@@ -1688,7 +1688,7 @@ function widthLineRowHtml(line = {}) {
   return `<div class="width-line-row" data-width-line-id="${line.id || ''}"><input data-width-field="inch" placeholder="نص قديم غير مستعاد" value="${line.inch || ''}"><input data-width-field="width" type="number" placeholder="نص قديم غير مستعاد" value="${line.width || ''}"><input data-width-field="quantity" type="number" placeholder="نص قديم غير مستعاد" value="${line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-width-line>نص قديم غير مستعاد</button></div>`;
 }
 function renderWidthLinesEditor(lines = []) {
-  refs.widthLinesEditor.innerHTML = `<div class="width-line-head"><span>نص قديم غير مستعاد</span><span>نص قديم غير مستعاد</span><span>نص قديم غير مستعاد</span><span></span></div>${(lines.length ? lines : [{}]).map((line)=>widthLineRowHtml(line)).join('')}`;
+  refs.widthLinesEditor.innerHTML = `<div class="width-line-head"><span>البوصة</span><span>العرض</span><span>الكمية</span><span></span></div>${(lines.length ? lines : [{}]).map((line)=>widthLineRowHtml(line)).join('')}`;
 }
 function accessoryLineRowHtml(line = {}) {
   return `<div class="accessory-line-row" data-accessory-line-id="${line.id || ''}"><input data-accessory-field="type" placeholder="نص قديم غير مستعاد نص قديم غير مستعاد" list="accessoryTypeList" value="${line.type || ''}"><input data-accessory-field="percent" type="number" step="0.01" placeholder="نص قديم غير مستعاد %" value="${line.percent || ''}"><input data-accessory-field="quantity" type="number" step="0.01" placeholder="نص قديم غير مستعاد نص قديم غير مستعاد" value="${line.quantityManual || line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-accessory-line>نص قديم غير مستعاد</button></div>`;
@@ -1868,7 +1868,7 @@ function calculatePricing(pricing) {
 }
 function renderPricings() {
   const activePricings = pricings.filter(isActivePricing);
-  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td>${pricing.pricingNumber}</td><td>${pricing.customer}</td><td>${pricing.fabricType}</td><td>${pricing.dyehouse}</td><td>${pricing.quantity}</td><td>${pricing.costPerKg.toLocaleString('ar-EG')}</td><td>${pricing.sellPrice.toLocaleString('ar-EG')}</td><td>${pricing.totalOffer.toLocaleString('ar-EG')}</td><td><span class="status pending">تسعيرة</span></td><td><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button><button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button></div></td></tr>`).join('');
+  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم التسعيرة">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('ar-EG')}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('ar-EG')}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('ar-EG')}</td><td data-label="الحالة"><span class="status pending">تسعيرة</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button><button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button></div></td></tr>`).join('');
 }
 function updatePricingPreview() {
   const pricing = calculatePricing({ rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value });
@@ -2123,7 +2123,7 @@ async function copyAiWhatsappMessage() {
 function renderOrders() {
   const list = filteredOrders();
   renderStats(list);
-  refs.ordersTableBody.innerHTML = list.map((order) => `<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${order.fabricType}</td><td>${order.totalRawOrdered}</td><td>${order.totalRawReceived}</td><td>${order.totalSentToDyehouse}</td><td>${order.totalFinishedReceived}</td><td>${formatNumber(order.totalWastePercent || 0, 1)}%</td><td><span class="status ${order.status}">${statusLabel(order.status)}</span></td><td><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button><button class="mini-btn danger" data-delete-order="${order.id}">حذف</button></div></td></tr>`).join('');
+  refs.ordersTableBody.innerHTML = list.map((order) => `<tr><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="خام مستلم">${order.totalRawReceived}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="الهالك">${formatNumber(order.totalWastePercent || 0, 1)}%</td><td data-label="الحالة"><span class="status ${order.status}">${statusLabel(order.status)}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button><button class="mini-btn danger" data-delete-order="${order.id}">حذف</button></div></td></tr>`).join('');
 }
 function documentHeader() { return `<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>نص قديم غير مستعاد ?? نص قديم غير مستعاد</span><span>نص قديم غير مستعاد نص قديم غير مستعاد: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</span></div></div>`; }
 function documentFooter() {
@@ -3843,7 +3843,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 

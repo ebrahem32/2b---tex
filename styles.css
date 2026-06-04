@@ -260,14 +260,39 @@
 
 @media(max-width:700px){
   .app-shell{padding:10px}
+  .hero-overlay{padding:18px 14px}
+  .hero-brand{gap:10px}
+  .hero-brand h1{font-size:24px;line-height:1.25}
+  .hero-subtitle{font-size:14px;line-height:1.8}
   .primary-btn,.ghost-btn,.mini-btn{min-height:44px;font-size:14px}
   .actions,.main-actions,.filters-row{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+  .section-head .filters-row{flex:0 0 auto!important;grid-template-columns:1fr 1fr!important}
+  .section-head .filters-row input{grid-column:1/-1}
   .main-actions .primary-btn{grid-column:1/-1}
   .table-wrap,.panel,.batch-box,#documentBody{overflow-x:auto}
   table{min-width:760px}
+  .table-wrap:has(.mobile-card-table){overflow-x:visible}
+  .mobile-card-table{min-width:0!important;width:100%;border-collapse:separate;border-spacing:0 10px}
+  .mobile-card-table thead{display:none}
+  .mobile-card-table tbody,
+  .mobile-card-table tr,
+  .mobile-card-table td{display:block;width:100%}
+  .mobile-card-table tr{background:#0d141b;border:1px solid var(--line);border-radius:18px;padding:10px 12px;margin-bottom:10px;box-shadow:0 10px 24px rgba(0,0,0,.12)}
+  .mobile-card-table td{display:grid;grid-template-columns:minmax(94px,38%) 1fr;gap:10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.07);padding:10px 0;text-align:right;white-space:normal;overflow-wrap:anywhere}
+  .mobile-card-table td::before{content:attr(data-label);color:var(--muted);font-size:12px;font-weight:800}
+  .mobile-card-table td:last-child{border-bottom:0}
+  .mobile-card-table td[data-label="إجراءات"]{display:block}
+  .mobile-card-table td[data-label="إجراءات"]::before{display:block;margin-bottom:8px}
+  .mobile-card-table .batch-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mobile-card-table .batch-actions .mini-btn{width:100%;justify-content:center}
+  .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}
+  .stats-grid .stat-card{padding:12px}
+  .stats-grid .stat-card strong{font-size:20px}
   .orders-table td,.orders-table th{padding:10px 8px}
   .workspace-grid,.batch-grid,.master-grid,.summary-grid,.document-meta{grid-template-columns:1fr!important}
   .batch-form{grid-template-columns:1fr!important}
   input,select{min-height:44px;font-size:15px}
-  .dialog-card.xl{width:calc(100vw - 12px);padding:14px}
+  dialog{max-width:100vw}
+  .dialog-card.xl{width:calc(100vw - 12px);max-height:calc(100dvh - 18px);overflow:auto;padding:14px}
+  .pricing-preview{grid-template-columns:1fr!important}
 }
