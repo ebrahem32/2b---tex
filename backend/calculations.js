@@ -7,8 +7,9 @@ function round(value) {
 }
 
 function calculateOrderSummary(order, data = {}) {
-  const rawReceived = sum(data.rawReceivingBatches || []);
+  const rawReceivedRecorded = sum(data.rawReceivingBatches || []);
   const sentToDyehouse = sum(data.dyehouseDeliveryBatches || []);
+  const rawReceived = Math.max(rawReceivedRecorded, sentToDyehouse);
   const finishedReceived = sum(data.finishedReceivingBatches || []);
   const customerDelivered = sum(data.customerDeliveryBatches || []);
   const rawReturned = sum(data.rawReturns || []);

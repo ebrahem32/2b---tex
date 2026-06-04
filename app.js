@@ -356,13 +356,16 @@ const allocationToApi = (allocation) => ({
 });
 function pricingConvertedByOrder(pricing) {
   const pricingOrderNumber = orderNumberFromPricing(pricing?.pricingNumber);
+  const pricingNumber = String(pricing?.pricingNumber || '').trim();
+  const pricingId = String(pricing?.id || '').trim();
   const customer = normalizeForCompare(pricing?.customer);
   const fabric = normalizeForCompare(pricing?.fabricType);
-  return orders.some((order) =>
-    String(order.orderNumber || '').trim() === String(pricingOrderNumber || '').trim()
-    && normalizeForCompare(order.customer) === customer
-    && normalizeForCompare(order.fabricType) === fabric
-  );
+  return orders.some((order) => {
+    const orderNumber = String(order.orderNumber || '').trim();
+    const samePricingId = pricingId && String(order.pricingId || '').trim() === pricingId;
+    const sameNumber = orderNumber === String(pricingOrderNumber || '').trim() || orderNumber === pricingNumber;
+    return samePricingId || (sameNumber && normalizeForCompare(order.customer) === customer && normalizeForCompare(order.fabricType) === fabric);
+  });
 }
 function isActivePricing(pricing) {
   const status = String(pricing?.status || '').toLowerCase();
@@ -3840,7 +3843,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 

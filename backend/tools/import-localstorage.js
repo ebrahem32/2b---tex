@@ -136,7 +136,8 @@ function splitRawMovements(rawRows) {
   const rawReceiving = [];
   const dyehouseDelivery = [];
   rawRows.forEach((row) => {
-    if (normalizedField(row.movementKind).toLowerCase() === 'out') dyehouseDelivery.push(row);
+    const movement = normalizedField(row.movementKind || row.movement).toLowerCase();
+    if (movement === 'out' || !movement) dyehouseDelivery.push(row);
     else rawReceiving.push(row);
   });
   return { rawReceiving, dyehouseDelivery };
@@ -243,7 +244,7 @@ async function importRows(prepared) {
     });
 
     prepared.pricings.forEach((row) => {
-      runInsert(db, `INSERT OR IGNORE INTO pricings (
+      runInsert(db, `INSERT OR REPLACE INTO pricings (
         id, pricing_number, customer_id, pricing_date, fabric_type, material_type, dyehouse,
         color_class, quantity, inch_width, finished_weight, raw_cost, dye_cost, waste_percent,
         extra_cost, profit_per_kg, unit_price, total_price, payment_terms, notes, status
@@ -268,7 +269,7 @@ async function importRows(prepared) {
         numberValue(row, 'totalPrice', 'total'),
         value(row, 'paymentTerms'),
         value(row, 'notes'),
-        value(row, 'status') || 'active',
+        value(row, 'status') || (value(row, 'convertedOrderId') ? 'converted' : 'active'),
       ]);
     });
 
