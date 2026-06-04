@@ -159,11 +159,32 @@ let selectedOrderId = orders[0]?.id || null;
 let editingOrderId = null;
 let editingPricingId = null;
 let currentDocumentType = null;
+let pendingConvertedPricingId = null;
+let initialLocalStorageSnapshot = null;
 
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
+
+function captureLocalStorageSnapshot() {
+  ensureRuntimeCollections();
+  return {
+    orders: clone(orders),
+    allocations: clone(allocations),
+    rawBatches: clone(rawBatches),
+    dyeBatches: clone(dyeBatches),
+    finishedBatches: clone(finishedBatches),
+    productionBatches: clone(productionBatches),
+    customerBatches: clone(customerBatches),
+    accessoryBatches: clone(accessoryBatches),
+    dyehouseTransfers: clone(dyehouseTransfers),
+    rawReturns: clone(rawReturns),
+    pricings: clone(pricings),
+    reportOutbox: clone(reportOutbox),
+    auditLog: clone(auditLog),
+  };
+}
 
 const WHATSAPP_SERVICE_URL = 'http://127.0.0.1:3020';
 const AI_SERVICE_URL = 'http://127.0.0.1:3030';
@@ -281,9 +302,34 @@ async function loadBackendData() {
     console.warn('Backend unavailable, using LocalStorage fallback', error);
   }
 }
+
+async function syncLocalStorageToBackend() {
+  if (!confirm('سيتم ترحيل بيانات المتصفح الحالية إلى قاعدة البيانات بدون حذف LocalStorage. هل تريد المتابعة؟')) return;
+  const snapshot = initialLocalStorageSnapshot || captureLocalStorageSnapshot();
+  try {
+    const result = await backendRequest('/import-local', {
+      method: 'POST',
+      body: JSON.stringify({
+        metadata: {
+          origin: location.origin,
+          href: location.href,
+          exportedAt: new Date().toISOString(),
+          source: 'ui-sync'
+        },
+        ...snapshot
+      })
+    });
+    alert(`تمت المزامنة.\nتمت إضافة: ${result.inserted || 0}\nتم تحديث: ${result.updated || 0}\nتم تجاهل: ${result.skipped || 0}`);
+    await loadBackendData();
+  } catch (error) {
+    console.error(error);
+    alert('تعذر تنفيذ المزامنة. تأكد أن خدمة قاعدة البيانات تعمل ثم حاول مرة أخرى.');
+  }
+}
 const orderToApi = (order, customerId = null) => ({
   id: order.id,
   order_number: order.orderNumber,
+  pricing_id: order.pricingId || null,
   customer_id: customerId,
   order_date: order.orderDate,
   fabric_type: order.fabricType,
@@ -1078,9 +1124,10 @@ async function openSystemStatusDialog() {
 function installAutomationUi() {
   const actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
-    actionBar.insertAdjacentHTML('beforeend', `<button class="mini-btn" id="whatsappStatusBadge" type="button">واتساب: غير متصل</button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
+    actionBar.insertAdjacentHTML('beforeend', `<button class="mini-btn" id="whatsappStatusBadge" type="button">واتساب: غير متصل</button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="syncLocalStorageBtn" type="button">مزامنة البيانات</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
   }
   document.getElementById('systemStatusBtn')?.addEventListener('click', openSystemStatusDialog);
+  document.getElementById('syncLocalStorageBtn')?.addEventListener('click', syncLocalStorageToBackend);
   document.getElementById('whatsappSettingsBtn')?.addEventListener('click', openWhatsappSettingsDialog);
   document.getElementById('dyehousePricesBtn')?.addEventListener('click', renderDyehousePricesDialog);
   document.getElementById('a5AccountsBtn')?.addEventListener('click', renderA5AccountsDialog);
@@ -1886,8 +1933,10 @@ function convertPricingToOrder(id) {
   const pricing = calculatePricing(pricings.find((item)=>item.id===id));
   if (!pricing) return;
   const orderNumber = orderNumberFromPricing(pricing.pricingNumber);
+  pendingConvertedPricingId = pricing.id;
   editingOrderId = null;
   fillOrderForm({
+    pricingId: pricing.id,
     orderNumber,
     productCode: buildItemCode(orderNumber),
     customer: pricing.customer || '',
@@ -1909,11 +1958,11 @@ function convertPricingToOrder(id) {
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.orderDialog.showModal();
 }
-async function markPricingConverted(pricingNumber, orderId) {
+async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
   const convertedAt = new Date().toISOString();
   const converted = [];
   pricings = pricings.map((pricing)=>{
-    const matches = String(pricing.pricingNumber)===String(pricingNumber) || orderNumberFromPricing(pricing.pricingNumber)===String(pricingNumber);
+    const matches = pricingId ? pricing.id === pricingId : (String(pricing.pricingNumber)===String(pricingNumber) || orderNumberFromPricing(pricing.pricingNumber)===String(pricingNumber));
     if (!matches) return pricing;
     const updated = { ...pricing, status:'converted', convertedOrderId: orderId || true, convertedAt };
     converted.push(updated);
@@ -2291,7 +2340,7 @@ async function addOrder(event) {
   const currentOrder = editingOrderId ? orders.find((order)=>order.id === editingOrderId) : null;
   const accessoryLines = readAccessoryLinesFromEditor();
   const firstAccessory = accessoryLines[0] || {};
-  const payload = { orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms:refs.paymentTerms.value, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
+  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms:refs.paymentTerms.value, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
   const backendCustomer = await ensureBackendCustomer(payload.customer);
   if (editingOrderId) {
     const previousDyehouse = String(currentOrder?.dyehouse || '').trim();
@@ -2313,10 +2362,11 @@ async function addOrder(event) {
     const newOrder = { id:uid(), ...payload };
     orders.unshift(newOrder);
     selectedOrderId = newOrder.id;
-    await markPricingConverted(payload.orderNumber, newOrder.id);
+    await markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
     await postBackend('/orders', orderToApi(newOrder, backendCustomer));
   }
   editingOrderId = null;
+  pendingConvertedPricingId = null;
   save(); refs.orderDialog.close(); renderAll();
 }
 async function addBatch(event) {
@@ -3371,7 +3421,7 @@ applyPricingDyehouseOptions();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
-refs.openOrderFormBtn.onclick = () => { editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
+refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
@@ -3420,7 +3470,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
 });
 
 refs.closePricingFormBtn.onclick = () => refs.pricingDialog.close();
-refs.closeOrderFormBtn.onclick = () => refs.orderDialog.close();
+refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; refs.orderDialog.close(); };
 refs.pricingForm.onsubmit = addPricing;
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);
@@ -3784,18 +3834,12 @@ if (refs.shareWhatsAppBtn) {
   refs.shareWhatsAppBtn.onclick = shareCurrentReportPngManual;
 }
 
+initialLocalStorageSnapshot = captureLocalStorageSnapshot();
 renderAll();
 loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
-
-
-
 
 
 

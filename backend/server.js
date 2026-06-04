@@ -29,6 +29,7 @@ const TABLE_FIELDS = {
   raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','notes','created_at','updated_at'],
   dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
+  audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
 };
 
 function tableData(table, data) {
@@ -188,6 +189,303 @@ batchPost('/api/batches/dyehouse', 'dyehouse_delivery_batches');
 batchPost('/api/batches/finished', 'finished_receiving_batches');
 batchPost('/api/batches/customer', 'customer_delivery_batches');
 batchPost('/api/batches/accessory', 'accessory_batches');
+
+function localCustomerId(name) {
+  const clean = String(name || '').trim();
+  if (!clean) return null;
+  return `customer-${clean.replace(/\s+/g, '-').replace(/[^\u0600-\u06FF\w-]/g, '')}`;
+}
+
+function firstValue(row, keys, fallback = '') {
+  for (const key of keys) {
+    if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== '') return row[key];
+  }
+  return fallback;
+}
+
+function numValue(row, keys) {
+  return Number(firstValue(row, keys, 0)) || 0;
+}
+
+function dateValue(row) {
+  return firstValue(row, ['batchDate', 'date', 'orderDate', 'pricingDate', 'createdAt', 'created_at'], null);
+}
+
+async function backupDatabaseForImport() {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const target = path.join(BACKUP_DIR, `before-import-local-${stamp}.sqlite`);
+  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, target);
+  return target;
+}
+
+async function upsertMapped(table, data, stats) {
+  const clean = tableData(table, data || {});
+  if (!clean.id) {
+    stats.skipped++;
+    return;
+  }
+  const exists = await get(`SELECT id FROM ${table} WHERE id = ?`, [clean.id]);
+  if (exists) {
+    const query = updateSql(table, clean, clean.id);
+    await run(query.sql, query.values);
+    stats.updated++;
+  } else {
+    const query = insertSql(table, clean);
+    await run(query.sql, query.values);
+    stats.inserted++;
+  }
+  stats.byTable[table] = (stats.byTable[table] || 0) + 1;
+}
+
+function mapOrder(row, customerId, inferredPricingId) {
+  return {
+    id: row.id,
+    order_number: firstValue(row, ['orderNumber', 'order_number']),
+    pricing_id: firstValue(row, ['pricingId', 'pricing_id'], inferredPricingId || null),
+    customer_id: customerId,
+    order_date: firstValue(row, ['orderDate', 'order_date']),
+    fabric_type: firstValue(row, ['fabricType', 'fabric_type']),
+    total_raw_quantity: numValue(row, ['totalRawQuantity', 'total_raw_quantity']),
+    expected_waste_percent: numValue(row, ['expectedWastePercent', 'expected_waste_percent']),
+    inch_width: numValue(row, ['inchWidth', 'inch_width']),
+    kilo_price: numValue(row, ['kiloPrice', 'kilo_price']),
+    payment_terms: firstValue(row, ['paymentTerms', 'payment_terms']),
+    dyehouse: firstValue(row, ['dyehouse']),
+    weaving_source: firstValue(row, ['weavingSource', 'weaving_source']),
+    notes: firstValue(row, ['notes']),
+    status: firstValue(row, ['status'], 'active'),
+    is_closed: row.isClosed || row.operationClosed ? 1 : 0,
+    created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+    updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+  };
+}
+
+function mapPricing(row, customerId) {
+  return {
+    id: row.id,
+    pricing_number: firstValue(row, ['pricingNumber', 'pricing_number']),
+    customer_id: customerId,
+    pricing_date: firstValue(row, ['pricingDate', 'pricing_date']),
+    fabric_type: firstValue(row, ['fabricType', 'fabric_type']),
+    material_type: firstValue(row, ['materialType', 'material_type']),
+    dyehouse: firstValue(row, ['dyehouse']),
+    color_class: firstValue(row, ['colorClass', 'color_class']),
+    quantity: numValue(row, ['quantity']),
+    inch_width: numValue(row, ['inchWidth', 'inch_width']),
+    finished_weight: numValue(row, ['finishedWeight', 'finished_weight']),
+    raw_cost: numValue(row, ['rawCost', 'raw_cost']),
+    dye_cost: numValue(row, ['dyeCost', 'dye_cost']),
+    waste_percent: numValue(row, ['wastePercent', 'waste_percent']),
+    extra_cost: numValue(row, ['extraCost', 'extra_cost']),
+    profit_per_kg: numValue(row, ['profitPerKg', 'profit_per_kg']),
+    unit_price: numValue(row, ['unitPrice', 'unit_price']),
+    total_price: numValue(row, ['totalPrice', 'total_price']),
+    payment_terms: firstValue(row, ['paymentTerms', 'payment_terms']),
+    notes: firstValue(row, ['notes']),
+    status: firstValue(row, ['status'], row.convertedOrderId ? 'converted' : 'active'),
+    created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+    updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+  };
+}
+
+// Sync browser LocalStorage payload into SQLite through safe field mapping.
+app.post('/api/import-local', asyncHandler(async (req, res) => {
+  const body = req.body || {};
+  const stats = { inserted: 0, updated: 0, skipped: 0, byTable: {}, repairedOrderId: 0 };
+  const backup = await backupDatabaseForImport();
+  const ordersInput = body.orders || [];
+  const pricingsInput = body.pricings || [];
+  const allocationsInput = body.allocations || [];
+  const allocationOrderById = new Map(allocationsInput.filter((row) => row?.id).map((row) => [row.id, row.orderId || row.order_id]));
+  const orderById = new Map(ordersInput.filter((row) => row?.id).map((row) => [row.id, row]));
+  const pricingByComposite = new Map();
+
+  for (const pricing of pricingsInput) {
+    const customerId = localCustomerId(pricing.customer || pricing.customer_name);
+    const mapped = mapPricing(pricing, customerId);
+    const key = [mapped.pricing_number, customerId, mapped.fabric_type, mapped.pricing_date].join('|');
+    pricingByComposite.set(key, mapped.id);
+    if (customerId) await upsertMapped('customers', { id: customerId, name: pricing.customer || pricing.customer_name || '', created_at: now(), updated_at: now() }, stats);
+    await upsertMapped('pricings', mapped, stats);
+  }
+
+  for (const order of ordersInput) {
+    const customerId = localCustomerId(order.customer || order.customer_name);
+    const pricingKey = [order.orderNumber || order.order_number, customerId, order.fabricType || order.fabric_type, order.orderDate || order.order_date].join('|');
+    const mappedOrder = mapOrder(order, customerId, pricingByComposite.get(pricingKey));
+    if (customerId) await upsertMapped('customers', { id: customerId, name: order.customer || order.customer_name || '', created_at: now(), updated_at: now() }, stats);
+    await upsertMapped('orders', mappedOrder, stats);
+    if (mappedOrder.pricing_id) await run('UPDATE pricings SET status = ?, updated_at = ? WHERE id = ?', ['converted', now(), mappedOrder.pricing_id]);
+  }
+
+  for (const row of allocationsInput) {
+    await upsertMapped('order_allocations', {
+      id: row.id,
+      order_id: firstValue(row, ['orderId', 'order_id']),
+      color: firstValue(row, ['color']),
+      pantone_code: firstValue(row, ['pantoneCode', 'pantone_code']),
+      planned_quantity: numValue(row, ['plannedQuantity', 'planned_quantity', 'quantity']),
+      dyehouse: firstValue(row, ['dyehouse']),
+      finished_width: numValue(row, ['finishedWidth', 'targetFinishedWidth', 'finished_width']),
+      finished_weight: numValue(row, ['finishedWeight', 'targetFinishedWeight', 'finished_weight']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  async function batchOrderId(row) {
+    const direct = firstValue(row, ['orderId', 'order_id'], null);
+    if (direct) return direct;
+    const allocationId = firstValue(row, ['allocationId', 'allocation_id'], null);
+    const repaired = allocationOrderById.get(allocationId);
+    if (repaired) stats.repairedOrderId++;
+    return repaired || null;
+  }
+
+  async function importRawRow(row) {
+    const order_id = await batchOrderId(row);
+    const allocation_id = firstValue(row, ['allocationId', 'allocation_id'], null);
+    const common = {
+      id: row.id,
+      order_id,
+      allocation_id,
+      batch_date: dateValue(row),
+      quantity: numValue(row, ['quantity']),
+      note_number: firstValue(row, ['noteNumber', 'note_number']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    };
+    const movement = String(row.movementKind || row.movement || '').toLowerCase();
+    if (movement === 'out' || movement === '') {
+      const order = orderById.get(order_id);
+      await upsertMapped('dyehouse_delivery_batches', { ...common, dyehouse: firstValue(row, ['dyehouse'], order?.dyehouse || '') }, stats);
+    } else {
+      await upsertMapped('raw_receiving_batches', { ...common, supplier: firstValue(row, ['supplier', 'weavingSource']) }, stats);
+    }
+  }
+
+  for (const row of body.rawBatches || []) await importRawRow(row);
+  for (const row of body.dyeBatches || body.dyehouse || []) {
+    await upsertMapped('dyehouse_delivery_batches', {
+      id: row.id,
+      order_id: await batchOrderId(row),
+      allocation_id: firstValue(row, ['allocationId', 'allocation_id'], null),
+      batch_date: dateValue(row),
+      quantity: numValue(row, ['quantity']),
+      dyehouse: firstValue(row, ['dyehouse']),
+      note_number: firstValue(row, ['noteNumber', 'note_number']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  for (const row of [...(body.finishedBatches || []), ...(body.productionBatches || []), ...(body.finished || [])]) {
+    await upsertMapped('finished_receiving_batches', {
+      id: row.id,
+      order_id: await batchOrderId(row),
+      allocation_id: firstValue(row, ['allocationId', 'allocation_id'], null),
+      batch_date: dateValue(row),
+      quantity: numValue(row, ['quantity']),
+      finished_width: numValue(row, ['finishedWidth', 'finished_width']),
+      finished_weight: numValue(row, ['finishedWeight', 'finished_weight']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  for (const row of body.customerBatches || body.customer || []) {
+    await upsertMapped('customer_delivery_batches', {
+      id: row.id,
+      order_id: await batchOrderId(row),
+      allocation_id: firstValue(row, ['allocationId', 'allocation_id'], null),
+      batch_date: dateValue(row),
+      quantity: numValue(row, ['quantity']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  for (const row of body.accessoryBatches || body.accessory || []) {
+    await upsertMapped('accessory_batches', {
+      id: row.id,
+      order_id: await batchOrderId(row),
+      allocation_id: firstValue(row, ['allocationId', 'allocation_id'], null),
+      accessory_type: firstValue(row, ['accessoryType', 'accessory_type']),
+      quantity: numValue(row, ['quantity']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  for (const row of body.rawReturns || []) {
+    await upsertMapped('raw_returns', {
+      id: row.id,
+      order_id: await batchOrderId(row),
+      allocation_id: firstValue(row, ['allocationId', 'allocation_id'], null),
+      batch_date: dateValue(row),
+      quantity: numValue(row, ['quantity']),
+      reason: firstValue(row, ['reason']),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  for (const row of body.dyehouseTransfers || body.transfers || []) {
+    await upsertMapped('dyehouse_transfers', {
+      id: row.id,
+      order_id: firstValue(row, ['orderId', 'order_id']),
+      from_allocation_id: firstValue(row, ['allocationId', 'fromAllocationId', 'from_allocation_id']),
+      to_allocation_id: firstValue(row, ['newAllocationId', 'toAllocationId', 'to_allocation_id']),
+      from_dyehouse: firstValue(row, ['fromDyehouse', 'from_dyehouse']),
+      to_dyehouse: firstValue(row, ['toDyehouse', 'to_dyehouse']),
+      quantity: numValue(row, ['quantity']),
+      transfer_date: dateValue(row),
+      notes: firstValue(row, ['notes']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
+    }, stats);
+  }
+
+  for (const row of body.reportOutbox || []) {
+    await upsertMapped('report_outbox', {
+      id: row.id,
+      report_type: firstValue(row, ['reportType', 'report_type']),
+      order_id: firstValue(row, ['orderId', 'order_id']),
+      order_number: firstValue(row, ['orderNumber', 'order_number']),
+      customer_name: firstValue(row, ['customerName', 'customer_name']),
+      target_group: firstValue(row, ['targetGroup', 'target_group']),
+      message_text: firstValue(row, ['messageText', 'message_text']),
+      attachment_path: firstValue(row, ['attachmentPath', 'attachment_path']),
+      status: firstValue(row, ['status'], 'pending'),
+      error_message: firstValue(row, ['errorMessage', 'error_message']),
+      retry_count: numValue(row, ['retryCount', 'retry_count']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now()),
+      sent_at: firstValue(row, ['sentAt', 'sent_at'], null)
+    }, stats);
+  }
+
+  for (const row of body.auditLog || []) {
+    await upsertMapped('audit_log', {
+      id: row.id,
+      action: firstValue(row, ['action']),
+      entity_type: firstValue(row, ['entityType', 'entity_type']),
+      entity_id: firstValue(row, ['entityId', 'entity_id']),
+      before_json: typeof row.before === 'string' ? row.before : JSON.stringify(row.before || null),
+      after_json: typeof row.after === 'string' ? row.after : JSON.stringify(row.after || null),
+      note: firstValue(row, ['note']),
+      created_at: firstValue(row, ['createdAt', 'created_at'], now())
+    }, stats);
+  }
+
+  res.json({ ok: true, backup, ...stats });
+}));
 
 app.delete('/api/batches/:type/:id', asyncHandler(async (req, res) => {
   const table = batchTables[req.params.type];
