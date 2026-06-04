@@ -1,0 +1,40 @@
+# 2B Tex Docker/Railway build ignore
+
+.git
+.github
+node_modules
+**/node_modules
+
+# Local logs and backups
+logs
+Reports
+backup-before-*
+backend/backups
+*.log
+*.err.log
+*.bak
+*.bak-*
+
+# Local-only runtimes and sessions
+cloudflared.exe
+*.exe
+whatsapp-service/runtime
+whatsapp-service/data
+.wwebjs_auth
+.wwebjs_cache
+
+# Local secret files
+.env
+ai-service/.env
+backend/.env
+
+# Keep only the committed seed database, ignore generated DB variants
+backend/data/*
+!backend/data/2btex.sqlite
+*.sqlite3
+*.db
+
+# Windows noise
+*.lnk
+Thumbs.db
+Desktop.ini

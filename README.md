@@ -5,6 +5,7 @@
 ## الحالة الحالية
 
 - النسخة الحالية مهيأة للعمل محليًا وعلى Railway.
+- GitHub هو مصدر الكود المعتمد، ولا يجب تعديل نسخة تشغيلية ثم تركها بدون commit/push.
 - الواجهة الرئيسية تعمل من `server.js`.
 - الـ Backend يعمل بقاعدة SQLite.
 - الواجهة تعتمد على الـ Backend كمصدر أساسي، مع بقاء LocalStorage كاحتياطي عند فشل الاتصال.
@@ -20,8 +21,8 @@
 ```powershell
 $env:SYSTEM_USER="admin"
 $env:SYSTEM_PASS="ضع_كلمة_مرور_قوية_هنا"
-& "D:\2B Tex نظام التشغيل\whatsapp-service\runtime\node-v20.11.1-win-x64\node.exe" "D:\2B Tex نظام التشغيل\backend\server.js"
-& "D:\2B Tex نظام التشغيل\whatsapp-service\runtime\node-v20.11.1-win-x64\node.exe" "D:\2B Tex نظام التشغيل\server.js"
+npm install --prefix backend
+npm start
 ```
 
 ثم افتح:
@@ -77,6 +78,12 @@ GitHub Actions يشغل نفس الفحص عند كل push على الفرع `ma
 - `whatsapp-service/runtime`
 - `whatsapp-service/data`
 - أي مفاتيح API أو كلمات مرور
+
+راجع أيضًا:
+
+- `.env.example`
+- `.dockerignore`
+- `GITHUB_READY_20260605.md`
 
 ## خدمات إضافية
 
