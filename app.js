@@ -1535,7 +1535,7 @@ const TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY = {
   },
   'نيو جيما': {
     effectiveFrom: '2026-04-15',
-    accountingMode: 'gross',
+    accountingMode: 'net',
     dyeing: {},
     printing: {
       'بيجمنت': {
@@ -3934,7 +3934,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 
