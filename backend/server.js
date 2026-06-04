@@ -46,6 +46,13 @@ function now() {
   return new Date().toISOString();
 }
 
+const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
+const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
+
+function normalizeArabicName(value) {
+  return String(value || '').replace(/[إأآ]/g, 'ا').replace(/\s+/g, ' ').trim();
+}
+
 function asyncHandler(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 }
@@ -87,9 +94,47 @@ function crudRoutes(base, table) {
     res.json(await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]));
   }));
   app.delete(`/api/${base}/:id`, asyncHandler(async (req, res) => {
-    await run(`DELETE FROM ${table} WHERE id = ?`, [req.params.id]);
-    res.json({ ok: true });
+    if (table === 'orders') {
+      const deleted = await deleteOrderGraph(req.params.id);
+      return res.json({ ok: true, deleted });
+    }
+    const result = await run(`DELETE FROM ${table} WHERE id = ?`, [req.params.id]);
+    res.json({ ok: true, deleted: result.changes || 0 });
   }));
+}
+
+async function deleteOrderGraph(orderId) {
+  const order = await get('SELECT id, order_number FROM orders WHERE id = ?', [orderId]);
+  if (!order) return 0;
+  await run('DELETE FROM report_outbox WHERE order_id = ? OR order_number = ?', [order.id, order.order_number || '']);
+  await run('DELETE FROM dyehouse_transfers WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM raw_returns WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM accessory_batches WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM customer_delivery_batches WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM finished_receiving_batches WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM dyehouse_delivery_batches WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM raw_receiving_batches WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM order_allocations WHERE order_id = ?', [order.id]);
+  const result = await run('DELETE FROM orders WHERE id = ?', [order.id]);
+  return result.changes || 0;
+}
+
+async function cleanupLegacyTestOrders() {
+  const placeholders = [...LEGACY_TEST_ORDER_NUMBERS].map(() => '?').join(',');
+  const rows = await all(
+    `SELECT o.id, o.order_number, c.name AS customer
+     FROM orders o
+     LEFT JOIN customers c ON c.id = o.customer_id
+     WHERE o.order_number IN (${placeholders})`,
+    [...LEGACY_TEST_ORDER_NUMBERS]
+  );
+  const matches = rows.filter((row) => LEGACY_TEST_CUSTOMERS.has(normalizeArabicName(row.customer)));
+  if (!matches.length) return;
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const target = path.join(BACKUP_DIR, `before-legacy-test-orders-cleanup-${stamp}.sqlite`);
+  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, target);
+  for (const row of matches) await deleteOrderGraph(row.id);
+  console.log(`[2B Tex] Removed ${matches.length} legacy test orders after backup: ${target}`);
 }
 
 app.get('/api/health', asyncHandler(async (_req, res) => {
@@ -608,7 +653,8 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: error.message || 'Internal server error' });
 });
 
-initDb().then(() => {
+initDb().then(async () => {
+  await cleanupLegacyTestOrders();
   app.listen(PORT, HOST, () => {
     console.log(`2B Tex Backend: http://localhost:${PORT}/api/health`);
   });

@@ -110,6 +110,32 @@ if (!Array.isArray(auditLog)) auditLog = clone(defaults.auditLog);
 if (!Array.isArray(customerBatches)) customerBatches = clone(defaults.customer);
 if (!Array.isArray(dyehouseTransfers)) dyehouseTransfers = clone(defaults.transfers);
 if (!Array.isArray(rawReturns)) rawReturns = clone(defaults.rawReturns);
+const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
+const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
+function normalizeLegacyCustomerName(value) {
+  return String(value || '').replace(/[إأآ]/g, 'ا').replace(/\s+/g, ' ').trim();
+}
+function isLegacyTestOrder(order) {
+  return LEGACY_TEST_ORDER_NUMBERS.has(String(order?.orderNumber || '').trim())
+    && LEGACY_TEST_CUSTOMERS.has(normalizeLegacyCustomerName(order?.customer));
+}
+function purgeLegacyTestOrdersFromMemory() {
+  const legacyIds = orders.filter(isLegacyTestOrder).map((order)=>order.id).filter(Boolean);
+  if (!legacyIds.length) return false;
+  const legacyIdSet = new Set(legacyIds);
+  const legacyAllocationIds = new Set(allocations.filter((allocation)=>legacyIdSet.has(allocation.orderId)).map((allocation)=>allocation.id));
+  orders = orders.filter((order)=>!legacyIdSet.has(order.id));
+  allocations = allocations.filter((allocation)=>!legacyIdSet.has(allocation.orderId));
+  rawBatches = rawBatches.filter((batch)=>!legacyIdSet.has(batch.orderId));
+  rawReturns = rawReturns.filter((batch)=>!legacyIdSet.has(batch.orderId) && !legacyAllocationIds.has(batch.allocationId));
+  dyeBatches = dyeBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
+  productionBatches = productionBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
+  finishedBatches = finishedBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
+  customerBatches = customerBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
+  accessoryBatches = accessoryBatches.filter((batch)=>!legacyIdSet.has(batch.orderId) && !legacyAllocationIds.has(batch.allocationId));
+  dyehouseTransfers = dyehouseTransfers.filter((transfer)=>!legacyIdSet.has(transfer.orderId) && !legacyAllocationIds.has(transfer.allocationId) && !legacyAllocationIds.has(transfer.newAllocationId));
+  return true;
+}
 function ensureRuntimeCollections() {
   if (!Array.isArray(orders)) orders = clone(defaults.orders);
   if (!Array.isArray(allocations)) allocations = clone(defaults.allocations);
@@ -310,6 +336,7 @@ async function loadBackendData() {
     accessoryBatches = (data.accessoryBatches || []).map(mapDbBatch);
     rawReturns = (data.rawReturns || []).map(mapDbBatch);
     dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbTransfer);
+    purgeLegacyTestOrdersFromMemory();
     const backendPriceLibrary = data.systemSettings?.dyehousePriceLibrary;
     if (backendPriceLibrary && typeof backendPriceLibrary === 'object' && !Array.isArray(backendPriceLibrary)) {
       customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(backendPriceLibrary);
@@ -3928,14 +3955,13 @@ if (refs.shareWhatsAppBtn) {
   refs.shareWhatsAppBtn.onclick = shareCurrentReportPngManual;
 }
 
+if (purgeLegacyTestOrdersFromMemory()) save();
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
 renderAll();
 loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
 
 
 
