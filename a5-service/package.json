@@ -1,0 +1,10 @@
+{
+  "name": "2btex-a5-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Read-only bridge from 2B Tex tracking to A5 Group accounting",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

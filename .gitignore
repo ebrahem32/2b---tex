@@ -1,0 +1,58 @@
+# ============================================================
+# 2B Tex - .gitignore
+# ============================================================
+
+# --- قاعدة البيانات (لا ترفع أبداً) ---
+backend/data/
+*.sqlite
+*.sqlite3
+*.db
+
+# --- النسخ الاحتياطية ---
+backend/backups/
+backup-before-*/
+Codex/
+
+# --- السجلات (Logs) ---
+logs/
+*.log
+*.err.log
+
+# --- المتغيرات السرية والـ API Keys ---
+.env
+ai-service/.env
+# استثناء: ملفات الأمثلة مسموحة
+!.env.example
+!**/.env.example
+
+# --- الملفات التنفيذية الكبيرة ---
+cloudflared.exe
+*.exe
+
+# --- تبعيات Node.js ---
+node_modules/
+**/node_modules/
+
+# --- Node.js المُدمج مع whatsapp-service ---
+whatsapp-service/runtime/
+
+# --- بيانات جلسة واتساب ---
+whatsapp-service/data/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# --- التقارير المولّدة ---
+Reports/
+
+# --- ملفات الـ Backup اليدوية ---
+*.bak
+*.bak-*
+
+# --- ملفات Windows ---
+*.lnk
+Thumbs.db
+Desktop.ini
+
+# --- ملفات مؤقتة ---
+*.tmp
+*.temp

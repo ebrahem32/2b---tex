@@ -1,0 +1,203 @@
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const childProcess = require('child_process');
+
+const root = __dirname;
+const port = Number(process.env.PORT || 3000);
+const systemUser = process.env.SYSTEM_USER;
+const systemPass = process.env.SYSTEM_PASS;
+const apiTarget = {
+  host: '127.0.0.1',
+  port: Number(process.env.BACKEND_PORT || 3050),
+};
+const mime = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.ico': 'image/x-icon',
+  '.svg': 'image/svg+xml; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+};
+
+function latestBackupInfo() {
+  const roots = [root, path.dirname(root)];
+  const found = [];
+  for (const base of roots) {
+    try {
+      for (const name of fs.readdirSync(base)) {
+        if (!/^backup-before-|^backup-/.test(name)) continue;
+        const fullPath = path.join(base, name);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) found.push({ name, path: fullPath, modifiedAt: stat.mtime.toISOString() });
+      }
+    } catch {}
+  }
+  return found.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt))[0] || null;
+}
+
+function currentCloudflareUrl() {
+  const candidates = [
+    path.join(root, 'logs', 'cloudflared.log'),
+    path.join(root, 'logs', 'cloudflared.err.log'),
+  ];
+  const urls = [];
+  for (const file of candidates) {
+    try {
+      const text = fs.readFileSync(file, 'utf8');
+      const matches = text.match(/https:\/\/[-a-z0-9]+\.trycloudflare\.com/gi) || [];
+      urls.push(...matches);
+    } catch {}
+  }
+  return urls[urls.length - 1] || '';
+}
+
+function isProcessRunning(name) {
+  try {
+    const output = childProcess.execSync('tasklist', { encoding: 'utf8', windowsHide: true });
+    return output.toLowerCase().includes(name.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+function backendHealth() {
+  return new Promise((resolve) => {
+    const req = http.request({ hostname: apiTarget.host, port: apiTarget.port, path: '/api/health', method: 'GET', timeout: 2500 }, (res) => {
+      res.resume();
+      resolve(res.statusCode >= 200 && res.statusCode < 300);
+    });
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve(false));
+    req.end();
+  });
+}
+
+function safePath(urlPath) {
+  const decoded = decodeURIComponent(urlPath.split('?')[0]);
+  const clean = decoded === '/' ? '/index.html' : decoded;
+  const target = path.normalize(path.join(root, clean));
+  if (!target.startsWith(root)) return null;
+  return target;
+}
+
+function sendMissingCredentials(res) {
+  res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('لم يتم ضبط بيانات الدخول للنظام. اضبط SYSTEM_USER و SYSTEM_PASS ثم أعد تشغيل السيرفر.');
+}
+
+function timingSafeEqualText(a, b) {
+  const left = Buffer.from(String(a || ''), 'utf8');
+  const right = Buffer.from(String(b || ''), 'utf8');
+  if (left.length !== right.length) return false;
+  return cryptoSafeEqual(left, right);
+}
+
+function cryptoSafeEqual(left, right) {
+  let result = 0;
+  for (let i = 0; i < left.length; i += 1) result |= left[i] ^ right[i];
+  return result === 0;
+}
+
+function isAuthorized(req) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Basic ')) return false;
+  try {
+    const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+    const separator = decoded.indexOf(':');
+    if (separator < 0) return false;
+    const user = decoded.slice(0, separator);
+    const pass = decoded.slice(separator + 1);
+    return timingSafeEqualText(user, systemUser) && timingSafeEqualText(pass, systemPass);
+  } catch {
+    return false;
+  }
+}
+
+function requestLogin(res) {
+  res.writeHead(401, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'WWW-Authenticate': 'Basic realm="2B Tex"',
+  });
+  res.end('مطلوب تسجيل الدخول لفتح نظام 2B Tex.');
+}
+
+function proxyApi(req, res) {
+  const options = {
+    hostname: apiTarget.host,
+    port: apiTarget.port,
+    path: req.url,
+    method: req.method,
+    headers: { ...req.headers, host: `${apiTarget.host}:${apiTarget.port}` },
+  };
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+  proxyReq.on('error', () => {
+    res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: false, error: 'خدمة قاعدة البيانات غير متصلة حاليًا' }));
+  });
+  req.pipe(proxyReq);
+}
+
+const server = http.createServer((req, res) => {
+  if (!systemUser || !systemPass) {
+    sendMissingCredentials(res);
+    return;
+  }
+  if (!isAuthorized(req)) {
+    requestLogin(res);
+    return;
+  }
+  if ((req.url || '').startsWith('/system/status')) {
+    backendHealth().then((backendOk) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        frontend: { ok: true, port },
+        backend: { ok: backendOk, port: apiTarget.port },
+        cloudflare: { ok: isProcessRunning('cloudflared.exe'), url: currentCloudflareUrl() },
+        backup: { ok: !!latestBackupInfo(), latest: latestBackupInfo() },
+        updatedAt: new Date().toISOString(),
+      }));
+    });
+    return;
+  }
+  if ((req.url || '').startsWith('/api')) {
+    proxyApi(req, res);
+    return;
+  }
+  const filePath = safePath(req.url || '/');
+  if (!filePath) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('الملف غير موجود');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': mime[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
+    res.end(data);
+  });
+});
+
+server.listen(port, '0.0.0.0', () => {
+  const addresses = [];
+  for (const items of Object.values(os.networkInterfaces())) {
+    for (const item of items || []) {
+      if (item.family === 'IPv4' && !item.internal) addresses.push(item.address);
+    }
+  }
+  console.log('2B Tex system is running');
+  console.log('افتح من نفس الكمبيوتر: http://localhost:' + port);
+  addresses.forEach((ip) => console.log('افتح من الموبايل: http://' + ip + ':' + port));
+  console.log('اترك هذه النافذة مفتوحة أثناء الاستخدام.');
+});

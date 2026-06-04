@@ -1,0 +1,16 @@
+{
+  "name": "2b-tex-ai-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend AI analysis service for 2B Tex operations.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "openai": "latest"
+  }
+}

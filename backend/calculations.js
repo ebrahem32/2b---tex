@@ -1,0 +1,38 @@
+function sum(rows, key = 'quantity') {
+  return rows.reduce((total, row) => total + Number(row?.[key] || 0), 0);
+}
+
+function round(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function calculateOrderSummary(order, data = {}) {
+  const rawReceived = sum(data.rawReceivingBatches || []);
+  const sentToDyehouse = sum(data.dyehouseDeliveryBatches || []);
+  const finishedReceived = sum(data.finishedReceivingBatches || []);
+  const customerDelivered = sum(data.customerDeliveryBatches || []);
+  const rawReturned = sum(data.rawReturns || []);
+  const requested = Number(order?.total_raw_quantity || order?.totalRawQuantity || 0);
+  const wasteQuantity = Math.max(sentToDyehouse - finishedReceived, 0);
+  const wastePercentage = sentToDyehouse ? wasteQuantity / sentToDyehouse * 100 : 0;
+  const estimatedWaste = requested * Number(order?.expected_waste_percent || order?.expectedWastePercent || 0) / 100;
+
+  return {
+    totalRequestedQuantity: round(requested),
+    totalRawReceived: round(rawReceived),
+    remainingRawToReceive: round(Math.max(requested - rawReceived, 0)),
+    totalSentToDyehouse: round(sentToDyehouse),
+    remainingNotSentToDyehouse: round(Math.max(rawReceived - sentToDyehouse, 0)),
+    totalFinishedReceived: round(finishedReceived),
+    remainingAtDyehouse: round(Math.max(sentToDyehouse - finishedReceived, 0)),
+    customerDeliveredQuantity: round(customerDelivered),
+    customerRemainingQuantity: round(Math.max(requested - customerDelivered, 0)),
+    warehouseBalance: round(Math.max(finishedReceived - customerDelivered, 0)),
+    rawReturned: round(rawReturned),
+    estimatedWasteQuantity: round(estimatedWaste),
+    wasteQuantity: round(wasteQuantity),
+    wastePercentage: round(wastePercentage)
+  };
+}
+
+module.exports = { calculateOrderSummary };

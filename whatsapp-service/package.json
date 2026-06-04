@@ -1,0 +1,16 @@
+{
+  "name": "2b-tex-whatsapp-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WhatsApp Web automation service for 2B Tex operations reports",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "latest",
+    "express": "latest",
+    "qrcode-terminal": "latest",
+    "whatsapp-web.js": "latest"
+  }
+}
