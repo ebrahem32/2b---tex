@@ -1,60 +1,58 @@
 # ============================================================
-# 2B Tex - .gitignore
+# 2B Tex - Git ignore rules
 # ============================================================
 
-# --- قاعدة البيانات ---
-# تجاهل كل محتويات backend/data/ عدا قاعدة البيانات الرئيسية
+# قاعدة البيانات
+# نتجاهل كل محتويات backend/data عدا نسخة التشغيل الأساسية المرفوعة للـ Railway seed.
 backend/data/**
 !backend/data/2btex.sqlite
-# تجاهل أي sqlite خارج backend/data
 *.sqlite3
 *.db
 
-# --- النسخ الاحتياطية ---
+# النسخ الاحتياطية
 backend/backups/
 backup-before-*/
 Codex/
 
-# --- السجلات (Logs) ---
+# السجلات
 logs/
 *.log
 *.err.log
 
-# --- المتغيرات السرية والـ API Keys ---
+# المتغيرات السرية ومفاتيح API
 .env
 ai-service/.env
-# استثناء: ملفات الأمثلة مسموحة
 !.env.example
 !**/.env.example
 
-# --- الملفات التنفيذية الكبيرة ---
+# ملفات تنفيذية كبيرة ومحلية
 cloudflared.exe
 *.exe
 
-# --- تبعيات Node.js ---
+# تبعيات Node.js
 node_modules/
 **/node_modules/
 
-# --- Node.js المُدمج مع whatsapp-service ---
+# Node portable الخاص بواتساب
 whatsapp-service/runtime/
 
-# --- بيانات جلسة واتساب ---
+# بيانات جلسة واتساب
 whatsapp-service/data/
 .wwebjs_auth/
 .wwebjs_cache/
 
-# --- التقارير المولّدة ---
+# التقارير والملفات المولدة
 Reports/
 
-# --- ملفات الـ Backup اليدوية ---
+# ملفات Backup يدوية
 *.bak
 *.bak-*
 
-# --- ملفات Windows ---
+# ملفات Windows
 *.lnk
 Thumbs.db
 Desktop.ini
 
-# --- ملفات مؤقتة ---
+# ملفات مؤقتة
 *.tmp
 *.temp

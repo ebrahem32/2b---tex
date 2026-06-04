@@ -1,67 +1,82 @@
-﻿# ط­ط§ظ„ط© ظ†ط¸ط§ظ… 2B Tex - 2026-06-04
+# حالة نظام 2B Tex - 2026-06-04
 
-## ظ…ط§ طھظ… ط¥ظ†ط¬ط§ط²ظ‡
-- طھظ… ط±ط¨ط· ط§ظ„ظˆط§ط¬ظ‡ط© ط¨ط§ظ„ظ€ Backend ظ„ظ„ظ‚ط±ط§ط،ط© ظ…ظ† ظ‚ط§ط¹ط¯ط© SQLite ظ…ط¹ ط¨ظ‚ط§ط، LocalStorage ظƒط§ط­طھظٹط§ط·ظٹ ط¹ظ†ط¯ ظپط´ظ„ ط§ظ„ظ€ API.
-- طھظ… طھط´ط؛ظٹظ„ ط§ظ„ظˆط§ط¬ظ‡ط© ط¹ط¨ط± `server.js` ط¹ظ„ظ‰ `http://localhost:3000`.
-- طھظ… طھط´ط؛ظٹظ„ ط§ظ„ظ€ Backend ط¹ظ„ظ‰ `http://localhost:3050`.
-- طھظ… طھظپط¹ظٹظ„ Reverse Proxy ط¨ط­ظٹط« `/api` ظٹط¹ظ…ظ„ ظ…ظ† ظ†ظپط³ ط¯ظˆظ…ظٹظ† ط§ظ„ظˆط§ط¬ظ‡ط©.
-- طھظ… طھظپط¹ظٹظ„ Basic Auth ط¹ظ„ظ‰ ط§ظ„ظˆط§ط¬ظ‡ط© ظˆط§ظ„ظ€ API ط¨ط§ط³طھط®ط¯ط§ظ… `SYSTEM_USER` ظˆ `SYSTEM_PASS`.
-- طھظ… طھط´ط؛ظٹظ„ Cloudflare TryTunnel ظ…ط¤ظ‚طھ.
-- طھظ… ط§ط®طھط¨ط§ط± `/api/bootstrap` ظˆظٹط¹ط±ط¶:
-  - ط§ظ„ط·ظ„ط¨ط§طھ: 61
-  - ط§ظ„ط¹ظ…ظ„ط§ط،: 18
+## ما تم إنجازه
 
-## ط·ط±ظٹظ‚ط© ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„ظٹط¯ظˆظٹ
-ط§ظپطھط­ PowerShell ظ…ظ† ط¬ط°ط± ط§ظ„ظ…ط´ط±ظˆط¹ ط«ظ… ط´ط؛ظ„:
+- تم نقل النظام من الاعتماد الكامل على LocalStorage إلى Backend + SQLite.
+- تم ربط الواجهة بالـ Backend للقراءة والعرض، مع بقاء LocalStorage كاحتياطي.
+- تم رفع المشروع إلى GitHub:
+  `https://github.com/ebrahem32/2b---tex`
+- تم نشر النظام على Railway:
+  `https://2b-tex-railway-startjs.up.railway.app`
+- تم تشغيل Frontend و Backend داخل نفس Railway deployment.
+- تم تفعيل Basic Auth عبر `SYSTEM_USER` و `SYSTEM_PASS`.
+- تم تفعيل Reverse Proxy بحيث تعمل طلبات `/api` من نفس رابط الواجهة.
+- تم إصلاح أرصدة الاستيراد الأساسية وظهور التسعيرات المحولة.
+
+## أرقام التشغيل الحالية على Railway
+
+- عدد الطلبات: 61
+- عدد العملاء: 18
+- الخام المستلم: 69,531.1
+- المرسل للمصبغة: 69,531.1
+- المجهز المستلم: 31,932.06
+- التسعيرات النشطة: 1
+
+## طريقة التشغيل اليدوي محليًا
 
 ```powershell
 $env:SYSTEM_USER="admin"
-$env:SYSTEM_PASS="ط¶ط¹_ظƒظ„ظ…ط©_ط§ظ„ظ…ط±ظˆط±_ظ‡ظ†ط§"
-& "D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\whatsapp-service\runtime\node-v20.11.1-win-x64\node.exe" "D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\backend\server.js"
-& "D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\whatsapp-service\runtime\node-v20.11.1-win-x64\node.exe" "D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\server.js"
-& "D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\cloudflared.exe" tunnel --url http://localhost:3000
+$env:SYSTEM_PASS="ضع_كلمة_مرور_قوية_هنا"
+& "D:\2B Tex نظام التشغيل\whatsapp-service\runtime\node-v20.11.1-win-x64\node.exe" "D:\2B Tex نظام التشغيل\backend\server.js"
+& "D:\2B Tex نظام التشغيل\whatsapp-service\runtime\node-v20.11.1-win-x64\node.exe" "D:\2B Tex نظام التشغيل\server.js"
 ```
 
-## ط·ط±ظٹظ‚ط© ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„طھظ„ظ‚ط§ط¦ظٹ
-- ط§ظ„ظ…ظ„ظپ: `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\start-public-system.ps1`
-- ظٹط¹طھظ…ط¯ ط¹ظ„ظ‰ Windows Environment Variables:
+ثم افتح:
+
+`http://localhost:3000`
+
+## طريقة التشغيل التلقائي المحلي
+
+- الملف: `D:\2B Tex نظام التشغيل\start-public-system.ps1`
+- يعتمد على Windows Environment Variables:
   - `SYSTEM_USER`
   - `SYSTEM_PASS`
-- ظٹط­ظپط¸ ط§ظ„ظ„ظˆط¬ط§طھ ط¯ط§ط®ظ„:
-  - `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\logs\backend.log`
-  - `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\logs\frontend.log`
-  - `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\logs\cloudflared.log`
-- طھظ… طھط¬ظ‡ظٹط² ط§ط³ظ… ظ…ظ‡ظ…ط© Task Scheduler:
-  - `2BTex-PublicSystem`
-- ط¥ظ†ط´ط§ط، ط§ظ„ظ…ظ‡ظ…ط© ظٹط­طھط§ط¬ طھط´ط؛ظٹظ„ PowerShell ظƒظ…ط³ط¤ظˆظ„ ط¥ط°ط§ ط¸ظ‡ط±طھ ط±ط³ط§ظ„ط© طµظ„ط§ط­ظٹط§طھ.
+- يحفظ السجلات داخل:
+  - `D:\2B Tex نظام التشغيل\logs\backend.log`
+  - `D:\2B Tex نظام التشغيل\logs\frontend.log`
+  - `D:\2B Tex نظام التشغيل\logs\cloudflared.log`
 
-## ط±ط§ط¨ط· Cloudflare ط§ظ„ط­ط§ظ„ظٹ
-`https://promising-locations-plaintiff-presentations.trycloudflare.com`
+## Railway
 
-ظ…ظ„ط§ط­ط¸ط©: ظ‡ط°ط§ ط±ط§ط¨ط· TryTunnel ظ…ط¤ظ‚طھ ظˆظ‚ط¯ ظٹطھط؛ظٹط± ط¹ظ†ط¯ ط¥ط¹ط§ط¯ط© طھط´ط؛ظٹظ„ cloudflared.
+- رابط التشغيل:
+  `https://2b-tex-railway-startjs.up.railway.app`
+- ملف التشغيل:
+  `start.js`
+- قاعدة Railway:
+  `/data/2btex.sqlite`
 
-## ظ…ظ„ظپط§طھ Backup ط§ظ„ظ…ظ‡ظ…ط©
-- `D:\backup-before-backend-ui-20260604-142728`
-- ط£ظٹ ظ†ط³ط® ط³ط§ط¨ظ‚ط© ط¨ط§ط³ظ… `backup-before-*` ط£ظˆ `backup-before-stabilization-*`
+## ملفات Backup مهمة
 
-## ط§ظ„ظ…ظ„ظپط§طھ ط§ظ„ظ…ط¹ط¯ظ„ط©
-- `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\server.js`
-- `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\app.js`
-- `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\styles.css`
-- `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\backend\server.js`
-- `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\start-public-system.ps1`
-- `D:\2B Tex ظ†ط¸ط§ظ… ط§ظ„طھط´ط؛ظٹظ„\CURRENT_STATUS_20260604.md`
+- `D:\backup-before-db-reimport-20260604-195349`
+- `D:\backup-before-github-hardening-20260604-200352`
+- `D:\backup-before-github-docs-20260604-204744`
 
-## ظ…ط§ ظ„ظ… ظٹظƒطھظ…ظ„
-- LocalStorage ظ„ظ… ظٹطھظ… ط­ط°ظپظ‡طŒ ظˆظ…ط§ ط²ط§ظ„ ط§ط­طھظٹط§ط·ظٹظ‹ط§.
-- ط§ظ„ط±ط¨ط· ط§ظ„ظƒط§ظ…ظ„ ظ„ظƒظ„ ط´ط§ط´ط§طھ ط§ظ„ظ†ط¸ط§ظ… ط¨ط§ظ„ظ€ Backend ظ„ظ… ظٹظƒطھظ…ظ„ ط¨ظ†ط³ط¨ط© 100%.
-- ط§ط³طھظ„ط§ظ… ط®ط§ظ… ظ…ظ†ظپطµظ„ ظƒط­ط±ظƒط© Backend ظٹط­طھط§ط¬ ظ…ط±ط§ط¬ط¹ط© ط´ط§ط´ط© ط§ظ„ط¥ط¯ط®ط§ظ„ ط§ظ„ظ…ظ‚طµظˆط¯ط©.
-- ط±ط§ط¨ط· Cloudflare ط§ظ„ط­ط§ظ„ظٹ ظ…ط¤ظ‚طھ ظˆظ„ظٹط³ ظ†ط´ط±ظ‹ط§ ط¯ط§ط¦ظ…ظ‹ط§ ط¨ط§ط³ظ… ط¯ظˆظ…ظٹظ† ط«ط§ط¨طھ.
-- Task Scheduler ظ‚ط¯ ظٹط­طھط§ط¬ ط¥ظ†ط´ط§ط، ظٹط¯ظˆظٹ ط¨طµظ„ط§ط­ظٹط§طھ ظ…ط³ط¤ظˆظ„.
+## الملفات المعدلة في مرحلة GitHub
 
-## ط§ظ„ط®ط·ظˆط© ط§ظ„ظ‚ط§ط¯ظ…ط© ط§ظ„ظ…ظ‚طھط±ط­ط©
-- طھط«ط¨ظٹطھ Cloudflare Named Tunnel ط¯ط§ط¦ظ… ط¨ط¯ظ„ TryTunnel.
-- ظ…ط±ط§ط¬ط¹ط© ط´ط§ط´ط© ط§ط³طھظ„ط§ظ… ط§ظ„ط®ط§ظ… ظˆط±ط¨ط·ظ‡ط§ ظƒط­ط±ظƒط© `raw_receiving_batches`.
-- ظ†ظ‚ظ„ ط¨ط§ظ‚ظٹ ط´ط§ط´ط§طھ ط§ظ„ط¥ط¯ط®ط§ظ„ طھط¯ط±ظٹط¬ظٹظ‹ط§ ظ„ظ„ظ€ Backend.
-- ط¥ط¶ط§ظپط© Backup طھظ„ظ‚ط§ط¦ظٹ ظٹظˆظ…ظٹ ظ„ظ…ظ„ظپ SQLite.
+- `D:\2B Tex نظام التشغيل\package.json`
+- `D:\2B Tex نظام التشغيل\.gitattributes`
+- `D:\2B Tex نظام التشغيل\.gitignore`
+- `D:\2B Tex نظام التشغيل\.github\workflows\checks.yml`
+- `D:\2B Tex نظام التشغيل\README.md`
+- `D:\2B Tex نظام التشغيل\CURRENT_STATUS_20260604.md`
+- `D:\2B Tex نظام التشغيل\GITHUB_RAILWAY_REVIEW_20260604.md`
 
+## ما لم يكتمل
+
+- إضافة Backup/Export مباشر من قاعدة Railway.
+- نقل كل شاشات الإدخال تدريجيًا للـ Backend فقط.
+- مراجعة طويلة المدى لطريقة تخزين SQLite على Railway مقارنة بقاعدة بيانات مستضافة.
+
+## الخطوة القادمة المقترحة
+
+إضافة endpoint آمن أو سكريبت لتصدير Backup من `/data/2btex.sqlite` قبل أي تعديلات تشغيل كبيرة.
