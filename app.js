@@ -1078,7 +1078,17 @@ async function renderA5LedgerDialog(customerName) {
 }
 function openAuditLogDialog() {
   ensureRuntimeCollections();
-  const rows = auditLog.slice(0,200).map((item)=>`<tr><td>${arDateTime(item.createdAt)}</td><td>${item.action || '-'}</td><td>${item.entityType || '-'}</td><td>${item.note || '-'}</td></tr>`).join('') || '<tr><td colspan="4">لا توجد تعديلات مسجلة حتى الآن.</td></tr>';
+  const actionLabels = { create:'إنشاء', update:'تعديل', delete:'حذف', retry:'إعادة محاولة', error:'خطأ' };
+  const entityLabels = { order:'طلب', pricing:'تسعيرة', allocation:'لون', reportOutbox:'قائمة الإرسال', whatsappSettings:'إعدادات واتساب', dyehousePriceLibrary:'أسعار المصابغ', customerAccount:'حساب عميل', customerPayment:'دفعة عميل' };
+  const cleanAuditNote = (item) => {
+    const text = String(item?.note || '').trim();
+    if (text && !isLegacyRecoveredText(text)) return text;
+    const number = String(text || item?.entityId || '').match(/\d+/)?.[0] || String(item?.entityId || '').trim();
+    const entity = entityLabels[item?.entityType] || item?.entityType || 'بيان';
+    const action = actionLabels[item?.action] || item?.action || 'تحديث';
+    return `${action} ${entity}${number ? ` رقم ${number}` : ''}`;
+  };
+  const rows = auditLog.slice(0,200).map((item)=>`<tr><td>${escapeHtml(arDateTime(item.createdAt))}</td><td>${escapeHtml(actionLabels[item.action] || item.action || '-')}</td><td>${escapeHtml(entityLabels[item.entityType] || item.entityType || '-')}</td><td>${escapeHtml(cleanAuditNote(item))}</td></tr>`).join('') || '<tr><td colspan="4">لا توجد تعديلات مسجلة حتى الآن.</td></tr>';
   refs.documentTitle.textContent = 'سجل التعديلات';
   refs.documentBody.dataset.documentType = 'audit-log';
   refs.documentBody.innerHTML = `<div class="document-sheet orders-follow-report"><div class="report-title"><h2>سجل التعديلات</h2><span>آخر العمليات والتعديلات المسجلة داخل النظام.</span></div><section class="report-section"><h3>تفاصيل السجل</h3><table class="follow-table"><thead><tr><th>التاريخ</th><th>الإجراء</th><th>نوع البيان</th><th>الملاحظة</th></tr></thead><tbody>${rows}</tbody></table></section></div>`;
@@ -2513,8 +2523,8 @@ function transferAllocationDyehouse(id) {
 function deleteAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
-  if (!confirm(`نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد ${allocation.color} نص قديم غير مستعاد نص قديم غير مستعاد. نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعادɿ`)) return;
-  recordAudit('delete', 'allocation', id, allocation, null, `نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد: ${allocation.color || allocation.pantoneCode || '-'}`);
+  if (!confirm(`هل تريد حذف اللون ${allocation.color || allocation.pantoneCode || '-'}؟ سيتم حذف الحركات المرتبطة به من هذا الطلب.`)) return;
+  recordAudit('delete', 'allocation', id, allocation, null, `حذف اللون ${allocation.color || allocation.pantoneCode || '-'}`);
   allocations = allocations.filter((item)=>item.id!==id);
   dyeBatches = dyeBatches.filter((batch)=>batch.allocationId!==id);
   productionBatches = productionBatches.filter((batch)=>batch.allocationId!==id);
@@ -2527,9 +2537,9 @@ function deleteAllocation(id) {
 function deleteOrder(id) {
   const order = orders.find((item)=>item.id===id);
   if (!order) return;
-  if (!confirm(`نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد ${order.orderNumber} نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد. نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعادɿ`)) return;
+  if (!confirm(`هل تريد حذف الطلب رقم ${order.orderNumber || '-'}؟ سيتم حذف الألوان والحركات المرتبطة به.`)) return;
   const allocationIds = allocations.filter((allocation)=>allocation.orderId===id).map((allocation)=>allocation.id);
-  recordAudit('delete', 'order', id, order, null, `نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد ${order.orderNumber || ''}`);
+  recordAudit('delete', 'order', id, order, null, `حذف الطلب رقم ${order.orderNumber || ''}`);
   orders = orders.filter((item)=>item.id!==id);
   allocations = allocations.filter((allocation)=>allocation.orderId!==id);
   rawBatches = rawBatches.filter((batch)=>batch.orderId!==id);
@@ -2826,9 +2836,8 @@ function dyehouseNamesForOrder(order) {
     .filter((transfer)=>transfer.orderId === order?.id)
     .map((transfer)=>transfer.toDyehouse);
   const allocationDyehouses = (order?.allocations || [])
-    .filter((allocation)=>String(allocation.dyehouse || originalDyehouse).trim() === originalDyehouse)
     .map((allocation)=>allocation.dyehouse || originalDyehouse);
-  return uniqueNonEmpty([originalDyehouse, ...transferDyehouses, ...allocationDyehouses]);
+  return uniqueNonEmpty([originalDyehouse, ...allocationDyehouses, ...transferDyehouses]);
 }
 function renderDyehouseDocumentPicker(order) {
   const names = dyehouseNamesForOrder(order);
@@ -2987,6 +2996,15 @@ function openDocument(type) {
   const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
   if (!sourceOrder) { alert('اختر طلبًا أولًا.'); return; }
   const order = calculateOrder(sourceOrder);
+  if (type === 'dyeing') {
+    const names = dyehouseNamesForOrder(order);
+    if (names.length > 1) {
+      renderDyehouseDocumentPicker(order);
+    } else {
+      openDyeingDocumentForDyehouse(names[0] || order.dyehouse || '');
+    }
+    return;
+  }
   const fmt = (value) => formatNumber(Number(value || 0));
   const safe = (value) => escapeHtml(value || '-');
   const titleMap = { quotation:'عرض سعر', weaving:'أمر تشغيل نسيج', dyeing:'أمر تشغيل صباغة', waste:'تقرير الهالك', fullreport:'التقرير التفصيلي للطلب', labSamples:'عينات معمل', stickers:'استيكرات التشغيل' };
@@ -3330,6 +3348,10 @@ function confirmWeavingSlip(event) {
 
 function documentHeader() {
   return `<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>العاشر من رمضان</span><span>خدمة العملاء: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>للنسيج والصباغة والتجهيز</span></div></div>`;
+}
+
+function documentLogo() {
+  return '<img src="./2b-mark.svg" alt="2B Tex" style="max-width:140px;height:auto">';
 }
 
 function rawPermitImagesSection(order, rawNotes = null) {
@@ -3849,10 +3871,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
 
 
 
