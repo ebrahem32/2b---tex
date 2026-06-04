@@ -3015,7 +3015,7 @@ function openDocument(type) {
   refs.documentBody.dataset.reportTitle = title;
   refs.documentBody.dataset.reportSubtitle = `رقم الطلب: ${order.orderNumber || '-'} - العميل: ${order.customer || '-'}`;
   if (type === 'dyeing') refs.documentBody.dataset.dyehouseName = order.dyehouse || '';
-  const infoCards = `<div class="summary-grid"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div>`;
+  const infoCards = `<div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div>`;
   const accessorySection = accessoryDocumentSection(order, fmt, safe);
   const hasAccessoryColumns = !!accessorySection;
   const allocationRows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(line.dyehouse || order.dyehouse)}</td><td>${safe(line.targetFinishedWidth)}</td><td>${safe(line.targetFinishedWeight)}</td><td>${fmt(line.finishedReceived)}</td><td>${fmt(line.wasteQuantity)} (${formatNumber(line.wastePercent || 0, 1)}%)</td>${hasAccessoryColumns ? `<td>${fmt(line.accessoryQuantity || 0)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="${hasAccessoryColumns ? 8 : 7}">لا توجد ألوان مسجلة.</td></tr>`;
@@ -3888,7 +3888,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 
