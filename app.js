@@ -653,19 +653,25 @@ function saveWhatsappSettingsFromDialog() {
   renderWhatsappSettingsDialog();
   alert(whatsappSettings.sendingEnabled ? 'تم حفظ إعدادات واتساب وتفعيل الإرسال.' : 'تم حفظ إعدادات واتساب مع بقاء الإرسال التلقائي متوقفًا.');
 }
+function isLegacyRecoveredText(value) {
+  return /نص قديم غير مستعاد|\uFFFD|ï؟½|\?{3,}/.test(String(value || ''));
+}
 function dyehousePriceRows() {
   const rows = [];
   Object.entries(activeDyehousePriceLibrary()).forEach(([dyehouse, config]) => {
+    if (isLegacyRecoveredText(dyehouse)) return;
     if (config?.aliasOf) return;
     const dyeing = config?.dyeing || {};
     Object.entries(dyeing).forEach(([material, colors]) => {
+      if (isLegacyRecoveredText(material)) return;
       Object.entries(colors || {}).forEach(([color, price]) => {
+        if (isLegacyRecoveredText(color)) return;
         rows.push({ dyehouse, material, color, price: price ?? '' });
       });
     });
     if (!Object.keys(dyeing).length) rows.push({ dyehouse, material:'', color:'', price:'' });
   });
-  return rows.length ? rows : [{ dyehouse:'مصبغة جديدة', material:'', color:'', price:'' }];
+  return rows.length ? rows : [{ dyehouse:'', material:'', color:'', price:'' }];
 }
 function dyehousePriceRowHtml(row = {}) {
   return `<tr data-dyehouse-price-row>
@@ -3843,7 +3849,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 
