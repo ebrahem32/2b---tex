@@ -190,6 +190,12 @@ batchPost('/api/batches/finished', 'finished_receiving_batches');
 batchPost('/api/batches/customer', 'customer_delivery_batches');
 batchPost('/api/batches/accessory', 'accessory_batches');
 
+app.post('/api/transfers', asyncHandler(async (req, res) => {
+  const query = insertSql('dyehouse_transfers', req.body || {});
+  await run(query.sql, query.values);
+  res.status(201).json(await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [query.id]));
+}));
+
 function localCustomerId(name) {
   const clean = String(name || '').trim();
   if (!clean) return null;

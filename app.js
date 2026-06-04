@@ -201,7 +201,7 @@ async function backendRequest(path, options = {}) {
   return response.json();
 }
 
-const dbDate = (row) => row.batch_date || row.order_date || row.pricing_date || row.created_at || '';
+const dbDate = (row) => row.batch_date || row.transfer_date || row.order_date || row.pricing_date || row.created_at || '';
 const customerLookupName = (customers, id) => customers.find((item)=>item.id===id)?.name || '';
 function mapDbOrder(row, customers) {
   return {
@@ -255,6 +255,21 @@ function mapDbBatch(row) {
     movement: row.movement || '',
   };
 }
+function mapDbTransfer(row) {
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    allocationId: row.from_allocation_id,
+    newAllocationId: row.to_allocation_id,
+    fromDyehouse: row.from_dyehouse || '',
+    toDyehouse: row.to_dyehouse || '',
+    quantity: Number(row.quantity || 0),
+    date: dbDate(row),
+    reason: row.notes || '',
+    noteNumber: row.note_number || '',
+    mode: row.to_allocation_id ? 'split' : 'full',
+  };
+}
 function mapDbPricing(row, customers) {
   return {
     id: row.id,
@@ -293,7 +308,7 @@ async function loadBackendData() {
     customerBatches = (data.customerDeliveryBatches || []).map(mapDbBatch);
     accessoryBatches = (data.accessoryBatches || []).map(mapDbBatch);
     rawReturns = (data.rawReturns || []).map(mapDbBatch);
-    dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbBatch);
+    dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbTransfer);
     backendAvailable = true;
     save();
     renderAll();
@@ -385,6 +400,17 @@ const batchToApi = (batch) => ({
   finished_weight: batch.finishedWeight || null,
   accessory_type: batch.accessoryType || null,
   movement: batch.movement || null,
+});
+const transferToApi = (transfer) => ({
+  id: transfer.id,
+  order_id: transfer.orderId || selectedOrderId || '',
+  from_allocation_id: transfer.allocationId || null,
+  to_allocation_id: transfer.newAllocationId || null,
+  from_dyehouse: transfer.fromDyehouse || '',
+  to_dyehouse: transfer.toDyehouse || '',
+  quantity: Number(transfer.quantity || 0),
+  transfer_date: transfer.date || new Date().toISOString().slice(0, 10),
+  notes: transfer.reason || transfer.notes || '',
 });
 function backendCustomerId(name) {
   return `customer-${String(name || 'unknown').trim().replace(/\s+/g, '-').replace(/[^\u0600-\u06FF\w-]/g, '')}`;
@@ -2480,7 +2506,7 @@ function editAllocation(id) {
   renderAll();
 }
 
-function transferAllocationDyehouse(id) {
+async function transferAllocationDyehouse(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   const order = calculateOrder(orders.find((item)=>item.id===allocation.orderId));
@@ -2498,24 +2524,37 @@ function transferAllocationDyehouse(id) {
   const quantity = Number(quantityValue);
   if (!quantity || quantity <= 0) { alert('\u0627\u062f\u062e\u0644 \u0643\u0645\u064a\u0629 \u0635\u062d\u064a\u062d\u0629 \u0644\u0644\u062a\u062d\u0648\u064a\u0644.'); return; }
   const transferWarnings = [];
-  if (quantity > originalQuantity) transferWarnings.push('نص قديم غير مستعاد: نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد');
-  if (quantity > Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0)) transferWarnings.push('نص قديم غير مستعاد: نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد');
+  if (quantity > originalQuantity) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062e\u0637\u0637\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.');
+  if (quantity > Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0)) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u062e\u0627\u0645 \u0627\u0644\u0645\u062a\u0627\u062d \u063a\u064a\u0631 \u0627\u0644\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629.');
   const dateValue = prompt('\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062a\u062d\u0648\u064a\u0644', new Date().toISOString().slice(0,10));
   if (dateValue === null) return;
   const noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '') || '';
   const reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '\u062a\u062d\u0648\u064a\u0644 \u0645\u0635\u0628\u063a\u0629') || '';
   const newAllocationId = uid();
   const roundedQuantity = roundNumber(quantity);
+  let transferRecord = null;
+  let allocationUpdate = null;
+  let newAllocation = null;
   if (roundedQuantity >= originalQuantity) {
-    allocations = allocations.map((item)=>item.id===id ? { ...item, dyehouse:newDyehouse } : item);
-    dyehouseTransfers.unshift({ id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundNumber(originalQuantity), date:dateValue, reason: [reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'full' });
+    allocationUpdate = { ...allocation, dyehouse:newDyehouse };
+    allocations = allocations.map((item)=>item.id===id ? allocationUpdate : item);
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundNumber(originalQuantity), date:dateValue, reason: [reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'full' };
+    dyehouseTransfers.unshift(transferRecord);
   } else {
     const ratio = originalQuantity ? roundedQuantity / originalQuantity : 0;
     const originalAccessory = Number(allocation.accessoryQuantityManual || 0);
     const newAccessory = originalAccessory ? roundNumber(originalAccessory * ratio) : allocation.accessoryQuantityManual;
-    allocations = allocations.map((item)=>item.id===id ? { ...item, plannedQuantity:roundNumber(originalQuantity - roundedQuantity), accessoryQuantityManual:originalAccessory ? roundNumber(originalAccessory - Number(newAccessory || 0)) : item.accessoryQuantityManual } : item);
-    allocations.push({ ...allocation, id:newAllocationId, plannedQuantity:roundedQuantity, dyehouse:newDyehouse, accessoryQuantityManual:newAccessory });
-    dyehouseTransfers.unshift({ id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason, noteNumber, mode:'split' });
+    allocationUpdate = { ...allocation, plannedQuantity:roundNumber(originalQuantity - roundedQuantity), accessoryQuantityManual:originalAccessory ? roundNumber(originalAccessory - Number(newAccessory || 0)) : allocation.accessoryQuantityManual };
+    newAllocation = { ...allocation, id:newAllocationId, plannedQuantity:roundedQuantity, dyehouse:newDyehouse, accessoryQuantityManual:newAccessory };
+    allocations = allocations.map((item)=>item.id===id ? allocationUpdate : item);
+    allocations.push(newAllocation);
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason, noteNumber, mode:'split' };
+    dyehouseTransfers.unshift(transferRecord);
+  }
+  if (backendAvailable) {
+    if (allocationUpdate) await putBackend(`/allocations/${id}`, allocationToApi(allocationUpdate));
+    if (newAllocation) await postBackend(`/orders/${allocation.orderId}/allocations`, allocationToApi(newAllocation));
+    if (transferRecord) await postBackend('/transfers', transferToApi(transferRecord));
   }
   save();
   renderAll();
@@ -3895,10 +3934,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
 
 
 
