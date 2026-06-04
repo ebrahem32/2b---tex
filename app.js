@@ -181,6 +181,7 @@ function captureLocalStorageSnapshot() {
     dyehouseTransfers: clone(dyehouseTransfers),
     rawReturns: clone(rawReturns),
     pricings: clone(pricings),
+    dyehousePriceLibrary: clone(customDyehousePriceLibrary || {}),
     reportOutbox: clone(reportOutbox),
     auditLog: clone(auditLog),
   };
@@ -309,6 +310,13 @@ async function loadBackendData() {
     accessoryBatches = (data.accessoryBatches || []).map(mapDbBatch);
     rawReturns = (data.rawReturns || []).map(mapDbBatch);
     dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbTransfer);
+    const backendPriceLibrary = data.systemSettings?.dyehousePriceLibrary;
+    if (backendPriceLibrary && typeof backendPriceLibrary === 'object' && !Array.isArray(backendPriceLibrary)) {
+      customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(backendPriceLibrary);
+      saveDyehousePriceLibraryLocal();
+      applyPricingDyehouseOptions();
+      updateSuggestedDyeCost();
+    }
     backendAvailable = true;
     save();
     renderAll();
@@ -726,6 +734,38 @@ function saveWhatsappSettingsFromDialog() {
 function isLegacyRecoveredText(value) {
   return /نص قديم غير مستعاد|\uFFFD|ï؟½|\?{3,}/.test(String(value || ''));
 }
+function sanitizeDyehousePriceLibrary(source = {}) {
+  const clean = {};
+  Object.entries(source || {}).forEach(([dyehouse, config]) => {
+    if (!dyehouse || isLegacyRecoveredText(dyehouse) || !config || typeof config !== 'object') return;
+    if (config.aliasOf && isLegacyRecoveredText(config.aliasOf)) return;
+    const dyeing = {};
+    Object.entries(config.dyeing || {}).forEach(([material, colors]) => {
+      if (!material || isLegacyRecoveredText(material)) return;
+      Object.entries(colors || {}).forEach(([color, price]) => {
+        if (!color || isLegacyRecoveredText(color)) return;
+        const number = Number(price);
+        if (!Number.isFinite(number)) return;
+        if (!dyeing[material]) dyeing[material] = {};
+        dyeing[material][color] = number;
+      });
+    });
+    const extras = {};
+    Object.entries(config.extras || {}).forEach(([name, price]) => {
+      const number = Number(price);
+      if (name && !isLegacyRecoveredText(name) && Number.isFinite(number)) extras[name] = number;
+    });
+    clean[dyehouse] = {
+      effectiveFrom: config.effectiveFrom || '',
+      accountingMode: config.accountingMode || 'net',
+      dyeing,
+      printing: config.printing && typeof config.printing === 'object' ? config.printing : {},
+      extras,
+    };
+    if (config.aliasOf) clean[dyehouse].aliasOf = config.aliasOf;
+  });
+  return clean;
+}
 function dyehousePriceRows() {
   const rows = [];
   Object.entries(activeDyehousePriceLibrary()).forEach(([dyehouse, config]) => {
@@ -752,6 +792,19 @@ function dyehousePriceRowHtml(row = {}) {
     <td><button class="mini-btn" type="button" data-delete-price-row>حذف</button></td>
   </tr>`;
 }
+function dyehousePriceSummaryHtml() {
+  return Object.entries(activeDyehousePriceLibrary()).filter(([name])=>name && !isLegacyRecoveredText(name)).map(([dyehouse, config]) => {
+    const extras = Object.entries(config.extras || {}).map(([name, price])=>`<tr><td>${escapeHtml(name)}</td><td>${escapeHtml(price)}</td></tr>`).join('') || '<tr><td colspan="2">لا توجد بنود تجهيز.</td></tr>';
+    const printing = Object.entries(config.printing || {}).flatMap(([type, rows])=>Object.entries(rows || {}).map(([name, price])=>`<tr><td>${escapeHtml(type)}</td><td>${escapeHtml(name)}</td><td>${escapeHtml(price)}</td></tr>`)).join('') || '<tr><td colspan="3">لا توجد طباعة.</td></tr>';
+    return `<section class="whatsapp-settings-section">
+      <div class="subsection-head"><h3>${escapeHtml(dyehouse)} - ${config.accountingMode === 'gross' ? 'قائم' : 'صافي'}</h3></div>
+      <h4>التجهيز</h4>
+      <table><thead><tr><th>البند</th><th>السعر</th></tr></thead><tbody>${extras}</tbody></table>
+      <h4>الطباعة</h4>
+      <table><thead><tr><th>النوع</th><th>البند</th><th>السعر</th></tr></thead><tbody>${printing}</tbody></table>
+    </section>`;
+  }).join('');
+}
 function renderDyehousePricesDialog() {
   const rowsHtml = dyehousePriceRows().map(dyehousePriceRowHtml).join('');
   refs.documentTitle.textContent = 'أسعار المصابغ';
@@ -763,6 +816,7 @@ function renderDyehousePricesDialog() {
       <thead><tr><th>المصبغة</th><th>نوع الخامة</th><th>درجة اللون</th><th>السعر</th><th>إجراء</th></tr></thead>
       <tbody data-dyehouse-price-rows>${rowsHtml}</tbody>
     </table>
+    ${dyehousePriceSummaryHtml()}
     <div class="document-actions no-print">
       <button class="mini-btn" type="button" data-add-price-row>إضافة بند</button>
       <button class="primary-btn" type="button" data-save-dyehouse-prices>حفظ أسعار المصابغ</button>
@@ -771,7 +825,7 @@ function renderDyehousePricesDialog() {
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
 }
-function saveDyehousePricesFromDialog() {
+async function saveDyehousePricesFromDialog() {
   const before = clone(customDyehousePriceLibrary || {});
   const next = {};
   refs.documentBody.querySelectorAll('[data-dyehouse-price-row]').forEach((row) => {
@@ -779,14 +833,16 @@ function saveDyehousePricesFromDialog() {
     const material = row.querySelector('[data-price-material]')?.value.trim() || '';
     const color = row.querySelector('[data-price-color]')?.value.trim() || '';
     const rawPrice = row.querySelector('[data-price-value]')?.value;
-    if (!dyehouse) return;
+    if (!dyehouse || isLegacyRecoveredText(dyehouse) || isLegacyRecoveredText(material) || isLegacyRecoveredText(color)) return;
     if (!next[dyehouse]) next[dyehouse] = { effectiveFrom:'', dyeing:{}, extras:{} };
     if (!material || !color || rawPrice === '') return;
+    const price = Number(rawPrice);
+    if (!Number.isFinite(price)) return;
     if (!next[dyehouse].dyeing[material]) next[dyehouse].dyeing[material] = {};
-    next[dyehouse].dyeing[material][color] = Number(rawPrice);
+    next[dyehouse].dyeing[material][color] = price;
   });
-  customDyehousePriceLibrary = next;
-  saveDyehousePriceLibrary();
+  customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(next);
+  await saveDyehousePriceLibrary();
   recordAudit('update', 'dyehousePriceLibrary', 'pricing', before, customDyehousePriceLibrary, 'تحديث أسعار المصابغ');
   applyPricingDyehouseOptions();
   updateSuggestedDyeCost();
@@ -1475,6 +1531,78 @@ const DYEHOUSE_PRICE_LIBRARY = {
     extras: { 'نص قديم غير مستعاد نص قديم غير مستعاد + نص قديم غير مستعاد':10, 'نص قديم غير مستعاد نص قديم غير مستعاد':6, 'نص قديم غير مستعاد نص قديم غير مستعاد':6, 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد':9, 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد':10, 'نص قديم غير مستعاد نص قديم غير مستعاد':5, 'نص قديم غير مستعاد نص قديم غير مستعاد':4, 'نص قديم غير مستعاد + نص قديم غير مستعاد نص قديم غير مستعاد':4, 'نص قديم غير مستعاد نص قديم غير مستعاد':12, 'نص قديم غير مستعاد نص قديم غير مستعاد':18 },
   },
 };
+const TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY = {
+  'جيما': {
+    effectiveFrom: '2026-04-15',
+    accountingMode: 'net',
+    dyeing: {
+      'قطن': {
+        'غسيل - مفتوح':45, 'غسيل - مقفول':52,
+        'أبيض / كسر بياض - مفتوح':49, 'أبيض / كسر بياض - مقفول':56,
+        'فواتح - مفتوح':65, 'فواتح - مقفول':72,
+        'وسط - مفتوح':68, 'وسط - مقفول':75,
+        'غوامق - مفتوح':71, 'غوامق - مقفول':78,
+        'أسود - مفتوح':72, 'أسود - مقفول':79,
+        'أسود خاص - مفتوح':74, 'أسود خاص - مقفول':81,
+        'بني غامق - مفتوح':75, 'بني غامق - مقفول':82,
+      },
+      'بوليستر': {
+        'أبيض / كسر بياض - مفتوح':40, 'أبيض / كسر بياض - مقفول':47,
+        'وسط - مفتوح':41, 'وسط - مقفول':48,
+        'غوامق - مفتوح':43, 'غوامق - مقفول':50,
+        'أسود - مفتوح':44, 'أسود - مقفول':51,
+        'بني غامق - مفتوح':48, 'بني غامق - مقفول':55,
+      },
+    },
+    extras: {
+      'كسترة':9,
+      'قص براسل':5,
+      'حلاقة':2,
+      'كربون فينش':3,
+      'إنزيم':5,
+      'دبل إنزيم':4,
+      'سخاوة خاصة':5,
+      'شق خام':5,
+      'تجهيز خاص نيو جيما':3,
+      'تجهيز سقعانه':7,
+      'تجهيز بوليفار':7,
+      'معالج زيوت':5,
+      'معالجة زيوت خاصة':8,
+    },
+  },
+  'نيو جيما': {
+    effectiveFrom: '2026-04-15',
+    accountingMode: 'gross',
+    dyeing: {},
+    printing: {
+      'بيجمنت': {
+        'سنجل بدون ليكرا - أقل من 2.5 متر':60,
+        'سنجل ليكرا - أقل من 2.5 متر':67,
+        'سنجل بدون ليكرا - أقل من 4 متر':70,
+        'سنجل ليكرا - أقل من 4 متر':77,
+        'سنجل بدون ليكرا - أكبر من 4 متر':77,
+        'سنجل ليكرا - أكبر من 4 متر':84,
+      },
+      'راكتيف': {
+        'سنجل بدون ليكرا - أقل من 2.5 متر':75,
+        'سنجل ليكرا - أقل من 2.5 متر':82,
+        'سنجل بدون ليكرا - أقل من 4 متر':80,
+        'سنجل ليكرا - أقل من 4 متر':87,
+      },
+      'ديسبيرس': {
+        'أقل من 2.5 متر':53,
+        'أقل من 4 متر':60,
+      },
+      'شعيرات + كربون نقش': { 'عام':53 },
+      'أوفر برنت': { 'عام':16 },
+      'فلوريسنت': { 'عام':13 },
+      'جليتر': { 'عام':14 },
+    },
+    extras: {},
+  },
+};
+TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['نيو جيما'].dyeing = clone(TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['جيما'].dyeing);
+TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['نيو جيما'].extras = clone(TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['جيما'].extras);
 let customDyehousePriceLibrary = (() => {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.dyehousePriceLibrary));
@@ -1484,21 +1612,38 @@ let customDyehousePriceLibrary = (() => {
   }
 })();
 function mergeDyehousePriceLibrary() {
-  const merged = clone(DYEHOUSE_PRICE_LIBRARY);
-  Object.entries(customDyehousePriceLibrary || {}).forEach(([dyehouse, config]) => {
+  const merged = sanitizeDyehousePriceLibrary(TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY);
+  Object.entries(sanitizeDyehousePriceLibrary(customDyehousePriceLibrary || {})).forEach(([dyehouse, config]) => {
     if (!dyehouse || !config || typeof config !== 'object') return;
     const current = merged[dyehouse] || { effectiveFrom:'', dyeing:{}, extras:{} };
     merged[dyehouse] = {
       ...current,
       ...config,
       dyeing: { ...(current.dyeing || {}), ...(config.dyeing || {}) },
+      printing: { ...(current.printing || {}), ...(config.printing || {}) },
       extras: { ...(current.extras || {}), ...(config.extras || {}) },
     };
   });
   return merged;
 }
-function saveDyehousePriceLibrary() {
+function saveDyehousePriceLibraryLocal() {
   localStorage.setItem(STORAGE_KEYS.dyehousePriceLibrary, JSON.stringify(customDyehousePriceLibrary || {}));
+}
+async function saveDyehousePriceLibrary() {
+  customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(customDyehousePriceLibrary || {});
+  saveDyehousePriceLibraryLocal();
+  if (!backendAvailable) return false;
+  try {
+    await backendRequest('/settings/dyehousePriceLibrary', {
+      method: 'PUT',
+      body: JSON.stringify({ value: customDyehousePriceLibrary }),
+    });
+    return true;
+  } catch (error) {
+    backendAvailable = false;
+    console.warn('Dyehouse price library backend save failed', error);
+    return false;
+  }
 }
 function activeDyehousePriceLibrary() {
   return mergeDyehousePriceLibrary();
@@ -1511,6 +1656,25 @@ function applyPricingDyehouseOptions() {
     .sort((a,b)=>a.localeCompare(b, 'ar'));
   refs.pricingDyehouse.innerHTML = `<option value="">اختر المصبغة</option>${names.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
   if (names.includes(current)) refs.pricingDyehouse.value = current;
+}
+function applyPricingDyehouseOptions() {
+  if (!refs.pricingDyehouse) return;
+  const current = refs.pricingDyehouse.value;
+  const names = Object.keys(activeDyehousePriceLibrary())
+    .filter((name)=>name && !isLegacyRecoveredText(name))
+    .sort((a,b)=>a.localeCompare(b, 'ar'));
+  refs.pricingDyehouse.innerHTML = `<option value="">اختر المصبغة</option>${names.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
+  if (names.includes(current)) refs.pricingDyehouse.value = current;
+  applyPricingColorOptions();
+}
+function applyPricingColorOptions() {
+  if (!refs.pricingColorClass) return;
+  const current = refs.pricingColorClass.value;
+  const colors = uniqueNonEmpty(Object.values(activeDyehousePriceLibrary()).flatMap((config)=>Object.values(config.dyeing || {}).flatMap((items)=>Object.keys(items || {}))));
+  const fallback = ['غسيل - مفتوح','غسيل - مقفول','أبيض / كسر بياض - مفتوح','أبيض / كسر بياض - مقفول','فواتح - مفتوح','فواتح - مقفول','وسط - مفتوح','وسط - مقفول','غوامق - مفتوح','غوامق - مقفول','أسود - مفتوح','أسود - مقفول','أسود خاص - مفتوح','أسود خاص - مقفول','بني غامق - مفتوح','بني غامق - مقفول'];
+  const options = (colors.length ? colors : fallback).filter((name)=>name && !isLegacyRecoveredText(name)).sort((a,b)=>a.localeCompare(b, 'ar'));
+  refs.pricingColorClass.innerHTML = `<option value="">اختر الدرجة</option>${options.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
+  if (options.includes(current)) refs.pricingColorClass.value = current;
 }
 const FINISHING_PRICE_LIBRARY = {
   general: {
@@ -1759,6 +1923,11 @@ function getSuggestedDyeCost(dyehouse, materialType, colorClass) {
   const librarySource = activeDyehousePriceLibrary();
   const library = librarySource[dyehouse];
   const resolved = library?.aliasOf ? librarySource[library.aliasOf] : library;
+  if (!resolved) return '';
+  if (materialType === 'مخلوط') {
+    const base = resolved.dyeing?.['قطن']?.[colorClass];
+    return base === undefined || base === null || base === '' ? '' : Number(base) + 9;
+  }
   return resolved?.dyeing?.[materialType]?.[colorClass] ?? '';
 }
 function updateSuggestedDyeCost() {
@@ -1946,18 +2115,22 @@ function calculateOrder(order) {
   };
 }
 function calculatePricing(pricing) {
-  const wasteCost = Number(pricing.rawCost || 0) * Number(pricing.wastePercent || 0) / 100;
+  const library = activeDyehousePriceLibrary()[pricing.dyehouse] || {};
+  const wasteBase = library.accountingMode === 'gross'
+    ? Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0)
+    : Number(pricing.rawCost || 0);
+  const wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
   const costPerKg = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + wasteCost;
   const sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
   const totalOffer = sellPrice * Number(pricing.quantity || 0);
-  return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), wasteCost:roundNumber(wasteCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
+  return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:library.accountingMode || 'net', wasteCost:roundNumber(wasteCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
 }
 function renderPricings() {
   const activePricings = pricings.filter(isActivePricing);
   refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم التسعيرة">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('ar-EG')}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('ar-EG')}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('ar-EG')}</td><td data-label="الحالة"><span class="status pending">تسعيرة</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button><button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button></div></td></tr>`).join('');
 }
 function updatePricingPreview() {
-  const pricing = calculatePricing({ rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value });
+  const pricing = calculatePricing({ dyehouse:refs.pricingDyehouse.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value });
   refs.pricingWasteCostPreview.textContent = pricing.wasteCost.toLocaleString('ar-EG');
   refs.pricingCostPreview.textContent = pricing.costPerKg.toLocaleString('ar-EG');
   refs.pricingSellPreview.textContent = pricing.sellPrice.toLocaleString('ar-EG');
@@ -4145,16 +4318,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
-
-
-
-
-
-
 
 
 

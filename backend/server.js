@@ -163,6 +163,15 @@ app.get('/api/orders/:orderId/batches', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
+  const systemSettingsRows = await all('SELECT key, value_json FROM system_settings ORDER BY key');
+  const systemSettings = {};
+  for (const row of systemSettingsRows) {
+    try {
+      systemSettings[row.key] = JSON.parse(row.value_json);
+    } catch {
+      systemSettings[row.key] = null;
+    }
+  }
   res.json({
     customers: await all('SELECT * FROM customers ORDER BY name'),
     pricings: await all('SELECT * FROM pricings ORDER BY created_at DESC'),
@@ -176,7 +185,29 @@ app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
     rawReturns: await all('SELECT * FROM raw_returns ORDER BY created_at'),
     dyehouseTransfers: await all('SELECT * FROM dyehouse_transfers ORDER BY created_at'),
     reportOutbox: await all('SELECT * FROM report_outbox ORDER BY created_at DESC'),
+    systemSettings,
   });
+}));
+
+app.get('/api/settings/:key', asyncHandler(async (req, res) => {
+  const row = await get('SELECT key, value_json FROM system_settings WHERE key = ?', [req.params.key]);
+  if (!row) return res.json({ key: req.params.key, value: null });
+  let value = null;
+  try {
+    value = JSON.parse(row.value_json);
+  } catch {}
+  res.json({ key: row.key, value });
+}));
+
+app.put('/api/settings/:key', asyncHandler(async (req, res) => {
+  const valueJson = JSON.stringify(req.body?.value ?? null);
+  const existing = await get('SELECT key FROM system_settings WHERE key = ?', [req.params.key]);
+  if (existing) {
+    await run('UPDATE system_settings SET value_json = ?, updated_at = ? WHERE key = ?', [valueJson, now(), req.params.key]);
+  } else {
+    await run('INSERT INTO system_settings (key, value_json, created_at, updated_at) VALUES (?, ?, ?, ?)', [req.params.key, valueJson, now(), now()]);
+  }
+  res.json({ key: req.params.key, value: req.body?.value ?? null });
 }));
 
 function batchPost(route, table) {
