@@ -3419,7 +3419,14 @@ function buildDyeingOrderReport(order, dyehouseName, dyeingMeta, fmt) {
   const actualSentTotal = reportRawTotal || dyehouseAllocations.reduce((total, allocation)=>total + rawSentForAllocation(allocation), 0);
   const dyehouseRawNotes = uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
   const rawNotesLabel = dyehouseRawNotes.length ? dyehouseRawNotes.join('، ') : '-';
-  const cleanDyeingMeta = `<div class="document-meta"><div><span>رقم الطلب</span>${order.orderNumber || '-'}</div><div><span>التاريخ</span>${order.orderDate || '-'}</div><div><span>الصنف</span>${order.fabricType || '-'}</div><div><span>أذون صرف الخام</span>${rawNotesLabel}</div></div>`;
+  const dyehouseDates = isOriginalDyehouse
+    ? uniqueNonEmpty(rawBatches
+      .filter((batch)=>batch.orderId === order.id)
+      .filter((batch)=>!excludedTransferNotes.has(normalizeDigits(batch.noteNumber)))
+      .map((batch)=>batch.date))
+    : uniqueNonEmpty(transfersToDyehouse.map((transfer)=>transfer.transferDate || transfer.date));
+  const reportDate = dyehouseDates.join('، ') || order.orderDate || '-';
+  const cleanDyeingMeta = `<div class="document-meta"><div><span>رقم الطلب</span>${order.orderNumber || '-'}</div><div><span>التاريخ</span>${reportDate}</div><div><span>الصنف</span>${order.fabricType || '-'}</div><div><span>أذون صرف الخام</span>${rawNotesLabel}</div></div>`;
   const allocationWarning = plannedTotal > Number(order.totalRawReceived || order.totalRawOrdered || 0)
     ? '<div class="document-warning">تنبيه للمراجعة: كمية الصباغة لهذه المصبغة أكبر من كمية الخام المتاحة.</div>'
     : '';
@@ -3428,7 +3435,7 @@ function buildDyeingOrderReport(order, dyehouseName, dyeingMeta, fmt) {
     const allocationNotes = rawNotesForAllocation(allocation).join('، ') || '-';
     return `<tr><td>${allocation.color}</td>${order.widthMode === 'multiple' ? `<td>${allocation.rawInch || '-'}</td><td>${allocation.rawWidth || '-'}</td>` : ''}<td>${fmt(allocation.plannedQuantity)}</td><td>${fmt(rawSentForAllocation(allocation))}</td><td>${allocationNotes}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessory ? `<td>${fmt(accessoryQuantity)}</td>` : ''}</tr>`;
   }).join('');
-  return `${documentHeader()}<h2>أمر تشغيل صباغة</h2>${cleanDyeingMeta}<div class="document-meta"><div><span>المصبغة</span>${name || '-'}</div><div><span>إجمالي كمية المصبغة</span>${fmt(plannedTotal)}</div><div><span>خام محول فعليًا</span>${fmt(actualSentTotal)}</div><div><span>أذون الخام المرتبطة</span>${rawNotesLabel}</div><div><span>عدد الألوان</span>${dyehouseAllocations.length}</div></div>${allocationWarning}<table><thead><tr><th>اللون</th>${order.widthMode === 'multiple' ? '<th>البوصة</th><th>العرض</th>' : ''}<th>كمية الصباغة</th><th>خام محول</th><th>إذن الخام</th><th>العرض النهائي</th><th>الوزن المجهز</th>${hasAccessory ? `<th>${accessoryTypesLabel(order)}</th>` : ''}</tr></thead><tbody>${rows || emptyRow(order.widthMode === 'multiple' ? (hasAccessory ? 9 : 8) : (hasAccessory ? 7 : 6), 'لا توجد ألوان لهذه المصبغة.')}</tbody></table><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${reportOperationNotes(order)}</p></section>${rawPermitImagesSection(order, dyehouseRawNotes)}`;
+  return `${documentHeader()}<h2>أمر تشغيل صباغة</h2>${cleanDyeingMeta}<div class="document-meta"><div><span>المصبغة</span>${name || '-'}</div><div><span>إجمالي كمية المصبغة</span>${fmt(plannedTotal)}</div><div><span>خام محول فعليًا</span>${fmt(actualSentTotal)}</div><div><span>عدد الألوان</span>${dyehouseAllocations.length}</div></div>${allocationWarning}<table><thead><tr><th>اللون</th>${order.widthMode === 'multiple' ? '<th>البوصة</th><th>العرض</th>' : ''}<th>كمية الصباغة</th><th>خام محول</th><th>إذن الخام</th><th>العرض النهائي</th><th>الوزن المجهز</th>${hasAccessory ? `<th>${accessoryTypesLabel(order)}</th>` : ''}</tr></thead><tbody>${rows || emptyRow(order.widthMode === 'multiple' ? (hasAccessory ? 9 : 8) : (hasAccessory ? 7 : 6), 'لا توجد ألوان لهذه المصبغة.')}</tbody></table><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${reportOperationNotes(order)}</p></section>${rawPermitImagesSection(order, dyehouseRawNotes)}`;
 }
 
 function renderDyehouseDocumentPicker(order) {
@@ -3888,7 +3895,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 
