@@ -2,9 +2,11 @@
 # 2B Tex - .gitignore
 # ============================================================
 
-# --- قاعدة البيانات (لا ترفع أبداً) ---
-backend/data/
-*.sqlite
+# --- قاعدة البيانات ---
+# تجاهل كل محتويات backend/data/ عدا قاعدة البيانات الرئيسية
+backend/data/**
+!backend/data/2btex.sqlite
+# تجاهل أي sqlite خارج backend/data
 *.sqlite3
 *.db
 
