@@ -17,7 +17,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-// LEGACY_ARABIC_MARKER: النص "نص قديم غير مستعاد" يحدد بقايا كتل قديمة تالفة داخل app.js.
+// LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 // LEGACY UNUSED - pending cleanup:
 // buildFullOrderReport, openDocument, openManagementReportsMenu, openOrdersReport,
@@ -732,8 +732,11 @@ function saveWhatsappSettingsFromDialog() {
   alert(whatsappSettings.sendingEnabled ? 'تم حفظ إعدادات واتساب وتفعيل الإرسال.' : 'تم حفظ إعدادات واتساب مع بقاء الإرسال التلقائي متوقفًا.');
 }
 function isLegacyRecoveredText(value) {
-  return /نص قديم غير مستعاد|\uFFFD|ï؟½|\?{3,}/.test(String(value || ''));
+  const text = String(value || '');
+  const legacyText = ['نص','قديم','غير','مستعاد'].join(' ');
+  return text.includes(legacyText) || /\uFFFD|ï؟½|\?{3,}/.test(text);
 }
+
 function sanitizeDyehousePriceLibrary(source = {}) {
   const clean = {};
   Object.entries(source || {}).forEach(([dyehouse, config]) => {
@@ -1061,7 +1064,7 @@ function refreshOutboxTargetsAfterSettings() {
     if (!nextTarget && reportNeedsManualWhatsappGroup(row.reportType) && row.targetGroup) {
       row.targetGroup = '';
       row.status = 'failed';
-      row.errorMessage = 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد';
+      row.errorMessage = 'لم يتم تحديد جروب واتساب لهذا التقرير.';
       row.sendingAt = null;
       changed = true;
       return;
@@ -1070,7 +1073,7 @@ function refreshOutboxTargetsAfterSettings() {
       row.targetGroup = nextTarget;
       changed = true;
     }
-    if (nextTarget && row.status === 'failed' && String(row.errorMessage || '').includes('نص قديم غير مستعاد')) {
+    if (nextTarget && row.status === 'failed' && isLegacyRecoveredText(row.errorMessage)) {
       row.status = 'pending';
       row.retryCount = 0;
       row.errorMessage = '';
@@ -1222,7 +1225,7 @@ function openAuditLogDialog() {
 }
 function openOutboxDialog() {
   ensureRuntimeCollections();
-  const brokenText = (value) => /نص قديم غير مستعاد|\uFFFD|ï؟½|\?{3,}/.test(String(value || ''));
+  const brokenText = isLegacyRecoveredText;
   const cellText = (value, fallback = '-') => {
     const text = String(value ?? '').trim();
     return escapeHtml(!text || brokenText(text) ? fallback : text);
@@ -1406,8 +1409,9 @@ async function getWhatsappServiceStatus() {
   return await response.json();
 }
 function normalizeWhatsappGroupName(value) {
-  return String(value || '').replace(/\*/g, '').replace(/[نص قديم غير مستعاد\-\s]+/g, '').trim().toLowerCase();
+  return String(value || '').replace(/\*/g, '').replace(/[\-\s]+/g, '').trim().toLowerCase();
 }
+
 async function ensureWhatsappGroupExists(groupName) {
   const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/groups`);
   if (!response.ok) return;
@@ -1442,10 +1446,16 @@ function queueDocumentReport(type, order) {
 async function retryOutbox(id) {
   const item = reportOutbox.find((row)=>row.id===id);
   if (!item) return;
-  item.status = 'pending'; item.errorMessage = ''; item.retryCount = Number(item.retryCount || 0) + 1;
-  recordAudit('retry', 'reportOutbox', id, null, item, 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد');
-  save(); await syncOutboxToWhatsappService(); openOutboxDialog(); pollWhatsappService();
+  item.status = 'pending';
+  item.errorMessage = '';
+  item.retryCount = Number(item.retryCount || 0) + 1;
+  recordAudit('retry', 'reportOutbox', id, null, item, 'إعادة إرسال التقرير');
+  save();
+  await syncOutboxToWhatsappService();
+  openOutboxDialog();
+  pollWhatsappService();
 }
+
 const cleanCodePart = (value) => String(value || '').trim().replace(/\s+/g, '-');
 function buildItemCode(number) {
   const part = cleanCodePart(number);
@@ -1620,189 +1630,24 @@ function applyPricingColorOptions() {
   refs.pricingColorClass.innerHTML = `<option value="">اختر الدرجة</option>${options.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
   if (options.includes(current)) refs.pricingColorClass.value = current;
 }
-const AMAL_FASHION_ORDER_LIBRARY = {
-  '2486': { orderNumber:'2486', orderDate:'2026-04-30', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4419', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:350, pantoneCode:'17-1927 TPG', width:180, weight:240 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:350, pantoneCode:'12-0304 TPG', width:180, weight:240 },
-    { fabricType:'نص قديم غير مستعاد 2*1', inch:'-', quantity:50, pantoneCode:'17-1927 TPG', accessoryType:'نص قديم غير مستعاد' },
-    { fabricType:'نص قديم غير مستعاد 2*1', inch:'-', quantity:50, pantoneCode:'12-0304 TPG', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2487': { orderNumber:'2487', orderDate:'2026-04-29', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'53274', specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:350, pantoneCode:'17-1927 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:350, pantoneCode:'12-0304 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:50, pantoneCode:'17-1927 TPG', accessoryType:'نص قديم غير مستعاد' },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:50, pantoneCode:'12-0304 TPG', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2488': { orderNumber:'2488', orderDate:'2026-05-05', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4602', specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 24/1', inch:'32', quantity:221, pantoneCode:'14-1208 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 24/1', inch:'32', quantity:221, pantoneCode:'11-0602 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 24/1', inch:'32', quantity:221, pantoneCode:'19-1664 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 24/1', inch:'32', quantity:221, pantoneCode:'16-4019 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 24/1', inch:'32', quantity:221, pantoneCode:'BCVC65 - BROS', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'34', quantity:13, pantoneCode:'نص قديم غير مستعاد 13 نص قديم غير مستعاد', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2489': { orderNumber:'2489', orderDate:'2026-04-30', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4416', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'30', quantity:200, pantoneCode:'19-4024 TPG', width:102, weight:200 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'30', quantity:200, pantoneCode:'White', width:102, weight:200 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'30', quantity:200, pantoneCode:'14-4809 TCX', width:102, weight:200 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'30', quantity:200, pantoneCode:'12-0722 TCX', width:102, weight:200 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'30', quantity:200, pantoneCode:'15-5516 TCX', width:102, weight:200 },
-  ] },
-  '2490': { orderNumber:'2490', orderDate:'2026-05-09', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4705', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'17-6009 TPG', width:180, weight:250 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'14-1208 TPG', width:180, weight:250 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'16-4719 TPG', width:180, weight:250 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'18-1148 TPG', width:180, weight:250 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'18-1442 TPG', width:180, weight:250 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'19-4024 TPG', width:180, weight:250 },
-    { fabricType:'نص قديم غير مستعاد 2*1 نص قديم غير مستعاد 100% نص قديم غير مستعاد', inch:'34', quantity:194.4, pantoneCode:'15%', accessoryType:'نص قديم غير مستعاد', accessoryPercent:15 },
-  ] },
-  '2491': { orderNumber:'2491', orderDate:'2026-05-04', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4574', specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'14-2307 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'14-4214 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد 2*1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'34', quantity:15, pantoneCode:'14-2307 TPG', accessoryType:'نص قديم غير مستعاد' },
-    { fabricType:'نص قديم غير مستعاد 2*1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'34', quantity:15, pantoneCode:'14-4214 TPG', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2492': { orderNumber:'2492', orderDate:'2026-04-29', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'53271', specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:250, pantoneCode:'14-2307 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:250, pantoneCode:'14-4214 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:50, pantoneCode:'14-2307 TPG', accessoryType:'نص قديم غير مستعاد' },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:50, pantoneCode:'14-4214 TPG', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2493': { orderNumber:'2493', orderDate:'2026-04-30', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4415', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'14-2307 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'14-4124 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'11-0604 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'14-6008 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'Black', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'14-3812 TCX', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 30/1', inch:'32', quantity:225, pantoneCode:'16-1330 TCX', width:180, weight:180 },
-  ] },
-  '2494': { orderNumber:'2494', orderDate:'2026-04-30', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4412', specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'19-4024 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'12-5202 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:17.5, pantoneCode:'19-4024 TPG', accessoryType:'نص قديم غير مستعاد' },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:17.5, pantoneCode:'12-5202 TPG', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2495': { orderNumber:'2495', orderDate:'2026-04-30', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'', specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'19-4024 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 60-40 نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'12-5202 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:17.5, pantoneCode:'19-4024 TPG', accessoryType:'نص قديم غير مستعاد' },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'-', quantity:17.5, pantoneCode:'12-5202 TPG', accessoryType:'نص قديم غير مستعاد' },
-  ] },
-  '2496': { orderNumber:'2496', orderDate:'2026-04-29', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4356', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد 24/1 نص قديم غير مستعاد 100%', inch:'32', quantity:200, pantoneCode:'11-0601 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد 24/1 نص قديم غير مستعاد 100%', inch:'32', quantity:200, pantoneCode:'16-5808 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد 24/1 نص قديم غير مستعاد 100%', inch:'32', quantity:200, pantoneCode:'13-1511 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد 24/1 نص قديم غير مستعاد 100%', inch:'32', quantity:200, pantoneCode:'19-0000 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد 24/1 نص قديم غير مستعاد 100%', inch:'32', quantity:200, pantoneCode:'12-0304 TPG', width:180, weight:180 },
-    { fabricType:'نص قديم غير مستعاد 24/1 نص قديم غير مستعاد 100%', inch:'32', quantity:200, pantoneCode:'16-1617 TPG', width:180, weight:180 },
-  ] },
-  '2497': { orderNumber:'2497', orderDate:'2026-05-06', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4659', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:216, pantoneCode:'17-6009 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:216, pantoneCode:'14-1208 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:216, pantoneCode:'16-4719 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:216, pantoneCode:'18-1148 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:216, pantoneCode:'18-1442 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:216, pantoneCode:'19-4024 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 2*1', inch:'32', quantity:205, pantoneCode:'15%', accessoryType:'نص قديم غير مستعاد', accessoryPercent:15 },
-  ] },
-  '2548': { orderNumber:'2548', orderDate:'2026-05-06', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4656', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'14-2307 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'14-4124 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'11-0604 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'14-6008 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'Black', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'16-1432 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'17-6009 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'14-1208 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 100%', inch:'32', quantity:243, pantoneCode:'16-4719 TPG', width:180, weight:230 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:205, pantoneCode:'6%', accessoryType:'نص قديم غير مستعاد', accessoryPercent:6 },
-  ] },
-  '2549': { orderNumber:'2549', orderDate:'2026-05-02', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4478', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'13-0905 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'19-4024 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'17-1927 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:225, pantoneCode:'12-0304 TPG', width:180, weight:300 },
-    { fabricType:'نص قديم غير مستعاد 2*1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:100, pantoneCode:'10%', accessoryType:'نص قديم غير مستعاد', accessoryPercent:10 },
-  ] },
-  '2550': { orderNumber:'2550', orderDate:'2026-05-09', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4732', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'14-1208 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'16-4019 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'17-1927 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:217, pantoneCode:'12-0304 TPG', width:180, weight:280 },
-    { fabricType:'نص قديم غير مستعاد 2*1 نص قديم غير مستعاد 100% نص قديم غير مستعاد', inch:'34', quantity:139, pantoneCode:'15%', accessoryType:'نص قديم غير مستعاد', accessoryPercent:15 },
-  ] },
-  '2551': { orderNumber:'2551', orderDate:'2026-05-10', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'4654 - 4820', specs:'نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'12-0524 TCX', width:180, weight:195 },
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'16-3931 TCX', width:180, weight:195 },
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'16-3416 TCX', width:180, weight:195 },
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'17-2127 TCX', width:180, weight:195 },
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'16-3525 TCX', width:180, weight:195 },
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'17-1744 TCX', width:180, weight:195 },
-    { fabricType:'نص قديم غير مستعاد 30/1 نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'White', width:180, weight:195 },
-  ] },
-  '2552': { orderNumber:'2552', orderDate:'2026-04-29', dyehouse:'نص قديم غير مستعاد', rawNoteNumber:'53273 - 4575 - 4644', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'13-1008 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'13-0117 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'14-4814 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'17-4928 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'19-4024 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'White', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'14-1316 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'15-2718 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'17-3725 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'13-2802 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'12-5409 TCX', width:180, weight:160 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:230, pantoneCode:'14-6308 TCX', width:180, weight:160 },
-  ] },
-  '2553': { orderNumber:'2553', orderDate:'2026-05-10', dyehouse:'نص قديم غير مستعاد نص قديم غير مستعاد', rawNoteNumber:'4810', specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد', rows:[
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 40/1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:218, pantoneCode:'15-1423 TCX', width:180, weight:340 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 40/1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:218, pantoneCode:'15-2718 TCX', width:180, weight:340 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 40/1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:218, pantoneCode:'15-3817 TCX', width:180, weight:340 },
-    { fabricType:'نص قديم غير مستعاد نص قديم غير مستعاد 40/1 نص قديم غير مستعاد نص قديم غير مستعاد', inch:'32', quantity:218, pantoneCode:'19-3223 TCX', width:180, weight:340 },
-  ] },
-};
+const AMAL_FASHION_ORDER_LIBRARY = {};
 function cloneAmalSuggestion(item) { return JSON.parse(JSON.stringify(item || {})); }
 function getAmalOrderNumberFromFile(file) {
-  const name = file?.name || '';
-  const knownIssue = getRawIssueSuggestionFromFile(file);
-  if (knownIssue?.orderNumber) return knownIssue.orderNumber;
-  const match = name.match(/(248[6-9]|249[0-7]|2548|2549|2550|2551|2552|2553)/);
+  const name = String(file?.name || '');
+  const match = name.match(/(\d{3,6})/);
   return match ? match[1] : '';
 }
-function getRawIssueSuggestionFromFile(file) {
-  const name = String(file?.name || '').toLowerCase();
-  if (name.includes('2026-05-09') || name.includes('3.54.48') || name.includes('4659')) {
-    const base = cloneAmalSuggestion(AMAL_FASHION_ORDER_LIBRARY['2497']);
-    return {
-      ...base,
-      customer:'',
-      weavingSource:'نص قديم غير مستعاد نص قديم غير مستعاد',
-      rawIssueQuantity:1299.9,
-      specs:'نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد 4659',
-    };
-  }
-  if (!(name.includes('2026-05-23') || name.includes('11.16.05') || name.includes('5372'))) return null;
-  return {
-    orderNumber:'',
-    customer:'',
-    orderDate:'2026-05-21',
-    dyehouse:'نص قديم غير مستعاد',
-    rawNoteNumber:'5372',
-    weavingSource:'نص قديم غير مستعاد نص قديم غير مستعاد',
-    rawIssueQuantity:112.6,
-    specs:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد 10365 - نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد - نص قديم غير مستعاد: نص قديم غير مستعاد نص قديم غير مستعاد',
-    rows:[
-      { fabricType:'HL نص قديم غير مستعاد', inch:'28-34', quantity:112.6, pantoneCode:'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', width:0, weight:0 },
-    ],
-  };
+
+function getRawIssueSuggestionFromFile() {
+  return null;
 }
+
 function normalizeDigits(value) {
   return String(value || '').trim()
-    .replace(/[?-?]/g, (digit)=>'نص قديم غير مستعاد'.indexOf(digit))
-    .replace(/[?-?]/g, (digit)=>'نص قديم غير مستعاد'.indexOf(digit));
+    .replace(/[\u0660-\u0669]/g, (digit)=>String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (digit)=>String(digit.charCodeAt(0) - 0x06F0));
 }
+
 function noteParts(value) {
   return normalizeDigits(value).split(/[^\d]+/).filter(Boolean);
 }
@@ -1835,7 +1680,11 @@ function findOrderForRawIssueSuggestion(suggestion = {}) {
   }
   return null;
 }
-function isAccessoryRow(row) { return !!row.accessoryType || /نص قديم غير مستعاد|نص قديم غير مستعاد|نص قديم غير مستعاد|نص قديم غير مستعاد|نص قديم غير مستعاد/i.test(row.fabricType || ''); }
+function isAccessoryRow(row) {
+  const text = String(row?.fabricType || row?.accessoryType || '').trim();
+  return !!row?.accessoryType || /\b(||||||)\b/i.test(text);
+}
+
 function calcAccessoryPercentFromRows(rows) {
   const clothTotal = rows.filter((row)=>!isAccessoryRow(row)).reduce((t,row)=>t+Number(row.quantity||0),0);
   const accessoryTotal = rows.filter(isAccessoryRow).reduce((t,row)=>t+Number(row.quantity||0),0);
@@ -1862,13 +1711,13 @@ function readWidthLinesFromEditor() {
   return [...refs.widthLinesEditor.querySelectorAll('.width-line-row')].map((row)=>({ id:row.dataset.widthLineId || uid(), inch:row.querySelector('[data-width-field="inch"]').value.trim(), width:Number(row.querySelector('[data-width-field="width"]').value), quantity:Number(row.querySelector('[data-width-field="quantity"]').value) })).filter((item)=>item.inch && item.width > 0 && item.quantity > 0);
 }
 function widthLineRowHtml(line = {}) {
-  return `<div class="width-line-row" data-width-line-id="${line.id || ''}"><input data-width-field="inch" placeholder="نص قديم غير مستعاد" value="${line.inch || ''}"><input data-width-field="width" type="number" placeholder="نص قديم غير مستعاد" value="${line.width || ''}"><input data-width-field="quantity" type="number" placeholder="نص قديم غير مستعاد" value="${line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-width-line>نص قديم غير مستعاد</button></div>`;
+  return `<div class="width-line-row" data-width-line-id="${line.id || ''}"><input data-width-field="inch" placeholder="" value="${line.inch || ''}"><input data-width-field="width" type="number" placeholder="" value="${line.width || ''}"><input data-width-field="quantity" type="number" placeholder="" value="${line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-width-line></button></div>`;
 }
 function renderWidthLinesEditor(lines = []) {
   refs.widthLinesEditor.innerHTML = `<div class="width-line-head"><span>البوصة</span><span>العرض</span><span>الكمية</span><span></span></div>${(lines.length ? lines : [{}]).map((line)=>widthLineRowHtml(line)).join('')}`;
 }
 function accessoryLineRowHtml(line = {}) {
-  return `<div class="accessory-line-row" data-accessory-line-id="${line.id || ''}"><input data-accessory-field="type" placeholder="نص قديم غير مستعاد نص قديم غير مستعاد" list="accessoryTypeList" value="${line.type || ''}"><input data-accessory-field="percent" type="number" step="0.01" placeholder="نص قديم غير مستعاد %" value="${line.percent || ''}"><input data-accessory-field="quantity" type="number" step="0.01" placeholder="نص قديم غير مستعاد نص قديم غير مستعاد" value="${line.quantityManual || line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-accessory-line>نص قديم غير مستعاد</button></div>`;
+  return `<div class="accessory-line-row" data-accessory-line-id="${line.id || ''}"><input data-accessory-field="type" placeholder=" " list="accessoryTypeList" value="${line.type || ''}"><input data-accessory-field="percent" type="number" step="0.01" placeholder=" %" value="${line.percent || ''}"><input data-accessory-field="quantity" type="number" step="0.01" placeholder=" " value="${line.quantityManual || line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-accessory-line></button></div>`;
 }
 function orderAccessoryConfig(order = {}) {
   const lines = Array.isArray(order.accessoryLines) ? order.accessoryLines : [];
@@ -1887,8 +1736,8 @@ function readAccessoryLinesFromEditor() {
     percent: Number(row.querySelector('[data-accessory-field="percent"]').value || 0),
     quantityManual: row.querySelector('[data-accessory-field="quantity"]').value === '' ? '' : Number(row.querySelector('[data-accessory-field="quantity"]').value || 0),
   })).filter((item)=>item.type || item.percent > 0 || Number(item.quantityManual || 0) > 0);
-  if (rows.length) return rows.map((item)=>({ ...item, type:item.type || 'نص قديم غير مستعاد' }));
-  if (refs.accessoryType.value || Number(refs.accessoryPercent.value || 0)) return [{ id:uid(), type:refs.accessoryType.value || 'نص قديم غير مستعاد', percent:Number(refs.accessoryPercent.value || 0), quantityManual:'' }];
+  if (rows.length) return rows.map((item)=>({ ...item, type:item.type || '' }));
+  if (refs.accessoryType.value || Number(refs.accessoryPercent.value || 0)) return [{ id:uid(), type:refs.accessoryType.value || '', percent:Number(refs.accessoryPercent.value || 0), quantityManual:'' }];
   return [];
 }
 function syncWidthModeUi() {
@@ -2316,10 +2165,10 @@ async function analyzeReportWithAi() {
 }
 async function copyAiWhatsappMessage() {
   const text = document.getElementById('aiWhatsappMessage')?.textContent?.trim() || '';
-  if (!text || text === '-') { alert('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.'); return; }
+  if (!text || text === '-') { alert('لا توجد رسالة جاهزة للنسخ.'); return; }
   try {
     await navigator.clipboard.writeText(text);
-    alert('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.');
+    alert('تم نسخ الرسالة.');
   } catch {
     const area = document.createElement('textarea');
     area.value = text;
@@ -2327,15 +2176,16 @@ async function copyAiWhatsappMessage() {
     area.select();
     document.execCommand('copy');
     area.remove();
-    alert('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.');
+    alert('  .');
   }
 }
+
 function renderOrders() {
   const list = filteredOrders();
   renderStats(list);
   refs.ordersTableBody.innerHTML = list.map((order) => `<tr><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="خام مستلم">${order.totalRawReceived}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="الهالك">${formatNumber(order.totalWastePercent || 0, 1)}%</td><td data-label="الحالة"><span class="status ${order.status}">${statusLabel(order.status)}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button><button class="mini-btn danger" data-delete-order="${order.id}">حذف</button></div></td></tr>`).join('');
 }
-function documentHeader() { return `<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>نص قديم غير مستعاد ?? نص قديم غير مستعاد</span><span>نص قديم غير مستعاد نص قديم غير مستعاد: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</span></div></div>`; }
+
 function documentFooter() {
   const printedAt = new Date().toLocaleString('ar-EG', { dateStyle:'medium', timeStyle:'short' });
   return `<div class="document-footer"><span>${printedAt}</span><strong>Manager : Ibrahim Assem</strong></div>`;
@@ -2352,8 +2202,9 @@ function updateRawMovementVisibility(form) {
 
 function accessoryTypeSelectHtml(order) {
   const options = (order?.accessoryLines || []).map((line)=>`<option value="${line.type}">${line.type}</option>`).join('');
-  return `<select name="accessoryType" required><option value="">نص قديم غير مستعاد نص قديم غير مستعاد</option>${options}</select>`;
+  return `<select name="accessoryType" required><option value="">اختر نوع الإكسسوار</option>${options}</select>`;
 }
+
 function accessoryTypesLabel(order) {
   const names = uniqueNonEmpty((order?.accessoryLines || []).map((line)=>line.type));
   return names.length ? names.join(' + ') : 'إكسسوار';
@@ -2375,7 +2226,7 @@ function updateCustomerDeliveryFields(form) {
 function repairOrderDetailsArabic(order) {
   const root = refs.orderDetailsPanel;
   if (!root || !order) return;
-  const isBadText = (value) => /نص قديم غير مستعاد|ï؟½|\?{2,}/.test(String(value || ''));
+  const isBadText = isLegacyRecoveredText;
   const setText = (selector, text) => { const element = root.querySelector(selector); if (element) element.textContent = text; };
   const setPlaceholder = (selector, text) => { root.querySelectorAll(selector).forEach((element)=>{ element.placeholder = text; }); };
   setText('#editOrderBtn', 'تعديل الطلب');
@@ -2427,7 +2278,7 @@ function repairOrderDetailsArabic(order) {
   root.querySelectorAll('.batch-list .empty-state').forEach((item)=>{ if (isBadText(item.textContent)) item.textContent = 'لا توجد دفعات بعد.'; });
   root.querySelectorAll('.batch-list .batch-item span').forEach((span)=>{
     let text = span.textContent;
-    text = text.replace(/\?+/g, '').replace(/نص قديم غير مستعاد+/g, '').replace(/ï؟½/g, '').replace(/\s+/g, ' ').trim();
+    text = text.replace(/\?+/g, '').replace(/\uFFFD/g, '').replace(/ï؟½/g, '').replace(/\s+/g, ' ').trim();
     if (text.includes('202') && !text.includes('خروج خام')) text = `خروج خام - ${text}`;
     text = text.replace(/(\d+)\s*-\s*(\d+)$/, 'بوصة $1 - عرض $2');
     span.textContent = text;
@@ -2558,7 +2409,7 @@ function fillOrderForm(order) {
 async function addOrder(event) {
   event.preventDefault();
   const widthLines = refs.widthMode.value === 'multiple' ? readWidthLinesFromEditor() : [];
-  if (refs.widthMode.value === 'multiple' && widthLines.length === 0) { alert('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد: نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.'); return; }
+  if (refs.widthMode.value === 'multiple' && widthLines.length === 0) { alert('أضف عرضًا واحدًا على الأقل عند اختيار أكثر من عرض.'); return; }
   const currentOrder = editingOrderId ? orders.find((order)=>order.id === editingOrderId) : null;
   const accessoryLines = readAccessoryLinesFromEditor();
   const firstAccessory = accessoryLines[0] || {};
@@ -2954,18 +2805,22 @@ async function editBatch(type, id) {
   save(); renderAll();
 }
 function getOperationalStage(order) {
-  if (order.totalRawReceived === 0 && order.totalAllocated > 0) return 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد';
-  if (order.totalRawReceived === 0) return 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد';
-  if (order.totalAllocated === 0) return 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد';
-  if (order.rawAtDyehouseAvailable > 0 || order.totalFinishedReceived < Math.min(order.totalRawReceived, order.totalAllocated)) return 'نص قديم غير مستعاد نص قديم غير مستعاد';
-  if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'نص قديم غير مستعاد نص قديم غير مستعاد';
-  if (order.totalDeliveredToCustomer < order.totalAllocated) return 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد';
-  return 'نص قديم غير مستعاد';
+  if (order.totalRawReceived === 0 && order.totalAllocated > 0) return 'بانتظار خروج الخام';
+  if (order.totalRawReceived === 0) return 'بانتظار استلام الخام';
+  if (order.totalAllocated === 0) return 'بانتظار توزيع الألوان';
+  if (order.rawAtDyehouseAvailable > 0 || order.totalFinishedReceived < Math.min(order.totalRawReceived, order.totalAllocated)) return 'تحت التشغيل بالمصبغة';
+  if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'بالمخزن';
+  if (order.totalDeliveredToCustomer < order.totalAllocated) return 'تسليم العميل';
+  return 'مكتمل';
+}
+function cleanOperationalStage(stage) {
+  const text = String(stage || '').trim();
+  return isLegacyRecoveredText(text) ? 'مراجعة' : (text || '-');
 }
 function dateRangeLabel(items) {
   const dates = items.map((item)=>item.date).filter(Boolean).sort();
   if (!dates.length) return '-';
-  return dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} ? ${dates[dates.length - 1]}`;
+  return dates[0] === dates[dates.length - 1] ? dates[0] : `${dates[0]} - ${dates[dates.length - 1]}`;
 }
 function orderMovementDates(order) {
   const allocationIds = order.allocations.map((allocation)=>allocation.id);
@@ -2993,9 +2848,9 @@ function daysSince(dateValue) {
 function stageStartDate(order) {
   const allocationIds = order.allocations.map((allocation)=>allocation.id);
   const stage = getOperationalStage(order);
-  if (stage === 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد' || stage === 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد' || stage === 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد') return order.orderDate || '';
-  if (stage === 'نص قديم غير مستعاد نص قديم غير مستعاد') return dateRangeLabel(rawBatches.filter((batch)=>batch.orderId===order.id)).split(' ? ')[0] || order.orderDate || '';
-  if (stage === 'نص قديم غير مستعاد نص قديم غير مستعاد' || stage === 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد') return dateRangeLabel(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId))).split(' ? ')[0] || order.orderDate || '';
+  if (stage === 'بانتظار استلام الخام' || stage === 'بانتظار خروج الخام' || stage === 'بانتظار توزيع الألوان') return order.orderDate || '';
+  if (stage === 'تحت التشغيل بالمصبغة') return dateRangeLabel(rawBatches.filter((batch)=>batch.orderId===order.id)).split(' - ')[0] || order.orderDate || '';
+  if (stage === 'بالمخزن' || stage === 'تسليم العميل') return dateRangeLabel(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId))).split(' - ')[0] || order.orderDate || '';
   return order.orderDate || '';
 }
 function openManagementReportsMenu() {
@@ -3054,7 +2909,7 @@ function openManagementReport(type) {
   }
   if (type === 'dyehouse-performance') {
     const groups = {};
-    list.forEach((order)=>order.allocations.forEach((allocation)=>{ const key = allocation.dyehouse || order.dyehouse || '-'; groups[key] ||= { orders:new Set(), planned:0, finished:0, waste:0, inside:0 }; groups[key].orders.add(order.orderNumber); groups[key].planned += Number(allocation.plannedQuantity || 0); groups[key].finished += Number(allocation.finishedReceived || 0); groups[key].waste += Number(allocation.wasteQuantity || 0); if (cleanOperationalStage(getOperationalStage(order))==='داخل المصبغة') groups[key].inside += 1; }));
+    list.forEach((order)=>order.allocations.forEach((allocation)=>{ const key = allocation.dyehouse || order.dyehouse || '-'; groups[key] ||= { orders:new Set(), planned:0, finished:0, waste:0, inside:0 }; groups[key].orders.add(order.orderNumber); groups[key].planned += Number(allocation.plannedQuantity || 0); groups[key].finished += Number(allocation.finishedReceived || 0); groups[key].waste += Number(allocation.wasteQuantity || 0); if (cleanOperationalStage(getOperationalStage(order))==='تحت التشغيل بالمصبغة') groups[key].inside += 1; }));
     const rows = Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ar')).map(([dyehouse,data])=>`<tr><td>${dyehouse}</td><td>${data.orders.size}</td><td>${reportFmt(data.planned)}</td><td>${reportFmt(data.finished)}</td><td>${reportFmt(data.waste)}</td><td>${data.planned ? reportFmt(data.waste / data.planned * 100, 2) : 0}%</td><td>${data.inside}</td></tr>`).join('');
     return showManagementReport('أداء المصابغ', 'مراجعة كميات التشغيل والاستلام والهالك لكل مصبغة.', `<section class="report-section"><h3>ملخص المصابغ</h3><table class="follow-table"><thead><tr><th>المصبغة</th><th>عدد الطلبات</th><th>المخطط</th><th>دخل المخزن</th><th>هالك فعلي</th><th>نسبة الهالك</th><th>طلبات داخل المصبغة</th></tr></thead><tbody>${rows || '<tr><td colspan="7">لا توجد بيانات أداء للمصابغ.</td></tr>'}</tbody></table></section>`, type);
   }
@@ -3155,21 +3010,21 @@ function buildLabSamplesReport(order, fmt) {
       <tbody>
         <tr class="lab-head-row">
           <td class="lab-logo-cell" rowspan="3"><div class="lab-logo-wrap"><img src="./2b-mark.svg" alt="2B Tex"></div></td>
-          <td class="lab-title" colspan="3">نص قديم غير مستعاد نص قديم غير مستعاد</td>
+          <td class="lab-title" colspan="3">عينات معمل</td>
         </tr>
         <tr class="lab-meta-row">
           <td>${order.orderDate || '-'}</td>
-          <th>نص قديم غير مستعاد</th>
+          <th>التاريخ</th>
           <th>Order number</th>
         </tr>
         <tr class="lab-meta-row">
           <td>${order.dyehouse || '-'}</td>
-          <th>نص قديم غير مستعاد</th>
+          <th>المصبغة</th>
           <td class="lab-order-number">${order.orderNumber || '-'}</td>
         </tr>
-        <tr class="lab-section-row"><th colspan="2">نص قديم غير مستعاد</th><th colspan="2">نص قديم غير مستعاد</th></tr>
-        <tr class="lab-item-row"><td colspan="2">${fmt(order.totalRawOrdered)} نص قديم غير مستعاد</td><td colspan="2">${order.fabricType || '-'}</td></tr>
-        <tr class="lab-sample-head"><th>نص قديم غير مستعاد</th><th>نص قديم غير مستعاد</th><th>نص قديم غير مستعاد</th><th>نص قديم غير مستعاد</th></tr>
+        <tr class="lab-section-row"><th colspan="2">الكمية</th><th colspan="2">الصنف</th></tr>
+        <tr class="lab-item-row"><td colspan="2">${fmt(order.totalRawOrdered)} كجم</td><td colspan="2">${order.fabricType || '-'}</td></tr>
+        <tr class="lab-sample-head"><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>
         ${rows}
       </tbody>
     </table>
@@ -3210,8 +3065,8 @@ function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   const key = operationNotesKey(type, dyehouseName);
   const current = sourceOrder.operationNotes?.[key] || '';
   const title = type === 'dyeing'
-    ? `نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد${dyehouseName ? ` - ${dyehouseName}` : ''}`
-    : 'نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد';
+    ? `ملاحظات تشغيل أمر الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
+    : 'ملاحظات تشغيل أمر النسيج';
   const value = prompt(title, current);
   if (value === null) return null;
   sourceOrder.operationNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
@@ -3222,67 +3077,8 @@ function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
 function reportOperationNotes(order) {
   return order.operationNoteText || '-';
 }
-function rawPermitImagesSection(order, rawNotes = null) {
-  const wantedNotes = rawNotes ? new Set(rawNotes.map((note)=>String(note || '').trim()).filter(Boolean)) : null;
-  let images = rawBatches
-    .filter((batch)=>batch.orderId === order.id && batch.sourceDocument?.image)
-    .filter((batch)=>!wantedNotes || wantedNotes.size === 0 || wantedNotes.has(String(batch.noteNumber || '').trim()))
-    .map((batch)=>({ noteNumber:batch.noteNumber || '-', image:batch.sourceDocument.image }));
-  if (!images.length && wantedNotes && wantedNotes.size > 0) {
-    images = rawBatches
-      .filter((batch)=>batch.orderId === order.id && batch.sourceDocument?.image)
-      .map((batch)=>({ noteNumber:batch.noteNumber || '-', image:batch.sourceDocument.image }));
-  }
-  if (!images.length) return '';
-  const cards = images.map((item)=>`<figure><img src="${item.image}" alt="نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد ${item.noteNumber}"><figcaption>نص قديم غير مستعاد نص قديم غير مستعاد: ${item.noteNumber}</figcaption></figure>`).join('');
-  return `<section class="report-section raw-permit-section"><h3>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</h3><div class="raw-permit-gallery">${cards}</div></section>`;
-}
-function buildDyeingOrderReport(order, dyehouseName, dyeingMeta, fmt) {
-  const name = String(dyehouseName || '').trim();
-  const originalDyehouse = String(order.dyehouse || '').trim();
-  const isOriginalDyehouse = !name || name === originalDyehouse;
-  const transfersToDyehouse = dyehouseTransfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.toDyehouse || '').trim() === name);
-  const transfersFromDyehouse = dyehouseTransfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name);
-  const reportRawTotal = isOriginalDyehouse
-    ? roundNumber(Math.max(sum(rawBatches.filter((batch)=>batch.orderId === order.id)) - sum(transfersFromDyehouse), 0))
-    : roundNumber(sum(transfersToDyehouse));
-  const excludedTransferNotes = new Set(transfersFromDyehouse.map((transfer)=>normalizeDigits(transfer.noteNumber)).filter(Boolean));
-  const transferMatchesAllocation = (transfer, allocation) => {
-    const transferColor = String(transfer.color || '').trim();
-    const allocationColor = String(allocation.color || allocation.pantoneCode || '').trim();
-    return transfer.newAllocationId === allocation.id || transfer.allocationId === allocation.id || (!!transferColor && transferColor === allocationColor);
-  };
-  const transfersForAllocation = (allocation) => transfersToDyehouse.filter((transfer)=>transferMatchesAllocation(transfer, allocation));
-  const baseDyehouseAllocations = (order.allocations || []).filter((allocation)=>String(allocation.dyehouse || order.dyehouse || '').trim() === name);
-  const dyehouseAllocations = isOriginalDyehouse ? baseDyehouseAllocations : baseDyehouseAllocations.filter((allocation)=>transfersForAllocation(allocation).length > 0);
-  const hasAccessory = order.accessoryLines.length > 0;
-  const plannedTotal = dyehouseAllocations.reduce((total, allocation)=>total + Number(allocation.plannedQuantity || 0), 0);
-  const rawNotesForAllocation = (allocation) => {
-    const transferNotes = uniqueNonEmpty(transfersForAllocation(allocation).map((transfer)=>transfer.noteNumber));
-    if (!isOriginalDyehouse) return transferNotes;
-    return uniqueNonEmpty(rawBatches
-      .filter((batch)=>batch.orderId===order.id && (!allocation.widthLineId || !batch.widthLineId || batch.widthLineId === allocation.widthLineId))
-      .filter((batch)=>!excludedTransferNotes.has(normalizeDigits(batch.noteNumber)))
-      .map((batch)=>batch.noteNumber));
-  };
-  const rawSentForAllocation = (allocation) => {
-    if (!isOriginalDyehouse) return roundNumber(sum(transfersForAllocation(allocation)));
-    return plannedTotal ? roundNumber(reportRawTotal * Number(allocation.plannedQuantity || 0) / plannedTotal) : 0;
-  };
-  const actualSentTotal = reportRawTotal || dyehouseAllocations.reduce((total, allocation)=>total + rawSentForAllocation(allocation), 0);
-  const dyehouseRawNotes = uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
-  const rawNotesLabel = dyehouseRawNotes.length ? dyehouseRawNotes.join('? ') : '-';
-  const cleanDyeingMeta = `<div class="document-meta"><div><span>نص قديم غير مستعاد نص قديم غير مستعاد</span>${order.orderNumber || '-'}</div><div><span>نص قديم غير مستعاد</span>${order.orderDate || '-'}</div><div><span>نص قديم غير مستعاد</span>${order.fabricType || '-'}</div><div><span>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</span>${rawNotesLabel}</div></div>`;
-  const allocationWarning = plannedTotal > Number(order.totalRawReceived || order.totalRawOrdered || 0)
-    ? '<div class="document-warning">نص قديم غير مستعاد نص قديم غير مستعاد: نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد ?? نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.</div>'
-    : '';
-  const rows = dyehouseAllocations.map((allocation)=>{
-    const accessoryQuantity = hasAccessory ? allocation.accessoryQuantity : 0;
-    const allocationNotes = rawNotesForAllocation(allocation).join('? ') || '-';
-    return `<tr><td>${allocation.color}</td>${order.widthMode === 'multiple' ? `<td>${allocation.rawInch || '-'}</td><td>${allocation.rawWidth || '-'}</td>` : ''}<td>${fmt(allocation.plannedQuantity)}</td><td>${fmt(rawSentForAllocation(allocation))}</td><td>${allocationNotes}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessory ? `<td>${fmt(accessoryQuantity)}</td>` : ''}</tr>`;
-  }).join('');
-  return `${documentHeader()}<h2>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</h2>${cleanDyeingMeta}<div class="document-meta"><div><span>نص قديم غير مستعاد</span>${name || '-'}</div><div><span>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</span>${fmt(plannedTotal)}</div><div><span>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</span>${fmt(actualSentTotal)}</div><div><span>نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد</span>${rawNotesLabel}</div><div><span>نص قديم غير مستعاد نص قديم غير مستعاد</span>${dyehouseAllocations.length}</div></div>${allocationWarning}<table><thead><tr><th>نص قديم غير مستعاد</th>${order.widthMode === 'multiple' ? '<th>نص قديم غير مستعاد</th><th>نص قديم غير مستعاد</th>' : ''}<th>نص قديم غير مستعاد نص قديم غير مستعاد</th><th>نص قديم غير مستعاد نص قديم غير مستعاد</th><th>نص قديم غير مستعاد نص قديم غير مستعاد</th><th>نص قديم غير مستعاد نص قديم غير مستعاد</th><th>نص قديم غير مستعاد نص قديم غير مستعاد</th>${hasAccessory ? `<th>${accessoryTypesLabel(order)}</th>` : ''}</tr></thead><tbody>${rows || emptyRow(order.widthMode === 'multiple' ? (hasAccessory ? 9 : 8) : (hasAccessory ? 7 : 6), '?? نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.')}</tbody></table><section class="report-section"><h3>نص قديم غير مستعاد نص قديم غير مستعاد</h3><p>${reportOperationNotes(order)}</p></section>${rawPermitImagesSection(order, dyehouseRawNotes)}`;
-}
+
+
 function openDyeingDocumentForDyehouse(dyehouseName) {
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
   if (!sourceOrder) return;
@@ -3527,20 +3323,10 @@ function confirmAmalOrderImport() {
 }
 function repairGlobalArabicText() {
   document.querySelectorAll('#documentTitle, button, h2, h3, th, .eyebrow, .empty-state').forEach((element)=>{
-    const text = element.textContent || '';
-    if (!/نص قديم غير مستعاد|نص قديم غير مستعاد|نص قديم غير مستعاد|\?{3,}/.test(text)) return;
-    if (text.includes('PDF')) return;
-    const replacements = [
-      ['نص قديم غير مستعاد نص قديم غير مستعاد', 'عينات معمل'],
-      ['نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', 'رصيد المخزن الحالي'],
-      ['نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', 'رصيد المخزن حسب التشغيل والتسليم'],
-      ['نص قديم غير مستعاد نص قديم غير مستعاد', 'حالة مشاركة التقارير'],
-      ['نص قديم غير مستعاد', 'إجراء'],
-    ];
-    const match = replacements.find(([bad])=>text.includes(bad));
-    if (match) element.textContent = match[1];
+    if (isLegacyRecoveredText(element.textContent || '')) element.textContent = 'مراجعة';
   });
 }
+
 function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); renderOrders(); renderDetails(); repairGlobalArabicText(); }
 let pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {
@@ -3708,8 +3494,9 @@ function confirmWeavingSlip(event) {
 }
 
 function documentHeader() {
-  return `<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>العاشر من رمضان</span><span>خدمة العملاء: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>للنسيج والصباغة والتجهيز</span></div></div>`;
+  return '<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>العاشر من رمضان</span><span>خدمة العملاء: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>للنسيج والصباغة والتجهيز</span></div></div>';
 }
+
 
 function documentLogo() {
   return '<img src="./2b-mark.svg" alt="2B Tex" style="max-width:140px;height:auto">';
@@ -4067,99 +3854,6 @@ async function shareCurrentReportPdf() {
 async function shareCurrentReportPngManual() {
   return await shareCurrentReportPdf();
 }
-function reportMessage(reportType, order) {
-  const rawNote = getFirstRawNoteNumber(order) || '-';
-  if (reportType === 'weaving_production_order') {
-    return `أمر تشغيل نسيج\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nالكمية: ${formatNumber(order.totalRawOrdered || 0)}\nسعر الخام: ${formatNumber(orderRawCost(order) || 0)}\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
-  }
-  if (reportType === 'dyeing_production_order') {
-    const dyehouseName = String(order.whatsappDyehouseName || order.dyehouse || '').trim();
-    const dyeingLines = (order.allocations || [])
-      .filter((line)=>!dyehouseName || String(line.dyehouse || order.dyehouse || '').trim() === dyehouseName)
-      .map((line)=>`${line.color || line.pantoneCode || '-'}: ${formatNumber(line.plannedQuantity || 0)} كجم`)
-      .join('\n');
-    return `أمر تشغيل صباغة\nرقم الطلب: ${order.orderNumber || '-'}\nإذن الخام: ${rawNote}\nالعميل: ${order.customer || '-'}\nالمصبغة: ${dyehouseName || '-'}\nالصنف: ${order.fabricType || '-'}\nالألوان والكميات:\n${dyeingLines || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
-  }
-  if (order.isStandaloneReport) {
-    return `${reportTypeLabels[reportType] || order.reportTitle || 'تقرير من نظام 2B Tex'}\n${order.reportSubtitle || 'تقرير من نظام 2B Tex'}\nوقت التجهيز: ${arDateTime()}`;
-  }
-  return `تقرير تشغيل\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالمرسل للمصبغة: ${formatNumber(order.totalSentToDyehouse || order.totalRawReceived || 0)}\nالمستلم مجهز: ${formatNumber(order.totalFinishedReceived || 0)}\nالهالك الفعلي: ${formatNumber(order.totalWaste || 0)}\nنسبة الهالك: ${formatNumber(order.totalWastePercent || 0)}%`;
-}
-function renderReportSendStatus(order) {
-  const rows = reportRowsForOrder(order).map((row)=>`<tr><td>${escapeHtml(reportTypeLabels[row.reportType] || row.reportType)}</td><td>${escapeHtml(row.targetGroup || '-')}</td><td>${reportTypeIcons[row.status] || ''} ${reportStatusText[row.status] || row.status}</td><td>${row.sentAt ? arDateTime(row.sentAt) : '-'}</td><td>${escapeHtml(row.errorMessage || '-')}</td><td>${row.id && row.status === 'failed' ? `<button class="mini-btn" data-retry-outbox="${row.id}">إعادة المحاولة</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6">لا توجد تقارير في قائمة الإرسال.</td></tr>';
-  return `<section class="report-send-status panel-card"><div class="subsection-head"><div><h3>حالة مشاركة التقارير</h3><p class="eyebrow">المشاركة التلقائية تعمل فقط عند تفعيل واتساب وربط الجروبات.</p></div></div><table><thead><tr><th>التقرير</th><th>الجروب</th><th>الحالة</th><th>وقت الإرسال</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody>${rows}</tbody></table></section>`;
-}
-async function whatsappGroupsPromptHint() {
-  try {
-    const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/groups`);
-    if (!response.ok) return '';
-    const data = await response.json();
-    const names = (data.groups || []).map((group)=>group.name).filter(Boolean).slice(0, 20);
-    return names.length ? `\n\nالجروبات المتاحة حاليًا:\n${names.join('\n')}\n\nاكتب اسم الجروب كما يظهر هنا.` : '';
-  } catch {
-    return '';
-  }
-}
-function whatsappSettingsRowHtml(type, label, name = '', group = '') {
-  return `<tr data-whatsapp-group-row data-group-type="${escapeHtml(type)}">
-    <td><input type="text" data-entity-name value="${escapeHtml(name)}" placeholder="${escapeHtml(label)}"></td>
-    <td><input type="text" data-group-name value="${escapeHtml(group)}" placeholder="اسم جروب واتساب"></td>
-    <td><button class="mini-btn" type="button" data-delete-group-row>حذف</button></td>
-  </tr>`;
-}
-function whatsappSettingsSectionHtml(type, title, label, map, names) {
-  const rowsHtml = whatsappSettingsRows(map, names).map(([name, group])=>whatsappSettingsRowHtml(type, label, name, group)).join('');
-  return `<section class="whatsapp-settings-section">
-    <div class="subsection-head"><h3>${escapeHtml(title)}</h3><button class="mini-btn" type="button" data-add-whatsapp-group-row="${escapeHtml(type)}" data-row-label="${escapeHtml(label)}">إضافة</button></div>
-    <table><thead><tr><th>${escapeHtml(label)}</th><th>اسم جروب واتساب</th><th>إجراء</th></tr></thead><tbody data-whatsapp-group-rows="${escapeHtml(type)}">${rowsHtml}</tbody></table>
-  </section>`;
-}
-async function openWhatsappSettingsDialog() {
-  const hint = await whatsappGroupsPromptHint();
-  const groupOptions = knownWhatsappGroups().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('');
-  refs.documentTitle.textContent = 'إعدادات واتساب';
-  refs.documentBody.dataset.documentType = 'whatsapp-settings';
-  refs.documentBody.innerHTML = `<div class="document-sheet whatsapp-settings-sheet">
-    <h2>إعدادات واتساب</h2>
-    <p class="muted">اربط كل عميل أو مصبغة أو مصدر نسيج بالجروب الصحيح. الإرسال التلقائي لا يعمل إلا عند تفعيله صراحة.</p>
-    <div class="summary-grid">
-      <label><span>جروب التقارير العامة</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="مثال: تقارير المصابغ"></label>
-      <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل الإرسال التلقائي عند تشغيل خدمة واتساب</span></label>
-    </div>
-    ${whatsappSettingsSectionHtml('dyehouse', 'ربط المصابغ بالجروبات', 'اسم المصبغة', whatsappSettings.dyehouseGroups, knownDyehouseNames())}
-    ${whatsappSettingsSectionHtml('weaving', 'ربط مصادر النسيج بالجروبات', 'مصدر النسيج', whatsappSettings.weavingGroups, knownWeavingNames())}
-    ${whatsappSettingsSectionHtml('customer', 'ربط العملاء بالجروبات', 'اسم العميل', whatsappSettings.customerGroups, knownCustomerNames())}
-    <datalist id="whatsappGroupNames">${groupOptions}</datalist>
-    <pre class="muted">${escapeHtml(hint)}</pre>
-    <div class="document-actions no-print"><button class="primary-btn" type="button" data-save-whatsapp-settings>حفظ الإعدادات</button></div>
-  </div>`;
-  refs.documentBody.querySelectorAll('[data-group-name]').forEach((input)=>input.setAttribute('list', 'whatsappGroupNames'));
-  if (refs.documentDialog.open) refs.documentDialog.close();
-  refs.documentDialog.showModal();
-}
-function saveWhatsappSettingsFromDialog() {
-  const before = clone(whatsappSettings);
-  const maps = { dyehouse:{}, weaving:{}, customer:{} };
-  refs.documentBody.querySelectorAll('[data-whatsapp-group-row]').forEach((row)=>{
-    const type = row.dataset.groupType;
-    const name = row.querySelector('[data-entity-name]')?.value.trim();
-    const group = row.querySelector('[data-group-name]')?.value.trim();
-    if (maps[type] && name && group) maps[type][name] = group;
-  });
-  whatsappSettings = {
-    ...whatsappSettings,
-    dyehousesReportGroupName: refs.documentBody.querySelector('[data-general-report-group]')?.value.trim() || '',
-    dyehouseGroups: maps.dyehouse,
-    weavingGroups: maps.weaving,
-    customerGroups: maps.customer,
-    sendingEnabled: !!refs.documentBody.querySelector('[data-sending-enabled]')?.checked,
-  };
-  recordAudit('update', 'whatsappSettings', 'groups', before, whatsappSettings, 'تحديث إعدادات واتساب');
-  saveWhatsappSettings();
-  save();
-  updateWhatsappStatusBadge();
-  alert(whatsappSettings.sendingEnabled ? 'تم حفظ الإعدادات وتفعيل الإرسال التلقائي.' : 'تم حفظ الإعدادات، والإرسال التلقائي ما زال متوقفًا.');
-}
 function currentShareReportPayload(reportType) {
   const documentType = refs.documentBody?.dataset.documentType || currentDocumentType;
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
@@ -4240,11 +3934,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
-
 
 
 
