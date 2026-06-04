@@ -369,6 +369,32 @@ const allocationToApi = (allocation) => ({
   finished_weight: allocation.targetFinishedWeight || '',
   notes: allocation.notes || '',
 });
+const pricingToApi = (pricing, customerId = null) => {
+  const calculated = calculatePricing(pricing);
+  return {
+    id: pricing.id,
+    pricing_number: pricing.pricingNumber,
+    customer_id: customerId,
+    pricing_date: pricing.pricingDate,
+    fabric_type: pricing.fabricType,
+    material_type: pricing.materialType || '',
+    dyehouse: pricing.dyehouse || '',
+    color_class: pricing.colorClass || '',
+    quantity: Number(pricing.quantity || 0),
+    inch_width: pricing.inchWidth || '',
+    finished_weight: pricing.finishedWeight || '',
+    raw_cost: Number(pricing.rawCost || 0),
+    dye_cost: Number(pricing.dyeCost || 0),
+    waste_percent: Number(pricing.wastePercent || 0),
+    extra_cost: Number(pricing.extraCost || 0),
+    profit_per_kg: Number(pricing.profitPerKg || 0),
+    unit_price: Number(calculated.sellPrice || 0),
+    total_price: Number(calculated.totalOffer || 0),
+    payment_terms: pricing.paymentTerms || '',
+    notes: pricing.notes || '',
+    status: pricing.status || 'active',
+  };
+};
 function pricingConvertedByOrder(pricing) {
   const pricingOrderNumber = orderNumberFromPricing(pricing?.pricingNumber);
   const pricingNumber = String(pricing?.pricingNumber || '').trim();
@@ -431,6 +457,20 @@ async function putBackend(path, payload) {
   if (!backendAvailable) return null;
   try { return await backendRequest(path, { method: 'PUT', body: JSON.stringify(payload) }); }
   catch (error) { backendAvailable = false; console.warn('Backend update failed, kept LocalStorage copy', error); return null; }
+}
+async function deleteBackend(path) {
+  if (!backendAvailable) return null;
+  try { return await backendRequest(path, { method: 'DELETE' }); }
+  catch (error) { backendAvailable = false; console.warn('Backend delete failed, kept LocalStorage copy', error); return null; }
+}
+function backendBatchType(type) {
+  return type === 'production' || type === 'finished' ? 'finished'
+    : type === 'rawReturn' ? 'raw-return'
+    : type === 'accessory' ? 'accessory'
+    : type === 'customer' ? 'customer'
+    : type === 'raw' ? 'dyehouse'
+    : type === 'dye' ? 'dyehouse'
+    : type;
 }
 async function rollbackAfterBackendWriteFailure(message) {
   alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
@@ -1956,10 +1996,16 @@ function editPricing(id) {
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.pricingDialog.showModal();
 }
-function deletePricing(id) {
+async function deletePricing(id) {
   const pricing = pricings.find((item)=>item.id===id);
   if (!pricing) return;
   if (!confirm(`هل تريد حذف التسعيرة رقم ${pricing.pricingNumber}؟`)) return;
+  const backendSaveRequired = backendAvailable;
+  const deleted = await deleteBackend(`/pricings/${id}`);
+  if (backendSaveRequired && !deleted) {
+    await rollbackAfterBackendWriteFailure('تعذر حذف التسعيرة من قاعدة البيانات. لم يتم اعتماد الحذف.');
+    return;
+  }
   recordAudit('delete', 'pricing', id, pricing, null, `حذف التسعيرة رقم ${pricing.pricingNumber || ''}`);
   pricings = pricings.filter((item)=>item.id!==id);
   if (editingPricingId === id) editingPricingId = null;
@@ -1967,14 +2013,34 @@ function deletePricing(id) {
   renderPricings();
   if (refs.documentDialog.open) refs.documentDialog.close();
 }
-function addPricing(event) {
+async function addPricing(event) {
   event.preventDefault();
+  const backendSaveRequired = backendAvailable;
   if (editingPricingId) {
     const index = pricings.findIndex((item)=>item.id===editingPricingId);
-    if (index !== -1) { const before = clone(pricings[index]); pricings[index] = pricingPayload(editingPricingId); recordAudit('update', 'pricing', editingPricingId, before, pricings[index], `تعديل التسعيرة رقم ${pricings[index].pricingNumber || ''}`); }
+    if (index !== -1) {
+      const before = clone(pricings[index]);
+      const updatedPricing = pricingPayload(editingPricingId);
+      const backendCustomer = await ensureBackendCustomer(updatedPricing.customer);
+      const savedPricing = await putBackend(`/pricings/${editingPricingId}`, pricingToApi(updatedPricing, backendCustomer));
+      if (backendSaveRequired && !savedPricing) {
+        await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل التسعيرة في قاعدة البيانات. لم يتم اعتماد التعديل.');
+        return;
+      }
+      pricings[index] = updatedPricing;
+      recordAudit('update', 'pricing', editingPricingId, before, pricings[index], `تعديل التسعيرة رقم ${pricings[index].pricingNumber || ''}`);
+    }
     editingPricingId = null;
   } else {
-    const createdPricing = pricingPayload(); pricings.unshift(createdPricing); recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `إنشاء التسعيرة رقم ${createdPricing.pricingNumber || ''}`);
+    const createdPricing = pricingPayload();
+    const backendCustomer = await ensureBackendCustomer(createdPricing.customer);
+    const savedPricing = await postBackend('/pricings', pricingToApi(createdPricing, backendCustomer));
+    if (backendSaveRequired && !savedPricing) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ التسعيرة الجديدة في قاعدة البيانات. لم يتم اعتماد التسعيرة.');
+      return;
+    }
+    pricings.unshift(createdPricing);
+    recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `إنشاء التسعيرة رقم ${createdPricing.pricingNumber || ''}`);
   }
   save(); refs.pricingDialog.close(); renderPricings();
 }
@@ -2017,9 +2083,12 @@ async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
     converted.push(updated);
     return updated;
   });
+  let ok = true;
   for (const pricing of converted) {
-    await putBackend(`/pricings/${pricing.id}`, { status:'converted', notes:pricing.notes || '' });
+    const saved = await putBackend(`/pricings/${pricing.id}`, { status:'converted', notes:pricing.notes || '' });
+    if (!saved) ok = false;
   }
+  return ok;
 }
 function openPricingQuotation(id) {
   const pricing = calculatePricing(pricings.find((item)=>item.id===id));
@@ -2352,10 +2421,19 @@ function renderDetails() {
   repairOrderDetailsArabic(order);
   renderDocuments();
 }
-function toggleOperationClosed() {
+async function toggleOperationClosed() {
   const order = orders.find((item)=>item.id===selectedOrderId);
   if (!order) return;
+  const backendSaveRequired = backendAvailable;
   order.operationClosed = !order.operationClosed;
+  if (backendSaveRequired) {
+    const backendCustomer = await ensureBackendCustomer(order.customer);
+    const savedOrder = await putBackend(`/orders/${order.id}`, orderToApi(order, backendCustomer));
+    if (!savedOrder) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ حالة دورة التشغيل في قاعدة البيانات. لم يتم اعتماد التعديل.');
+      return;
+    }
+  }
   saveData();
   selectedOrderId = order.id;
   renderAll();
@@ -2416,10 +2494,14 @@ async function addOrder(event) {
     const newOrder = { id:uid(), ...payload };
     orders.unshift(newOrder);
     selectedOrderId = newOrder.id;
-    await markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
     const savedOrder = await postBackend('/orders', orderToApi(newOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب الجديد في قاعدة البيانات. لم يتم اعتماد الطلب.');
+      return;
+    }
+    const pricingMarked = await markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
+    if (backendSaveRequired && !pricingMarked) {
+      await rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث حالة التسعيرة في قاعدة البيانات. راجع الطلب والتسعيرة قبل المتابعة.');
       return;
     }
   }
@@ -2434,41 +2516,74 @@ async function addBatch(event) {
   const rawDocumentFile = event.target.elements.sourceDocumentFile?.files?.[0] || null;
   delete data.sourceDocumentFile;
   data.id = uid(); data.quantity = +data.quantity;
-  if (type === 'raw') { const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId)); data.orderId = selectedOrderId; if (data.movementKind === 'return') { if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; } rawReturns.unshift(data); } else { if (currentOrder.widthMode === 'multiple' && !data.widthLineId) { alert('اختر العرض المرتبط قبل تسجيل خروج الخام.'); return; } if (rawDocumentFile) data.sourceDocument = { type:'raw-batch-image', image: await resizeSlipImage(rawDocumentFile) }; rawBatches.unshift(data); await postBackend('/batches/dyehouse', batchToApi(data)); } }
-  if (type === 'rawReturn') { if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; } data.orderId = selectedOrderId; rawReturns.unshift(data); }
-  if (type === 'accessory') { if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; } data.orderId = selectedOrderId; data.movement = 'sent'; delete data.allocationId; accessoryBatches.unshift(data); await postBackend('/batches/accessory', batchToApi(data)); }
-  if (type === 'accessoryReceived') { if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; } if (!data.allocationId) { alert('اختر اللون المرتبط باستلام الإكسسوار.'); return; } data.orderId = selectedOrderId; data.movement = 'received'; accessoryBatches.unshift(data); await postBackend('/batches/accessory', batchToApi(data)); }
+  data.orderId = selectedOrderId;
+  const backendSaveRequired = backendAvailable;
+  let backendResult = true;
+  if (type === 'raw') {
+    const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
+    if (data.movementKind === 'return') {
+      if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; }
+      rawReturns.unshift(data);
+      backendResult = await postBackend('/batches/raw-return', { ...batchToApi(data), reason:data.reason || data.notes || '' });
+    } else {
+      if (currentOrder.widthMode === 'multiple' && !data.widthLineId) { alert('اختر العرض المرتبط قبل تسجيل خروج الخام.'); return; }
+      if (rawDocumentFile) data.sourceDocument = { type:'raw-batch-image', image: await resizeSlipImage(rawDocumentFile) };
+      rawBatches.unshift(data);
+      backendResult = await postBackend('/batches/dyehouse', batchToApi(data));
+    }
+  }
+  if (type === 'rawReturn') {
+    if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; }
+    rawReturns.unshift(data);
+    backendResult = await postBackend('/batches/raw-return', { ...batchToApi(data), reason:data.reason || data.notes || '' });
+  }
+  if (type === 'accessory') {
+    if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
+    data.movement = 'sent'; delete data.allocationId;
+    accessoryBatches.unshift(data);
+    backendResult = await postBackend('/batches/accessory', batchToApi(data));
+  }
+  if (type === 'accessoryReceived') {
+    if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
+    if (!data.allocationId) { alert('اختر اللون المرتبط باستلام الإكسسوار.'); return; }
+    data.movement = 'received';
+    accessoryBatches.unshift(data);
+    backendResult = await postBackend('/batches/accessory', batchToApi(data));
+  }
   if (type === 'production') {
     if (!data.allocationId || data.allocationId === 'raw') { alert('اختر اللون / المصبغة قبل تسجيل استلام المجهز.'); return; }
-    data.orderId = selectedOrderId;
     productionBatches.unshift(data);
-    await postBackend('/batches/finished', batchToApi(data));
+    backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'finished') {
     const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
     if (data.quantity > allocation.remainingAtDyehouse) { data.notes = [data.notes, 'تنبيه: الكمية المستلمة أكبر من المتبقي داخل المصبغة'].filter(Boolean).join(' - '); }
     data.finishedWidth = +data.finishedWidth; data.finishedWeight = +data.finishedWeight; finishedBatches.unshift(data);
+    backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'customer') {
     if (data.movementKind === 'accessory') {
       if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
       if (!data.allocationId) { alert('اختر اللون المرتبط بتسليم الإكسسوار.'); return; }
-      data.orderId = selectedOrderId;
       data.movement = 'customer';
       const receivedAccessory = sum(accessoryBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement==='received' && batch.accessoryType===data.accessoryType));
       const deliveredAccessory = sum(accessoryBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement==='customer' && batch.accessoryType===data.accessoryType));
       const availableAccessory = Math.max(receivedAccessory - deliveredAccessory, 0);
       if (data.quantity > availableAccessory) { data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - '); }
       accessoryBatches.unshift(data);
-      await postBackend('/batches/accessory', batchToApi(data));
+      backendResult = await postBackend('/batches/accessory', batchToApi(data));
     } else {
       const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
       const alreadyDelivered = sum(customerBatches.filter((batch)=>batch.allocationId===data.allocationId));
       const warehouseAvailable = Math.max(allocation.finishedReceived - alreadyDelivered, 0);
       if (data.quantity > warehouseAvailable) { data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - '); }
       customerBatches.unshift(data);
-      await postBackend('/batches/customer', batchToApi(data));
+      backendResult = await postBackend('/batches/customer', batchToApi(data));
     }
+  }
+  if (backendSaveRequired && !backendResult) {
+    await rollbackAfterBackendWriteFailure('تعذر حفظ الحركة في قاعدة البيانات. لم يتم اعتماد الحركة.');
+    return;
   }
   save(); renderAll();
 }
@@ -2476,6 +2591,7 @@ async function addAllocation() {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
   const color = prompt('اكتب اللون المطلوب'); if (!color) return;
   const createdAllocations = [];
+  const backendSaveRequired = backendAvailable;
   if (order.widthMode === 'multiple') {
     const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
     order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; allocations.push(allocation); createdAllocations.push(allocation); });
@@ -2487,33 +2603,50 @@ async function addAllocation() {
     const allocation = { id:uid(), orderId:order.id, color, plannedQuantity, dyehouse:order.dyehouse, targetFinishedWidth, targetFinishedWeight };
     allocations.push(allocation); createdAllocations.push(allocation);
   }
-  for (const allocation of createdAllocations) await postBackend(`/orders/${order.id}/allocations`, allocationToApi(allocation));
+  const savedAllocations = [];
+  for (const allocation of createdAllocations) savedAllocations.push(await postBackend(`/orders/${order.id}/allocations`, allocationToApi(allocation)));
+  if (backendSaveRequired && savedAllocations.some((item)=>!item)) {
+    await rollbackAfterBackendWriteFailure('تعذر حفظ اللون في قاعدة البيانات. لم يتم اعتماد الإضافة.');
+    return;
+  }
   save(); renderAll();
 }
-function editAllocation(id) {
+async function editAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   const order = orders.find((item)=>item.id===allocation.orderId);
-  const colorValue = prompt('نص قديم غير مستعاد / نص قديم غير مستعاد نص قديم غير مستعاد', allocation.color || allocation.pantoneCode || '');
+  const colorValue = prompt('اكتب اللون / كود اللون', allocation.color || allocation.pantoneCode || '');
   if (colorValue === null) return;
   const cleanedColor = colorValue.trim();
   if (!cleanedColor) return;
-  const targetFinishedWidth = Number(prompt('نص قديم غير مستعاد نص قديم غير مستعاد', allocation.targetFinishedWidth));
+  const targetFinishedWidth = Number(prompt('اكتب العرض النهائي', allocation.targetFinishedWidth));
   if (!targetFinishedWidth) return;
-  const targetFinishedWeight = Number(prompt('نص قديم غير مستعاد نص قديم غير مستعاد', allocation.targetFinishedWeight));
+  const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
   if (!targetFinishedWeight) return;
+  const backendSaveRequired = backendAvailable;
+  const changedAllocations = new Set();
 
   allocation.color = cleanedColor;
   allocation.pantoneCode = cleanedColor;
+  changedAllocations.add(allocation);
 
   if (order?.widthMode !== 'multiple') {
     allocations.filter((item)=>item.orderId===allocation.orderId).forEach((item)=>{
       item.targetFinishedWidth = targetFinishedWidth;
       item.targetFinishedWeight = targetFinishedWeight;
+      changedAllocations.add(item);
     });
   } else {
     allocation.targetFinishedWidth = targetFinishedWidth;
     allocation.targetFinishedWeight = targetFinishedWeight;
+  }
+  if (backendSaveRequired) {
+    const savedAllocations = [];
+    for (const item of changedAllocations) savedAllocations.push(await putBackend(`/allocations/${item.id}`, allocationToApi(item)));
+    if (savedAllocations.some((item)=>!item)) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل اللون في قاعدة البيانات. لم يتم اعتماد التعديل.');
+      return;
+    }
   }
   save();
   renderAll();
@@ -2577,24 +2710,53 @@ async function transferAllocationDyehouse(id) {
   save();
   renderAll();
 }
-function deleteAllocation(id) {
+async function deleteAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   if (!confirm(`هل تريد حذف اللون ${allocation.color || allocation.pantoneCode || '-'}؟ سيتم حذف الحركات المرتبطة به من هذا الطلب.`)) return;
+  const backendSaveRequired = backendAvailable;
+  if (backendSaveRequired) {
+    const deletions = [
+      ...rawBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/dyehouse/${batch.id}`)),
+      ...rawReturns.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/raw-return/${batch.id}`)),
+      ...productionBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/finished/${batch.id}`)),
+      ...finishedBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/finished/${batch.id}`)),
+      ...customerBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/customer/${batch.id}`)),
+      ...accessoryBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/accessory/${batch.id}`)),
+      ...dyehouseTransfers.filter((batch)=>batch.allocationId===id || batch.newAllocationId===id).map((batch)=>deleteBackend(`/transfers/${batch.id}`)),
+      deleteBackend(`/allocations/${id}`),
+    ];
+    const results = await Promise.all(deletions);
+    if (results.some((item)=>!item)) {
+      await rollbackAfterBackendWriteFailure('تعذر حذف اللون من قاعدة البيانات. لم يتم اعتماد الحذف.');
+      return;
+    }
+  }
   recordAudit('delete', 'allocation', id, allocation, null, `حذف اللون ${allocation.color || allocation.pantoneCode || '-'}`);
   allocations = allocations.filter((item)=>item.id!==id);
+  rawBatches = rawBatches.filter((batch)=>batch.allocationId!==id);
+  rawReturns = rawReturns.filter((batch)=>batch.allocationId!==id);
+  accessoryBatches = accessoryBatches.filter((batch)=>batch.allocationId!==id);
   dyeBatches = dyeBatches.filter((batch)=>batch.allocationId!==id);
   productionBatches = productionBatches.filter((batch)=>batch.allocationId!==id);
   finishedBatches = finishedBatches.filter((batch)=>batch.allocationId!==id);
   customerBatches = customerBatches.filter((batch)=>batch.allocationId!==id);
-  dyehouseTransfers = dyehouseTransfers.filter((batch)=>batch.allocationId!==id);
+  dyehouseTransfers = dyehouseTransfers.filter((batch)=>batch.allocationId!==id && batch.newAllocationId!==id);
   save();
   renderAll();
 }
-function deleteOrder(id) {
+async function deleteOrder(id) {
   const order = orders.find((item)=>item.id===id);
   if (!order) return;
   if (!confirm(`هل تريد حذف الطلب رقم ${order.orderNumber || '-'}؟ سيتم حذف الألوان والحركات المرتبطة به.`)) return;
+  const backendSaveRequired = backendAvailable;
+  if (backendSaveRequired) {
+    const deleted = await deleteBackend(`/orders/${id}`);
+    if (!deleted) {
+      await rollbackAfterBackendWriteFailure('تعذر حذف الطلب من قاعدة البيانات. لم يتم اعتماد الحذف.');
+      return;
+    }
+  }
   const allocationIds = allocations.filter((allocation)=>allocation.orderId===id).map((allocation)=>allocation.id);
   recordAudit('delete', 'order', id, order, null, `حذف الطلب رقم ${order.orderNumber || ''}`);
   orders = orders.filter((item)=>item.id!==id);
@@ -2610,10 +2772,12 @@ function deleteOrder(id) {
   save();
   renderAll();
 }
-function deleteBatch(type, id) {
-  if (!confirm('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد. نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعادɿ')) return;
+async function deleteBatch(type, id) {
+  if (!confirm('هل تريد حذف هذه الحركة؟ سيتم حذفها من قاعدة البيانات أيضًا.')) return;
+  const backendSaveRequired = backendAvailable;
+  let transfer = null;
   if (type === 'transfer') {
-    const transfer = dyehouseTransfers.find((batch)=>String(batch.id) === String(id));
+    transfer = dyehouseTransfers.find((batch)=>String(batch.id) === String(id));
     if (transfer) {
       if (transfer.mode === 'split' && transfer.newAllocationId) {
         const newAllocation = allocations.find((allocation)=>allocation.id === transfer.newAllocationId);
@@ -2634,11 +2798,30 @@ function deleteBatch(type, id) {
           }
           allocations = allocations.filter((allocation)=>allocation.id !== transfer.newAllocationId);
         } else if (hasLinkedMovements) {
-          alert('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعادء نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد. نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد.');
+          alert('لا يمكن حذف التحويل لأن اللون المحول عليه توجد عليه حركات تشغيل. احذف الحركات المرتبطة أولًا أو اترك التحويل كما هو.');
+          return;
         }
       } else if (transfer.mode === 'full' && transfer.allocationId) {
         allocations = allocations.map((allocation)=>allocation.id === transfer.allocationId ? { ...allocation, dyehouse:transfer.fromDyehouse || allocation.dyehouse } : allocation);
       }
+    }
+  }
+  if (backendSaveRequired) {
+    const backendTasks = [];
+    if (type === 'transfer') {
+      backendTasks.push(deleteBackend(`/transfers/${id}`));
+      if (transfer?.allocationId) {
+        const originalAllocation = allocations.find((allocation)=>allocation.id === transfer.allocationId);
+        if (originalAllocation) backendTasks.push(putBackend(`/allocations/${originalAllocation.id}`, allocationToApi(originalAllocation)));
+      }
+      if (transfer?.mode === 'split' && transfer.newAllocationId) backendTasks.push(deleteBackend(`/allocations/${transfer.newAllocationId}`));
+    } else {
+      backendTasks.push(deleteBackend(`/batches/${backendBatchType(type)}/${id}`));
+    }
+    const results = await Promise.all(backendTasks);
+    if (results.some((item)=>!item)) {
+      await rollbackAfterBackendWriteFailure('تعذر حذف الحركة من قاعدة البيانات. لم يتم اعتماد الحذف.');
+      return;
     }
   }
   if (type === 'raw') rawBatches = rawBatches.filter((batch)=>String(batch.id)!==String(id));
@@ -2651,18 +2834,28 @@ function deleteBatch(type, id) {
   if (type === 'rawReturn') rawReturns = rawReturns.filter((batch)=>String(batch.id)!==String(id));
   save(); renderAll();
 }
-function editBatch(type, id) {
+async function editBatch(type, id) {
   const collection = type === 'raw' ? rawBatches : type === 'accessory' ? accessoryBatches : type === 'transfer' ? dyehouseTransfers : type === 'rawReturn' ? rawReturns : type === 'production' ? productionBatches : type === 'customer' ? customerBatches : finishedBatches;
   const batch = collection.find((item)=>item.id===id); if (!batch) return;
-  const quantity = Number(prompt('نص قديم غير مستعاد', batch.quantity)); if (!quantity) return; batch.quantity = quantity;
-  batch.date = prompt('نص قديم غير مستعاد', batch.date) || batch.date;
-  if (type === 'raw') { batch.supplier = prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.supplier) || batch.supplier; batch.noteNumber = prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.noteNumber || '') || ''; batch.notes = prompt('نص قديم غير مستعاد', batch.notes || '') || ''; }
+  const backendSaveRequired = backendAvailable;
+  const quantity = Number(prompt('الكمية', batch.quantity)); if (!quantity) return; batch.quantity = quantity;
+  batch.date = prompt('التاريخ', batch.date) || batch.date;
+  if (type === 'raw') { batch.supplier = prompt('الجهة / المصدر', batch.supplier) || batch.supplier; batch.noteNumber = prompt('رقم الإذن', batch.noteNumber || '') || ''; batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
   if (type === 'transfer') { batch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', batch.fromDyehouse || '') || batch.fromDyehouse; batch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', batch.toDyehouse || '') || batch.toDyehouse; batch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', batch.noteNumber || '') || ''; batch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', batch.reason || '') || ''; }
-  if (type === 'rawReturn') { batch.noteNumber = prompt('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', batch.noteNumber || '') || ''; batch.notes = prompt('نص قديم غير مستعاد', batch.notes || '') || ''; }
-  if (type === 'accessory') { batch.accessoryType = prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.accessoryType) || batch.accessoryType; batch.noteNumber = prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.noteNumber || '') || ''; batch.notes = prompt('نص قديم غير مستعاد', batch.notes || '') || ''; }
-  if (type === 'dye') { batch.noteNumber = prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.noteNumber || '') || ''; batch.notes = prompt('نص قديم غير مستعاد', batch.notes || '') || ''; }
-  if (type === 'production') { batch.noteNumber = prompt('نص قديم غير مستعاد نص قديم غير مستعاد نص قديم غير مستعاد', batch.noteNumber || '') || ''; batch.notes = prompt('نص قديم غير مستعاد', batch.notes || '') || ''; }
-  if (type === 'finished') { batch.finishedWidth = Number(prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.finishedWidth)); batch.finishedWeight = Number(prompt('نص قديم غير مستعاد نص قديم غير مستعاد', batch.finishedWeight)); batch.notes = prompt('نص قديم غير مستعاد', batch.notes || '') || ''; }
+  if (type === 'rawReturn') { batch.noteNumber = prompt('رقم إذن المرتجع', batch.noteNumber || '') || ''; batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
+  if (type === 'accessory') { batch.accessoryType = prompt('نوع الإكسسوار', batch.accessoryType) || batch.accessoryType; batch.noteNumber = prompt('رقم الإذن', batch.noteNumber || '') || ''; batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
+  if (type === 'dye') { batch.noteNumber = prompt('رقم الإذن', batch.noteNumber || '') || ''; batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
+  if (type === 'production') { batch.noteNumber = prompt('رقم إذن استلام المجهز', batch.noteNumber || '') || ''; batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
+  if (type === 'finished') { batch.finishedWidth = Number(prompt('العرض النهائي', batch.finishedWidth)); batch.finishedWeight = Number(prompt('الوزن المجهز', batch.finishedWeight)); batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
+  if (backendSaveRequired) {
+    const saved = type === 'transfer'
+      ? await putBackend(`/transfers/${id}`, transferToApi(batch))
+      : await putBackend(`/batches/${backendBatchType(type)}/${id}`, type === 'rawReturn' ? { ...batchToApi(batch), reason:batch.reason || batch.notes || '' } : batchToApi(batch));
+    if (!saved) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الحركة في قاعدة البيانات. لم يتم اعتماد التعديل.');
+      return;
+    }
+  }
   save(); renderAll();
 }
 function getOperationalStage(order) {
@@ -3530,7 +3723,7 @@ function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
 if (refs.weavingSlipDialog) installAmalReviewUi();
 applyPricingDyehouseOptions();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
-refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId); };
+refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
 refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
@@ -3582,7 +3775,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
 
 refs.closePricingFormBtn.onclick = () => refs.pricingDialog.close();
 refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; refs.orderDialog.close(); };
-refs.pricingForm.onsubmit = addPricing;
+refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);
 ['pricingDyehouse','pricingMaterialType','pricingColorClass'].forEach((key)=>refs[key].onchange = updateSuggestedDyeCost);
@@ -3591,10 +3784,10 @@ refs.addWidthLineBtn.onclick = () => refs.widthLinesEditor.insertAdjacentHTML('b
 refs.widthLinesEditor.onclick = (event) => { if (event.target.dataset.removeWidthLine !== undefined) event.target.closest('.width-line-row')?.remove(); };
 refs.addAccessoryLineBtn.onclick = () => refs.accessoryLinesEditor.insertAdjacentHTML('beforeend', accessoryLineRowHtml());
 refs.accessoryLinesEditor.onclick = (event) => { if (event.target.dataset.removeAccessoryLine !== undefined) event.target.closest('.accessory-line-row')?.remove(); };
-refs.orderForm.onsubmit = addOrder;
+refs.orderForm.onsubmit = (event) => addOrder(event).catch((error)=>{ console.error('order-save-error', error); alert('تعذر حفظ الطلب.'); });
 refs.orderNumber.oninput = syncAutoCodes;
 refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.oninput = refs.dyehouseFilter.oninput = refs.fabricFilter.oninput = renderOrders;
-refs.pricingTableBody.onclick = (event) => { if (event.target.dataset.pricingQuote) openPricingQuotation(event.target.dataset.pricingQuote); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); if (event.target.dataset.editPricing) editPricing(event.target.dataset.editPricing); if (event.target.dataset.deletePricing) deletePricing(event.target.dataset.deletePricing); };
+refs.pricingTableBody.onclick = (event) => { if (event.target.dataset.pricingQuote) openPricingQuotation(event.target.dataset.pricingQuote); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); if (event.target.dataset.editPricing) editPricing(event.target.dataset.editPricing); if (event.target.dataset.deletePricing) deletePricing(event.target.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 refs.ordersTableBody.onclick = (event) => {
   const button = event.target.closest('button');
   if (!button) return;
@@ -3617,7 +3810,7 @@ refs.ordersTableBody.onclick = (event) => {
     if (order) { selectedOrderId = order.id; fillOrderForm(order); refs.orderDialog.showModal(); }
     return;
   }
-  if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder);
+  if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
 };
 refs.orderDetailsPanel.addEventListener('submit', (event) => {
   addBatch(event).catch((error) => {
@@ -3641,14 +3834,14 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
   const target = event.target.closest('button');
   if (!target) return;
   if (target.id === 'editOrderBtn') { editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
-  if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed(); return; }
-  if (target.id === 'addAllocationBtn') addAllocation();
-  if (target.dataset.editAllocation) editAllocation(target.dataset.editAllocation);
-  if (target.dataset.deleteAllocation) deleteAllocation(target.dataset.deleteAllocation);
-  if (target.dataset.transferAllocation) transferAllocationDyehouse(target.dataset.transferAllocation);
+  if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
+  if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
+  if (target.dataset.editAllocation) editAllocation(target.dataset.editAllocation).catch((error)=>{ console.error('allocation-edit-error', error); alert('تعذر تعديل اللون.'); });
+  if (target.dataset.deleteAllocation) deleteAllocation(target.dataset.deleteAllocation).catch((error)=>{ console.error('allocation-delete-error', error); alert('تعذر حذف اللون.'); });
+  if (target.dataset.transferAllocation) transferAllocationDyehouse(target.dataset.transferAllocation).catch((error)=>{ console.error('allocation-transfer-error', error); alert('تعذر حفظ تحويل المصبغة.'); });
   const action = target.dataset.batchAction;
-  if (action === 'delete') deleteBatch(target.dataset.batchType, target.dataset.batchId);
-  if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId);
+  if (action === 'delete') deleteBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-delete-error', error); alert('تعذر حذف الحركة.'); });
+  if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-edit-error', error); alert('تعذر تعديل الحركة.'); });
   if (target.dataset.retryOutbox) retryOutbox(target.dataset.retryOutbox);
 });
 function safeOpenDocument(type) {
@@ -3952,20 +4145,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

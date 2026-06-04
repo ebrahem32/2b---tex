@@ -144,7 +144,10 @@ const batchTables = {
   raw: 'raw_receiving_batches',
   dyehouse: 'dyehouse_delivery_batches',
   finished: 'finished_receiving_batches',
-  customer: 'customer_delivery_batches'
+  customer: 'customer_delivery_batches',
+  accessory: 'accessory_batches',
+  rawReturn: 'raw_returns',
+  'raw-return': 'raw_returns'
 };
 
 app.get('/api/orders/:orderId/batches', asyncHandler(async (req, res) => {
@@ -189,11 +192,23 @@ batchPost('/api/batches/dyehouse', 'dyehouse_delivery_batches');
 batchPost('/api/batches/finished', 'finished_receiving_batches');
 batchPost('/api/batches/customer', 'customer_delivery_batches');
 batchPost('/api/batches/accessory', 'accessory_batches');
+batchPost('/api/batches/raw-return', 'raw_returns');
 
 app.post('/api/transfers', asyncHandler(async (req, res) => {
   const query = insertSql('dyehouse_transfers', req.body || {});
   await run(query.sql, query.values);
   res.status(201).json(await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [query.id]));
+}));
+
+app.put('/api/transfers/:id', asyncHandler(async (req, res) => {
+  const query = updateSql('dyehouse_transfers', req.body || {}, req.params.id);
+  await run(query.sql, query.values);
+  res.json(await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]));
+}));
+
+app.delete('/api/transfers/:id', asyncHandler(async (req, res) => {
+  await run('DELETE FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
+  res.json({ ok: true });
 }));
 
 function localCustomerId(name) {
@@ -498,6 +513,14 @@ app.delete('/api/batches/:type/:id', asyncHandler(async (req, res) => {
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
   await run(`DELETE FROM ${table} WHERE id = ?`, [req.params.id]);
   res.json({ ok: true });
+}));
+
+app.put('/api/batches/:type/:id', asyncHandler(async (req, res) => {
+  const table = batchTables[req.params.type];
+  if (!table) return res.status(400).json({ error: 'Unknown batch type' });
+  const query = updateSql(table, req.body || {}, req.params.id);
+  await run(query.sql, query.values);
+  res.json(await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]));
 }));
 
 async function orderSummary(orderId) {
