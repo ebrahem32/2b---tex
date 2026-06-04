@@ -432,6 +432,10 @@ async function putBackend(path, payload) {
   try { return await backendRequest(path, { method: 'PUT', body: JSON.stringify(payload) }); }
   catch (error) { backendAvailable = false; console.warn('Backend update failed, kept LocalStorage copy', error); return null; }
 }
+async function rollbackAfterBackendWriteFailure(message) {
+  alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
+  await loadBackendData();
+}
 const reportTypeLabels = {
   weaving_production_order: 'أمر تشغيل نسيج',
   dyeing_production_order: 'أمر تشغيل صباغة',
@@ -2387,6 +2391,7 @@ async function addOrder(event) {
   const firstAccessory = accessoryLines[0] || {};
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms:refs.paymentTerms.value, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
   const backendCustomer = await ensureBackendCustomer(payload.customer);
+  const backendSaveRequired = backendAvailable;
   if (editingOrderId) {
     const previousDyehouse = String(currentOrder?.dyehouse || '').trim();
     const transferredAllocationIds = new Set(dyehouseTransfers
@@ -2402,13 +2407,21 @@ async function addOrder(event) {
       return { ...allocation, dyehouse: payload.dyehouse };
     });
     selectedOrderId = editingOrderId;
-    await putBackend(`/orders/${editingOrderId}`, orderToApi(updatedOrder, backendCustomer));
+    const savedOrder = await putBackend(`/orders/${editingOrderId}`, orderToApi(updatedOrder, backendCustomer));
+    if (backendSaveRequired && !savedOrder) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الطلب في قاعدة البيانات. لم يتم اعتماد التعديل.');
+      return;
+    }
   } else {
     const newOrder = { id:uid(), ...payload };
     orders.unshift(newOrder);
     selectedOrderId = newOrder.id;
     await markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
-    await postBackend('/orders', orderToApi(newOrder, backendCustomer));
+    const savedOrder = await postBackend('/orders', orderToApi(newOrder, backendCustomer));
+    if (backendSaveRequired && !savedOrder) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب الجديد في قاعدة البيانات. لم يتم اعتماد الطلب.');
+      return;
+    }
   }
   editingOrderId = null;
   pendingConvertedPricingId = null;
@@ -2535,6 +2548,7 @@ async function transferAllocationDyehouse(id) {
   let transferRecord = null;
   let allocationUpdate = null;
   let newAllocation = null;
+  const backendSaveRequired = backendAvailable;
   if (roundedQuantity >= originalQuantity) {
     allocationUpdate = { ...allocation, dyehouse:newDyehouse };
     allocations = allocations.map((item)=>item.id===id ? allocationUpdate : item);
@@ -2551,10 +2565,14 @@ async function transferAllocationDyehouse(id) {
     transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason, noteNumber, mode:'split' };
     dyehouseTransfers.unshift(transferRecord);
   }
-  if (backendAvailable) {
-    if (allocationUpdate) await putBackend(`/allocations/${id}`, allocationToApi(allocationUpdate));
-    if (newAllocation) await postBackend(`/orders/${allocation.orderId}/allocations`, allocationToApi(newAllocation));
-    if (transferRecord) await postBackend('/transfers', transferToApi(transferRecord));
+  if (backendSaveRequired) {
+    const updatedAllocation = allocationUpdate ? await putBackend(`/allocations/${id}`, allocationToApi(allocationUpdate)) : true;
+    const insertedAllocation = newAllocation ? await postBackend(`/orders/${allocation.orderId}/allocations`, allocationToApi(newAllocation)) : true;
+    const insertedTransfer = transferRecord ? await postBackend('/transfers', transferToApi(transferRecord)) : true;
+    if (!updatedAllocation || !insertedAllocation || !insertedTransfer) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تحويل المصبغة في قاعدة البيانات. لم يتم اعتماد التحويل.');
+      return;
+    }
   }
   save();
   renderAll();
@@ -3934,9 +3952,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
 
 
 
