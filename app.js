@@ -3036,7 +3036,23 @@ function openDocument(type) {
   } else if (type === 'labSamples') {
     body = `<div class="document-sheet lab-samples-sheet"><table class="lab-samples-table"><tbody><tr><td colspan="2"><h2>عينات معمل</h2></td><td colspan="2">${documentLogo()}</td></tr><tr><th>Order number</th><td>${safe(order.orderNumber)}</td><th>التاريخ</th><td>${safe(order.orderDate)}</td></tr><tr><th>المصبغة</th><td>${safe(order.dyehouse)}</td><th>الصنف</th><td>${safe(order.fabricType)}</td></tr><tr><th colspan="2">الكمية</th><td colspan="2">${fmt(order.totalRawOrdered)} ك</td></tr><tr><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>${(order.allocations || []).map((line, index)=> index % 2 === 0 ? `<tr><td class="sample-cell"></td><td>${safe(line.color || line.pantoneCode)}</td><td>${safe((order.allocations || [])[index + 1]?.color || (order.allocations || [])[index + 1]?.pantoneCode || '')}</td><td class="sample-cell"></td></tr>` : '').join('')}<tr><td class="sample-cell"></td><td></td><td></td><td class="sample-cell"></td></tr></tbody></table></div>`;
   } else if (type === 'stickers') {
-    body = `<div class="document-sheet stickers-sheet"><h2>استيكرات التشغيل</h2><p class="muted">اطبع كل استيكر حسب المقاس المطلوب.</p>${(order.allocations || []).map((line)=>`<div class="sticker-card"><strong>2B Tex</strong><span>طلب: ${safe(order.orderNumber)}</span><span>عميل: ${safe(order.customer)}</span><span>صنف: ${safe(order.fabricType)}</span><span>لون: ${safe(line.color || line.pantoneCode)}</span><span>كمية: ${fmt(line.plannedQuantity)}</span></div>`).join('') || '<p>لا توجد استيكرات متاحة.</p>'}</div>`;
+    const stickerRows = (order.allocations || []).map((line, index)=>{
+      const stickerId = `sticker-${line.id || index}`;
+      return `<div class="sticker-card" data-sticker-id="${escapeHtml(stickerId)}">
+        <div class="sticker-brand"><strong>2B Tex</strong><span>تشغيل</span></div>
+        <div class="sticker-order">${safe(order.orderNumber)}</div>
+        <div class="sticker-line"><span>العميل</span><strong>${safe(order.customer)}</strong></div>
+        <div class="sticker-line"><span>الصنف</span><strong>${safe(order.fabricType)}</strong></div>
+        <div class="sticker-grid">
+          <div><span>اللون</span><strong>${safe(line.color || line.pantoneCode)}</strong></div>
+          <div><span>الكمية</span><strong>${fmt(line.plannedQuantity)}</strong></div>
+          <div><span>العرض</span><strong>${safe(line.targetFinishedWidth || line.rawWidth || order.inchWidth)}</strong></div>
+          <div><span>الوزن</span><strong>${safe(line.targetFinishedWeight || '-')}</strong></div>
+        </div>
+        <button class="mini-btn sticker-print-btn" type="button" data-print-sticker="${escapeHtml(stickerId)}">طباعة هذا اللون</button>
+      </div>`;
+    }).join('');
+    body = `<div class="document-sheet sticker-sheet">${stickerRows || '<p>لا توجد استيكرات متاحة.</p>'}</div>`;
   } else {
     body = `${documentHeader()}<div class="report-title"><h2>${title}</h2></div>${infoCards}${documentFooter()}`;
   }
@@ -3588,12 +3604,13 @@ function printCurrentDocument(stickerId = null) {
   };
   if (isSticker) {
     const cards = [...refs.documentBody.querySelectorAll('.sticker-card')];
-    if (!stickerId && cards.length > 1) { alert('اختر الاستيكر المطلوب طباعته من داخل المستند.'); return; }
-    const selectedId = stickerId || cards[0]?.dataset.stickerId || '';
-    document.body.classList.add('printing-stickers');
-    stickerPrintStyle = document.createElement('style');
-    stickerPrintStyle.textContent = `@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-card:not([data-sticker-id="${selectedId}"]) { display:none!important; } }`;
-    document.head.appendChild(stickerPrintStyle);
+    if (stickerId || cards.length === 1) {
+      const selectedId = stickerId || cards[0]?.dataset.stickerId || '';
+      document.body.classList.add('printing-stickers');
+      stickerPrintStyle = document.createElement('style');
+      stickerPrintStyle.textContent = `@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-card:not([data-sticker-id="${selectedId}"]) { display:none!important; } }`;
+      document.head.appendChild(stickerPrintStyle);
+    }
   }
   window.addEventListener('afterprint', cleanup, { once:true });
   setTimeout(() => window.print(), 80);
@@ -3871,8 +3888,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
 
 
 
