@@ -1,0 +1,9 @@
+{
+  "name": "2b-tex",
+  "version": "1.0.0",
+  "private": true,
+  "description": "2B Tex Operations System",
+  "scripts": {
+    "start": "node start.js"
+  }
+}
