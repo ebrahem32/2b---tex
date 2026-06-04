@@ -1507,14 +1507,14 @@ const TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY = {
         'غوامق - مفتوح':71, 'غوامق - مقفول':78,
         'أسود - مفتوح':72, 'أسود - مقفول':79,
         'أسود خاص - مفتوح':74, 'أسود خاص - مقفول':81,
-        'بني غامق - مفتوح':75, 'بني غامق - مقفول':82,
+        'ألوان خاصة - مفتوح':75, 'ألوان خاصة - مقفول':82,
       },
       'بوليستر': {
         'أبيض / كسر بياض - مفتوح':40, 'أبيض / كسر بياض - مقفول':47,
         'وسط - مفتوح':41, 'وسط - مقفول':48,
         'غوامق - مفتوح':43, 'غوامق - مقفول':50,
         'أسود - مفتوح':44, 'أسود - مقفول':51,
-        'بني غامق - مفتوح':48, 'بني غامق - مقفول':55,
+        'ألوان خاصة - مفتوح':48, 'ألوان خاصة - مقفول':55,
       },
     },
     extras: {
@@ -1625,7 +1625,7 @@ function applyPricingColorOptions() {
   if (!refs.pricingColorClass) return;
   const current = refs.pricingColorClass.value;
   const colors = uniqueNonEmpty(Object.values(activeDyehousePriceLibrary()).flatMap((config)=>Object.values(config.dyeing || {}).flatMap((items)=>Object.keys(items || {}))));
-  const fallback = ['غسيل - مفتوح','غسيل - مقفول','أبيض / كسر بياض - مفتوح','أبيض / كسر بياض - مقفول','فواتح - مفتوح','فواتح - مقفول','وسط - مفتوح','وسط - مقفول','غوامق - مفتوح','غوامق - مقفول','أسود - مفتوح','أسود - مقفول','أسود خاص - مفتوح','أسود خاص - مقفول','بني غامق - مفتوح','بني غامق - مقفول'];
+  const fallback = ['غسيل - مفتوح','غسيل - مقفول','أبيض / كسر بياض - مفتوح','أبيض / كسر بياض - مقفول','فواتح - مفتوح','فواتح - مقفول','وسط - مفتوح','وسط - مقفول','غوامق - مفتوح','غوامق - مقفول','أسود - مفتوح','أسود - مقفول','أسود خاص - مفتوح','أسود خاص - مقفول','ألوان خاصة - مفتوح','ألوان خاصة - مقفول'];
   const options = (colors.length ? colors : fallback).filter((name)=>name && !isLegacyRecoveredText(name)).sort((a,b)=>a.localeCompare(b, 'ar'));
   refs.pricingColorClass.innerHTML = `<option value="">اختر الدرجة</option>${options.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
   if (options.includes(current)) refs.pricingColorClass.value = current;
@@ -3934,7 +3934,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
 
 
 
