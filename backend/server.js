@@ -19,7 +19,7 @@ app.use(express.json({ limit: '20mb' }));
 const TABLE_FIELDS = {
   customers: ['id','name','phone','a5_customer_id','notes','created_at','updated_at'],
   pricings: ['id','pricing_number','customer_id','pricing_date','fabric_type','material_type','dyehouse','color_class','quantity','inch_width','finished_weight','raw_cost','dye_cost','waste_percent','extra_cost','profit_per_kg','unit_price','total_price','payment_terms','notes','status','created_at','updated_at'],
-  orders: ['id','order_number','pricing_id','customer_id','order_date','fabric_type','total_raw_quantity','expected_waste_percent','inch_width','kilo_price','payment_terms','dyehouse','weaving_source','notes','status','is_closed','created_at','updated_at'],
+  orders: ['id','order_number','pricing_id','customer_id','order_date','product_code','fabric_type','total_raw_quantity','expected_waste_percent','width_mode','width_lines_json','inch_width','kilo_price','raw_cost','payment_terms','accessory_type','accessory_percent','accessory_lines_json','dyehouse','weaving_source','notes','status','is_closed','created_at','updated_at'],
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','finished_width','finished_weight','notes','created_at','updated_at'],
   raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','created_at','updated_at'],
   dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','note_number','notes','created_at','updated_at'],
@@ -304,6 +304,23 @@ function numValue(row, keys) {
   return Number(firstValue(row, keys, 0)) || 0;
 }
 
+function normalizeOrderStatus(status) {
+  return status === 'active' ? 'pending' : (status || 'pending');
+}
+
+function jsonArrayValue(value) {
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (!value) return '[]';
+  if (typeof value === 'string') {
+    try {
+      return Array.isArray(JSON.parse(value)) ? value : '[]';
+    } catch {
+      return '[]';
+    }
+  }
+  return '[]';
+}
+
 function dateValue(row) {
   return firstValue(row, ['batchDate', 'date', 'orderDate', 'pricingDate', 'createdAt', 'created_at'], null);
 }
@@ -341,16 +358,23 @@ function mapOrder(row, customerId, inferredPricingId) {
     pricing_id: firstValue(row, ['pricingId', 'pricing_id'], inferredPricingId || null),
     customer_id: customerId,
     order_date: firstValue(row, ['orderDate', 'order_date']),
+    product_code: firstValue(row, ['productCode', 'product_code']),
     fabric_type: firstValue(row, ['fabricType', 'fabric_type']),
     total_raw_quantity: numValue(row, ['totalRawQuantity', 'total_raw_quantity']),
     expected_waste_percent: numValue(row, ['expectedWastePercent', 'expected_waste_percent']),
+    width_mode: firstValue(row, ['widthMode', 'width_mode'], 'single'),
+    width_lines_json: jsonArrayValue(row.widthLines || row.width_lines_json),
     inch_width: numValue(row, ['inchWidth', 'inch_width']),
     kilo_price: numValue(row, ['kiloPrice', 'kilo_price']),
+    raw_cost: numValue(row, ['rawCost', 'raw_cost']),
     payment_terms: firstValue(row, ['paymentTerms', 'payment_terms']),
+    accessory_type: firstValue(row, ['accessoryType', 'accessory_type']),
+    accessory_percent: numValue(row, ['accessoryPercent', 'accessory_percent']),
+    accessory_lines_json: jsonArrayValue(row.accessoryLines || row.accessory_lines_json),
     dyehouse: firstValue(row, ['dyehouse']),
     weaving_source: firstValue(row, ['weavingSource', 'weaving_source']),
     notes: firstValue(row, ['notes']),
-    status: firstValue(row, ['status'], 'active'),
+    status: normalizeOrderStatus(firstValue(row, ['status'], 'pending')),
     is_closed: row.isClosed || row.operationClosed ? 1 : 0,
     created_at: firstValue(row, ['createdAt', 'created_at'], now()),
     updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())

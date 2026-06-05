@@ -230,25 +230,44 @@ async function backendRequest(path, options = {}) {
 
 const dbDate = (row) => row.batch_date || row.transfer_date || row.order_date || row.pricing_date || row.created_at || '';
 const customerLookupName = (customers, id) => customers.find((item)=>item.id===id)?.name || '';
+function parseDbJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+function normalizeOrderStatus(status) {
+  return status === 'active' ? 'pending' : (status || 'pending');
+}
 function mapDbOrder(row, customers) {
+  const widthMode = row.width_mode || 'single';
   return {
     id: row.id,
     orderNumber: row.order_number || '',
     pricingId: row.pricing_id || '',
     customer: customerLookupName(customers, row.customer_id) || row.customer || '',
     orderDate: row.order_date || '',
+    productCode: row.product_code || buildItemCode(row.order_number),
     fabricType: row.fabric_type || '',
     totalRawQuantity: Number(row.total_raw_quantity || 0),
     expectedWastePercent: Number(row.expected_waste_percent || 0),
-    widthMode: 'single',
+    widthMode,
     inchWidth: row.inch_width || '',
-    widthLines: [],
+    widthLines: widthMode === 'multiple' ? parseDbJsonArray(row.width_lines_json) : [],
     kiloPrice: Number(row.kilo_price || 0),
+    rawCost: Number(row.raw_cost || 0),
     paymentTerms: row.payment_terms || '',
+    accessoryType: row.accessory_type || '',
+    accessoryPercent: Number(row.accessory_percent || 0),
+    accessoryLines: parseDbJsonArray(row.accessory_lines_json),
     dyehouse: row.dyehouse || '',
     weavingSource: row.weaving_source || '',
     notes: row.notes || '',
-    status: row.status || 'active',
+    status: normalizeOrderStatus(row.status),
     operationClosed: !!row.is_closed,
   };
 }
@@ -430,16 +449,23 @@ const orderToApi = (order, customerId = null) => ({
   pricing_id: order.pricingId || null,
   customer_id: customerId,
   order_date: order.orderDate,
+  product_code: order.productCode || buildItemCode(order.orderNumber),
   fabric_type: order.fabricType,
   total_raw_quantity: Number(order.totalRawQuantity || 0),
   expected_waste_percent: Number(order.expectedWastePercent || 0),
+  width_mode: order.widthMode || 'single',
+  width_lines_json: JSON.stringify(Array.isArray(order.widthLines) ? order.widthLines : []),
   inch_width: order.inchWidth || '',
   kilo_price: Number(order.kiloPrice || 0),
+  raw_cost: Number(order.rawCost || 0),
   payment_terms: order.paymentTerms || '',
+  accessory_type: order.accessoryType || '',
+  accessory_percent: Number(order.accessoryPercent || 0),
+  accessory_lines_json: JSON.stringify(Array.isArray(order.accessoryLines) ? order.accessoryLines : []),
   dyehouse: order.dyehouse || '',
   weaving_source: order.weavingSource || '',
   notes: order.notes || '',
-  status: order.status || 'active',
+  status: normalizeOrderStatus(order.status),
   is_closed: order.operationClosed ? 1 : 0,
 });
 const allocationToApi = (allocation) => ({
@@ -2533,28 +2559,37 @@ async function addOrder(event) {
       .flatMap((transfer)=>[transfer.allocationId, transfer.newAllocationId])
       .filter(Boolean));
     const updatedOrder = { ...currentOrder, ...payload };
-    orders = orders.map((order) => order.id === editingOrderId ? updatedOrder : order);
-    allocations = allocations.map((allocation) => {
+    const updatedAllocations = allocations.map((allocation) => {
       if (allocation.orderId !== editingOrderId) return allocation;
       const allocationDyehouse = String(allocation.dyehouse || '').trim();
       if (transferredAllocationIds.has(allocation.id) || (previousDyehouse && allocationDyehouse !== previousDyehouse)) return allocation;
       return { ...allocation, dyehouse: payload.dyehouse };
     });
-    selectedOrderId = editingOrderId;
     const savedOrder = await putBackend(`/orders/${editingOrderId}`, orderToApi(updatedOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الطلب في قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
+    const changedAllocations = updatedAllocations.filter((allocation) => {
+      const original = allocations.find((item)=>item.id === allocation.id);
+      return original && original.dyehouse !== allocation.dyehouse;
+    });
+    for (const allocation of changedAllocations) {
+      const savedAllocation = await putBackend(`/allocations/${allocation.id}`, allocationToApi(allocation));
+      if (backendSaveRequired && !savedAllocation) {
+        await rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث مصبغة الألوان المرتبطة في قاعدة البيانات. لم يتم اعتماد التعديل كاملًا.');
+        return;
+      }
+    }
+    selectedOrderId = editingOrderId;
   } else {
-    const newOrder = { id:uid(), ...payload };
-    orders.unshift(newOrder);
-    selectedOrderId = newOrder.id;
+    const newOrder = { id:uid(), status:'pending', ...payload };
     const savedOrder = await postBackend('/orders', orderToApi(newOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب الجديد في قاعدة البيانات. لم يتم اعتماد الطلب.');
       return;
     }
+    selectedOrderId = savedOrder.id || newOrder.id;
     const pricingMarked = await markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
     if (backendSaveRequired && !pricingMarked) {
       await rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث حالة التسعيرة في قاعدة البيانات. راجع الطلب والتسعيرة قبل المتابعة.');
@@ -2563,7 +2598,8 @@ async function addOrder(event) {
   }
   editingOrderId = null;
   pendingConvertedPricingId = null;
-  save(); refs.orderDialog.close(); renderAll();
+  await loadBackendData();
+  refs.orderDialog.close();
 }
 async function addBatch(event) {
   event.preventDefault();
@@ -4054,7 +4090,4 @@ pollBackendStatus();
 pollWhatsappService();
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
-
-
-
 

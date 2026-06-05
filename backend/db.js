@@ -19,8 +19,29 @@ async function initDb() {
   db.run('PRAGMA foreign_keys = ON;');
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
   db.run(schema);
+  runMigrations();
   persist();
   return db;
+}
+
+function addColumnIfMissing(table, definition) {
+  try {
+    db.run(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+  } catch (error) {
+    if (!String(error?.message || error).includes('duplicate column name')) throw error;
+  }
+}
+
+function runMigrations() {
+  [
+    'product_code TEXT',
+    "width_mode TEXT DEFAULT 'single'",
+    'width_lines_json TEXT',
+    'raw_cost REAL DEFAULT 0',
+    'accessory_type TEXT',
+    'accessory_percent REAL DEFAULT 0',
+    'accessory_lines_json TEXT',
+  ].forEach((definition) => addColumnIfMissing('orders', definition));
 }
 
 function persist() {
