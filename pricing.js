@@ -75,6 +75,15 @@
     TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['نيو جيما'].dyeing = clone(TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['جيما'].dyeing);
     TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['نيو جيما'].extras = clone(TWO_B_TEX_DYEHOUSE_PRICE_LIBRARY['جيما'].extras);
 
+    function mergeNestedPriceTable(base = {}, override = {}) {
+      const merged = clone(base || {});
+      Object.entries(override || {}).forEach(([group, rows]) => {
+        if (!rows || typeof rows !== 'object' || Array.isArray(rows)) return;
+        merged[group] = { ...(merged[group] || {}), ...rows };
+      });
+      return merged;
+    }
+
     function sanitizeDyehousePriceLibrary(source = {}) {
       const clean = {};
       Object.entries(source || {}).forEach(([dyehouse, config]) => {
@@ -97,11 +106,21 @@
           const number = Number(price);
           if (name && !isLegacyRecoveredText(name) && Number.isFinite(number)) extras[name] = number;
         });
+        const printing = {};
+        Object.entries(config.printing || {}).forEach(([type, rows]) => {
+          if (!type || isLegacyRecoveredText(type) || !rows || typeof rows !== 'object') return;
+          Object.entries(rows).forEach(([name, price]) => {
+            const number = Number(price);
+            if (!name || isLegacyRecoveredText(name) || !Number.isFinite(number)) return;
+            if (!printing[type]) printing[type] = {};
+            printing[type][name] = number;
+          });
+        });
         clean[dyehouse] = {
           effectiveFrom: config.effectiveFrom || '',
           accountingMode: config.accountingMode || 'net',
           dyeing,
-          printing: config.printing && typeof config.printing === 'object' ? config.printing : {},
+          printing,
           extras,
         };
         if (config.aliasOf) clean[dyehouse].aliasOf = config.aliasOf;
@@ -117,8 +136,8 @@
         merged[dyehouse] = {
           ...current,
           ...config,
-          dyeing: { ...(current.dyeing || {}), ...(config.dyeing || {}) },
-          printing: { ...(current.printing || {}), ...(config.printing || {}) },
+          dyeing: mergeNestedPriceTable(current.dyeing || {}, config.dyeing || {}),
+          printing: mergeNestedPriceTable(current.printing || {}, config.printing || {}),
           extras: { ...(current.extras || {}), ...(config.extras || {}) },
         };
       });

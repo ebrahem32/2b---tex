@@ -406,6 +406,7 @@ async function loadBackendData() {
     if (backendPriceLibrary && typeof backendPriceLibrary === 'object' && !Array.isArray(backendPriceLibrary)) {
       customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(backendPriceLibrary);
       saveDyehousePriceLibraryLocal();
+      applyPricingMaterialOptions();
       applyPricingDyehouseOptions();
       updateSuggestedDyeCost();
     }
@@ -914,10 +915,14 @@ function isLegacyRecoveredText(value) {
   return text.includes(legacyText) || /\uFFFD|ï؟½|\?{3,}/.test(text);
 }
 function normalizeDyehousePriceLabel(value) {
-  return String(value || '')
+  const text = String(value || '')
     .trim()
     .replace(/كسر بياض/g, 'كسترة')
-    .replace(/أسود مخصوص/g, 'أسود خاص');
+    .replace(/أسود مخصوص/g, 'أسود خاص')
+    .replace(/بني غامق/g, 'ألوان خاصة')
+    .replace(/^خصوص$/g, 'ألوان خاصة')
+    .replace(/^ألوان$/g, 'ألوان خاصة');
+  return text;
 }
 
 const pricingDomain = window.TwoBTexPricing.createPricingDomain({
@@ -1752,6 +1757,13 @@ function applyPricingDyehouseOptions() {
   if (names.includes(current)) refs.pricingDyehouse.value = current;
   applyPricingColorOptions();
 }
+function applyPricingMaterialOptions() {
+  if (!refs.pricingMaterialType) return;
+  const current = refs.pricingMaterialType.value;
+  const options = ['قطن', 'مخلوط', 'بوليستر'];
+  refs.pricingMaterialType.innerHTML = `<option value="">اختر الخامة</option>${options.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
+  if (options.includes(current)) refs.pricingMaterialType.value = current;
+}
 function applyPricingColorOptions() {
   if (!refs.pricingColorClass) return;
   const current = normalizeDyehousePriceLabel(refs.pricingColorClass.value);
@@ -1933,14 +1945,20 @@ function pricingPayload(id = uid()) {
   return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:refs.pricingCustomer.value, pricingDate:refs.pricingDate.value, fabricType:refs.pricingFabricType.value, dyehouse:refs.pricingDyehouse.value, colorClass:refs.pricingColorClass.value, quantity:+refs.pricingQuantity.value, inchWidth:+refs.pricingInchWidth.value, finishedWeight:+refs.pricingFinishedWeight.value, materialType:refs.pricingMaterialType.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, paymentTerms:refs.pricingPaymentTerms.value, notes:refs.pricingNotes.value };
 }
 function fillPricingForm(pricing) {
+  const material = pricing.materialType || '';
+  const dyehouse = pricing.dyehouse || '';
+  const colorClass = normalizeDyehousePriceLabel(pricing.colorClass || '');
   refs.pricingNumber.value = pricing.pricingNumber || '';
   if (refs.pricingProductCode) refs.pricingProductCode.value = pricing.productCode || buildItemCode(pricing.pricingNumber);
   refs.pricingCustomer.value = pricing.customer || '';
   refs.pricingDate.value = pricing.pricingDate || new Date().toISOString().slice(0,10);
   refs.pricingFabricType.value = pricing.fabricType || '';
-  refs.pricingMaterialType.value = pricing.materialType || '';
-  refs.pricingDyehouse.value = pricing.dyehouse || '';
-  refs.pricingColorClass.value = pricing.colorClass || '';
+  applyPricingMaterialOptions();
+  refs.pricingMaterialType.value = [...refs.pricingMaterialType.options].some((option)=>option.value === material) ? material : '';
+  applyPricingDyehouseOptions();
+  refs.pricingDyehouse.value = [...refs.pricingDyehouse.options].some((option)=>option.value === dyehouse) ? dyehouse : '';
+  applyPricingColorOptions();
+  refs.pricingColorClass.value = [...refs.pricingColorClass.options].some((option)=>option.value === colorClass) ? colorClass : '';
   refs.pricingQuantity.value = pricing.quantity || '';
   refs.pricingInchWidth.value = pricing.inchWidth || '';
   refs.pricingFinishedWeight.value = pricing.finishedWeight || '';
@@ -1951,7 +1969,7 @@ function fillPricingForm(pricing) {
   refs.pricingProfitPerKg.value = pricing.profitPerKg || '';
   refs.pricingPaymentTerms.value = pricing.paymentTerms || '';
   refs.pricingNotes.value = pricing.notes || '';
-  updatePricingPreview();
+  updateSuggestedDyeCost();
 }
 function editPricing(id) {
   const pricing = pricings.find((item)=>item.id===id);
@@ -3479,8 +3497,9 @@ function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   return sourceOrder.operationNotes[key];
 }
 if (refs.weavingSlipDialog) installAmalReviewUi();
+applyPricingMaterialOptions();
 applyPricingDyehouseOptions();
-refs.openPricingFormBtn.onclick = () => { editingPricingId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
+refs.openPricingFormBtn.onclick = () => { editingPricingId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
 refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
