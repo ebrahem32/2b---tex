@@ -498,6 +498,18 @@ async function deleteBackend(path) {
   try { return await backendRequest(path, { method: 'DELETE' }); }
   catch (error) { backendAvailable = false; console.warn('Backend delete failed, kept LocalStorage copy', error); return null; }
 }
+async function ensureBackendForWrite(message = 'تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد التعديل.') {
+  try {
+    await backendRequest('/health', { cache: 'no-store' });
+    backendAvailable = true;
+    return true;
+  } catch (error) {
+    backendAvailable = false;
+    console.warn('Backend unavailable before write', error);
+    alert(message);
+    return false;
+  }
+}
 function backendBatchType(type) {
   return type === 'production' || type === 'finished' ? 'finished'
     : type === 'rawReturn' ? 'raw-return'
@@ -856,6 +868,7 @@ function renderDyehousePricesDialog() {
   refs.documentDialog.showModal();
 }
 async function saveDyehousePricesFromDialog() {
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ أسعار المصابغ.'))) return;
   const before = clone(customDyehousePriceLibrary || {});
   const next = {};
   refs.documentBody.querySelectorAll('[data-dyehouse-price-row]').forEach((row) => {
@@ -872,7 +885,13 @@ async function saveDyehousePricesFromDialog() {
     next[dyehouse].dyeing[material][color] = price;
   });
   customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(next);
-  await saveDyehousePriceLibrary();
+  const saved = await saveDyehousePriceLibrary();
+  if (!saved) {
+    customDyehousePriceLibrary = before;
+    saveDyehousePriceLibraryLocal();
+    await rollbackAfterBackendWriteFailure('تعذر حفظ أسعار المصابغ في قاعدة البيانات. لم يتم اعتماد التعديل.');
+    return;
+  }
   recordAudit('update', 'dyehousePriceLibrary', 'pricing', before, customDyehousePriceLibrary, 'تحديث أسعار المصابغ');
   applyPricingDyehouseOptions();
   updateSuggestedDyeCost();
@@ -1971,7 +1990,8 @@ async function deletePricing(id) {
   const pricing = pricings.find((item)=>item.id===id);
   if (!pricing) return;
   if (!confirm(`هل تريد حذف التسعيرة رقم ${pricing.pricingNumber}؟`)) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   const deleted = await deleteBackend(`/pricings/${id}`);
   if (backendSaveRequired && !deleted) {
     await rollbackAfterBackendWriteFailure('تعذر حذف التسعيرة من قاعدة البيانات. لم يتم اعتماد الحذف.');
@@ -1986,7 +2006,8 @@ async function deletePricing(id) {
 }
 async function addPricing(event) {
   event.preventDefault();
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   if (editingPricingId) {
     const index = pricings.findIndex((item)=>item.id===editingPricingId);
     if (index !== -1) {
@@ -2397,7 +2418,8 @@ function renderDetails() {
 async function toggleOperationClosed() {
   const order = orders.find((item)=>item.id===selectedOrderId);
   if (!order) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   order.operationClosed = !order.operationClosed;
   if (backendSaveRequired) {
     const backendCustomer = await ensureBackendCustomer(order.customer);
@@ -2441,8 +2463,9 @@ async function addOrder(event) {
   const accessoryLines = readAccessoryLinesFromEditor();
   const firstAccessory = accessoryLines[0] || {};
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms:refs.paymentTerms.value, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   const backendCustomer = await ensureBackendCustomer(payload.customer);
-  const backendSaveRequired = backendAvailable;
   if (editingOrderId) {
     const previousDyehouse = String(currentOrder?.dyehouse || '').trim();
     const transferredAllocationIds = new Set(dyehouseTransfers
@@ -2490,7 +2513,8 @@ async function addBatch(event) {
   delete data.sourceDocumentFile;
   data.id = uid(); data.quantity = +data.quantity;
   data.orderId = selectedOrderId;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   let backendResult = true;
   if (type === 'raw') {
     const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
@@ -2564,7 +2588,8 @@ async function addAllocation() {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
   const color = prompt('اكتب اللون المطلوب'); if (!color) return;
   const createdAllocations = [];
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   if (order.widthMode === 'multiple') {
     const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
     order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; allocations.push(allocation); createdAllocations.push(allocation); });
@@ -2596,7 +2621,8 @@ async function editAllocation(id) {
   if (!targetFinishedWidth) return;
   const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
   if (!targetFinishedWeight) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   const changedAllocations = new Set();
 
   allocation.color = cleanedColor;
@@ -2654,7 +2680,8 @@ async function transferAllocationDyehouse(id) {
   let transferRecord = null;
   let allocationUpdate = null;
   let newAllocation = null;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   if (roundedQuantity >= originalQuantity) {
     allocationUpdate = { ...allocation, dyehouse:newDyehouse };
     allocations = allocations.map((item)=>item.id===id ? allocationUpdate : item);
@@ -2687,7 +2714,8 @@ async function deleteAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   if (!confirm(`هل تريد حذف اللون ${allocation.color || allocation.pantoneCode || '-'}؟ سيتم حذف الحركات المرتبطة به من هذا الطلب.`)) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   if (backendSaveRequired) {
     const deletions = [
       ...rawBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/dyehouse/${batch.id}`)),
@@ -2722,7 +2750,8 @@ async function deleteOrder(id) {
   const order = orders.find((item)=>item.id===id);
   if (!order) return;
   if (!confirm(`هل تريد حذف الطلب رقم ${order.orderNumber || '-'}؟ سيتم حذف الألوان والحركات المرتبطة به.`)) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   if (backendSaveRequired) {
     const deleted = await deleteBackend(`/orders/${id}`);
     if (!deleted) {
@@ -2747,7 +2776,8 @@ async function deleteOrder(id) {
 }
 async function deleteBatch(type, id) {
   if (!confirm('هل تريد حذف هذه الحركة؟ سيتم حذفها من قاعدة البيانات أيضًا.')) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   let transfer = null;
   if (type === 'transfer') {
     transfer = dyehouseTransfers.find((batch)=>String(batch.id) === String(id));
@@ -2810,7 +2840,8 @@ async function deleteBatch(type, id) {
 async function editBatch(type, id) {
   const collection = type === 'raw' ? rawBatches : type === 'accessory' ? accessoryBatches : type === 'transfer' ? dyehouseTransfers : type === 'rawReturn' ? rawReturns : type === 'production' ? productionBatches : type === 'customer' ? customerBatches : finishedBatches;
   const batch = collection.find((item)=>item.id===id); if (!batch) return;
-  const backendSaveRequired = backendAvailable;
+  if (!(await ensureBackendForWrite())) return;
+  const backendSaveRequired = true;
   const quantity = Number(prompt('الكمية', batch.quantity)); if (!quantity) return; batch.quantity = quantity;
   batch.date = prompt('التاريخ', batch.date) || batch.date;
   if (type === 'raw') { batch.supplier = prompt('الجهة / المصدر', batch.supplier) || batch.supplier; batch.noteNumber = prompt('رقم الإذن', batch.noteNumber || '') || ''; batch.notes = prompt('ملاحظات', batch.notes || '') || ''; }
@@ -3962,9 +3993,6 @@ loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
 
 
 
