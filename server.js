@@ -23,6 +23,11 @@ const mime = {
   '.svg': 'image/svg+xml; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
 };
+const noStoreHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+};
 
 function latestBackupInfo() {
   const roots = [root, path.dirname(root)];
@@ -190,7 +195,7 @@ const server = http.createServer((req, res) => {
       res.end('الملف غير موجود');
       return;
     }
-    res.writeHead(200, { 'Content-Type': mime[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
+    res.writeHead(200, { 'Content-Type': mime[path.extname(filePath).toLowerCase()] || 'application/octet-stream', ...noStoreHeaders });
     res.end(data);
   });
 });

@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.28';
-const APP_BUILD_TIME = '2026-06-05 23:30';
+const APP_VERSION = 'v2026.06.05.29';
+const APP_BUILD_TIME = '2026-06-05 23:55';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -34,13 +34,22 @@ const load = (key, fallback, legacyKey) => {
     return clone(fallback);
   }
 };
+const safeSetLocalStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn('local-storage-write-skipped', key, error);
+    return false;
+  }
+};
 const save = () => {
   ensureRuntimeCollections();
-  localStorage.setItem(STORAGE_KEYS.customerAccounts, JSON.stringify(customerAccounts));
-  localStorage.setItem(STORAGE_KEYS.reportOutbox, JSON.stringify(reportOutbox));
-  localStorage.setItem(STORAGE_KEYS.whatsappSettings, JSON.stringify(whatsappSettings));
-  localStorage.setItem(STORAGE_KEYS.auditLog, JSON.stringify(auditLog));
-  localStorage.setItem(STORAGE_KEYS.whatsappStatus, JSON.stringify(whatsappStatus));
+  safeSetLocalStorage(STORAGE_KEYS.customerAccounts, JSON.stringify(customerAccounts));
+  safeSetLocalStorage(STORAGE_KEYS.reportOutbox, JSON.stringify(reportOutbox));
+  safeSetLocalStorage(STORAGE_KEYS.whatsappSettings, JSON.stringify(whatsappSettings));
+  safeSetLocalStorage(STORAGE_KEYS.auditLog, JSON.stringify(auditLog));
+  safeSetLocalStorage(STORAGE_KEYS.whatsappStatus, JSON.stringify(whatsappStatus));
 };
 const OPERATIONAL_STORAGE_KEYS = [
   STORAGE_KEYS.orders,
@@ -1855,7 +1864,7 @@ function mergeDyehousePriceLibrary() {
   return pricingDomain.mergeDyehousePriceLibrary(customDyehousePriceLibrary || {});
 }
 function saveDyehousePriceLibraryLocal() {
-  localStorage.setItem(STORAGE_KEYS.dyehousePriceLibrary, JSON.stringify(customDyehousePriceLibrary || {}));
+  safeSetLocalStorage(STORAGE_KEYS.dyehousePriceLibrary, JSON.stringify(customDyehousePriceLibrary || {}));
 }
 async function saveDyehousePriceLibrary() {
   customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(customDyehousePriceLibrary || {});
@@ -3105,7 +3114,7 @@ function openManagementReport(type) {
   }
   if (type === 'dyehouse-performance') {
     const groups = {};
-    list.forEach((order)=>order.allocations.forEach((allocation)=>{ const key = allocation.dyehouse || order.dyehouse || '-'; groups[key] ||= { orders:new Set(), planned:0, finished:0, waste:0, inside:0 }; groups[key].orders.add(order.orderNumber); groups[key].planned += Number(allocation.plannedQuantity || 0); groups[key].finished += Number(allocation.finishedReceived || 0); groups[key].waste += Number(allocation.wasteQuantity || 0); if (cleanOperationalStage(getOperationalStage(order))==='تحت التشغيل بالمصبغة') groups[key].inside += 1; }));
+    list.forEach((order)=>order.allocations.forEach((allocation)=>{ const key = allocation.dyehouse || order.dyehouse || '-'; groups[key] = groups[key] || { orders:new Set(), planned:0, finished:0, waste:0, inside:0 }; groups[key].orders.add(order.orderNumber); groups[key].planned += Number(allocation.plannedQuantity || 0); groups[key].finished += Number(allocation.finishedReceived || 0); groups[key].waste += Number(allocation.wasteQuantity || 0); if (cleanOperationalStage(getOperationalStage(order))==='تحت التشغيل بالمصبغة') groups[key].inside += 1; }));
     const rows = Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ar')).map(([dyehouse,data])=>`<tr><td>${dyehouse}</td><td>${data.orders.size}</td><td>${reportFmt(data.planned)}</td><td>${reportFmt(data.finished)}</td><td>${reportFmt(data.waste)}</td><td>${data.planned ? reportFmt(data.waste / data.planned * 100, 2) : 0}%</td><td>${data.inside}</td></tr>`).join('');
     return showManagementReport('أداء المصابغ', 'مراجعة كميات التشغيل والاستلام والهالك لكل مصبغة.', `<section class="report-section"><h3>ملخص المصابغ</h3><table class="follow-table"><thead><tr><th>المصبغة</th><th>عدد الطلبات</th><th>المخطط</th><th>دخل المخزن</th><th>هالك فعلي</th><th>نسبة الهالك</th><th>طلبات داخل المصبغة</th></tr></thead><tbody>${rows || '<tr><td colspan="7">لا توجد بيانات أداء للمصابغ.</td></tr>'}</tbody></table></section>`, type);
   }
@@ -3115,7 +3124,7 @@ function openManagementReport(type) {
   }
   if (type === 'customer-account') {
     const groups = {};
-    list.forEach((order)=>{ const key = order.customer || '-'; groups[key] ||= { count:0, contract:0, raw:0, finished:0, delivered:0, balance:0, open:0 }; groups[key].count += 1; groups[key].contract += Number(order.contractTotal || order.totalContract || (Number(order.kiloPrice || 0) * Number(order.totalRawOrdered || 0)) || 0); groups[key].raw += Number(order.totalRawOrdered || 0); groups[key].finished += Number(order.totalFinishedReceived || 0); groups[key].delivered += Number(order.totalDeliveredToCustomer || 0); groups[key].balance += Number(order.warehouseBalance || 0); if (cleanOperationalStage(getOperationalStage(order))!=='مكتمل') groups[key].open += 1; });
+    list.forEach((order)=>{ const key = order.customer || '-'; groups[key] = groups[key] || { count:0, contract:0, raw:0, finished:0, delivered:0, balance:0, open:0 }; groups[key].count += 1; groups[key].contract += Number(order.contractTotal || order.totalContract || (Number(order.kiloPrice || 0) * Number(order.totalRawOrdered || 0)) || 0); groups[key].raw += Number(order.totalRawOrdered || 0); groups[key].finished += Number(order.totalFinishedReceived || 0); groups[key].delivered += Number(order.totalDeliveredToCustomer || 0); groups[key].balance += Number(order.warehouseBalance || 0); if (cleanOperationalStage(getOperationalStage(order))!=='مكتمل') groups[key].open += 1; });
     const rows = Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ar')).map(([customer,data])=>`<tr><td>${customer}</td><td>${data.count}</td><td>${reportFmt(data.contract,2)}</td><td>${reportFmt(data.raw)}</td><td>${reportFmt(data.finished)}</td><td>${reportFmt(data.delivered)}</td><td>${reportFmt(data.balance)}</td><td>${data.open}</td></tr>`).join('');
     return showManagementReport('تقرير العملاء', 'ملخص كل عميل داخل نظام المتابعة.', `<section class="report-section"><h3>ملخص العملاء</h3><table class="follow-table"><thead><tr><th>العميل</th><th>عدد الطلبات</th><th>إجمالي العقود</th><th>خام مطلوب</th><th>دخل المخزن</th><th>تسليم العميل</th><th>رصيد المخزن</th><th>طلبات مفتوحة</th></tr></thead><tbody>${rows || '<tr><td colspan="8">لا توجد بيانات عملاء.</td></tr>'}</tbody></table></section>`, type);
   }
@@ -3164,7 +3173,7 @@ function openDyehouseBalancesReport() {
   list.forEach((order)=>{
     (order.allocations || []).forEach((allocation)=>{
       const name = allocation.dyehouse || order.dyehouse || 'غير محدد';
-      groups[name] ||= { colors:0, planned:0, sent:0, finished:0, remaining:0, waste:0, accessoryRequired:0, accessoryReceived:0, accessoryBalance:0 };
+      groups[name] = groups[name] || { colors:0, planned:0, sent:0, finished:0, remaining:0, waste:0, accessoryRequired:0, accessoryReceived:0, accessoryBalance:0 };
       groups[name].colors += 1;
       groups[name].planned += Number(allocation.plannedQuantity || 0);
       groups[name].sent += Number(allocation.sentToDyehouse || 0);
@@ -3175,7 +3184,7 @@ function openDyehouseBalancesReport() {
     });
     if ((order.accessoryLines || []).length) {
       const name = order.dyehouse || 'غير محدد';
-      groups[name] ||= { colors:0, planned:0, sent:0, finished:0, remaining:0, waste:0, accessoryRequired:0, accessoryReceived:0, accessoryBalance:0 };
+      groups[name] = groups[name] || { colors:0, planned:0, sent:0, finished:0, remaining:0, waste:0, accessoryRequired:0, accessoryReceived:0, accessoryBalance:0 };
       groups[name].accessoryReceived += Number(order.accessoryReceived || 0);
       groups[name].accessoryBalance += Number(order.accessoryBalance || 0);
     }
