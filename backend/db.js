@@ -19,6 +19,7 @@ const REQUIRED_COLUMNS = {
     'accessory_type',
     'accessory_percent',
     'accessory_lines_json',
+    'operation_notes_json',
   ],
   order_allocations: [
     'width_line_id',
@@ -90,6 +91,7 @@ function runMigrations() {
     'accessory_type TEXT',
     'accessory_percent REAL DEFAULT 0',
     'accessory_lines_json TEXT',
+    'operation_notes_json TEXT',
   ].forEach((definition) => addColumnIfMissing('orders', definition));
   [
     'width_line_id TEXT',

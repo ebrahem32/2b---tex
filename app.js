@@ -226,6 +226,16 @@ function parseDbJsonArray(value) {
     return [];
   }
 }
+function parseDbJsonObject(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 function normalizeOrderStatus(status) {
   return status === 'active' ? 'pending' : (status || 'pending');
 }
@@ -253,6 +263,7 @@ function mapDbOrder(row, customers) {
     dyehouse: row.dyehouse || '',
     weavingSource: row.weaving_source || '',
     notes: row.notes || '',
+    operationNotes: parseDbJsonObject(row.operation_notes_json),
     status: normalizeOrderStatus(row.status),
     operationClosed: !!row.is_closed,
   };
@@ -497,6 +508,7 @@ const orderToApi = (order, customerId = null) => ({
   dyehouse: order.dyehouse || '',
   weaving_source: order.weavingSource || '',
   notes: order.notes || '',
+  operation_notes_json: JSON.stringify(order.operationNotes && typeof order.operationNotes === 'object' && !Array.isArray(order.operationNotes) ? order.operationNotes : {}),
   status: normalizeOrderStatus(order.status),
   is_closed: order.operationClosed ? 1 : 0,
 });
@@ -3058,7 +3070,8 @@ function operationNotesKey(type, dyehouseName = '') {
   return type === 'dyeing' ? `dyeing:${name || 'default'}` : 'weaving';
 }
 function reportOperationNotes(order) {
-  return order.operationNoteText || order.notes || '-';
+  if (order.operationNoteText !== undefined) return order.operationNoteText || '-';
+  return order.notes || '-';
 }
 const {
   buildCompactFullReportDocument,
@@ -3092,10 +3105,12 @@ async function openDyeingDocumentForDyehouse(dyehouseName) {
   if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
   if (!sourceOrder) return;
+  const operationNoteText = await promptOperationNotes(sourceOrder, 'dyeing', dyehouseName);
+  if (operationNoteText === null) return;
   const order = calculateOrder(sourceOrder);
   const name = String(dyehouseName || '').trim();
   const fmt = (value) => roundNumber(value).toLocaleString('ar-EG', { maximumFractionDigits: 3 });
-  const reportOrder = { ...order, whatsappDyehouseName:name };
+  const reportOrder = { ...order, operationNoteText, whatsappDyehouseName:name };
   currentDocumentType = 'dyeing';
   refs.documentTitle.textContent = `أمر صباغة - ${name || '-'}`;
   refs.documentBody.dataset.documentType = 'dyeing';
@@ -3138,7 +3153,9 @@ async function openDocument(type) {
   if (type === 'quotation') {
     body = buildQuotationDocument(order, fmt, safe);
   } else if (type === 'weaving') {
-    body = buildWeavingOrderDocument(order, fmt, safe);
+    const operationNoteText = await promptOperationNotes(sourceOrder, 'weaving');
+    if (operationNoteText === null) return;
+    body = buildWeavingOrderDocument({ ...order, operationNoteText }, fmt, safe);
   } else if (type === 'dyeing') {
     body = buildDyeingSummaryDocument(order, fmt, safe);
   } else if (type === 'waste') {
@@ -3505,10 +3522,10 @@ function renderDyehouseDocumentPicker(order) {
   refs.documentDialog.showModal();
 }
 
-function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
+async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   if (!sourceOrder) return null;
   const key = operationNotesKey(type, dyehouseName);
-  const current = sourceOrder.operationNotes?.[key] || '';
+  const current = sourceOrder.operationNotes?.[key] ?? sourceOrder.notes ?? '';
   const title = type === 'dyeing'
     ? `ملاحظات أمر تشغيل الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
     : 'ملاحظات أمر تشغيل النسيج';
@@ -3516,6 +3533,19 @@ function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   if (value === null) return null;
   sourceOrder.operationNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
   sourceOrder.operationNotes[key] = value.trim();
+  if (backendAvailable) {
+    const customerId = await ensureBackendCustomer(sourceOrder.customer);
+    const savedOrder = await putBackend(`/orders/${sourceOrder.id}`, orderToApi(sourceOrder, customerId));
+    if (!savedOrder) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ ملاحظات التقرير في قاعدة البيانات. لم يتم فتح التقرير.');
+      return null;
+    }
+    await loadBackendData();
+    const refreshedOrder = orders.find((order)=>order.id === sourceOrder.id);
+    if (refreshedOrder) {
+      sourceOrder.operationNotes = refreshedOrder.operationNotes || sourceOrder.operationNotes;
+    }
+  }
   save();
   return sourceOrder.operationNotes[key];
 }

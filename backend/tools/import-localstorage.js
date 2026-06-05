@@ -277,8 +277,8 @@ async function importRows(prepared) {
       runInsert(db, `INSERT OR IGNORE INTO orders (
         id, order_number, pricing_id, customer_id, order_date, fabric_type, total_raw_quantity,
         expected_waste_percent, inch_width, kilo_price, payment_terms, dyehouse, weaving_source,
-        notes, status, is_closed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        notes, operation_notes_json, status, is_closed
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
         row.id || stableId('order', orderCompositeKey(row, true)),
         value(row, 'orderNumber'),
         pricingIds.has(String(value(row, 'pricingId'))) ? value(row, 'pricingId') : null,
@@ -293,6 +293,7 @@ async function importRows(prepared) {
         value(row, 'dyehouse'),
         value(row, 'weavingSource'),
         value(row, 'notes'),
+        typeof row.operation_notes_json === 'string' ? row.operation_notes_json : JSON.stringify(row.operationNotes || row.operation_notes_json || {}),
         value(row, 'status') || 'active',
         row.isClosed || row.is_closed ? 1 : 0,
       ]);

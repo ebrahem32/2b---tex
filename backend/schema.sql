@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS orders (
   dyehouse TEXT,
   weaving_source TEXT,
   notes TEXT,
+  operation_notes_json TEXT,
   status TEXT DEFAULT 'pending',
   is_closed INTEGER DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
