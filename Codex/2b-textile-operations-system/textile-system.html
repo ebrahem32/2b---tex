@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2B Textile Operations System</title>
+    <style>
+      :root {
+        --bg:#0c0b0a; --panel:#151311; --text:#f5f3ef; --muted:#a8a29b;
+        --gold:#c8a56a; --gold-soft:#e7d3ad; --line:rgba(255,255,255,.08);
+      }
+      *{box-sizing:border-box} body{margin:0;font-family:Arial,"Segoe UI",sans-serif;background:radial-gradient(circle at top right,rgba(200,165,106,.08),transparent 28%),var(--bg);color:var(--text)}
+      button,input,select{font:inherit}.app-shell{min-height:100vh;display:grid;grid-template-columns:280px 1fr}
+      .sidebar{border-left:1px solid var(--line);background:rgba(9,8,7,.88);display:flex;flex-direction:column;justify-content:space-between;padding:28px 20px}
+      .brand{display:flex;align-items:center;gap:14px}.brand-mark{width:54px;height:54px;display:grid;place-items:center;border:1px solid rgba(200,165,106,.45);border-radius:18px;color:var(--gold-soft);font-weight:800}
+      .brand strong,.brand span{display:block}.brand span,.sidebar-footer,.sidebar-footer small{color:var(--muted)}
+      .nav{display:grid;gap:10px;margin-top:36px}.nav-item{border:0;border-radius:16px;padding:14px 16px;color:var(--text);background:transparent;text-align:right;cursor:pointer}
+      .nav-item.active{color:#111;background:var(--gold);font-weight:700}.sidebar-footer{display:grid;gap:4px}.main-content{padding:28px}
+      .topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:24px}.topbar p{margin:0;color:var(--muted)}.topbar h1{margin:2px 0 0;font-size:28px}.topbar-actions{display:flex;gap:12px}
+      input,select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;padding:12px 14px}.primary-btn,.ghost-btn{border:0;border-radius:14px;cursor:pointer}
+      .primary-btn{background:var(--gold);color:#15110d;font-weight:700;padding:12px 18px}.ghost-btn{background:transparent;color:var(--gold-soft)}
+      .view{display:none}.active-view{display:block}.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
+      .stat-card,.panel,.table-card,.customer-card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:22px}
+      .stat-card{padding:18px}.stat-card span,.stat-card small{display:block;color:var(--muted)}.stat-card strong{display:block;margin:8px 0 4px;font-size:28px}
+      .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{padding:18px}.panel.wide{grid-column:1/-1}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.panel-head h2{margin:0;font-size:18px}.panel-head span{color:var(--muted)}
+      .workflow-list,.ranked-list{display:grid;gap:12px}.workflow-list div,.ranked-list li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px}.ranked-list{list-style:none;margin:0;padding:0}
+      .table-wrap,.table-card{overflow-x:auto}.table-card{padding:8px 0}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:right;padding:14px 16px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-weight:600}
+      .status{display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(200,165,106,.12);color:var(--gold-soft)}.status.delayed{background:rgba(208,120,95,.14);color:#f0b49f}
+      .toolbar{display:flex;gap:12px;margin-bottom:16px}.toolbar input{flex:1}.customers-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.customer-card{padding:18px}.customer-card h3{margin:0 0 8px}
+      .customer-meta{color:var(--muted);display:grid;gap:6px;margin-bottom:14px}.customer-actions{display:flex;justify-content:space-between;align-items:center;gap:10px}.wa-btn{color:#14110d;background:var(--gold-soft);text-decoration:none;padding:10px 12px;border-radius:12px;font-weight:700}
+      @media(max-width:980px){.app-shell{grid-template-columns:1fr}.sidebar{gap:20px;border-left:0;border-bottom:1px solid var(--line)}.nav{grid-template-columns:repeat(3,1fr);margin-top:18px}.stats-grid,.dashboard-grid,.customers-grid{grid-template-columns:1fr}.panel.wide{grid-column:auto}.topbar,.topbar-actions,.toolbar{flex-direction:column;align-items:stretch}}
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div>
+          <div class="brand">
+            <div class="brand-mark">2B</div>
+            <div><strong>2B Textile</strong><span>نظام التشغيل</span></div>
+          </div>
+          <nav class="nav">
+            <button class="nav-item active" data-view="dashboard">لوحة التحكم</button>
+            <button class="nav-item" data-view="orders">أوامر الصباغة</button>
+            <button class="nav-item" data-view="customers">العملاء</button>
+          </nav>
+        </div>
+        <div class="sidebar-footer"><span>نسخة تشغيلية أولى</span><small>واجهة عربية سريعة للمصنع</small></div>
+      </aside>
+      <main class="main-content">
+        <header class="topbar">
+          <div><p>مرحبًا بك</p><h1 id="page-title">لوحة التحكم</h1></div>
+          <div class="topbar-actions"><input type="search" placeholder="بحث سريع..." /><button class="primary-btn">+ أمر جديد</button></div>
+        </header>
+        <section id="dashboard-view" class="view active-view">
+          <div class="stats-grid">
+            <article class="stat-card"><span>الأوامر النشطة</span><strong>42</strong><small>منها 8 أوامر قيد التشطيب</small></article>
+            <article class="stat-card"><span>الأوامر المتأخرة</span><strong>6</strong><small>تحتاج متابعة اليوم</small></article>
+            <article class="stat-card"><span>إنتاج اليوم</span><strong>3,280 كجم</strong><small>↑ 12% عن أمس</small></article>
+            <article class="stat-card"><span>نسبة التسليم</span><strong>87%</strong><small>خلال آخر 7 أيام</small></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="panel-head"><h2>سير العمل اليومي</h2><span>الأحد 17 مايو 2026</span></div>
+              <div class="workflow-list">
+                <div><span>استلام خام</span><strong>12 أمر</strong></div><div><span>داخل الصباغة</span><strong>18 أمر</strong></div><div><span>فحص نهائي</span><strong>7 أوامر</strong></div><div><span>جاهز للتسليم</span><strong>5 أوامر</strong></div>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>أكثر العملاء نشاطًا</h2></div>
+              <ul class="ranked-list"><li><span>شركة النور</span><strong>14 أمر</strong></li><li><span>الصفوة للمنسوجات</span><strong>11 أمر</strong></li><li><span>دلتا تكستايل</span><strong>9 أوامر</strong></li><li><span>الرواد</span><strong>7 أوامر</strong></li></ul>
+            </section>
+            <section class="panel wide">
+              <div class="panel-head"><h2>أحدث أوامر الصباغة</h2><button class="ghost-btn" data-jump="orders">عرض الكل</button></div>
+              <div class="table-wrap"><table><thead><tr><th>العميل</th><th>القماش</th><th>اللون</th><th>الكمية</th><th>الحالة</th></tr></thead><tbody id="dashboard-orders"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+        <section id="orders-view" class="view">
+          <div class="toolbar"><input id="orders-search" type="search" placeholder="ابحث باسم العميل أو اللون أو نوع القماش" /><select id="status-filter"><option value="all">كل الحالات</option><option value="قيد التشغيل">قيد التشغيل</option><option value="فحص نهائي">فحص نهائي</option><option value="جاهز للتسليم">جاهز للتسليم</option><option value="متأخر">متأخر</option></select></div>
+          <div class="table-card"><table><thead><tr><th>العميل</th><th>التاريخ</th><th>نوع القماش</th><th>اللون</th><th>الكمية</th><th>العرض</th><th>الوزن</th><th>المصبغة</th><th>المتبقي</th><th>الحالة</th></tr></thead><tbody id="orders-table"></tbody></table></div>
+        </section>
+        <section id="customers-view" class="view"><div class="customers-grid" id="customers-grid"></div></section>
+      </main>
+    </div>
+    <script>
+      const orders=[
+        {customer:"شركة النور",date:"2026-05-17",fabric:"قطن",color:"كحلي",quantity:1200,width:"160 سم",weight:"220 جم",dyehouse:"مصنع 1",delivered:800,status:"قيد التشغيل"},
+        {customer:"الصفوة للمنسوجات",date:"2026-05-16",fabric:"ليكرا",color:"أسود",quantity:850,width:"150 سم",weight:"180 جم",dyehouse:"مصنع 2",delivered:850,status:"جاهز للتسليم"},
+        {customer:"دلتا تكستايل",date:"2026-05-14",fabric:"بوليستر",color:"بيج",quantity:640,width:"170 سم",weight:"200 جم",dyehouse:"مصنع 1",delivered:300,status:"فحص نهائي"},
+        {customer:"الرواد",date:"2026-05-12",fabric:"ريب",color:"رمادي",quantity:980,width:"155 سم",weight:"210 جم",dyehouse:"مصنع 3",delivered:420,status:"متأخر"}
+      ];
+      const customers=[
+        {name:"شركة النور",company:"النور للملابس الجاهزة",phone:"01001234567",inquiry:"متابعة طلبات",followUp:"اليوم - 3:00 م"},
+        {name:"الصفوة للمنسوجات",company:"الصفوة",phone:"01009876543",inquiry:"استفسار سعر",followUp:"غدًا - 11:00 ص"},
+        {name:"دلتا تكستايل",company:"دلتا",phone:"01122334455",inquiry:"شكوى جودة",followUp:"اليوم - 5:30 م"}
+      ];
+      const q=(s)=>document.querySelector(s), qa=(s)=>document.querySelectorAll(s);
+      const remaining=(o)=>o.quantity-o.delivered, statusClass=(s)=>s==="متأخر"?"status delayed":"status";
+      function renderOrders(list=orders){q("#orders-table").innerHTML=list.map(o=>`<tr><td>${o.customer}</td><td>${o.date}</td><td>${o.fabric}</td><td>${o.color}</td><td>${o.quantity} كجم</td><td>${o.width}</td><td>${o.weight}</td><td>${o.dyehouse}</td><td>${remaining(o)} كجم</td><td><span class="${statusClass(o.status)}">${o.status}</span></td></tr>`).join("")}
+      function renderDashboard(){q("#dashboard-orders").innerHTML=orders.map(o=>`<tr><td>${o.customer}</td><td>${o.fabric}</td><td>${o.color}</td><td>${o.quantity} كجم</td><td><span class="${statusClass(o.status)}">${o.status}</span></td></tr>`).join("")}
+      function renderCustomers(){q("#customers-grid").innerHTML=customers.map(c=>`<article class="customer-card"><h3>${c.name}</h3><div class="customer-meta"><span>${c.company}</span><span>${c.phone}</span><span>${c.inquiry}</span><span>المتابعة القادمة: ${c.followUp}</span></div><div class="customer-actions"><span>سجل ملاحظات متاح</span><a class="wa-btn" href="https://wa.me/2${c.phone}" target="_blank">واتساب</a></div></article>`).join("")}
+      function setView(v){qa(".view").forEach(x=>x.classList.remove("active-view"));qa(".nav-item").forEach(x=>x.classList.remove("active"));q(`#${v}-view`).classList.add("active-view");q(`[data-view="${v}"]`).classList.add("active");q("#page-title").textContent=v==="dashboard"?"لوحة التحكم":v==="orders"?"أوامر الصباغة":"العملاء"}
+      function filterOrders(){const text=q("#orders-search").value.trim(), status=q("#status-filter").value;renderOrders(orders.filter(o=>(!text||[o.customer,o.fabric,o.color].some(v=>v.includes(text)))&&(status==="all"||o.status===status)))}
+      qa(".nav-item").forEach(b=>b.onclick=()=>setView(b.dataset.view));qa("[data-jump]").forEach(b=>b.onclick=()=>setView(b.dataset.jump));q("#orders-search").oninput=filterOrders;q("#status-filter").onchange=filterOrders;
+      renderOrders();renderDashboard();renderCustomers();
+    </script>
+  </body>
+</html>
