@@ -27,7 +27,7 @@ const TABLE_FIELDS = {
   customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','notes','created_at','updated_at'],
   accessory_batches: ['id','order_id','allocation_id','accessory_type','quantity','notes','created_at','updated_at'],
   raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','notes','created_at','updated_at'],
-  dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','notes','created_at','updated_at'],
+  dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
 };
@@ -574,6 +574,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       to_dyehouse: firstValue(row, ['toDyehouse', 'to_dyehouse']),
       quantity: numValue(row, ['quantity']),
       transfer_date: dateValue(row),
+      note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())

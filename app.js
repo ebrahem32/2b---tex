@@ -318,6 +318,7 @@ function mapDbTransfer(row) {
     date: dbDate(row),
     reason: row.notes || '',
     noteNumber: row.note_number || '',
+    transferDate: row.transfer_date || dbDate(row),
     mode: row.to_allocation_id ? 'split' : 'full',
   };
 }
@@ -565,6 +566,7 @@ const transferToApi = (transfer) => ({
   to_dyehouse: transfer.toDyehouse || '',
   quantity: Number(transfer.quantity || 0),
   transfer_date: transfer.date || new Date().toISOString().slice(0, 10),
+  note_number: transfer.noteNumber || '',
   notes: transfer.reason || transfer.notes || '',
 });
 function backendCustomerId(name) {
@@ -3727,10 +3729,10 @@ function buildDyeingOrderReport(order, dyehouseName, dyeingMeta, fmt) {
   const isOriginalDyehouse = !name || name === originalDyehouse;
   const transfersToDyehouse = dyehouseTransfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.toDyehouse || '').trim() === name);
   const transfersFromDyehouse = dyehouseTransfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name);
+  const rawBatchesForOriginalDyehouse = rawBatches.filter((batch)=>batch.orderId === order.id);
   const reportRawTotal = isOriginalDyehouse
-    ? roundNumber(Math.max(sum(rawBatches.filter((batch)=>batch.orderId === order.id)) - sum(transfersFromDyehouse), 0))
+    ? roundNumber(Math.max(sum(rawBatchesForOriginalDyehouse) - sum(transfersFromDyehouse), 0))
     : roundNumber(sum(transfersToDyehouse));
-  const excludedTransferNotes = new Set(transfersFromDyehouse.map((transfer)=>normalizeDigits(transfer.noteNumber)).filter(Boolean));
   const transferMatchesAllocation = (transfer, allocation) => {
     const transferColor = String(transfer.color || '').trim();
     const allocationColor = String(allocation.color || allocation.pantoneCode || '').trim();
@@ -3744,9 +3746,8 @@ function buildDyeingOrderReport(order, dyehouseName, dyeingMeta, fmt) {
   const rawNotesForAllocation = (allocation) => {
     const transferNotes = uniqueNonEmpty(transfersForAllocation(allocation).map((transfer)=>transfer.noteNumber));
     if (!isOriginalDyehouse) return transferNotes;
-    return uniqueNonEmpty(rawBatches
-      .filter((batch)=>batch.orderId===order.id && (!allocation.widthLineId || !batch.widthLineId || batch.widthLineId === allocation.widthLineId))
-      .filter((batch)=>!excludedTransferNotes.has(normalizeDigits(batch.noteNumber)))
+    return uniqueNonEmpty(rawBatchesForOriginalDyehouse
+      .filter((batch)=>!allocation.widthLineId || !batch.widthLineId || batch.widthLineId === allocation.widthLineId)
       .map((batch)=>batch.noteNumber));
   };
   const rawSentForAllocation = (allocation) => {
@@ -3754,13 +3755,12 @@ function buildDyeingOrderReport(order, dyehouseName, dyeingMeta, fmt) {
     return plannedTotal ? roundNumber(reportRawTotal * Number(allocation.plannedQuantity || 0) / plannedTotal) : 0;
   };
   const actualSentTotal = reportRawTotal || dyehouseAllocations.reduce((total, allocation)=>total + rawSentForAllocation(allocation), 0);
-  const dyehouseRawNotes = uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
+  const dyehouseRawNotes = isOriginalDyehouse && !dyehouseAllocations.length
+    ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.noteNumber))
+    : uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
   const rawNotesLabel = dyehouseRawNotes.length ? dyehouseRawNotes.join('، ') : '-';
   const dyehouseDates = isOriginalDyehouse
-    ? uniqueNonEmpty(rawBatches
-      .filter((batch)=>batch.orderId === order.id)
-      .filter((batch)=>!excludedTransferNotes.has(normalizeDigits(batch.noteNumber)))
-      .map((batch)=>batch.date))
+    ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.date))
     : uniqueNonEmpty(transfersToDyehouse.map((transfer)=>transfer.transferDate || transfer.date));
   const reportDate = dyehouseDates.join('، ') || order.orderDate || '-';
   const cleanDyeingMeta = `<div class="document-meta"><div><span>رقم الطلب</span>${order.orderNumber || '-'}</div><div><span>التاريخ</span>${reportDate}</div><div><span>الصنف</span>${order.fabricType || '-'}</div><div><span>أذون صرف الخام</span>${rawNotesLabel}</div></div>`;

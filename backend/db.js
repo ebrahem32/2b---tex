@@ -49,6 +49,7 @@ function runMigrations() {
     'accessory_quantity_manual REAL',
   ].forEach((definition) => addColumnIfMissing('order_allocations', definition));
   addColumnIfMissing('dyehouse_delivery_batches', 'width_line_id TEXT');
+  addColumnIfMissing('dyehouse_transfers', 'note_number TEXT');
 }
 
 function persist() {

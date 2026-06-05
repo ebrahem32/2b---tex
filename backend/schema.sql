@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS dyehouse_transfers (
   to_dyehouse TEXT,
   quantity REAL DEFAULT 0,
   transfer_date TEXT,
+  note_number TEXT,
   notes TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
