@@ -2258,7 +2258,8 @@ function documentFooter() {
   return `<div class="document-footer"><span>${printedAt}</span><strong>Manager : Ibrahim Assem</strong></div>`;
 }
 function withDocumentFooter(body) {
-  return body.includes('sticker-sheet') ? body : `${body}${documentFooter()}`;
+  if (body.includes('sticker-sheet') || body.includes('document-footer')) return body;
+  return `${body}${documentFooter()}`;
 }
 function updateRawMovementVisibility(form) {
   if (!form) return;
@@ -3091,12 +3092,10 @@ async function openDyeingDocumentForDyehouse(dyehouseName) {
   if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
   if (!sourceOrder) return;
-  const operationNoteText = promptOperationNotes(sourceOrder, 'dyeing', dyehouseName);
-  if (operationNoteText === null) return;
   const order = calculateOrder(sourceOrder);
   const name = String(dyehouseName || '').trim();
   const fmt = (value) => roundNumber(value).toLocaleString('ar-EG', { maximumFractionDigits: 3 });
-  const reportOrder = { ...order, operationNoteText, whatsappDyehouseName:name };
+  const reportOrder = { ...order, whatsappDyehouseName:name };
   currentDocumentType = 'dyeing';
   refs.documentTitle.textContent = `أمر صباغة - ${name || '-'}`;
   refs.documentBody.dataset.documentType = 'dyeing';
