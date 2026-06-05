@@ -13,6 +13,9 @@
       rawPermitImagesSection,
       reportOperationNotes,
       uniqueNonEmpty,
+      sum,
+      roundNumber,
+      accessoryTypesLabel,
     } = deps;
 
     function weavingAccessoryRows(order, fmt, safe) {
@@ -69,6 +72,59 @@
       return `${documentHeader()}<div class="report-title"><h2>أمر تشغيل صباغة</h2><span>أمر تشغيل الصباغة للمصبغة المحددة.</span></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إذن الخام</th><td>${safe(rawNotes)}</td><th>إجمالي كمية الصباغة</th><td>${fmt(order.totalSentToDyehouse || order.totalRawOrdered)}</td></tr><tr><th>عدد الألوان</th><td>${(order.allocations || []).length}</td><th>رصيد الخام في المصبغة</th><td>${fmt(order.totalSentToDyehouse)}</td></tr></tbody></table></section>${accessorySection}<section class="report-section"><h3>خطة توزيع الألوان</h3><table><thead><tr><th>اللون</th><th>الكمية</th><th>المصبغة</th><th>العرض</th><th>الوزن المجهز</th><th>دخل المخزن</th><th>الهالك الفعلي</th>${hasAccessoryColumns ? '<th>الإكسسوار المطلوب</th>' : ''}</tr></thead><tbody>${rows}</tbody></table></section>${rawPermitImagesSection(order)}<section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safe(reportOperationNotes(order))}</p></section>${documentFooter()}`;
     }
 
+    function buildDyeingOrderDocument(order, dyehouseName, fmt) {
+      const name = String(dyehouseName || '').trim();
+      const originalDyehouse = String(order.dyehouse || '').trim();
+      const isOriginalDyehouse = !name || name === originalDyehouse;
+      const transfers = Array.isArray(order.dyehouseTransfers) ? order.dyehouseTransfers : [];
+      const rawBatches = Array.isArray(order.rawBatches) ? order.rawBatches : [];
+      const transfersToDyehouse = transfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.toDyehouse || '').trim() === name);
+      const transfersFromDyehouse = transfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name);
+      const rawBatchesForOriginalDyehouse = rawBatches.filter((batch)=>batch.orderId === order.id);
+      const reportRawTotal = isOriginalDyehouse
+        ? roundNumber(Math.max(sum(rawBatchesForOriginalDyehouse) - sum(transfersFromDyehouse), 0))
+        : roundNumber(sum(transfersToDyehouse));
+      const transferMatchesAllocation = (transfer, allocation) => {
+        const transferColor = String(transfer.color || '').trim();
+        const allocationColor = String(allocation.color || allocation.pantoneCode || '').trim();
+        return transfer.newAllocationId === allocation.id || transfer.allocationId === allocation.id || (!!transferColor && transferColor === allocationColor);
+      };
+      const transfersForAllocation = (allocation) => transfersToDyehouse.filter((transfer)=>transferMatchesAllocation(transfer, allocation));
+      const baseDyehouseAllocations = (order.allocations || []).filter((allocation)=>String(allocation.dyehouse || order.dyehouse || '').trim() === name);
+      const dyehouseAllocations = isOriginalDyehouse ? baseDyehouseAllocations : baseDyehouseAllocations.filter((allocation)=>transfersForAllocation(allocation).length > 0);
+      const hasAccessory = (order.accessoryLines || []).length > 0;
+      const plannedTotal = dyehouseAllocations.reduce((total, allocation)=>total + Number(allocation.plannedQuantity || 0), 0);
+      const rawNotesForAllocation = (allocation) => {
+        const transferNotes = uniqueNonEmpty(transfersForAllocation(allocation).map((transfer)=>transfer.noteNumber));
+        if (!isOriginalDyehouse) return transferNotes;
+        return uniqueNonEmpty(rawBatchesForOriginalDyehouse
+          .filter((batch)=>!allocation.widthLineId || !batch.widthLineId || batch.widthLineId === allocation.widthLineId)
+          .map((batch)=>batch.noteNumber));
+      };
+      const rawSentForAllocation = (allocation) => {
+        if (!isOriginalDyehouse) return roundNumber(sum(transfersForAllocation(allocation)));
+        return plannedTotal ? roundNumber(reportRawTotal * Number(allocation.plannedQuantity || 0) / plannedTotal) : 0;
+      };
+      const actualSentTotal = reportRawTotal || dyehouseAllocations.reduce((total, allocation)=>total + rawSentForAllocation(allocation), 0);
+      const dyehouseRawNotes = isOriginalDyehouse && !dyehouseAllocations.length
+        ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.noteNumber))
+        : uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
+      const rawNotesLabel = dyehouseRawNotes.length ? dyehouseRawNotes.join('، ') : '-';
+      const dyehouseDates = isOriginalDyehouse
+        ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.date))
+        : uniqueNonEmpty(transfersToDyehouse.map((transfer)=>transfer.transferDate || transfer.date));
+      const reportDate = dyehouseDates.join('، ') || order.orderDate || '-';
+      const allocationWarning = plannedTotal > Number(order.totalRawReceived || order.totalRawOrdered || 0)
+        ? '<div class="document-warning">تنبيه للمراجعة: كمية الصباغة لهذه المصبغة أكبر من كمية الخام المتاحة.</div>'
+        : '';
+      const rows = dyehouseAllocations.map((allocation)=>{
+        const accessoryQuantity = hasAccessory ? allocation.accessoryQuantity : 0;
+        return `<tr><td>${escapeHtml(allocation.color || allocation.pantoneCode || '-')}</td>${order.widthMode === 'multiple' ? `<td>${escapeHtml(allocation.rawInch || '-')}</td>` : ''}<td>${escapeHtml(allocation.targetFinishedWidth || '-')}</td><td>${fmt(allocation.plannedQuantity)}</td><td>${escapeHtml(allocation.targetFinishedWeight || '-')}</td>${hasAccessory ? `<td>${fmt(accessoryQuantity)}</td>` : ''}</tr>`;
+      }).join('');
+      const colspan = order.widthMode === 'multiple' ? (hasAccessory ? 6 : 5) : (hasAccessory ? 5 : 4);
+      return `${documentHeader()}<h2>أمر تشغيل صباغة</h2><div class="document-meta"><div><span>رقم الطلب</span>${escapeHtml(order.orderNumber || '-')}</div><div><span>التاريخ</span>${escapeHtml(reportDate)}</div><div><span>الصنف</span>${escapeHtml(order.fabricType || '-')}</div><div><span>أذون صرف الخام</span>${escapeHtml(rawNotesLabel)}</div></div><div class="document-meta"><div><span>المصبغة</span>${escapeHtml(name || '-')}</div><div><span>إجمالي كمية المصبغة</span>${fmt(plannedTotal)}</div><div><span>رصيد الخام في المصبغة</span>${fmt(actualSentTotal)}</div><div><span>عدد الألوان</span>${dyehouseAllocations.length}</div></div>${allocationWarning}<table><thead><tr><th>اللون</th>${order.widthMode === 'multiple' ? '<th>البوصة</th>' : ''}<th>العرض</th><th>كمية الصباغة</th><th>الوزن المجهز</th>${hasAccessory ? `<th>${escapeHtml(accessoryTypesLabel(order))}</th>` : ''}</tr></thead><tbody>${rows || emptyRow(colspan, 'لا توجد ألوان لهذه المصبغة.')}</tbody></table><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${escapeHtml(reportOperationNotes(order))}</p></section>${rawPermitImagesSection(order, dyehouseRawNotes)}`;
+    }
+
     function buildWasteReportDocument(order, fmt, safe) {
       const rows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.sentToDyehouse)}</td><td>${fmt(line.finishedReceived)}</td><td>${fmt(line.expectedWasteQuantity)}</td><td>${fmt(line.wasteQuantity)}</td><td>${formatNumber(line.wastePercent || 0, 1)}%</td></tr>`).join('') || '<tr><td colspan="6">لا توجد بيانات هالك.</td></tr>';
       return `${documentHeader()}<div class="report-title"><h2>تقرير الهالك</h2><span>الهالك الفعلي محسوب من التشغيل الفعلي وليس من المخطط.</span></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>تفاصيل الهالك</h3><table><thead><tr><th>اللون</th><th>مرسل للمصبغة</th><th>دخل المخزن</th><th>هالك تقديري</th><th>هالك فعلي</th><th>نسبة الهالك</th></tr></thead><tbody>${rows}</tbody></table></section>${accessoryDocumentSection(order, fmt, safe)}${documentFooter()}`;
@@ -103,6 +159,7 @@
 
     return {
       buildCompactFullReportDocument,
+      buildDyeingOrderDocument,
       buildDyeingSummaryDocument,
       buildLabSamplesDocument,
       buildQuotationDocument,

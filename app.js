@@ -19,11 +19,6 @@
 };
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
-// LEGACY UNUSED - pending cleanup:
-// buildFullOrderReport, openDocument, openManagementReportsMenu, openOrdersReport,
-// openDyehouseBalancesReport, buildDyeingOrderReport, openPricingQuotation,
-// renderDyehouseDocumentPicker, addAllocation, promptOperationNotes,
-// rawPermitImagesSection, documentHeader, editAllocation, buildLabSamplesReport.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const load = (key, fallback, legacyKey) => {
@@ -3024,6 +3019,7 @@ function reportOperationNotes(order) {
 }
 const {
   buildCompactFullReportDocument,
+  buildDyeingOrderDocument,
   buildDyeingSummaryDocument,
   buildLabSamplesDocument,
   buildQuotationDocument,
@@ -3043,6 +3039,9 @@ const {
   rawPermitImagesSection,
   reportOperationNotes,
   uniqueNonEmpty,
+  sum,
+  roundNumber,
+  accessoryTypesLabel,
 });
 
 
@@ -3059,44 +3058,14 @@ function openDyeingDocumentForDyehouse(dyehouseName) {
   refs.documentTitle.textContent = `أمر صباغة - ${name || '-'}`;
   refs.documentBody.dataset.documentType = 'dyeing';
   refs.documentBody.dataset.dyehouseName = name;
-  refs.documentBody.innerHTML = `<div class="document-sheet dyeing-document">${withDocumentFooter(buildDyeingOrderReport(reportOrder, name, fmt))}</div>`;
+  refs.documentBody.innerHTML = `<div class="document-sheet dyeing-document">${withDocumentFooter(buildDyeingOrderDocument({
+    ...reportOrder,
+    rawBatches,
+    dyehouseTransfers,
+  }, name, fmt))}</div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
   queueDocumentReport('dyeing', reportOrder);
-}
-function buildFullOrderReport(order, header, meta, fmt) {
-  const movementDates = orderMovementDates(order);
-  const allocationIds = order.allocations.map((allocation)=>allocation.id);
-  const widthLabelFor = (allocation) => order.widthMode === 'multiple'
-    ? `بوصة ${allocation?.rawInch || '-'} / عرض ${allocation?.rawWidth || allocation?.targetFinishedWidth || '-'}`
-    : `بوصة ${order.inchWidth || '-'} / عرض ${allocation?.targetFinishedWidth || '-'}`;
-  const allocationRows = order.allocations.map((allocation)=>{
-    const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===allocation.id));
-    const stockBalance = Math.max(Number(allocation.finishedReceived || 0) - delivered, 0);
-    const expectedWaste = order.operationClosed ? `${fmt(allocation.expectedWasteQuantity)} (${formatNumber(allocation.expectedWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة';
-    const actualWaste = order.operationClosed ? `${fmt(allocation.wasteQuantity)} (${formatNumber(allocation.wastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة';
-    return `<tr><td>${allocation.color || '-'}</td><td>${widthLabelFor(allocation)}</td><td>${allocation.dyehouse || '-'}</td><td>${fmt(allocation.plannedQuantity)}</td><td>${fmt(allocation.sentToDyehouse)}</td><td>${fmt(allocation.finishedReceived)}</td><td>${fmt(delivered)}</td><td>${fmt(stockBalance)}</td><td>${expectedWaste}</td><td>${actualWaste}</td></tr>`;
-  }).join('');
-  const rawRows = rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>`<tr><td>${batch.date || '-'}</td><td>${fmt(batch.quantity)}</td><td>${batch.supplier || '-'}</td><td>${batch.noteNumber || '-'}</td><td>${batch.notes || '-'}</td></tr>`).join('');
-  const productionRows = productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId)).map((batch)=>{
-    const allocation = order.allocations.find((item)=>item.id===batch.allocationId);
-    return `<tr><td>${batch.date || '-'}</td><td>${allocation?.dyehouse || '-'}</td><td>${allocation?.color || '-'}</td><td>${widthLabelFor(allocation)}</td><td>${fmt(batch.quantity)}</td><td>${batch.noteNumber || '-'}</td><td>${batch.notes || '-'}</td></tr>`;
-  }).join('');
-  const customerRows = customerBatches.filter((batch)=>allocationIds.includes(batch.allocationId)).map((batch)=>{
-    const allocation = order.allocations.find((item)=>item.id===batch.allocationId);
-    return `<tr><td>${batch.date || '-'}</td><td>${allocation?.color || '-'}</td><td>${widthLabelFor(allocation)}</td><td>${fmt(batch.quantity)}</td><td>${batch.notes || '-'}</td></tr>`;
-  }).join('');
-  const rawReturnRows = rawReturns.filter((batch)=>allocationIds.includes(batch.allocationId)).map((batch)=>{
-    const allocation = order.allocations.find((item)=>item.id===batch.allocationId);
-    return `<tr><td>${batch.date || '-'}</td><td>${allocation?.color || '-'}</td><td>${allocation?.dyehouse || '-'}</td><td>${fmt(batch.quantity)}</td><td>${batch.noteNumber || '-'}</td><td>${batch.notes || '-'}</td></tr>`;
-  }).join('');
-  const accessoryRows = accessoryBatches.filter((batch)=>batch.orderId===order.id || allocationIds.includes(batch.allocationId)).map((batch)=>{
-    const allocation = order.allocations.find((item)=>item.id===batch.allocationId);
-    const movement = batch.movement === 'received' ? 'استلام إكسسوار' : batch.movement === 'customer' ? 'تسليم عميل' : 'خروج إكسسوار';
-    return `<tr><td>${batch.date || '-'}</td><td>${batch.accessoryType || order.accessoryLines[0]?.type || 'إكسسوار'}</td><td>${allocation?.color || '-'}</td><td>${movement}</td><td>${fmt(batch.quantity)}</td><td>${batch.noteNumber || '-'}</td><td>${batch.notes || '-'}</td></tr>`;
-  }).join('');
-  const accessorySection = order.accessoryLines.length ? `<section class="report-section"><h3>ملخص الإكسسوار</h3><table class="summary-table"><tbody><tr><th>إكسسوار مطلوب</th><td>${fmt(order.accessoryRequired)}</td><th>إكسسوار مرسل</th><td>${fmt(order.accessorySent)}</td></tr><tr><th>إكسسوار مستلم</th><td>${fmt(order.accessoryReceived)}</td><th>إكسسوار مسلم للعميل</th><td>${fmt(order.accessoryDelivered)}</td></tr><tr><th>رصيد الإكسسوار</th><td>${fmt(order.accessoryBalance)}</td><th>هالك الإكسسوار</th><td>${order.operationClosed ? `${fmt(order.accessoryWaste)} (${formatNumber(order.accessoryWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة'}</td></tr></tbody></table><table><thead><tr><th>التاريخ</th><th>النوع</th><th>اللون</th><th>الحركة</th><th>الكمية</th><th>رقم الإذن</th><th>ملاحظات</th></tr></thead><tbody>${accessoryRows || emptyRow(7, 'لا توجد حركات إكسسوار مسجلة.')}</tbody></table></section>` : '';
-  return `${header}<div class="report-title"><h2>التقرير التفصيلي للطلب</h2><span>تجميع كامل من الخام حتى تسليم العميل.</span></div>${meta}<div class="document-meta"><div><span>نوع القماش</span>${order.fabricType || '-'}</div><div><span>إجمالي الخام المطلوب</span>${fmt(order.totalRawOrdered)}</div><div><span>نظام العرض</span>${order.widthMode === 'multiple' ? 'عدة عروض' : 'عرض واحد'}</div><div><span>المصبغة</span>${order.dyehouse || '-'}</div><div><span>مصدر النسيج</span>${order.weavingSource || '-'}</div><div><span>حالة الهالك</span>${order.operationClosed ? 'بعد إغلاق الدورة' : 'يظهر بعد إغلاق الدورة'}</div></div><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${reportOperationNotes(order) || '-'}</p></section><section class="report-section"><h3>تواريخ الحركة</h3><table class="summary-table"><tbody><tr><th>تاريخ الطلب</th><td>${movementDates.orderDate}</td><th>خروج الخام للمصبغة</th><td>${movementDates.weavingDate}</td></tr><tr><th>دخول المخزن</th><td>${movementDates.dyehouseDate}</td><th>تسليم العميل</th><td>${movementDates.customerDate}</td></tr></tbody></table></section><section class="report-section"><h3>ملخص الكميات</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order.warehouseBalance)}</td></tr><tr><th>متبقي بالمصبغة</th><td>${fmt(order.rawAtDyehouseAvailable)}</td><th>مرتجعات الخام</th><td>${fmt(order.totalRawReturnedToWeaving)}</td></tr><tr><th>هالك تقديري</th><td>${order.operationClosed ? `${fmt(order.expectedWasteQuantity)} (${formatNumber(order.expectedWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة'}</td><th>هالك فعلي</th><td>${order.operationClosed ? `${fmt(order.totalWaste)} (${formatNumber(order.totalWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة'}</td></tr></tbody></table></section><section class="report-section"><h3>خطة توزيع الألوان</h3><table><thead><tr><th>اللون</th><th>العرض / البوصة</th><th>المصبغة</th><th>المخطط</th><th>مرسل للمصبغة</th><th>دخل المخزن</th><th>تسليم العميل</th><th>رصيد المخزن</th><th>هالك تقديري</th><th>هالك فعلي</th></tr></thead><tbody>${allocationRows || emptyRow(10)}</tbody></table></section>${accessorySection}<section class="report-section"><h3>دفعات الخام</h3><table><thead><tr><th>التاريخ</th><th>الكمية</th><th>المورد</th><th>رقم الإذن</th><th>ملاحظات</th></tr></thead><tbody>${rawRows || emptyRow(5, 'لا توجد دفعات خام مسجلة.')}</tbody></table></section>${rawReturnRows ? `<section class="report-section"><h3>مرتجعات الخام</h3><table><thead><tr><th>التاريخ</th><th>اللون</th><th>المصبغة</th><th>الكمية</th><th>رقم الإذن</th><th>ملاحظات</th></tr></thead><tbody>${rawReturnRows}</tbody></table></section>` : ''}<section class="report-section"><h3>استلام المجهز من المصبغة</h3><table><thead><tr><th>التاريخ</th><th>المصبغة</th><th>اللون</th><th>العرض / البوصة</th><th>الكمية</th><th>رقم الإذن</th><th>ملاحظات</th></tr></thead><tbody>${productionRows || emptyRow(7, 'لا توجد دفعات استلام مجهز مسجلة.')}</tbody></table></section><section class="report-section"><h3>تسليم العميل</h3><table><thead><tr><th>التاريخ</th><th>اللون</th><th>العرض / البوصة</th><th>الكمية</th><th>ملاحظات</th></tr></thead><tbody>${customerRows || emptyRow(5, 'لا توجد دفعات تسليم عميل مسجلة.')}</tbody></table></section><div class="signatures"><div><span>إعداد</span></div><div><span>مراجعة</span></div><div><span>اعتماد</span></div></div>`;
 }
 function openDocument(type) {
   const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
@@ -3473,57 +3442,6 @@ function rawPermitImagesSection(order, rawNotes = null) {
   if (!images.length) return '';
   const cards = images.map((item)=>`<figure><img src="${item.image}" alt="صورة إذن الخام ${item.noteNumber}"><figcaption>إذن خام: ${item.noteNumber}</figcaption></figure>`).join('');
   return `<section class="report-section raw-permit-section"><h3>صورة إذن الخام</h3><div class="raw-permit-gallery">${cards}</div></section>`;
-}
-
-function buildDyeingOrderReport(order, dyehouseName, fmt) {
-  const name = String(dyehouseName || '').trim();
-  const originalDyehouse = String(order.dyehouse || '').trim();
-  const isOriginalDyehouse = !name || name === originalDyehouse;
-  const transfersToDyehouse = dyehouseTransfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.toDyehouse || '').trim() === name);
-  const transfersFromDyehouse = dyehouseTransfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name);
-  const rawBatchesForOriginalDyehouse = rawBatches.filter((batch)=>batch.orderId === order.id);
-  const reportRawTotal = isOriginalDyehouse
-    ? roundNumber(Math.max(sum(rawBatchesForOriginalDyehouse) - sum(transfersFromDyehouse), 0))
-    : roundNumber(sum(transfersToDyehouse));
-  const transferMatchesAllocation = (transfer, allocation) => {
-    const transferColor = String(transfer.color || '').trim();
-    const allocationColor = String(allocation.color || allocation.pantoneCode || '').trim();
-    return transfer.newAllocationId === allocation.id || transfer.allocationId === allocation.id || (!!transferColor && transferColor === allocationColor);
-  };
-  const transfersForAllocation = (allocation) => transfersToDyehouse.filter((transfer)=>transferMatchesAllocation(transfer, allocation));
-  const baseDyehouseAllocations = (order.allocations || []).filter((allocation)=>String(allocation.dyehouse || order.dyehouse || '').trim() === name);
-  const dyehouseAllocations = isOriginalDyehouse ? baseDyehouseAllocations : baseDyehouseAllocations.filter((allocation)=>transfersForAllocation(allocation).length > 0);
-  const hasAccessory = order.accessoryLines.length > 0;
-  const plannedTotal = dyehouseAllocations.reduce((total, allocation)=>total + Number(allocation.plannedQuantity || 0), 0);
-  const rawNotesForAllocation = (allocation) => {
-    const transferNotes = uniqueNonEmpty(transfersForAllocation(allocation).map((transfer)=>transfer.noteNumber));
-    if (!isOriginalDyehouse) return transferNotes;
-    return uniqueNonEmpty(rawBatchesForOriginalDyehouse
-      .filter((batch)=>!allocation.widthLineId || !batch.widthLineId || batch.widthLineId === allocation.widthLineId)
-      .map((batch)=>batch.noteNumber));
-  };
-  const rawSentForAllocation = (allocation) => {
-    if (!isOriginalDyehouse) return roundNumber(sum(transfersForAllocation(allocation)));
-    return plannedTotal ? roundNumber(reportRawTotal * Number(allocation.plannedQuantity || 0) / plannedTotal) : 0;
-  };
-  const actualSentTotal = reportRawTotal || dyehouseAllocations.reduce((total, allocation)=>total + rawSentForAllocation(allocation), 0);
-  const dyehouseRawNotes = isOriginalDyehouse && !dyehouseAllocations.length
-    ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.noteNumber))
-    : uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
-  const rawNotesLabel = dyehouseRawNotes.length ? dyehouseRawNotes.join('، ') : '-';
-  const dyehouseDates = isOriginalDyehouse
-    ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.date))
-    : uniqueNonEmpty(transfersToDyehouse.map((transfer)=>transfer.transferDate || transfer.date));
-  const reportDate = dyehouseDates.join('، ') || order.orderDate || '-';
-  const cleanDyeingMeta = `<div class="document-meta"><div><span>رقم الطلب</span>${order.orderNumber || '-'}</div><div><span>التاريخ</span>${reportDate}</div><div><span>الصنف</span>${order.fabricType || '-'}</div><div><span>أذون صرف الخام</span>${rawNotesLabel}</div></div>`;
-  const allocationWarning = plannedTotal > Number(order.totalRawReceived || order.totalRawOrdered || 0)
-    ? '<div class="document-warning">تنبيه للمراجعة: كمية الصباغة لهذه المصبغة أكبر من كمية الخام المتاحة.</div>'
-    : '';
-  const rows = dyehouseAllocations.map((allocation)=>{
-    const accessoryQuantity = hasAccessory ? allocation.accessoryQuantity : 0;
-    return `<tr><td>${allocation.color}</td>${order.widthMode === 'multiple' ? `<td>${allocation.rawInch || '-'}</td>` : ''}<td>${allocation.targetFinishedWidth || '-'}</td><td>${fmt(allocation.plannedQuantity)}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessory ? `<td>${fmt(accessoryQuantity)}</td>` : ''}</tr>`;
-  }).join('');
-  return `${documentHeader()}<h2>أمر تشغيل صباغة</h2>${cleanDyeingMeta}<div class="document-meta"><div><span>المصبغة</span>${name || '-'}</div><div><span>إجمالي كمية المصبغة</span>${fmt(plannedTotal)}</div><div><span>رصيد الخام في المصبغة</span>${fmt(actualSentTotal)}</div><div><span>عدد الألوان</span>${dyehouseAllocations.length}</div></div>${allocationWarning}<table><thead><tr><th>اللون</th>${order.widthMode === 'multiple' ? '<th>البوصة</th>' : ''}<th>العرض</th><th>كمية الصباغة</th><th>الوزن المجهز</th>${hasAccessory ? `<th>${accessoryTypesLabel(order)}</th>` : ''}</tr></thead><tbody>${rows || emptyRow(order.widthMode === 'multiple' ? (hasAccessory ? 6 : 5) : (hasAccessory ? 5 : 4), 'لا توجد ألوان لهذه المصبغة.')}</tbody></table><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${reportOperationNotes(order)}</p></section>${rawPermitImagesSection(order, dyehouseRawNotes)}`;
 }
 
 function renderDyehouseDocumentPicker(order) {
