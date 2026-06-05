@@ -3209,45 +3209,6 @@ function openDyehouseBalancesReport() {
 function emptyRow(colspan, text = 'لا توجد بيانات مسجلة.') {
   return `<tr><td colspan="${colspan}">${text}</td></tr>`;
 }
-function buildLabSamplesReport(order, fmt) {
-  const colors = uniqueNonEmpty((order.allocations || []).map((allocation)=>allocation.color));
-  const minRows = Math.max(4, Math.ceil(colors.length / 2));
-  const rows = Array.from({ length:minRows }, (_, index)=>{
-    const rightColor = colors[index * 2] || '';
-    const leftColor = colors[index * 2 + 1] || '';
-    return `<tr><td class="sample-cell"></td><td class="color-cell">${rightColor || '&nbsp;'}</td><td class="color-cell">${leftColor || '&nbsp;'}</td><td class="sample-cell"></td></tr>`;
-  }).join('');
-  return `<div class="lab-samples-sheet">
-    <table class="lab-samples-table">
-      <colgroup>
-        <col class="lab-sample-col">
-        <col class="lab-color-col">
-        <col class="lab-color-col">
-        <col class="lab-sample-col">
-      </colgroup>
-      <tbody>
-        <tr class="lab-head-row">
-          <td class="lab-logo-cell" rowspan="3"><div class="lab-logo-wrap"><img src="./2b-mark.svg" alt="2B Tex"></div></td>
-          <td class="lab-title" colspan="3">عينات معمل</td>
-        </tr>
-        <tr class="lab-meta-row">
-          <td>${order.orderDate || '-'}</td>
-          <th>التاريخ</th>
-          <th>Order number</th>
-        </tr>
-        <tr class="lab-meta-row">
-          <td>${order.dyehouse || '-'}</td>
-          <th>المصبغة</th>
-          <td class="lab-order-number">${order.orderNumber || '-'}</td>
-        </tr>
-        <tr class="lab-section-row"><th colspan="2">الكمية</th><th colspan="2">الصنف</th></tr>
-        <tr class="lab-item-row"><td colspan="2">${fmt(order.totalRawOrdered)} كجم</td><td colspan="2">${order.fabricType || '-'}</td></tr>
-        <tr class="lab-sample-head"><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>
-        ${rows}
-      </tbody>
-    </table>
-  </div>`;
-}
 function dyehouseNamesForOrder(order) {
   const originalDyehouse = String(order?.dyehouse || '').trim();
   const transferDyehouses = dyehouseTransfers
@@ -3257,40 +3218,9 @@ function dyehouseNamesForOrder(order) {
     .map((allocation)=>allocation.dyehouse || originalDyehouse);
   return uniqueNonEmpty([originalDyehouse, ...allocationDyehouses, ...transferDyehouses]);
 }
-function renderDyehouseDocumentPicker(order) {
-  const names = dyehouseNamesForOrder(order);
-  refs.documentTitle.textContent = 'اختيار أمر الصباغة';
-  refs.documentBody.dataset.documentType = 'dyeing-picker';
-  refs.documentBody.dataset.dyehouseName = '';
-  refs.documentBody.innerHTML = `<div class="document-sheet">
-    <h2>اختيار أمر الصباغة</h2>
-    <p class="muted">اختر المصبغة المطلوبة لطباعة أمر تشغيل منفصل حسب المصبغة.</p>
-    <table><thead><tr><th>المصبغة</th><th>عدد الألوان</th><th>إجمالي الكمية</th><th>إجراء</th></tr></thead><tbody>${names.map((name)=>{
-      const rows = (order.allocations || []).filter((allocation)=>String(allocation.dyehouse || order.dyehouse || '').trim() === name);
-      const quantity = rows.reduce((total, row)=>total + Number(row.plannedQuantity || 0), 0);
-      return `<tr><td>${escapeHtml(name)}</td><td>${rows.length}</td><td>${formatNumber(quantity)}</td><td><button class="mini-btn gold" type="button" data-open-dyeing-for="${escapeHtml(name)}">فتح أمر الصباغة</button></td></tr>`;
-    }).join('') || '<tr><td colspan="4">لا توجد مصبغة مرتبطة بهذا الطلب.</td></tr>'}</tbody></table>
-  </div>`;
-  if (refs.documentDialog.open) refs.documentDialog.close();
-  refs.documentDialog.showModal();
-}
 function operationNotesKey(type, dyehouseName = '') {
   const name = String(dyehouseName || '').trim();
   return type === 'dyeing' ? `dyeing:${name || 'default'}` : 'weaving';
-}
-function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
-  if (!sourceOrder) return null;
-  const key = operationNotesKey(type, dyehouseName);
-  const current = sourceOrder.operationNotes?.[key] || '';
-  const title = type === 'dyeing'
-    ? `ملاحظات تشغيل أمر الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
-    : 'ملاحظات تشغيل أمر النسيج';
-  const value = prompt(title, current);
-  if (value === null) return null;
-  sourceOrder.operationNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
-  sourceOrder.operationNotes[key] = value.trim();
-  save();
-  return sourceOrder.operationNotes[key];
 }
 function reportOperationNotes(order) {
   return order.operationNoteText || order.notes || '-';
@@ -4043,76 +3973,6 @@ function currentReportTypeFromDocument() {
   if (documentType === 'management-report') return `management_${cleanCodePart(refs.documentBody.dataset.reportKey || refs.documentTitle.textContent || 'report')}`;
   if (['quotation','waste','rawreport','productionreport','customerreport'].includes(documentType)) return `${documentType}_pdf_report`;
   return '';
-}
-// LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic currentShareReportPayload implementation.
-function currentShareReportPayload(reportType) {
-  const documentType = refs.documentBody?.dataset.documentType || currentDocumentType;
-  const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
-  if (sourceOrder && ['weaving','dyeing','fullreport','quotation','waste','rawreport','productionreport','customerreport'].includes(documentType)) {
-    const order = calculateOrder(sourceOrder);
-    if (documentType === 'dyeing') {
-      const dyehouseName = String(refs.documentBody?.dataset.dyehouseName || '').trim();
-      return dyehouseName ? { ...order, whatsappDyehouseName:dyehouseName } : order;
-    }
-    if (['weaving','fullreport'].includes(documentType)) return order;
-    const titleMap = { quotation:'عرض سعر', waste:'تقرير الهالك', rawreport:'تقرير الخام', productionreport:'تقرير الإنتاج', customerreport:'تقرير تسليم العميل' };
-    const title = titleMap[documentType] || refs.documentTitle?.textContent || 'تقرير PDF';
-    reportTypeLabels[reportType] = title;
-    return { ...order, isStandaloneReport:true, reportTitle:title, reportSubtitle:`رقم الطلب: ${order.orderNumber || '-'} - العميل: ${order.customer || '-'}` };
-  }
-  const title = refs.documentBody?.dataset.reportTitle || refs.documentTitle?.textContent || 'تقرير PDF';
-  const subtitle = refs.documentBody?.dataset.reportSubtitle || 'تقرير PDF من نظام 2B Tex';
-  reportTypeLabels[reportType] = title;
-  return { id:reportType, orderNumber:title, customer:'تقرير', reportTitle:title, reportSubtitle:subtitle, isStandaloneReport:true };
-}
-// LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic shareCurrentReportPdf implementation.
-async function shareCurrentReportPdf() {
-  const reportType = currentReportTypeFromDocument();
-  const order = reportType ? currentShareReportPayload(reportType) : null;
-  if (!reportType || !order) {
-    alert('لا يوجد تقرير مفتوح جاهز للمشاركة.');
-    return;
-  }
-  const oldText = refs.shareWhatsAppBtn.textContent;
-  refs.shareWhatsAppBtn.disabled = true;
-  refs.shareWhatsAppBtn.textContent = 'جاري تجهيز PNG...';
-  try {
-    const blob = await reportToPngBlob();
-    const fileName = `${cleanCodePart(reportTypeLabels[reportType] || refs.documentTitle?.textContent || '2B-Tex')}-${cleanCodePart(order.orderNumber || 'report')}.png`;
-    const file = new File([blob], fileName, { type:'image/png' });
-    if (navigator.canShare && navigator.canShare({ files:[file] }) && navigator.share) {
-      await navigator.share({ title:reportTypeLabels[reportType] || refs.documentTitle?.textContent || '2B Tex', files:[file] });
-      alert('تم فتح المشاركة اليدوية بصورة PNG عالية الدقة.');
-      return;
-    }
-    if (navigator.clipboard && window.ClipboardItem) {
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        alert('تم نسخ صورة التقرير للحافظة. افتح واتساب والصق الصورة يدويًا.');
-        return;
-      } catch (clipboardError) {
-        console.warn('share-png-clipboard-skipped', clipboardError);
-      }
-    }
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 1500);
-    alert('تم تجهيز صورة PNG عالية الدقة وتنزيلها. أرسلها يدويًا من واتساب.');
-  } catch (error) {
-    console.error('share-png-error', error);
-    alert('تعذر تجهيز صورة المشاركة. جرّب الطباعة PDF أو أعد فتح التقرير مرة أخرى.');
-  } finally {
-    refs.shareWhatsAppBtn.disabled = false;
-    refs.shareWhatsAppBtn.textContent = oldText;
-  }
-}
-async function shareCurrentReportPngManual() {
-  return await shareCurrentReportPdf();
 }
 function currentShareReportPayload(reportType) {
   const documentType = refs.documentBody?.dataset.documentType || currentDocumentType;
