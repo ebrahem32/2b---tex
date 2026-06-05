@@ -1,2 +1,40 @@
-# 2B Tex development migration
-# Intentionally no ignore rules: GitHub is the single source during this stage.
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Runtime and generated files
+logs/
+*.log
+*.err.log
+*.tmp
+*.temp
+*.bak
+*.bak-*
+Reports/
+
+# Local secrets
+.env
+ai-service/.env
+!.env.example
+!**/.env.example
+
+# Database snapshots and local backups.
+# The main system database is intentionally kept in Git.
+backend/data/*
+!backend/data/
+!backend/data/2btex.sqlite
+backend/backups/
+*.sqlite3
+*.db
+
+# WhatsApp browser runtime and sessions
+whatsapp-service/runtime/
+whatsapp-service/data/
+whatsapp-service/.wwebjs_cache/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Local tools, shortcuts, and old generated artifacts
+cloudflared.exe
+*.lnk
+Codex/
