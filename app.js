@@ -3045,7 +3045,8 @@ const {
 });
 
 
-function openDyeingDocumentForDyehouse(dyehouseName) {
+async function openDyeingDocumentForDyehouse(dyehouseName) {
+  if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
   if (!sourceOrder) return;
   const operationNoteText = promptOperationNotes(sourceOrder, 'dyeing', dyehouseName);
@@ -3067,7 +3068,8 @@ function openDyeingDocumentForDyehouse(dyehouseName) {
   refs.documentDialog.showModal();
   queueDocumentReport('dyeing', reportOrder);
 }
-function openDocument(type) {
+async function openDocument(type) {
+  if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
   if (!sourceOrder) { alert('اختر طلبًا أولًا.'); return; }
   const order = calculateOrder(sourceOrder);
@@ -3076,7 +3078,7 @@ function openDocument(type) {
     if (names.length > 1) {
       renderDyehouseDocumentPicker(order);
     } else {
-      openDyeingDocumentForDyehouse(names[0] || order.dyehouse || '');
+      await openDyeingDocumentForDyehouse(names[0] || order.dyehouse || '');
     }
     return;
   }
@@ -3512,7 +3514,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (deletePriceButton) deletePriceButton.closest('[data-dyehouse-price-row]')?.remove();
   if (event.target.closest('[data-save-dyehouse-prices]')) saveDyehousePricesFromDialog().catch((error)=>{ console.error('dyehouse-prices-save-error', error); alert('تعذر حفظ أسعار المصابغ.'); });
   const dyeingDocButton = event.target.closest('[data-open-dyeing-for]');
-  if (dyeingDocButton) openDyeingDocumentForDyehouse(dyeingDocButton.dataset.openDyeingFor);
+  if (dyeingDocButton) openDyeingDocumentForDyehouse(dyeingDocButton.dataset.openDyeingFor).catch((error)=>{ console.error('dyeing-document-open-error', error); alert('تعذر فتح أمر الصباغة حاليًا.'); });
   if (event.target.closest('[data-refresh-a5-accounts]')) renderA5AccountsDialog();
   const a5LedgerButton = event.target.closest('[data-a5-ledger]');
   if (a5LedgerButton) renderA5LedgerDialog(a5LedgerButton.dataset.a5Ledger);
@@ -3602,9 +3604,9 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
   if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-edit-error', error); alert('تعذر تعديل الحركة.'); });
   if (target.dataset.retryOutbox) retryOutbox(target.dataset.retryOutbox);
 });
-function safeOpenDocument(type) {
+async function safeOpenDocument(type) {
   try {
-    openDocument(type === 'labsamples' ? 'labSamples' : type);
+    await openDocument(type === 'labsamples' ? 'labSamples' : type);
   } catch (error) {
     console.error('document-open-error', error);
     alert('تعذر فتح المستند حاليًا. راجع بيانات الطلب ثم حاول مرة أخرى.');

@@ -1,16 +1,13 @@
 (function () {
   function createBuilders(deps) {
     const {
-      accessoryDocumentSection,
       documentFooter,
       documentHeader,
       documentLogo,
       emptyRow,
       escapeHtml,
       formatNumber,
-      getFirstRawNoteNumber,
       orderRawCost,
-      rawPermitImagesSection,
       reportOperationNotes,
       uniqueNonEmpty,
       sum,
@@ -18,143 +15,206 @@
       accessoryTypesLabel,
     } = deps;
 
-    function weavingAccessoryRows(order, fmt, safe) {
-      const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
-      if (lines.length) {
-        return lines
-          .map((line) => `<tr><td>${safe(line.type || 'إكسسوار')}</td><td>${formatNumber(Number(line.percent || 0))}%</td><td>${fmt(line.quantity || line.quantityManual || 0)}</td></tr>`)
-          .join('');
-      }
-      const allocationRequired = (order?.allocations || []).reduce((total, line) => total + Number(line.accessoryQuantity || 0), 0);
-      const required = Number(order?.accessoryRequired || 0) || allocationRequired;
+    const safeText = (value) => escapeHtml(value === undefined || value === null || value === '' ? '-' : value);
+    const fmt = (value, digits = 3) => formatNumber(Number(value || 0), digits);
+    const clean = (value) => String(value || '').trim();
+
+    function uniqueBy(rows, keyFactory) {
+      const seen = new Set();
+      return (rows || []).filter((row, index) => {
+        const key = keyFactory(row, index);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function orderAllocations(order) {
+      return uniqueBy(Array.isArray(order?.allocations) ? order.allocations : [], (line, index) => [
+        line.id || index,
+        clean(line.color || line.pantoneCode),
+        clean(line.dyehouse || order?.dyehouse),
+        Number(line.plannedQuantity || 0),
+        clean(line.rawInch || order?.inchWidth),
+        clean(line.targetFinishedWidth || line.rawWidth),
+        clean(line.targetFinishedWeight),
+      ].join('|'));
+    }
+
+    function orderAccessoryLines(order) {
+      const configuredLines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
+      const normalized = configuredLines
+        .map((line) => ({
+          type: clean(line.type || 'إكسسوار'),
+          percent: Number(line.percent || 0),
+          quantity: Number(line.quantityManual || line.quantity || 0),
+        }))
+        .filter((line) => line.type || line.percent || line.quantity);
+      if (normalized.length) return uniqueBy(normalized, (line) => `${line.type}|${line.percent}|${line.quantity}`);
+
+      const allocationRequired = orderAllocations(order).reduce((total, line) => total + Number(line.accessoryQuantity || 0), 0);
+      const quantity = Number(order?.accessoryRequired || 0) || allocationRequired;
       const percent = Number(order?.accessoryPercent || 0);
-      if (!order?.accessoryType && !percent && !required) return '';
-      return `<tr><td>${safe(order?.accessoryType || 'إكسسوار')}</td><td>${formatNumber(percent)}%</td><td>${fmt(required)}</td></tr>`;
+      const type = clean(order?.accessoryType || '');
+      if (!type && !percent && !quantity) return [];
+      return [{ type: type || 'إكسسوار', percent, quantity }];
     }
 
-    function weavingAccessoryDocumentSection(order, fmt, safe) {
-      const rows = weavingAccessoryRows(order, fmt, safe);
-      if (!rows) return '';
-      return `<section class="report-section"><h3>الإكسسوارات</h3><table class="summary-table"><thead><tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    function reportShell(title, order, body, options = {}) {
+      const subtitle = options.subtitle ? `<span>${safeText(options.subtitle)}</span>` : '';
+      return `${documentHeader()}<div class="report-title"><h2>${safeText(title)}</h2>${subtitle}</div>${basicInfoSection(order, options)}${body}${documentFooter()}`;
     }
 
-    function weavingLegacyAccessoryNotice(order, safe) {
-      const notes = String(order?.notes || '');
-      const mentionsAccessory = /(\u0644\u064a\u0627\u0642\u0627\u062a|\u0644\u064a\u0627\u0642\u0629|\u0631\u064a\u0628|\u062f\u064a\u0631\u0628\u064a|\u0623\u0633\u0627\u0648\u0631|\u0627\u0633\u0627\u0648\u0631|\u0625\u0643\u0633\u0633\u0648\u0627\u0631|\u0627\u0643\u0633\u0633\u0648\u0627\u0631)/.test(notes);
-      if (!mentionsAccessory) return '';
-      return `<section class="report-section"><h3>الإكسسوارات</h3><p>مذكور في ملاحظات الطلب لكنه غير محفوظ كنوع ونسبة أو كمية منظمة. الملاحظة: ${safe(notes)}</p></section>`;
+    function basicInfoSection(order, options = {}) {
+      const fields = [
+        ['رقم الطلب', order?.orderNumber],
+        ['العميل', order?.customer],
+        ['التاريخ', options.date || order?.orderDate],
+        ['الصنف', order?.fabricType],
+        ['إجمالي الخام', `${fmt(order?.totalRawOrdered)} كجم`],
+        ['المصبغة', options.dyehouse || order?.dyehouse],
+      ];
+      if (options.rawNotes) fields.push(['إذن الخام', options.rawNotes]);
+      return `<div class="document-meta">${fields.map(([label, value]) => `<div><span>${safeText(label)}</span>${safeText(value)}</div>`).join('')}</div>`;
     }
 
-    function buildWeavingOrderDocument(order, fmt, safe) {
-      const structuredAccessorySection = weavingAccessoryDocumentSection(order, fmt, safe);
-      const accessorySection = structuredAccessorySection || weavingLegacyAccessoryNotice(order, safe);
-      const hasAccessoryColumns = !!structuredAccessorySection || (order.allocations || []).some((line) => Number(line.accessoryQuantity || 0) > 0);
-      const inchLabel = order.widthMode === 'multiple' ? uniqueNonEmpty(order.widthLines.map((line)=>line.inch)).join('، ') || '-' : safe(order.inchWidth);
-      const widthRows = order.widthMode === 'multiple' && order.widthLines.length
-        ? `<section class="report-section"><h3>توزيع العروض</h3><table class="summary-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((line)=>`<tr><td>${safe(line.inch)}</td><td>${safe(line.width)}</td><td>${fmt(line.quantity)}</td></tr>`).join('')}</tbody></table></section>`
-        : '';
-      const allocationRows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(line.dyehouse || order.dyehouse)}</td><td>${safe(line.targetFinishedWidth)}</td><td>${safe(line.targetFinishedWeight)}</td>${hasAccessoryColumns ? `<td>${fmt(line.accessoryQuantity || 0)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="${hasAccessoryColumns ? 6 : 5}">لا توجد ألوان مسجلة.</td></tr>`;
-      const allocationTable = `<section class="report-section"><h3>خطة توزيع الألوان</h3><table><thead><tr><th>اللون</th><th>الكمية</th><th>المصبغة</th><th>العرض</th><th>الوزن المجهز</th>${hasAccessoryColumns ? '<th>الإكسسوار المطلوب</th>' : ''}</tr></thead><tbody>${allocationRows}</tbody></table></section>`;
-      const notes = `<section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safe(reportOperationNotes(order))}</p></section>`;
-      return `${documentHeader()}<div class="report-title"><h2>أمر تشغيل نسيج</h2></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>بيانات الخام</h3><table class="summary-table"><tbody><tr><th>إجمالي الخام المطلوب</th><td>${fmt(order.totalRawOrdered)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr><tr><th>مصدر النسيج</th><td>${safe(order.weavingSource)}</td><th>البوصة</th><td>${inchLabel}</td></tr></tbody></table></section>${widthRows}${accessorySection}${allocationTable}${notes}${documentFooter()}`;
-    }
-
-    function buildQuotationDocument(order, fmt, safe) {
-      const rows = (order.allocations || []).map((line)=>`<tr><td>${safe(order.fabricType)}</td><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(order.inchWidth)}</td><td>${fmt(order.kiloPrice)}</td><td>${fmt(Number(line.plannedQuantity || 0) * Number(order.kiloPrice || 0))}</td></tr>`).join('') || '<tr><td colspan="6">لا توجد بنود عرض.</td></tr>';
-      return `${documentHeader()}<div class="report-title"><h2>عرض سعر</h2><span>عرض تجاري للعميل حسب بيانات الطلب الحالية.</span></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>بنود العرض</h3><table><thead><tr><th>الصنف</th><th>اللون</th><th>الكمية</th><th>البوصة</th><th>سعر الكيلو</th><th>الإجمالي</th></tr></thead><tbody>${rows}</tbody></table></section><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safe(reportOperationNotes(order))}</p></section>${documentFooter()}`;
-    }
-
-    function buildDyeingSummaryDocument(order, fmt, safe) {
-      const accessorySection = accessoryDocumentSection(order, fmt, safe);
-      const hasAccessoryColumns = !!accessorySection || (order.allocations || []).some((line) => Number(line.accessoryQuantity || 0) > 0);
-      const rows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(line.dyehouse || order.dyehouse)}</td><td>${safe(line.targetFinishedWidth)}</td><td>${safe(line.targetFinishedWeight)}</td><td>${fmt(line.finishedReceived)}</td><td>${fmt(line.wasteQuantity)} (${formatNumber(line.wastePercent || 0, 1)}%)</td>${hasAccessoryColumns ? `<td>${fmt(line.accessoryQuantity || 0)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="${hasAccessoryColumns ? 8 : 7}">لا توجد ألوان مسجلة.</td></tr>`;
-      const rawNotes = getFirstRawNoteNumber(order) || '-';
-      return `${documentHeader()}<div class="report-title"><h2>أمر تشغيل صباغة</h2><span>أمر تشغيل الصباغة للمصبغة المحددة.</span></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إذن الخام</th><td>${safe(rawNotes)}</td><th>إجمالي كمية الصباغة</th><td>${fmt(order.totalSentToDyehouse || order.totalRawOrdered)}</td></tr><tr><th>عدد الألوان</th><td>${(order.allocations || []).length}</td><th>رصيد الخام في المصبغة</th><td>${fmt(order.totalSentToDyehouse)}</td></tr></tbody></table></section>${accessorySection}<section class="report-section"><h3>خطة توزيع الألوان</h3><table><thead><tr><th>اللون</th><th>الكمية</th><th>المصبغة</th><th>العرض</th><th>الوزن المجهز</th><th>دخل المخزن</th><th>الهالك الفعلي</th>${hasAccessoryColumns ? '<th>الإكسسوار المطلوب</th>' : ''}</tr></thead><tbody>${rows}</tbody></table></section>${rawPermitImagesSection(order)}<section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safe(reportOperationNotes(order))}</p></section>${documentFooter()}`;
-    }
-
-    function buildDyeingOrderDocument(order, dyehouseName, fmt) {
-      const name = String(dyehouseName || '').trim();
-      const originalDyehouse = String(order.dyehouse || '').trim();
-      const isOriginalDyehouse = !name || name === originalDyehouse;
-      const transfers = Array.isArray(order.dyehouseTransfers) ? order.dyehouseTransfers : [];
-      const rawBatches = Array.isArray(order.rawBatches) ? order.rawBatches : [];
-      const transfersToDyehouse = transfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.toDyehouse || '').trim() === name);
-      const transfersFromDyehouse = transfers.filter((transfer)=>transfer.orderId === order.id && String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name);
-      const rawBatchesForOriginalDyehouse = rawBatches.filter((batch)=>batch.orderId === order.id);
-      const reportRawTotal = isOriginalDyehouse
-        ? roundNumber(Math.max(sum(rawBatchesForOriginalDyehouse) - sum(transfersFromDyehouse), 0))
-        : roundNumber(sum(transfersToDyehouse));
-      const transferMatchesAllocation = (transfer, allocation) => {
-        const transferColor = String(transfer.color || '').trim();
-        const allocationColor = String(allocation.color || allocation.pantoneCode || '').trim();
-        return transfer.newAllocationId === allocation.id || transfer.allocationId === allocation.id || (!!transferColor && transferColor === allocationColor);
-      };
-      const transfersForAllocation = (allocation) => transfersToDyehouse.filter((transfer)=>transferMatchesAllocation(transfer, allocation));
-      const baseDyehouseAllocations = (order.allocations || []).filter((allocation)=>String(allocation.dyehouse || order.dyehouse || '').trim() === name);
-      const dyehouseAllocations = isOriginalDyehouse ? baseDyehouseAllocations : baseDyehouseAllocations.filter((allocation)=>transfersForAllocation(allocation).length > 0);
-      const hasAccessory = (order.accessoryLines || []).length > 0;
-      const plannedTotal = dyehouseAllocations.reduce((total, allocation)=>total + Number(allocation.plannedQuantity || 0), 0);
-      const rawNotesForAllocation = (allocation) => {
-        const transferNotes = uniqueNonEmpty(transfersForAllocation(allocation).map((transfer)=>transfer.noteNumber));
-        if (!isOriginalDyehouse) return transferNotes;
-        return uniqueNonEmpty(rawBatchesForOriginalDyehouse
-          .filter((batch)=>!allocation.widthLineId || !batch.widthLineId || batch.widthLineId === allocation.widthLineId)
-          .map((batch)=>batch.noteNumber));
-      };
-      const rawSentForAllocation = (allocation) => {
-        if (!isOriginalDyehouse) return roundNumber(sum(transfersForAllocation(allocation)));
-        return plannedTotal ? roundNumber(reportRawTotal * Number(allocation.plannedQuantity || 0) / plannedTotal) : 0;
-      };
-      const actualSentTotal = reportRawTotal || dyehouseAllocations.reduce((total, allocation)=>total + rawSentForAllocation(allocation), 0);
-      const dyehouseRawNotes = isOriginalDyehouse && !dyehouseAllocations.length
-        ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.noteNumber))
-        : uniqueNonEmpty(dyehouseAllocations.flatMap(rawNotesForAllocation));
-      const rawNotesLabel = dyehouseRawNotes.length ? dyehouseRawNotes.join('، ') : '-';
-      const dyehouseDates = isOriginalDyehouse
-        ? uniqueNonEmpty(rawBatchesForOriginalDyehouse.map((batch)=>batch.date))
-        : uniqueNonEmpty(transfersToDyehouse.map((transfer)=>transfer.transferDate || transfer.date));
-      const reportDate = dyehouseDates.join('، ') || order.orderDate || '-';
-      const allocationWarning = plannedTotal > Number(order.totalRawReceived || order.totalRawOrdered || 0)
-        ? '<div class="document-warning">تنبيه للمراجعة: كمية الصباغة لهذه المصبغة أكبر من كمية الخام المتاحة.</div>'
-        : '';
-      const rows = dyehouseAllocations.map((allocation)=>{
-        const accessoryQuantity = hasAccessory ? allocation.accessoryQuantity : 0;
-        return `<tr><td>${escapeHtml(allocation.color || allocation.pantoneCode || '-')}</td>${order.widthMode === 'multiple' ? `<td>${escapeHtml(allocation.rawInch || '-')}</td>` : ''}<td>${escapeHtml(allocation.targetFinishedWidth || '-')}</td><td>${fmt(allocation.plannedQuantity)}</td><td>${escapeHtml(allocation.targetFinishedWeight || '-')}</td>${hasAccessory ? `<td>${fmt(accessoryQuantity)}</td>` : ''}</tr>`;
+    function colorRows(order, rows = orderAllocations(order), options = {}) {
+      const includeDyehouse = options.includeDyehouse !== false;
+      const includeInch = options.includeInch || order?.widthMode === 'multiple';
+      const includeFinished = options.includeFinished !== false;
+      const includeReceived = !!options.includeReceived;
+      const includeWaste = !!options.includeWaste;
+      const headers = [
+        'اللون',
+        includeInch ? 'البوصة' : '',
+        'الكمية',
+        includeDyehouse ? 'المصبغة' : '',
+        'العرض',
+        includeFinished ? 'الوزن المجهز' : '',
+        includeReceived ? 'دخل المخزن' : '',
+        includeWaste ? 'الهالك الفعلي' : '',
+      ].filter(Boolean);
+      const body = rows.map((line) => {
+        const cells = [
+          safeText(line.color || line.pantoneCode),
+          includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
+          fmt(line.plannedQuantity),
+          includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
+          safeText(line.targetFinishedWidth || line.rawWidth),
+          includeFinished ? safeText(line.targetFinishedWeight) : '',
+          includeReceived ? fmt(line.finishedReceived) : '',
+          includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(Number(line.wastePercent || 0), 1)}%)` : '',
+        ].filter((cell) => cell !== '');
+        return `<tr>${cells.map((cell) => `<td>${cell}</td>`).join('')}</tr>`;
       }).join('');
-      const colspan = order.widthMode === 'multiple' ? (hasAccessory ? 6 : 5) : (hasAccessory ? 5 : 4);
-      return `${documentHeader()}<h2>أمر تشغيل صباغة</h2><div class="document-meta"><div><span>رقم الطلب</span>${escapeHtml(order.orderNumber || '-')}</div><div><span>التاريخ</span>${escapeHtml(reportDate)}</div><div><span>الصنف</span>${escapeHtml(order.fabricType || '-')}</div><div><span>أذون صرف الخام</span>${escapeHtml(rawNotesLabel)}</div></div><div class="document-meta"><div><span>المصبغة</span>${escapeHtml(name || '-')}</div><div><span>إجمالي كمية المصبغة</span>${fmt(plannedTotal)}</div><div><span>رصيد الخام في المصبغة</span>${fmt(actualSentTotal)}</div><div><span>عدد الألوان</span>${dyehouseAllocations.length}</div></div>${allocationWarning}<table><thead><tr><th>اللون</th>${order.widthMode === 'multiple' ? '<th>البوصة</th>' : ''}<th>العرض</th><th>كمية الصباغة</th><th>الوزن المجهز</th>${hasAccessory ? `<th>${escapeHtml(accessoryTypesLabel(order))}</th>` : ''}</tr></thead><tbody>${rows || emptyRow(colspan, 'لا توجد ألوان لهذه المصبغة.')}</tbody></table><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${escapeHtml(reportOperationNotes(order))}</p></section>${rawPermitImagesSection(order, dyehouseRawNotes)}`;
+      return `<section class="report-section"><h3>جدول الألوان</h3><table><thead><tr>${headers.map((head) => `<th>${safeText(head)}</th>`).join('')}</tr></thead><tbody>${body || emptyRow(headers.length, 'لا توجد ألوان مسجلة.')}</tbody></table></section>`;
     }
 
-    function buildWasteReportDocument(order, fmt, safe) {
-      const rows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.sentToDyehouse)}</td><td>${fmt(line.finishedReceived)}</td><td>${fmt(line.expectedWasteQuantity)}</td><td>${fmt(line.wasteQuantity)}</td><td>${formatNumber(line.wastePercent || 0, 1)}%</td></tr>`).join('') || '<tr><td colspan="6">لا توجد بيانات هالك.</td></tr>';
-      return `${documentHeader()}<div class="report-title"><h2>تقرير الهالك</h2><span>الهالك الفعلي محسوب من التشغيل الفعلي وليس من المخطط.</span></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>تفاصيل الهالك</h3><table><thead><tr><th>اللون</th><th>مرسل للمصبغة</th><th>دخل المخزن</th><th>هالك تقديري</th><th>هالك فعلي</th><th>نسبة الهالك</th></tr></thead><tbody>${rows}</tbody></table></section>${accessoryDocumentSection(order, fmt, safe)}${documentFooter()}`;
+    function accessoriesSection(order, options = {}) {
+      const lines = orderAccessoryLines(order);
+      if (!lines.length) return '';
+      const showMovement = !!options.showMovement;
+      const header = showMovement
+        ? '<tr><th>نوع الإكسسوار</th><th>النسبة</th><th>المطلوب</th><th>المرسل</th><th>المستلم</th><th>المسلم للعميل</th><th>الرصيد</th></tr>'
+        : '<tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr>';
+      const rows = lines.map((line) => {
+        if (!showMovement) return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity)}</td></tr>`;
+        return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity || order?.accessoryRequired)}</td><td>${fmt(order?.accessorySent)}</td><td>${fmt(order?.accessoryReceived)}</td><td>${fmt(order?.accessoryDelivered)}</td><td>${fmt(order?.accessoryBalance)}</td></tr>`;
+      }).join('');
+      return `<section class="report-section"><h3>الإكسسوارات</h3><table class="summary-table"><thead>${header}</thead><tbody>${rows}</tbody></table></section>`;
     }
 
-    function buildCompactFullReportDocument(order, fmt, safe) {
-      const accessorySection = accessoryDocumentSection(order, fmt, safe);
-      const hasAccessoryColumns = !!accessorySection || (order.allocations || []).some((line) => Number(line.accessoryQuantity || 0) > 0);
-      const rows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(line.dyehouse || order.dyehouse)}</td><td>${safe(line.targetFinishedWidth)}</td><td>${safe(line.targetFinishedWeight)}</td><td>${fmt(line.finishedReceived)}</td><td>${fmt(line.wasteQuantity)} (${formatNumber(line.wastePercent || 0, 1)}%)</td>${hasAccessoryColumns ? `<td>${fmt(line.accessoryQuantity || 0)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="${hasAccessoryColumns ? 8 : 7}">لا توجد ألوان مسجلة.</td></tr>`;
-      return `${documentHeader()}<div class="report-title"><h2>التقرير التفصيلي للطلب</h2><span>متابعة كاملة من الخام حتى التسليم للعميل.</span></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div><section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order.warehouseBalance)}</td></tr><tr><th>هالك تقديري</th><td>${fmt(order.expectedWasteQuantity)}</td><th>هالك فعلي</th><td>${fmt(order.totalWaste)}</td></tr></tbody></table></section>${accessorySection}<section class="report-section"><h3>خطة توزيع الألوان</h3><table><thead><tr><th>اللون</th><th>الكمية</th><th>المصبغة</th><th>العرض</th><th>الوزن المجهز</th><th>دخل المخزن</th><th>الهالك الفعلي</th>${hasAccessoryColumns ? '<th>الإكسسوار المطلوب</th>' : ''}</tr></thead><tbody>${rows}</tbody></table></section><section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safe(reportOperationNotes(order))}</p></section>${documentFooter()}`;
+    function notesSection(order) {
+      return `<section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safeText(reportOperationNotes(order))}</p></section>`;
     }
 
-    function buildLabSamplesDocument(order, fmt, safe) {
-      const allocationList = Array.isArray(order.allocations) ? order.allocations : [];
-      const sampleRows = [];
-      for (let index = 0; index < Math.max(allocationList.length, 1); index += 2) {
-        const right = allocationList[index] || {};
-        const left = allocationList[index + 1] || {};
-        sampleRows.push(`<tr><td class="sample-cell"></td><td class="color-cell">${safe(right.color || right.pantoneCode || '')}</td><td class="color-cell">${safe(left.color || left.pantoneCode || '')}</td><td class="sample-cell"></td></tr>`);
+    function widthSummary(order) {
+      if (order?.widthMode === 'multiple') {
+        const inches = uniqueNonEmpty((order.widthLines || []).map((line) => line.inch)).join('، ');
+        return inches || '-';
       }
-      return `<div class="document-sheet lab-document lab-samples-sheet"><table class="lab-samples-table"><colgroup><col class="lab-sample-col"><col class="lab-color-col"><col class="lab-color-col"><col class="lab-sample-col"></colgroup><tbody><tr><td colspan="3" class="lab-title">عينات معمل</td><td class="lab-logo-cell">${documentLogo()}</td></tr><tr class="lab-meta-row"><th>رقم الطلب</th><td class="lab-order-number">${safe(order.orderNumber)}</td><th>التاريخ</th><td>${safe(order.orderDate)}</td></tr><tr class="lab-meta-row"><th>المصبغة</th><td>${safe(order.dyehouse)}</td><th>الصنف</th><td>${safe(order.fabricType)}</td></tr><tr class="lab-item-row"><th colspan="2">الكمية</th><td colspan="2">${fmt(order.totalRawOrdered)} كجم</td></tr><tr class="lab-sample-head"><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>${sampleRows.join('')}</tbody></table></div>`;
+      return order?.inchWidth || '-';
     }
 
-    function buildStickersDocument(order, fmt, safe) {
-      const allocationList = Array.isArray(order.allocations) ? order.allocations : [];
-      const stickerRows = allocationList.map((line, index)=>{
+    function buildWeavingOrderDocument(order) {
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td><th>إجمالي الخام المطلوب</th><td>${fmt(order?.totalRawOrdered)}</td></tr></tbody></table></section>`;
+      return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`);
+    }
+
+    function dyehouseTransfersFor(order, dyehouseName) {
+      const name = clean(dyehouseName);
+      return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : []).filter((transfer) => clean(transfer.toDyehouse) === name);
+    }
+
+    function rawBatchesFor(order) {
+      return (Array.isArray(order?.rawBatches) ? order.rawBatches : []).filter((batch) => batch.orderId === order?.id);
+    }
+
+    function dyehouseRawNotes(order, dyehouseName, isOriginalDyehouse) {
+      const notes = isOriginalDyehouse
+        ? rawBatchesFor(order).map((batch) => batch.noteNumber)
+        : dyehouseTransfersFor(order, dyehouseName).map((transfer) => transfer.noteNumber);
+      return uniqueNonEmpty(notes).join('، ') || '-';
+    }
+
+    function buildDyeingOrderDocument(order, dyehouseName) {
+      const name = clean(dyehouseName || order?.dyehouse);
+      const originalDyehouse = clean(order?.dyehouse);
+      const isOriginalDyehouse = !name || name === originalDyehouse;
+      const transfersToDyehouse = dyehouseTransfersFor(order, name);
+      const rows = orderAllocations(order).filter((allocation) => {
+        const allocationDyehouse = clean(allocation.dyehouse || order?.dyehouse);
+        if (isOriginalDyehouse) return allocationDyehouse === name;
+        return allocationDyehouse === name && transfersToDyehouse.some((transfer) => transfer.newAllocationId === allocation.id || transfer.allocationId === allocation.id || clean(transfer.color) === clean(allocation.color || allocation.pantoneCode));
+      });
+      const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
+      const rawTotal = isOriginalDyehouse
+        ? roundNumber(Math.max(sum(rawBatchesFor(order)) - sum((order?.dyehouseTransfers || []).filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name)), 0))
+        : roundNumber(sum(transfersToDyehouse));
+      const dates = isOriginalDyehouse ? rawBatchesFor(order).map((batch) => batch.date) : transfersToDyehouse.map((transfer) => transfer.transferDate || transfer.date);
+      const reportDate = uniqueNonEmpty(dates).join('، ') || order?.orderDate || '-';
+      const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
+      const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
+      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}`, { dyehouse:name, date:reportDate, rawNotes });
+    }
+
+    function buildDyeingSummaryDocument(order) {
+      return buildDyeingOrderDocument({ ...order, rawBatches: order.rawBatches || [], dyehouseTransfers: order.dyehouseTransfers || [] }, order?.dyehouse || '');
+    }
+
+    function buildLabSamplesDocument(order) {
+      const rows = orderAllocations(order);
+      const sampleRows = [];
+      for (let index = 0; index < Math.max(rows.length, 1); index += 2) {
+        const right = rows[index] || {};
+        const left = rows[index + 1] || {};
+        sampleRows.push(`<tr><td class="sample-cell"></td><td class="color-cell">${safeText(right.color || right.pantoneCode || '')}</td><td class="color-cell">${safeText(left.color || left.pantoneCode || '')}</td><td class="sample-cell"></td></tr>`);
+      }
+      return `<div class="document-sheet lab-document lab-samples-sheet"><table class="lab-samples-table"><colgroup><col class="lab-sample-col"><col class="lab-color-col"><col class="lab-color-col"><col class="lab-sample-col"></colgroup><tbody><tr><td colspan="3" class="lab-title">عينات معمل</td><td class="lab-logo-cell">${documentLogo()}</td></tr><tr class="lab-meta-row"><th>رقم الطلب</th><td class="lab-order-number">${safeText(order?.orderNumber)}</td><th>التاريخ</th><td>${safeText(order?.orderDate)}</td></tr><tr class="lab-meta-row"><th>المصبغة</th><td>${safeText(order?.dyehouse)}</td><th>الصنف</th><td>${safeText(order?.fabricType)}</td></tr><tr class="lab-item-row"><th colspan="2">الكمية</th><td colspan="2">${fmt(order?.totalRawOrdered)} كجم</td></tr><tr class="lab-sample-head"><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>${sampleRows.join('')}</tbody></table></div>`;
+    }
+
+    function buildStickersDocument(order) {
+      const rows = orderAllocations(order);
+      const stickerRows = rows.map((line, index) => {
         const stickerId = `sticker-${line.id || index}`;
-        return `<div class="sticker-card" data-sticker-id="${escapeHtml(stickerId)}"><div class="sticker-brand"><strong>2B Tex</strong><span>تشغيل</span></div><div class="sticker-order">${safe(order.orderNumber)}</div><div class="sticker-line"><span>العميل</span><strong>${safe(order.customer)}</strong></div><div class="sticker-line"><span>الصنف</span><strong>${safe(order.fabricType)}</strong></div><div class="sticker-line"><span>اللون</span><strong>${safe(line.color || line.pantoneCode)}</strong></div><div class="sticker-grid"><div><span>الكمية</span><strong>${fmt(line.plannedQuantity)}</strong></div><div><span>البوصة</span><strong>${safe(line.rawInch || order.inchWidth)}</strong></div><div><span>العرض</span><strong>${safe(line.targetFinishedWidth || line.rawWidth || '-')}</strong></div><div><span>الوزن</span><strong>${safe(line.targetFinishedWeight || '-')}</strong></div></div><button class="mini-btn sticker-print-btn" type="button" data-print-sticker="${escapeHtml(stickerId)}">طباعة هذا اللون</button></div>`;
+        return `<div class="sticker-card" data-sticker-id="${safeText(stickerId)}"><div class="sticker-brand"><strong>2B Tex</strong><span>تشغيل</span></div><div class="sticker-order">${safeText(order?.orderNumber)}</div><div class="sticker-line"><span>العميل</span><strong>${safeText(order?.customer)}</strong></div><div class="sticker-line"><span>الصنف</span><strong>${safeText(order?.fabricType)}</strong></div><div class="sticker-line"><span>اللون</span><strong>${safeText(line.color || line.pantoneCode)}</strong></div><div class="sticker-grid"><div><span>الكمية</span><strong>${fmt(line.plannedQuantity)}</strong></div><div><span>البوصة</span><strong>${safeText(line.rawInch || order?.inchWidth)}</strong></div><div><span>العرض</span><strong>${safeText(line.targetFinishedWidth || line.rawWidth)}</strong></div><div><span>الوزن</span><strong>${safeText(line.targetFinishedWeight)}</strong></div></div><button class="mini-btn sticker-print-btn" type="button" data-print-sticker="${safeText(stickerId)}">طباعة هذا اللون</button></div>`;
       }).join('');
       return `<div class="document-sheet sticker-sheet">${stickerRows || '<p>لا توجد استيكرات متاحة.</p>'}</div>`;
+    }
+
+    function buildCompactFullReportDocument(order) {
+      const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order?.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order?.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td></tr><tr><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td><th>هالك فعلي</th><td>${fmt(order?.totalWaste)} (${formatNumber(Number(order?.totalWastePercent || 0), 1)}%)</td></tr></tbody></table></section>`;
+      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeReceived:true, includeWaste:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.' });
+    }
+
+    function buildWasteReportDocument(order) {
+      return reportShell('تقرير الهالك', order, `${colorRows(order, orderAllocations(order), { includeReceived:true, includeWaste:true, includeDyehouse:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'الهالك الفعلي محسوب من التشغيل الفعلي.' });
+    }
+
+    function buildQuotationDocument(order) {
+      const rows = orderAllocations(order).map((line) => `<tr><td>${safeText(order?.fabricType)}</td><td>${safeText(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safeText(line.rawInch || order?.inchWidth)}</td><td>${fmt(order?.kiloPrice)}</td><td>${fmt(Number(line.plannedQuantity || 0) * Number(order?.kiloPrice || 0))}</td></tr>`).join('');
+      const table = `<section class="report-section"><h3>بنود العرض</h3><table><thead><tr><th>الصنف</th><th>اللون</th><th>الكمية</th><th>البوصة</th><th>سعر الكيلو</th><th>الإجمالي</th></tr></thead><tbody>${rows || emptyRow(6, 'لا توجد بنود عرض.')}</tbody></table></section>`;
+      return reportShell('عرض سعر', order, `${table}${notesSection(order)}`, { subtitle:'عرض تجاري للعميل حسب بيانات الطلب الحالية.' });
     }
 
     return {
