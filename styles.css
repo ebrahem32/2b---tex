@@ -118,6 +118,12 @@
 .flow-strip span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:999px;background:rgba(200,165,106,.16);color:var(--accent2);font-size:12px;margin-left:8px}
 .flow-strip strong{display:inline-block}
 .flow-strip em{display:block;margin-top:10px;font-style:normal;font-size:22px;font-weight:700}
+.connection-badge{display:inline-flex;align-items:center;gap:8px}
+.connection-dot{width:10px;height:10px;border-radius:999px;background:var(--danger);box-shadow:0 0 0 3px rgba(239,68,68,.16)}
+.connection-badge.is-ok .connection-dot{background:var(--success);box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+.connection-badge.is-down .connection-dot{background:var(--danger);box-shadow:0 0 0 3px rgba(239,68,68,.16)}
+.connection-badge.is-ok{color:#bbf7d0}
+.connection-badge.is-down{color:#fecaca}
 @media(max-width:900px){.flow-strip{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.flow-strip{grid-template-columns:1fr}}
 

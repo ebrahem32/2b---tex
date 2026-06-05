@@ -339,6 +339,33 @@ function renderBackendUnavailable() {
   if (refs.ordersTableBody) refs.ordersTableBody.innerHTML = '<tr><td colspan="9">قاعدة البيانات غير متاحة حاليًا. لن يتم عرض بيانات قديمة من المتصفح.</td></tr>';
   if (refs.orderDetailsPanel) refs.orderDetailsPanel.innerHTML = '<div class="empty-state">قاعدة البيانات غير متاحة. النظام متوقف عن عرض أو تعديل بيانات التشغيل حتى يعود الاتصال.</div>';
 }
+function updateConnectionBadge(id, ok, label, detail = '') {
+  const badge = document.getElementById(id);
+  if (!badge) return;
+  badge.classList.toggle('is-ok', !!ok);
+  badge.classList.toggle('is-down', !ok);
+  badge.setAttribute('aria-label', `${label}: ${ok ? 'متصل' : 'غير متصل'}`);
+  badge.title = detail || `${label}: ${ok ? 'متصل' : 'غير متصل'}`;
+  const text = badge.querySelector('[data-connection-text]');
+  if (text) text.textContent = `${label}: ${ok ? 'متصل' : 'غير متصل'}`;
+}
+function updateBackendStatusBadge(detail = '') {
+  updateConnectionBadge('backendStatusBadge', backendAvailable, 'قاعدة البيانات', detail);
+}
+function updateWhatsappStatusBadge() {
+  const connected = whatsappStatus?.status === 'connected';
+  updateConnectionBadge('whatsappStatusBadge', connected, 'واتساب', whatsappStatus?.errorMessage || whatsappStatus?.updatedAt || '');
+}
+async function pollBackendStatus() {
+  try {
+    await backendRequest('/health', { cache: 'no-store' });
+    backendAvailable = true;
+    updateBackendStatusBadge('قاعدة البيانات متصلة');
+  } catch (error) {
+    backendAvailable = false;
+    updateBackendStatusBadge('قاعدة البيانات غير متاحة');
+  }
+}
 async function loadBackendData() {
   try {
     const data = await backendRequest('/bootstrap', { cache: 'no-store' });
@@ -363,10 +390,12 @@ async function loadBackendData() {
       updateSuggestedDyeCost();
     }
     backendAvailable = true;
+    updateBackendStatusBadge('قاعدة البيانات متصلة');
     save();
     renderAll();
   } catch (error) {
     backendAvailable = false;
+    updateBackendStatusBadge('قاعدة البيانات غير متاحة');
     console.warn('Backend unavailable; operational LocalStorage fallback is disabled', error);
     renderBackendUnavailable();
   }
@@ -1337,8 +1366,10 @@ async function openSystemStatusDialog() {
 function installAutomationUi() {
   const actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
-    actionBar.insertAdjacentHTML('beforeend', `<button class="mini-btn" id="whatsappStatusBadge" type="button">واتساب: غير متصل</button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="syncLocalStorageBtn" type="button">مزامنة البيانات</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
+    actionBar.insertAdjacentHTML('beforeend', `<button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="syncLocalStorageBtn" type="button">مزامنة البيانات</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
   }
+  document.getElementById('backendStatusBadge')?.addEventListener('click', pollBackendStatus);
+  document.getElementById('whatsappStatusBadge')?.addEventListener('click', pollWhatsappService);
   document.getElementById('systemStatusBtn')?.addEventListener('click', openSystemStatusDialog);
   document.getElementById('syncLocalStorageBtn')?.addEventListener('click', syncLocalStorageToBackend);
   document.getElementById('whatsappSettingsBtn')?.addEventListener('click', openWhatsappSettingsDialog);
@@ -1346,6 +1377,7 @@ function installAutomationUi() {
   document.getElementById('a5AccountsBtn')?.addEventListener('click', renderA5AccountsDialog);
   document.getElementById('outboxBtn')?.addEventListener('click', openOutboxDialog);
   document.getElementById('auditLogBtn')?.addEventListener('click', openAuditLogDialog);
+  updateBackendStatusBadge();
   updateWhatsappStatusBadge();
 }
 async function reportToCanvas(options = {}) {
@@ -4008,11 +4040,10 @@ if (refs.shareWhatsAppBtn) {
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
 loadBackendData();
 installAutomationUi();
+pollBackendStatus();
 pollWhatsappService();
+setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
-
-
-
 
 
 
