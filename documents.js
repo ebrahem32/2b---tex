@@ -8,6 +8,7 @@
       escapeHtml,
       formatNumber,
       orderRawCost,
+      rawPermitImagesSection,
       reportOperationNotes,
       uniqueNonEmpty,
       sum,
@@ -50,7 +51,21 @@
           quantity: Number(line.quantityManual || line.quantity || 0),
         }))
         .filter((line) => line.type || line.percent || line.quantity);
-      if (normalized.length) return uniqueBy(normalized, (line) => `${line.type}|${line.percent}|${line.quantity}`);
+      if (normalized.length) {
+        const byType = new Map();
+        normalized.forEach((line) => {
+          const key = clean(line.type || 'إكسسوار');
+          const current = byType.get(key) || { type: key, percent: 0, quantity: 0 };
+          current.percent += Number(line.percent || 0);
+          current.quantity += Number(line.quantity || 0);
+          byType.set(key, current);
+        });
+        return Array.from(byType.values()).map((line) => ({
+          ...line,
+          percent: roundNumber(line.percent),
+          quantity: roundNumber(line.quantity),
+        }));
+      }
 
       const allocationRequired = orderAllocations(order).reduce((total, line) => total + Number(line.accessoryQuantity || 0), 0);
       const quantity = Number(order?.accessoryRequired || 0) || allocationRequired;
@@ -62,7 +77,7 @@
 
     function reportShell(title, order, body, options = {}) {
       const subtitle = options.subtitle ? `<span>${safeText(options.subtitle)}</span>` : '';
-      return `${documentHeader()}<div class="report-title"><h2>${safeText(title)}</h2>${subtitle}</div>${basicInfoSection(order, options)}${body}${documentFooter()}`;
+      return `<div class="two-b-report">${documentHeader()}<div class="report-title"><h2>${safeText(title)}${order?.orderNumber ? ` <small># ${safeText(order.orderNumber)}</small>` : ''}</h2>${subtitle}</div>${basicInfoSection(order, options)}${body}${documentFooter()}</div>`;
     }
 
     function basicInfoSection(order, options = {}) {
@@ -151,10 +166,14 @@
     }
 
     function dyehouseRawNotes(order, dyehouseName, isOriginalDyehouse) {
-      const notes = isOriginalDyehouse
+      const notes = dyehouseRawNoteList(order, dyehouseName, isOriginalDyehouse);
+      return uniqueNonEmpty(notes).join('، ') || '-';
+    }
+
+    function dyehouseRawNoteList(order, dyehouseName, isOriginalDyehouse) {
+      return isOriginalDyehouse
         ? rawBatchesFor(order).map((batch) => batch.noteNumber)
         : dyehouseTransfersFor(order, dyehouseName).map((transfer) => transfer.noteNumber);
-      return uniqueNonEmpty(notes).join('، ') || '-';
     }
 
     function buildDyeingOrderDocument(order, dyehouseName) {
@@ -173,9 +192,11 @@
         : roundNumber(sum(transfersToDyehouse));
       const dates = isOriginalDyehouse ? rawBatchesFor(order).map((batch) => batch.date) : transfersToDyehouse.map((transfer) => transfer.transferDate || transfer.date);
       const reportDate = uniqueNonEmpty(dates).join('، ') || order?.orderDate || '-';
+      const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
-      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}`, { dyehouse:name, date:reportDate, rawNotes });
+      const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
+      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes });
     }
 
     function buildDyeingSummaryDocument(order) {
