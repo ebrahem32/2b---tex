@@ -1,4 +1,4 @@
-﻿const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   orders: '2btex.orders.v4',
   allocations: '2btex.allocations.v4',
   raw: '2btex.raw.v4',
@@ -17,8 +17,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.23';
-const APP_BUILD_TIME = '2026-06-05 22:10';
+const APP_VERSION = 'v2026.06.05.24';
+const APP_BUILD_TIME = '2026-06-05 22:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -787,7 +787,7 @@ const reportStatusText = { pending:'في قائمة الإرسال', sending:'ج
 function nowIso() { return new Date().toISOString(); }
 function arDateTime(value = new Date()) {
   const date = value instanceof Date ? value : new Date(value);
-  return isNaN(date.getTime()) ? '-' : date.toLocaleString('ar-EG', { dateStyle:'short', timeStyle:'short' });
+  return isNaN(date.getTime()) ? '-' : date.toLocaleString('en-US', { dateStyle:'short', timeStyle:'short' });
 }
 function normalizeForCompare(value) { return String(value || '').trim().toLowerCase(); }
 function escapeHtml(value) {
@@ -1052,7 +1052,7 @@ const roundNumber = (value, digits = 2) => {
   const number = Number(value || 0);
   return Number(Math.round((number + Number.EPSILON) * 10 ** digits) / 10 ** digits);
 };
-const formatNumber = (value, digits = 3) => roundNumber(value, digits).toLocaleString('ar-EG', { maximumFractionDigits: digits });
+const formatNumber = (value, digits = 3) => roundNumber(value, digits).toLocaleString('en-US', { maximumFractionDigits: digits });
 const sum = (items) => roundNumber(items.reduce((total, item) => total + Number(item.quantity || 0), 0));
 
 const pricingDomain = window.TwoBTexPricing.createPricingDomain({
@@ -1462,7 +1462,7 @@ function formatA5Date(value) {
   if (!value) return '-';
   const match = String(value).match(/\/Date\((\d+)\)\//);
   const date = match ? new Date(Number(match[1])) : new Date(value);
-  return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('ar-EG');
+  return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US');
 }
 async function renderA5AccountsDialog() {
   refs.documentTitle.textContent = 'حسابات A5';
@@ -2055,14 +2055,14 @@ function calculatePricing(pricing) {
 }
 function renderPricings() {
   const activePricings = pricings.filter(isActivePricing);
-  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم التسعيرة">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('ar-EG')}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('ar-EG')}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('ar-EG')}</td><td data-label="الحالة"><span class="status pending">تسعيرة</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button><button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button></div></td></tr>`).join('');
+  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم التسعيرة">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('en-US')}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('en-US')}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('en-US')}</td><td data-label="الحالة"><span class="status pending">تسعيرة</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button><button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button></div></td></tr>`).join('');
 }
 function updatePricingPreview() {
   const pricing = calculatePricing({ dyehouse:refs.pricingDyehouse.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value });
-  refs.pricingWasteCostPreview.textContent = pricing.wasteCost.toLocaleString('ar-EG');
-  refs.pricingCostPreview.textContent = pricing.costPerKg.toLocaleString('ar-EG');
-  refs.pricingSellPreview.textContent = pricing.sellPrice.toLocaleString('ar-EG');
-  refs.pricingTotalPreview.textContent = pricing.totalOffer.toLocaleString('ar-EG');
+  refs.pricingWasteCostPreview.textContent = pricing.wasteCost.toLocaleString('en-US');
+  refs.pricingCostPreview.textContent = pricing.costPerKg.toLocaleString('en-US');
+  refs.pricingSellPreview.textContent = pricing.sellPrice.toLocaleString('en-US');
+  refs.pricingTotalPreview.textContent = pricing.totalOffer.toLocaleString('en-US');
 }
 function pricingPayload(id = uid()) {
   const paymentTerms = composePaymentTerms(refs.pricingPaymentMode?.value, refs.pricingPaymentDetails?.value);
@@ -2213,7 +2213,7 @@ async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
 function openPricingQuotation(id) {
   const pricing = calculatePricing(pricings.find((item)=>item.id===id));
   if (!pricing) return;
-  const money = (value) => Number(value || 0).toLocaleString('ar-EG');
+  const money = (value) => Number(value || 0).toLocaleString('en-US');
   const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
   const notes = String(pricing.notes || '').trim();
   refs.documentTitle.textContent = 'عرض سعر';
@@ -2281,7 +2281,7 @@ function renderOrderFilters() {
   fillSelectOptions(refs.fabricFilter, orders.map((order)=>order.fabricType), 'كل الأصناف');
 }
 function renderStats(list) {
-  const fmt = (value) => roundNumber(value).toLocaleString('ar-EG', { maximumFractionDigits: 3 });
+  const fmt = (value) => roundNumber(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
   const values = [
     ['عدد الطلبات', list.length],
     ['خام مطلوب', list.reduce((t,o)=>t+o.totalRawOrdered,0)],
@@ -2395,7 +2395,7 @@ function renderOrders() {
 }
 
 function documentFooter() {
-  const printedAt = new Date().toLocaleString('ar-EG', { dateStyle:'medium', timeStyle:'short' });
+  const printedAt = new Date().toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' });
   return `<div class="document-footer"><span>${printedAt}</span><strong>Manager : Ibrahim Assem</strong></div>`;
 }
 function withDocumentFooter(body) {
@@ -3033,7 +3033,7 @@ function reportNumber(value, digits = 3) {
   return Math.round(number * factor) / factor;
 }
 function reportFmt(value, digits = 3) {
-  return reportNumber(value, digits).toLocaleString('ar-EG', { maximumFractionDigits: digits });
+  return reportNumber(value, digits).toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 function daysSince(dateValue) {
   if (!dateValue) return 0;
@@ -3136,7 +3136,7 @@ function openManagementReport(type) {
 
 function openOrdersReport() {
   const list = allOrders();
-  const fmt = (value) => Number(value || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 });
+  const fmt = (value) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
   const totals = list.reduce((acc, order)=>{
     acc.raw += Number(order.totalRawOrdered || 0);
     acc.received += Number(order.totalRawReceived || 0);
@@ -3159,7 +3159,7 @@ function openOrdersReport() {
 }
 function openDyehouseBalancesReport() {
   const list = allOrders();
-  const fmt = (value) => Number(value || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 });
+  const fmt = (value) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
   const groups = {};
   list.forEach((order)=>{
     (order.allocations || []).forEach((allocation)=>{
@@ -3253,7 +3253,7 @@ async function openDyeingDocumentForDyehouse(dyehouseName) {
   const order = calculateOrder(sourceOrder);
   const name = String(dyehouseName || '').trim();
   const operationNoteText = order.operationNotes?.[operationNotesKey('dyeing', name)] || '';
-  const fmt = (value) => roundNumber(value).toLocaleString('ar-EG', { maximumFractionDigits: 3 });
+  const fmt = (value) => roundNumber(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
   const reportOrder = { ...order, operationNoteText, whatsappDyehouseName:name };
   currentDocumentType = 'dyeing';
   refs.documentTitle.textContent = `أمر صباغة - ${name || '-'}`;
