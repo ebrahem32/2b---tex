@@ -245,3 +245,9 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_number_customer_fabric_unique
+ON orders(order_number, customer_id, TRIM(fabric_type))
+WHERE order_number IS NOT NULL AND TRIM(order_number) <> ''
+  AND customer_id IS NOT NULL AND TRIM(customer_id) <> ''
+  AND fabric_type IS NOT NULL AND TRIM(fabric_type) <> '';

@@ -84,6 +84,12 @@ function crudRoutes(base, table) {
     res.json(await all(`SELECT * FROM ${table} ORDER BY created_at DESC`));
   }));
   app.post(`/api/${base}`, asyncHandler(async (req, res) => {
+    const existing = await existingUniqueBusinessRow(table, req.body || {});
+    if (existing) {
+      const query = updateSql(table, req.body || {}, existing.id);
+      await run(query.sql, query.values);
+      return res.status(200).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [existing.id]));
+    }
     const query = insertSql(table, req.body || {});
     await run(table === 'customers' ? query.sql.replace('INSERT INTO', 'INSERT OR IGNORE INTO') : query.sql, query.values);
     res.status(201).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]));
@@ -101,6 +107,17 @@ function crudRoutes(base, table) {
     const result = await run(`DELETE FROM ${table} WHERE id = ?`, [req.params.id]);
     res.json({ ok: true, deleted: result.changes || 0 });
   }));
+}
+
+async function existingUniqueBusinessRow(table, data) {
+  if (!data) return null;
+  if (table === 'orders' && data.order_number && data.customer_id && data.fabric_type) {
+    return get(
+      'SELECT id FROM orders WHERE order_number = ? AND customer_id = ? AND TRIM(fabric_type) = TRIM(?) LIMIT 1',
+      [data.order_number, data.customer_id, data.fabric_type]
+    );
+  }
+  return null;
 }
 
 async function deleteOrderGraph(orderId) {

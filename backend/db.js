@@ -128,6 +128,8 @@ function scalar(sql, params = []) {
 function dropUnsafeUniqueIndexes() {
   db.run('DROP INDEX IF EXISTS idx_orders_number_customer_unique');
   db.run('DROP INDEX IF EXISTS idx_pricings_number_customer_unique');
+  db.run('DROP INDEX IF EXISTS idx_orders_number_customer_fabric_unique');
+  db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_number_customer_fabric_unique ON orders(order_number, customer_id, TRIM(fabric_type)) WHERE order_number IS NOT NULL AND TRIM(order_number) <> '' AND customer_id IS NOT NULL AND TRIM(customer_id) <> '' AND fabric_type IS NOT NULL AND TRIM(fabric_type) <> ''");
 }
 
 function notePart(text, label) {
