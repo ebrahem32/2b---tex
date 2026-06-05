@@ -1831,12 +1831,6 @@ function renderWidthLinesEditor(lines = []) {
 function accessoryLineRowHtml(line = {}) {
   return `<div class="accessory-line-row" data-accessory-line-id="${line.id || ''}"><input data-accessory-field="type" placeholder=" " list="accessoryTypeList" value="${line.type || ''}"><input data-accessory-field="percent" type="number" step="0.01" placeholder=" %" value="${line.percent || ''}"><input data-accessory-field="quantity" type="number" step="0.01" placeholder=" " value="${line.quantityManual || line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-accessory-line></button></div>`;
 }
-function orderAccessoryConfig(order = {}) {
-  const lines = Array.isArray(order.accessoryLines) ? order.accessoryLines : [];
-  if (lines.length) return lines.map((line)=>({ id:line.id || uid(), type:line.type || 'إكسسوار', percent:Number(line.percent || 0), quantityManual:line.quantityManual !== undefined ? line.quantityManual : '' })).filter((line)=>line.type || line.percent || line.quantityManual);
-  if (order.accessoryType || Number(order.accessoryPercent || 0)) return [{ id:uid(), type:order.accessoryType || 'إكسسوار', percent:Number(order.accessoryPercent || 0), quantityManual:'' }];
-  return [];
-}
 function renderAccessoryLinesEditor(lines = []) {
   const rows = lines.length ? lines : [{}];
   refs.accessoryLinesEditor.innerHTML = `<datalist id="accessoryTypeList"><option value="ريب"><option value="لياقات"><option value="أساور"><option value="ديربي"></datalist><div class="accessory-line-head"><span>نوع الإكسسوار</span><span>النسبة %</span><span>الكمية</span><span></span></div>${rows.map((line)=>accessoryLineRowHtml(line)).join('')}`;
@@ -1863,139 +1857,43 @@ const roundNumber = (value, digits = 2) => {
 };
 const formatNumber = (value, digits = 3) => roundNumber(value, digits).toLocaleString('ar-EG', { maximumFractionDigits: digits });
 const sum = (items) => roundNumber(items.reduce((total, item) => total + Number(item.quantity || 0), 0));
-const getAllocations = (order) => allocations.filter((allocation) => allocation.orderId === order.id);
 const statusLabel = (status) => ({ pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا' }[status]);
+const orderDomain = window.TwoBTexOrders.createOrderDomain({
+  buildItemCode,
+  orderRawCost,
+  roundNumber,
+  sum,
+  uid,
+  getState: () => ({
+    orders,
+    allocations,
+    rawBatches,
+    productionBatches,
+    customerBatches,
+    accessoryBatches,
+    dyehouseTransfers,
+    rawReturns,
+  }),
+});
+
+function orderAccessoryConfig(order = {}) {
+  return orderDomain.orderAccessoryConfig(order);
+}
 
 function normalizeOrderForRuntime(order = {}) {
-  const safe = { ...order };
-  safe.id = safe.id || uid();
-  safe.orderNumber = safe.orderNumber || '';
-  safe.productCode = safe.productCode || buildItemCode(safe.orderNumber);
-  safe.customer = safe.customer || '';
-  safe.orderDate = safe.orderDate || new Date().toISOString().slice(0,10);
-  safe.fabricType = safe.fabricType || '';
-  safe.totalRawQuantity = Number(safe.totalRawQuantity || safe.totalRawOrdered || 0);
-  safe.expectedWastePercent = Number(safe.expectedWastePercent || 0);
-  safe.widthMode = safe.widthMode || 'single';
-  safe.inchWidth = safe.inchWidth || '';
-  safe.widthLines = Array.isArray(safe.widthLines) ? safe.widthLines : [];
-  safe.kiloPrice = Number(safe.kiloPrice || 0);
-  safe.rawCost = Number(safe.rawCost || safe.rawPrice || orderRawCost(safe) || 0);
-  safe.paymentTerms = safe.paymentTerms || '';
-  safe.accessoryType = safe.accessoryType || '';
-  safe.accessoryPercent = Number(safe.accessoryPercent || 0);
-  safe.accessoryLines = orderAccessoryConfig(safe);
-  safe.dyehouse = safe.dyehouse || '';
-  safe.weavingSource = safe.weavingSource || '';
-  safe.notes = safe.notes || '';
-  safe.operationNotes = safe.operationNotes && typeof safe.operationNotes === 'object' && !Array.isArray(safe.operationNotes) ? safe.operationNotes : {};
-  safe.operationClosed = Boolean(safe.operationClosed);
-  return safe;
+  return orderDomain.normalizeOrderForRuntime(order);
 }
 function calculateAllocation(allocation = {}, orderContext = null) {
-  const order = orderContext || orders.find((item)=>item.id===allocation.orderId) || {};
-  const orderAllocations = getAllocations(order);
-  const orderRawSent = sum(rawBatches.filter((batch) => batch.orderId === allocation.orderId));
-  const widthRawSent = allocation.widthLineId ? sum(rawBatches.filter((batch) => batch.orderId === allocation.orderId && batch.widthLineId === allocation.widthLineId)) : 0;
-  const widthPlanned = allocation.widthLineId ? orderAllocations.filter((item)=>item.widthLineId === allocation.widthLineId).reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) : 0;
-  const totalPlanned = roundNumber(orderAllocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0));
-  const basePlanned = Number(allocation.plannedQuantity || 0);
-  const proportionalWidthSent = widthPlanned ? widthRawSent * basePlanned / widthPlanned : 0;
-  const proportionalOrderSent = totalPlanned ? orderRawSent * basePlanned / totalPlanned : 0;
-  const sent = roundNumber(allocation.widthLineId ? proportionalWidthSent : (orderAllocations.length <= 1 ? orderRawSent : proportionalOrderSent));
-  const finished = sum(productionBatches.filter((batch) => batch.allocationId === allocation.id));
-  const rawReturned = sum(rawReturns.filter((batch) => batch.allocationId === allocation.id));
-  const actualBase = sent || Number(allocation.plannedQuantity || 0);
-  const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
-  const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
-  const transfers = dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-  return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), remainingAtDyehouse:roundNumber(Math.max(sent - finished - rawReturned - actualWaste, 0)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+  return orderDomain.calculateAllocation(allocation, orderContext);
 }
 function expectedWasteFor(order, quantity) {
-  return roundNumber(Number(quantity || 0) * Number(order.expectedWastePercent || 0) / 100);
+  return orderDomain.expectedWasteFor(order, quantity);
 }
 function allocationAccessoryQuantity(order, allocation) {
-  if (allocation.accessoryQuantityManual !== null && allocation.accessoryQuantityManual !== undefined && allocation.accessoryQuantityManual !== '') return roundNumber(Number(allocation.accessoryQuantityManual || 0));
-  const lines = orderAccessoryConfig(order);
-  const percent = lines.length ? lines.reduce((total, line)=>total + Number(line.percent || 0), 0) : Number(order.accessoryPercent || 0);
-  return roundNumber(Number(allocation.plannedQuantity || 0) * percent / 100);
+  return orderDomain.allocationAccessoryQuantity(order, allocation);
 }
 function calculateOrder(order) {
-  order = normalizeOrderForRuntime(order);
-  const expectedWastePercent = Number(order.expectedWastePercent || 0);
-  const isClosed = Boolean(order.operationClosed);
-  const baseAllocations = getAllocations(order).map((allocation)=>calculateAllocation(allocation, order));
-  const singleWidthValue = order.widthMode !== 'multiple' ? baseAllocations.find((item)=>item.targetFinishedWidth)?.targetFinishedWidth : null;
-  const singleWeightValue = order.widthMode !== 'multiple' ? baseAllocations.find((item)=>item.targetFinishedWeight)?.targetFinishedWeight : null;
-  const orderAllocations = baseAllocations.map((allocation) => {
-    const widthLine = (order.widthLines || []).find((item)=>item.id===allocation.widthLineId);
-    const expectedWasteQuantity = isClosed ? expectedWasteFor(order, allocation.plannedQuantity) : 0;
-    if (widthLine) return { ...allocation, rawInch:widthLine.inch, rawWidth:widthLine.width, targetFinishedWidth:widthLine.width, accessoryQuantity: allocationAccessoryQuantity(order, allocation), expectedWastePercent, expectedWasteQuantity };
-    if (order.widthMode !== 'multiple') return { ...allocation, targetFinishedWidth: singleWidthValue || allocation.targetFinishedWidth || '', targetFinishedWeight: singleWeightValue || allocation.targetFinishedWeight || '', accessoryQuantity: allocationAccessoryQuantity(order, allocation), expectedWastePercent, expectedWasteQuantity };
-    return { ...allocation, accessoryQuantity: allocationAccessoryQuantity(order, allocation), expectedWastePercent, expectedWasteQuantity };
-  });
-  const rawToDyehouse = sum(rawBatches.filter((batch) => batch.orderId === order.id));
-  const allocated = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.plannedQuantity || 0), 0));
-  const operated = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.sentToDyehouse || 0), 0));
-  const warehouseReceived = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.finishedReceived || 0), 0));
-  const rawReturnedToWeaving = sum(rawReturns.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
-  const expectedWasteQuantity = isClosed ? expectedWasteFor(order, order.totalRawQuantity) : 0;
-  const deliveredToCustomer = sum(customerBatches.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
-  const waste = isClosed ? Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving, 0) : 0;
-  const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
-  const totalWidthQuantity = roundNumber(widthLines.reduce((total, item)=>total + Number(item.quantity || 0), 0));
-  const totalRawOrdered = order.widthMode === 'multiple' && totalWidthQuantity > 0 ? totalWidthQuantity : roundNumber(order.totalRawQuantity);
-  const configuredAccessoryLines = orderAccessoryConfig(order).map((line)=>{
-    const quantity = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined
-      ? Number(line.quantityManual || 0)
-      : Number(order.totalRawQuantity || 0) * Number(line.percent || 0) / 100;
-    return { id:line.id || uid(), type:line.type || 'إكسسوار', percent:Number(line.percent || 0), quantityManual:line.quantityManual, quantity:roundNumber(quantity) };
-  }).filter((line)=>line.type || line.percent || line.quantity);
-  const manualAccessoryQuantity = roundNumber(orderAllocations.reduce((total, item)=>total + Number(item.accessoryQuantity || 0), 0));
-  const recordedAccessoryQuantity = sum(accessoryBatches.filter((batch)=>batch.orderId === order.id && (!batch.movement || batch.movement === 'sent')));
-  const hasAccessory = configuredAccessoryLines.length > 0 || !!order.accessoryType || manualAccessoryQuantity > 0 || recordedAccessoryQuantity > 0;
-  const accessoryQuantity = manualAccessoryQuantity || roundNumber(Number(order.totalRawQuantity || 0) * Number(order.accessoryPercent || 0) / 100) || recordedAccessoryQuantity;
-  const accessoryLines = configuredAccessoryLines.length ? configuredAccessoryLines : (hasAccessory ? [{ type:order.accessoryType || 'إكسسوار', percent:Number(order.accessoryPercent || 0), quantity:roundNumber(accessoryQuantity) }] : []);
-  const accessoryRequired = roundNumber(accessoryLines.reduce((total, item)=>total + Number(item.quantity || 0), 0));
-  const accessorySent = sum(accessoryBatches.filter((batch)=>batch.orderId===order.id && (!batch.movement || batch.movement === 'sent')));
-  const accessoryReceived = sum(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'));
-  const accessoryDelivered = sum(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer'));
-  const accessoryWaste = isClosed ? Math.max(accessorySent - accessoryReceived, 0) : 0;
-  return {
-    ...order,
-    allocations: orderAllocations,
-    totalRawOrdered,
-    widthLines,
-    totalWidthQuantity,
-    widthDistributionMatches: Math.abs(totalWidthQuantity - Number(order.totalRawQuantity || 0)) <= 0.01,
-    accessoryLines,
-    totalRawReceived: roundNumber(rawToDyehouse),
-    totalAllocated: roundNumber(allocated),
-    remainingUnallocatedRaw: roundNumber(Math.max(rawToDyehouse - allocated, 0)),
-    allocationExceedsRaw: allocated > rawToDyehouse,
-    totalSentToDyehouse: roundNumber(rawToDyehouse),
-    rawAtDyehouseAvailable: roundNumber(Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving - waste, 0)),
-    totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
-    expectedWastePercent,
-    expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
-    totalFinishedReceived: roundNumber(warehouseReceived),
-    warehouseBalance: roundNumber(Math.max(warehouseReceived - deliveredToCustomer, 0)),
-    totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
-    remainingToCustomer: roundNumber(Math.max(allocated - deliveredToCustomer, 0)),
-    remainingAtDyehouse: roundNumber(Math.max(operated - warehouseReceived, 0)),
-    totalWaste: roundNumber(waste),
-    totalWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
-    totalActualWaste: roundNumber(waste),
-    totalActualWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
-    accessoryRequired,
-    accessorySent: roundNumber(accessorySent),
-    accessoryReceived: roundNumber(accessoryReceived),
-    accessoryDelivered: roundNumber(accessoryDelivered),
-    accessoryBalance: roundNumber(Math.max(accessoryReceived - accessoryDelivered, 0)),
-    accessoryWaste: roundNumber(accessoryWaste),
-    accessoryWastePercent: accessorySent ? roundNumber(accessoryWaste / accessorySent * 100) : 0,
-    status: order.operationClosed ? 'closed' : deliveredToCustomer >= allocated && allocated > 0 ? 'completed' : rawToDyehouse === 0 ? 'pending' : 'in-progress',
-  };
+  return orderDomain.calculateOrder(order);
 }
 function calculatePricing(pricing) {
   return pricingDomain.calculatePricing(pricing || {}, activeDyehousePriceLibrary());
