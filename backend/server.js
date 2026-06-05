@@ -239,6 +239,14 @@ app.get('/api/orders/:orderId/batches', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+app.post('/api/batches/:type', asyncHandler(async (req, res) => {
+  const table = batchTables[req.params.type];
+  if (!table) return res.status(400).json({ error: 'Unknown batch type' });
+  const query = insertSql(table, req.body || {});
+  await run(query.sql, query.values);
+  res.status(201).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]));
+}));
+
 app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
   const systemSettingsRows = await all('SELECT key, value_json FROM system_settings ORDER BY key');
   const systemSettings = {};
