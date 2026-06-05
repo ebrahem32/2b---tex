@@ -35,9 +35,17 @@
       return `<section class="report-section"><h3>الإكسسوارات</h3><table class="summary-table"><thead><tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     }
 
+    function weavingLegacyAccessoryNotice(order, safe) {
+      const notes = String(order?.notes || '');
+      const mentionsAccessory = /(\u0644\u064a\u0627\u0642\u0627\u062a|\u0644\u064a\u0627\u0642\u0629|\u0631\u064a\u0628|\u062f\u064a\u0631\u0628\u064a|\u0623\u0633\u0627\u0648\u0631|\u0627\u0633\u0627\u0648\u0631|\u0625\u0643\u0633\u0633\u0648\u0627\u0631|\u0627\u0643\u0633\u0633\u0648\u0627\u0631)/.test(notes);
+      if (!mentionsAccessory) return '';
+      return `<section class="report-section"><h3>الإكسسوارات</h3><p>مذكور في ملاحظات الطلب لكنه غير محفوظ كنوع ونسبة أو كمية منظمة. الملاحظة: ${safe(notes)}</p></section>`;
+    }
+
     function buildWeavingOrderDocument(order, fmt, safe) {
-      const accessorySection = weavingAccessoryDocumentSection(order, fmt, safe);
-      const hasAccessoryColumns = !!accessorySection || (order.allocations || []).some((line) => Number(line.accessoryQuantity || 0) > 0);
+      const structuredAccessorySection = weavingAccessoryDocumentSection(order, fmt, safe);
+      const accessorySection = structuredAccessorySection || weavingLegacyAccessoryNotice(order, safe);
+      const hasAccessoryColumns = !!structuredAccessorySection || (order.allocations || []).some((line) => Number(line.accessoryQuantity || 0) > 0);
       const inchLabel = order.widthMode === 'multiple' ? uniqueNonEmpty(order.widthLines.map((line)=>line.inch)).join('، ') || '-' : safe(order.inchWidth);
       const widthRows = order.widthMode === 'multiple' && order.widthLines.length
         ? `<section class="report-section"><h3>توزيع العروض</h3><table class="summary-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((line)=>`<tr><td>${safe(line.inch)}</td><td>${safe(line.width)}</td><td>${fmt(line.quantity)}</td></tr>`).join('')}</tbody></table></section>`

@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
-const { DB_PATH, initDb, run, get, all } = require('./db');
+const { DB_PATH, initDb, run, get, all, schemaHealth } = require('./db');
 const { calculateOrderSummary } = require('./calculations');
 
 const PORT = Number(process.env.PORT || 3050);
@@ -153,7 +153,8 @@ async function cleanupLegacyTestOrders() {
 
 app.get('/api/health', asyncHandler(async (_req, res) => {
   const row = await get('SELECT COUNT(*) AS count FROM sqlite_master WHERE type = ?', ['table']);
-  res.json({ ok: true, service: '2B Tex Backend', database: DB_PATH, tables: row.count, time: now() });
+  const schema = schemaHealth();
+  res.json({ ok: schema.ok, service: '2B Tex Backend', database: DB_PATH, tables: row.count, schema, time: now() });
 }));
 
 app.post('/api/backup', asyncHandler(async (_req, res) => {

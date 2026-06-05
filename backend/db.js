@@ -10,6 +10,29 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 
 let db = null;
 
+const REQUIRED_COLUMNS = {
+  orders: [
+    'product_code',
+    'width_mode',
+    'width_lines_json',
+    'raw_cost',
+    'accessory_type',
+    'accessory_percent',
+    'accessory_lines_json',
+  ],
+  order_allocations: [
+    'width_line_id',
+    'raw_inch',
+    'raw_width',
+    'accessory_quantity_manual',
+  ],
+  dyehouse_delivery_batches: ['width_line_id'],
+  finished_receiving_batches: ['note_number'],
+  accessory_batches: ['batch_date', 'note_number', 'movement'],
+  raw_returns: ['note_number'],
+  dyehouse_transfers: ['note_number'],
+};
+
 async function initDb() {
   if (db) return db;
   const SQL = await initSqlJs();
@@ -24,11 +47,37 @@ async function initDb() {
   return db;
 }
 
+function tableColumns(table) {
+  const stmt = db.prepare(`PRAGMA table_info(${table})`);
+  const columns = [];
+  while (stmt.step()) columns.push(stmt.getAsObject().name);
+  stmt.free();
+  return new Set(columns);
+}
+
 function addColumnIfMissing(table, definition) {
-  try {
-    db.run(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
-  } catch (error) {
-    if (!String(error?.message || error).includes('duplicate column name')) throw error;
+  const column = String(definition).trim().split(/\s+/)[0];
+  if (tableColumns(table).has(column)) return;
+  db.run(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+}
+
+function schemaHealth() {
+  if (!db) return { ok: false, missing: [] };
+  const missing = [];
+  for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
+    const existing = tableColumns(table);
+    for (const column of columns) {
+      if (!existing.has(column)) missing.push({ table, column });
+    }
+  }
+  return { ok: missing.length === 0, missing };
+}
+
+function assertSchemaReady() {
+  const health = schemaHealth();
+  if (!health.ok) {
+    const list = health.missing.map((item) => `${item.table}.${item.column}`).join(', ');
+    throw new Error(`Database schema migration is incomplete. Missing columns: ${list}`);
   }
 }
 
@@ -58,6 +107,7 @@ function runMigrations() {
   addColumnIfMissing('raw_returns', 'note_number TEXT');
   addColumnIfMissing('dyehouse_transfers', 'note_number TEXT');
   backfillAccessoryBatchFields();
+  assertSchemaReady();
 }
 
 function notePart(text, label) {
@@ -118,4 +168,4 @@ async function get(sql, params = []) {
   return rows[0] || null;
 }
 
-module.exports = { get db() { return db; }, DB_PATH, initDb, exec, run, get, all };
+module.exports = { get db() { return db; }, DB_PATH, initDb, exec, run, get, all, schemaHealth };

@@ -383,9 +383,10 @@ function updateWhatsappStatusBadge() {
 }
 async function pollBackendStatus() {
   try {
-    await backendRequest('/health', { cache: 'no-store' });
-    backendAvailable = true;
-    updateBackendStatusBadge('قاعدة البيانات متصلة');
+    const health = await backendRequest('/health', { cache: 'no-store' });
+    const schemaOk = health?.schema?.ok !== false;
+    backendAvailable = schemaOk;
+    updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
   } catch (error) {
     backendAvailable = false;
     updateBackendStatusBadge('قاعدة البيانات غير متاحة');
@@ -424,8 +425,14 @@ async function loadBackendData() {
       applyPricingDyehouseOptions();
       updateSuggestedDyeCost();
     }
-    backendAvailable = true;
-    updateBackendStatusBadge('قاعدة البيانات متصلة');
+    const health = await backendRequest('/health', { cache: 'no-store' });
+    const schemaOk = health?.schema?.ok !== false;
+    backendAvailable = schemaOk;
+    updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
+    if (!schemaOk) {
+      renderBackendUnavailable();
+      return;
+    }
     save();
     renderAll();
   } catch (error) {
