@@ -17,8 +17,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.21';
-const APP_BUILD_TIME = '2026-06-05 21:04';
+const APP_VERSION = 'v2026.06.05.22';
+const APP_BUILD_TIME = '2026-06-05 21:23';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3234,10 +3234,9 @@ async function openDyeingDocumentForDyehouse(dyehouseName) {
   if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
   if (!sourceOrder) return;
-  const operationNoteText = await promptOperationNotes(sourceOrder, 'dyeing', dyehouseName);
-  if (operationNoteText === null) return;
   const order = calculateOrder(sourceOrder);
   const name = String(dyehouseName || '').trim();
+  const operationNoteText = order.operationNotes?.[operationNotesKey('dyeing', name)] || '';
   const fmt = (value) => roundNumber(value).toLocaleString('ar-EG', { maximumFractionDigits: 3 });
   const reportOrder = { ...order, operationNoteText, whatsappDyehouseName:name };
   currentDocumentType = 'dyeing';
@@ -3282,8 +3281,7 @@ async function openDocument(type) {
   if (type === 'quotation') {
     body = buildQuotationDocument(order, fmt, safe);
   } else if (type === 'weaving') {
-    const operationNoteText = await promptOperationNotes(sourceOrder, 'weaving');
-    if (operationNoteText === null) return;
+    const operationNoteText = order.operationNotes?.[operationNotesKey('weaving')] || '';
     body = buildWeavingOrderDocument({ ...order, operationNoteText }, fmt, safe);
   } else if (type === 'dyeing') {
     body = buildDyeingSummaryDocument(order, fmt, safe);
