@@ -3344,6 +3344,7 @@ function openDocument(type) {
   const allocationRows = (order.allocations || []).map((line)=>`<tr><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(line.dyehouse || order.dyehouse)}</td><td>${safe(line.targetFinishedWidth)}</td><td>${safe(line.targetFinishedWeight)}</td><td>${fmt(line.finishedReceived)}</td><td>${fmt(line.wasteQuantity)} (${formatNumber(line.wastePercent || 0, 1)}%)</td>${hasAccessoryColumns ? `<td>${fmt(line.accessoryQuantity || 0)}</td>` : ''}</tr>`).join('') || `<tr><td colspan="${hasAccessoryColumns ? 8 : 7}">لا توجد ألوان مسجلة.</td></tr>`;
   const allocationTable = `<section class="report-section"><h3>خطة توزيع الألوان</h3><table><thead><tr><th>اللون</th><th>الكمية</th><th>المصبغة</th><th>العرض النهائي</th><th>الوزن المجهز</th><th>دخل المخزن</th><th>الهالك الفعلي</th>${hasAccessoryColumns ? '<th>الإكسسوار المطلوب</th>' : ''}</tr></thead><tbody>${allocationRows}</tbody></table></section>`;
   const notes = `<section class="report-section"><h3>ملاحظات تشغيل</h3><p>${safe(reportOperationNotes(order))}</p></section>`;
+  const allocationList = Array.isArray(order.allocations) ? order.allocations : [];
   let body = '';
   if (type === 'quotation') {
     body = `${documentHeader()}<div class="report-title"><h2>عرض سعر</h2><span>عرض تجاري للعميل حسب بيانات الطلب الحالية.</span></div>${infoCards}<section class="report-section"><h3>بنود العرض</h3><table><thead><tr><th>الصنف</th><th>اللون</th><th>الكمية</th><th>البوصة</th><th>سعر الكيلو</th><th>الإجمالي</th></tr></thead><tbody>${(order.allocations || []).map((line)=>`<tr><td>${safe(order.fabricType)}</td><td>${safe(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safe(order.inchWidth)}</td><td>${fmt(order.kiloPrice)}</td><td>${fmt(Number(line.plannedQuantity || 0) * Number(order.kiloPrice || 0))}</td></tr>`).join('') || '<tr><td colspan="6">لا توجد بنود عرض.</td></tr>'}</tbody></table></section>${notes}${documentFooter()}`;
@@ -3357,19 +3358,26 @@ function openDocument(type) {
   } else if (type === 'fullreport') {
     body = `${documentHeader()}<div class="report-title"><h2>التقرير التفصيلي للطلب</h2><span>متابعة كاملة من الخام حتى التسليم للعميل.</span></div>${infoCards}<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order.warehouseBalance)}</td></tr><tr><th>هالك تقديري</th><td>${fmt(order.expectedWasteQuantity)}</td><th>هالك فعلي</th><td>${fmt(order.totalWaste)}</td></tr></tbody></table></section>${accessorySection}${allocationTable}${notes}${documentFooter()}`;
   } else if (type === 'labSamples') {
-    body = `<div class="document-sheet lab-samples-sheet"><table class="lab-samples-table"><tbody><tr><td colspan="2"><h2>عينات معمل</h2></td><td colspan="2">${documentLogo()}</td></tr><tr><th>Order number</th><td>${safe(order.orderNumber)}</td><th>التاريخ</th><td>${safe(order.orderDate)}</td></tr><tr><th>المصبغة</th><td>${safe(order.dyehouse)}</td><th>الصنف</th><td>${safe(order.fabricType)}</td></tr><tr><th colspan="2">الكمية</th><td colspan="2">${fmt(order.totalRawOrdered)} ك</td></tr><tr><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>${(order.allocations || []).map((line, index)=> index % 2 === 0 ? `<tr><td class="sample-cell"></td><td>${safe(line.color || line.pantoneCode)}</td><td>${safe((order.allocations || [])[index + 1]?.color || (order.allocations || [])[index + 1]?.pantoneCode || '')}</td><td class="sample-cell"></td></tr>` : '').join('')}<tr><td class="sample-cell"></td><td></td><td></td><td class="sample-cell"></td></tr></tbody></table></div>`;
+    const sampleRows = [];
+    for (let index = 0; index < Math.max(allocationList.length, 1); index += 2) {
+      const right = allocationList[index] || {};
+      const left = allocationList[index + 1] || {};
+      sampleRows.push(`<tr><td class="sample-cell"></td><td class="color-cell">${safe(right.color || right.pantoneCode || '')}</td><td class="color-cell">${safe(left.color || left.pantoneCode || '')}</td><td class="sample-cell"></td></tr>`);
+    }
+    body = `<div class="document-sheet lab-document lab-samples-sheet"><table class="lab-samples-table"><colgroup><col class="lab-sample-col"><col class="lab-color-col"><col class="lab-color-col"><col class="lab-sample-col"></colgroup><tbody><tr><td colspan="3" class="lab-title">عينات معمل</td><td class="lab-logo-cell">${documentLogo()}</td></tr><tr class="lab-meta-row"><th>رقم الطلب</th><td class="lab-order-number">${safe(order.orderNumber)}</td><th>التاريخ</th><td>${safe(order.orderDate)}</td></tr><tr class="lab-meta-row"><th>المصبغة</th><td>${safe(order.dyehouse)}</td><th>الصنف</th><td>${safe(order.fabricType)}</td></tr><tr class="lab-item-row"><th colspan="2">الكمية</th><td colspan="2">${fmt(order.totalRawOrdered)} كجم</td></tr><tr class="lab-sample-head"><th>العينة</th><th>اللون</th><th>اللون</th><th>العينة</th></tr>${sampleRows.join('')}</tbody></table></div>`;
   } else if (type === 'stickers') {
-    const stickerRows = (order.allocations || []).map((line, index)=>{
+    const stickerRows = allocationList.map((line, index)=>{
       const stickerId = `sticker-${line.id || index}`;
       return `<div class="sticker-card" data-sticker-id="${escapeHtml(stickerId)}">
         <div class="sticker-brand"><strong>2B Tex</strong><span>تشغيل</span></div>
         <div class="sticker-order">${safe(order.orderNumber)}</div>
         <div class="sticker-line"><span>العميل</span><strong>${safe(order.customer)}</strong></div>
         <div class="sticker-line"><span>الصنف</span><strong>${safe(order.fabricType)}</strong></div>
+        <div class="sticker-line"><span>اللون</span><strong>${safe(line.color || line.pantoneCode)}</strong></div>
         <div class="sticker-grid">
-          <div><span>اللون</span><strong>${safe(line.color || line.pantoneCode)}</strong></div>
           <div><span>الكمية</span><strong>${fmt(line.plannedQuantity)}</strong></div>
-          <div><span>العرض</span><strong>${safe(line.targetFinishedWidth || line.rawWidth || order.inchWidth)}</strong></div>
+          <div><span>البوصة</span><strong>${safe(line.rawInch || order.inchWidth)}</strong></div>
+          <div><span>العرض</span><strong>${safe(line.targetFinishedWidth || line.rawWidth || '-')}</strong></div>
           <div><span>الوزن</span><strong>${safe(line.targetFinishedWeight || '-')}</strong></div>
         </div>
         <button class="mini-btn sticker-print-btn" type="button" data-print-sticker="${escapeHtml(stickerId)}">طباعة هذا اللون</button>
