@@ -2449,6 +2449,16 @@ function accessoryDocumentSection(order, fmt, safe) {
   const wasteText = order?.operationClosed ? `${fmt(order.accessoryWaste || 0)} (${formatNumber(order.accessoryWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة';
   return `<section class="report-section"><h3>متابعة الإكسسوار</h3><table class="summary-table"><tbody><tr><th>إكسسوار مطلوب</th><td>${fmt(order.accessoryRequired || 0)}</td><th>إكسسوار مرسل</th><td>${fmt(order.accessorySent || 0)}</td></tr><tr><th>إكسسوار مستلم</th><td>${fmt(order.accessoryReceived || 0)}</td><th>إكسسوار مسلم للعميل</th><td>${fmt(order.accessoryDelivered || 0)}</td></tr><tr><th>رصيد الإكسسوار</th><td>${fmt(order.accessoryBalance || 0)}</td><th>هالك الإكسسوار</th><td>${wasteText}</td></tr></tbody></table><table class="summary-table"><thead><tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
+function weavingAccessoryDocumentSection(order, fmt, safe) {
+  const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
+  const fallbackLine = order?.accessoryType || Number(order?.accessoryPercent || 0) || Number(order?.accessoryRequired || 0)
+    ? [{ type:order?.accessoryType || 'إكسسوار', percent:order?.accessoryPercent || 0, quantity:order?.accessoryRequired || 0 }]
+    : [];
+  const rows = (lines.length ? lines : fallbackLine)
+    .map((line) => `<tr><td>${safe(line.type || 'إكسسوار')}</td><td>${formatNumber(Number(line.percent || 0))}%</td><td>${fmt(line.quantity || line.quantityManual || 0)}</td></tr>`).join('');
+  if (!rows) return '';
+  return `<section class="report-section"><h3>الإكسسوارات</h3><table class="summary-table"><thead><tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+}
 function updateCustomerDeliveryFields(form) {
   if (!form) return;
   const isAccessory = form.elements.movementKind?.value === 'accessory';
@@ -3283,7 +3293,7 @@ function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   return sourceOrder.operationNotes[key];
 }
 function reportOperationNotes(order) {
-  return order.operationNoteText || '-';
+  return order.operationNoteText || order.notes || '-';
 }
 
 
@@ -3379,7 +3389,8 @@ function openDocument(type) {
       ? `<section class="report-section"><h3>توزيع العروض</h3><table class="summary-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((line)=>`<tr><td>${safe(line.inch)}</td><td>${safe(line.width)}</td><td>${fmt(line.quantity)}</td></tr>`).join('')}</tbody></table></section>`
       : '';
     const inchLabel = order.widthMode === 'multiple' ? uniqueNonEmpty(order.widthLines.map((line)=>line.inch)).join('، ') || '-' : safe(order.inchWidth);
-    body = `${documentHeader()}<div class="report-title"><h2>أمر تشغيل نسيج</h2><span>أمر تشغيل الخام قبل الصباغة.</span></div>${infoCards}<section class="report-section"><h3>بيانات الخام</h3><table class="summary-table"><tbody><tr><th>إجمالي الخام المطلوب</th><td>${fmt(order.totalRawOrdered)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr><tr><th>مصدر النسيج</th><td>${safe(order.weavingSource)}</td><th>البوصة</th><td>${inchLabel}</td></tr></tbody></table></section>${widthRows}${accessorySection}${weavingAllocationTable}${notes}${documentFooter()}`;
+    const weavingAccessorySection = weavingAccessoryDocumentSection(order, fmt, safe);
+    body = `${documentHeader()}<div class="report-title"><h2>أمر تشغيل نسيج</h2></div>${infoCards}<section class="report-section"><h3>بيانات الخام</h3><table class="summary-table"><tbody><tr><th>إجمالي الخام المطلوب</th><td>${fmt(order.totalRawOrdered)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr><tr><th>مصدر النسيج</th><td>${safe(order.weavingSource)}</td><th>البوصة</th><td>${inchLabel}</td></tr></tbody></table></section>${widthRows}${weavingAccessorySection}${weavingAllocationTable}${notes}${documentFooter()}`;
   } else if (type === 'dyeing') {
     const rawNotes = getFirstRawNoteNumber(order) || '-';
     body = `${documentHeader()}<div class="report-title"><h2>أمر تشغيل صباغة</h2><span>أمر تشغيل الصباغة للمصبغة المحددة.</span></div>${infoCards}<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إذن الخام</th><td>${safe(rawNotes)}</td><th>إجمالي كمية الصباغة</th><td>${fmt(order.totalSentToDyehouse || order.totalRawOrdered)}</td></tr><tr><th>عدد الألوان</th><td>${(order.allocations || []).length}</td><th>رصيد الخام في المصبغة</th><td>${fmt(order.totalSentToDyehouse)}</td></tr></tbody></table></section>${accessorySection}${allocationTable}${rawPermitImagesSection(order)}${notes}${documentFooter()}`;
