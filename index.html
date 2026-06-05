@@ -34,69 +34,15 @@
   </div>
 
 
-  <dialog id="pricingDialog"><form id="pricingForm" method="dialog" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">مرحلة ما قبل التشغيل</p><h2>تسجيل تسعيرة جديدة</h2></div><button class="ghost-btn" type="button" id="closePricingFormBtn">إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم التسعيرة</span><input id="pricingNumber" required></label><label><span>كود الصنف</span><input id="pricingProductCode" readonly></label><label><span>العميل</span><input id="pricingCustomer" required></label><label><span>تاريخ التسعيرة</span><input id="pricingDate" type="date" required></label><label><span>الصنف</span><input id="pricingFabricType" required></label><label><span>نوع الخامة للتسعير</span><select id="pricingMaterialType" required><option value="">اختر الخامة</option><option value="قطن">قطن</option><option value="مخلوط">مخلوط</option><option value="بوليستر">بوليستر</option></select></label><label><span>المصبغة المقترحة</span><select id="pricingDyehouse" required><option value="">اختر المصبغة</option><option value="جيما">جيما</option><option value="نيو جيما">نيو جيما</option></select></label><label><span>درجة اللون</span><select id="pricingColorClass" required><option value="">اختر الدرجة</option><option value="غسيل - مفتوح">غسيل - مفتوح</option><option value="غسيل - مقفول">غسيل - مقفول</option><option value="أبيض / كسترة - مفتوح">أبيض / كسترة - مفتوح</option><option value="أبيض / كسترة - مقفول">أبيض / كسترة - مقفول</option><option value="فواتح - مفتوح">فواتح - مفتوح</option><option value="فواتح - مقفول">فواتح - مقفول</option><option value="وسط - مفتوح">وسط - مفتوح</option><option value="وسط - مقفول">وسط - مقفول</option><option value="غوامق - مفتوح">غوامق - مفتوح</option><option value="غوامق - مقفول">غوامق - مقفول</option><option value="ألوان خاصة - مفتوح">ألوان خاصة - مفتوح</option><option value="ألوان خاصة - مقفول">ألوان خاصة - مقفول</option></select></label><label><span>الكمية المتوقعة</span><input id="pricingQuantity" type="number" required></label><label><span>البوصة</span><input id="pricingInchWidth" type="number" required></label><label><span>الوزن المجهز</span><input id="pricingFinishedWeight" type="number" required></label><label><span>تكلفة الخام</span><input id="pricingRawCost" type="number" required></label><label><span>تكلفة الصباغة</span><input id="pricingDyeCost" type="number" required></label><label><span>السعر المقترح من القائمة</span><input id="pricingSuggestedDyeCost" type="number" readonly></label><label><span>نسبة الهالك %</span><input id="pricingWastePercent" type="number" required></label><label><span>تكلفة المراحل الإضافية</span><input id="pricingExtraCost" type="number" value="0"></label><label><span>هامش الربح للكيلو</span><input id="pricingProfitPerKg" type="number" required></label><label><span>طريقة السداد</span><input id="pricingPaymentTerms" required></label><label class="full-row"><span>ملاحظات</span><input id="pricingNotes"></label></div><div class="pricing-preview"><div><span>تكلفة الهالك للكيلو</span><strong id="pricingWasteCostPreview">0</strong></div><div><span>إجمالي تكلفة الكيلو</span><strong id="pricingCostPreview">0</strong></div><div><span>سعر البيع للكيلو</span><strong id="pricingSellPreview">0</strong></div><div><span>إجمالي العقد</span><strong id="pricingTotalPreview">0</strong></div></div><div class="dialog-actions"><button class="mini-btn danger" type="button" id="deletePricingBtn" style="display:none">حذف التسعيرة</button><button class="primary-btn" type="submit">حفظ التسعيرة</button></div></form></dialog>
-  <dialog id="orderDialog"><form id="orderForm" method="dialog" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">أمر نسيج</p><h2>تسجيل طلب رئيسي</h2></div><button class="ghost-btn" type="button" id="closeOrderFormBtn">إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم الطلب</span><input id="orderNumber" required></label><label><span>كود الصنف</span><input id="productCode" readonly></label><label><span>العميل</span><input id="customer" required></label><label><span>تاريخ الطلب</span><input id="orderDate" type="date" required></label><label><span>نوع القماش</span><input id="fabricType" required></label><label><span>إجمالي الخام المطلوب</span><input id="totalRawQuantity" type="number" required></label><label><span>الهالك التقديري %</span><input id="expectedWastePercent" type="number" step="0.01" placeholder="بوليستر/اسبن 1.5-2 | مخلوط 4-5 | قطن 8-12"></label><label><span>نوع توزيع العرض</span><select id="widthMode"><option value="single">عرض واحد</option><option value="multiple">عدة عروض</option></select></label><label><span>البوصة</span><input id="inchWidth" required></label><div class="full-row width-lines-box" id="widthLinesBox"><div class="subsection-head"><span>توزيع العروض المتعددة</span><button type="button" class="mini-btn" id="addWidthLineBtn">+ إضافة عرض</button></div><div id="widthLinesEditor" class="width-lines-editor"></div></div><label><span>سعر الكيلو</span><input id="kiloPrice" type="number" required></label><label><span>طريقة السداد</span><input id="paymentTerms" required></label><label><span>المصبغة</span><input id="dyehouse" required></label><label><span>مصدر النسيج</span><input id="weavingSource" required></label><label><span>نوع الإكسسوار</span><select id="accessoryType"><option value="">بدون إكسسوار</option><option value="ريب">ريب</option><option value="ديربي">ديربي</option><option value="لياقات">لياقات</option><option value="أساور ولياقات">أساور ولياقات</option></select></label><label><span>نسبة الإكسسوار %</span><input id="accessoryPercent" type="number" value="0"></label><div class="full-row accessory-lines-box"><div class="subsection-head"><span>بنود الإكسسوار</span><button type="button" class="mini-btn" id="addAccessoryLineBtn">+ إضافة إكسسوار</button></div><div id="accessoryLinesEditor" class="accessory-lines-editor"></div><p class="eyebrow">يمكن إضافة أكثر من نوع، مثل ريب ولياقات، وكل بند له نسبته أو كميته.</p></div><label><span>ملاحظات</span><input id="orderNotes"></label></div><div class="dialog-actions"><button class="primary-btn" type="submit">حفظ الطلب</button></div></form></dialog>
+  <dialog id="pricingDialog"><form id="pricingForm" method="dialog" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">مرحلة ما قبل التشغيل</p><h2>تسجيل تسعيرة جديدة</h2></div><button class="ghost-btn" type="button" id="closePricingFormBtn">إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم التسعيرة</span><input id="pricingNumber" required></label><label><span>كود الصنف</span><input id="pricingProductCode" readonly></label><label><span>العميل</span><input id="pricingCustomer" required></label><label><span>تاريخ التسعيرة</span><input id="pricingDate" type="date" required></label><label><span>الصنف</span><input id="pricingFabricType" required></label><label><span>نوع الخامة للتسعير</span><select id="pricingMaterialType" required><option value="">اختر الخامة</option><option value="قطن">قطن</option><option value="مخلوط">مخلوط</option><option value="بوليستر">بوليستر</option></select></label><label><span>المصبغة المقترحة</span><select id="pricingDyehouse" required><option value="">اختر المصبغة</option><option value="جيما">جيما</option><option value="نيو جيما">نيو جيما</option></select></label><label><span>درجة اللون</span><select id="pricingColorClass" required><option value="">اختر الدرجة</option><option value="غسيل - مفتوح">غسيل - مفتوح</option><option value="غسيل - مقفول">غسيل - مقفول</option><option value="أبيض / كسترة - مفتوح">أبيض / كسترة - مفتوح</option><option value="أبيض / كسترة - مقفول">أبيض / كسترة - مقفول</option><option value="فواتح - مفتوح">فواتح - مفتوح</option><option value="فواتح - مقفول">فواتح - مقفول</option><option value="وسط - مفتوح">وسط - مفتوح</option><option value="وسط - مقفول">وسط - مقفول</option><option value="غوامق - مفتوح">غوامق - مفتوح</option><option value="غوامق - مقفول">غوامق - مقفول</option><option value="ألوان خاصة - مفتوح">ألوان خاصة - مفتوح</option><option value="ألوان خاصة - مقفول">ألوان خاصة - مقفول</option></select></label><label><span>الكمية المتوقعة</span><input id="pricingQuantity" type="number" required></label><label><span>البوصة</span><input id="pricingInchWidth" type="number" required></label><label><span>الوزن المجهز</span><input id="pricingFinishedWeight" type="number" required></label><label><span>تكلفة الخام</span><input id="pricingRawCost" type="number" required></label><label><span>تكلفة الصباغة</span><input id="pricingDyeCost" type="number" required></label><label><span>السعر المقترح من القائمة</span><input id="pricingSuggestedDyeCost" type="number" readonly></label><label><span>نسبة الهالك %</span><input id="pricingWastePercent" type="number" required></label><label><span>تكلفة المراحل الإضافية</span><input id="pricingExtraCost" type="number" value="0"></label><label><span>هامش الربح للكيلو</span><input id="pricingProfitPerKg" type="number" required></label><label><span>طريقة السداد</span><select id="pricingPaymentMode" required><option value="كاش">كاش</option><option value="شيكات">شيكات</option><option value="دفعات أسبوعية">دفعات أسبوعية</option></select><input id="pricingPaymentTerms" type="hidden"></label><label class="full-row"><span>تفاصيل السداد</span><input id="pricingPaymentDetails" placeholder="مثال: 2026-06-10 مبلغ 50000، 2026-06-17 مبلغ 50000"></label><label class="full-row"><span>ملاحظات</span><input id="pricingNotes"></label></div><div class="pricing-preview"><div><span>تكلفة الهالك للكيلو</span><strong id="pricingWasteCostPreview">0</strong></div><div><span>إجمالي تكلفة الكيلو</span><strong id="pricingCostPreview">0</strong></div><div><span>سعر البيع للكيلو</span><strong id="pricingSellPreview">0</strong></div><div><span>إجمالي العقد</span><strong id="pricingTotalPreview">0</strong></div></div><div class="dialog-actions"><button class="mini-btn danger" type="button" id="deletePricingBtn" style="display:none">حذف التسعيرة</button><button class="primary-btn" type="submit">حفظ التسعيرة</button></div></form></dialog>
+  <dialog id="orderDialog"><form id="orderForm" method="dialog" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">أمر نسيج</p><h2>تسجيل طلب رئيسي</h2></div><button class="ghost-btn" type="button" id="closeOrderFormBtn">إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم الطلب</span><input id="orderNumber" required></label><label><span>كود الصنف</span><input id="productCode" readonly></label><label><span>العميل</span><input id="customer" required></label><label><span>تاريخ الطلب</span><input id="orderDate" type="date" required></label><label><span>نوع القماش</span><input id="fabricType" required></label><label><span>إجمالي الخام المطلوب</span><input id="totalRawQuantity" type="number" required></label><label><span>الهالك التقديري %</span><input id="expectedWastePercent" type="number" step="0.01" placeholder="بوليستر/اسبن 1.5-2 | مخلوط 4-5 | قطن 8-12"></label><label><span>نوع توزيع العرض</span><select id="widthMode"><option value="single">عرض واحد</option><option value="multiple">عدة عروض</option></select></label><label><span>البوصة</span><input id="inchWidth" required></label><div class="full-row width-lines-box" id="widthLinesBox"><div class="subsection-head"><span>توزيع العروض المتعددة</span><button type="button" class="mini-btn" id="addWidthLineBtn">+ إضافة عرض</button></div><div id="widthLinesEditor" class="width-lines-editor"></div></div><label><span>سعر الكيلو</span><input id="kiloPrice" type="number" required></label><label><span>طريقة السداد</span><select id="paymentMode" required><option value="كاش">كاش</option><option value="شيكات">شيكات</option><option value="دفعات أسبوعية">دفعات أسبوعية</option></select><input id="paymentTerms" type="hidden"></label><label class="full-row"><span>تفاصيل السداد</span><input id="paymentDetails" placeholder="مثال: 2026-06-10 مبلغ 50000، 2026-06-17 مبلغ 50000"></label><label><span>المصبغة</span><input id="dyehouse" required></label><label><span>مصدر النسيج</span><input id="weavingSource" required></label><label><span>نوع الإكسسوار</span><select id="accessoryType"><option value="">بدون إكسسوار</option><option value="ريب">ريب</option><option value="ديربي">ديربي</option><option value="لياقات">لياقات</option><option value="أساور ولياقات">أساور ولياقات</option></select></label><label><span>نسبة الإكسسوار %</span><input id="accessoryPercent" type="number" value="0"></label><div class="full-row accessory-lines-box"><div class="subsection-head"><span>بنود الإكسسوار</span><button type="button" class="mini-btn" id="addAccessoryLineBtn">+ إضافة إكسسوار</button></div><div id="accessoryLinesEditor" class="accessory-lines-editor"></div><p class="eyebrow">يمكن إضافة أكثر من نوع، مثل ريب ولياقات، وكل بند له نسبته أو كميته.</p></div><label><span>ملاحظات</span><input id="orderNotes"></label></div><div class="dialog-actions"><button class="primary-btn" type="submit">حفظ الطلب</button></div></form></dialog>
   <dialog id="documentDialog"><div class="dialog-card xl printable-card"><div class="dialog-head no-print"><div><p class="eyebrow">مستند تشغيلي</p><h2 id="documentTitle">مستند تشغيلي</h2></div><div class="actions"><button class="mini-btn gold" id="shareWhatsAppBtn">مشاركة PNG</button><button class="mini-btn" id="printDocumentBtn">طباعة / PDF</button><button class="ghost-btn" id="closeDocumentBtn">&#1573;&#1594;&#1604;&#1575;&#1602;</button></div></div><div id="documentBody"></div></div></dialog>
   <dialog id="aiAnalysisDialog"><div class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">مساعد 2B الذكي</p><h2>تحليل التقرير</h2></div><button class="ghost-btn" id="closeAiAnalysisBtn" type="button">إغلاق</button></div><div id="aiAnalysisBody" class="ai-analysis-body"></div><div class="dialog-actions"><button class="mini-btn gold" id="copyAiWhatsappBtn" type="button">نسخ رسالة واتساب</button></div></div></dialog>
   <script src="./html2canvas.min.js"></script>
-  <script charset="UTF-8" src="./documents.js?v=20260605-07"></script>
+  <script charset="UTF-8" src="./documents.js?v=20260605-08"></script>
   <script charset="UTF-8" src="./pricing.js?v=20260605-02"></script>
   <script charset="UTF-8" src="./orders.js?v=20260605-01"></script>
-  <script charset="UTF-8" src="./app.js?v=20260605-22"></script>
+  <script charset="UTF-8" src="./app.js?v=20260605-23"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

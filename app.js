@@ -17,8 +17,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.22';
-const APP_BUILD_TIME = '2026-06-05 21:23';
+const APP_VERSION = 'v2026.06.05.23';
+const APP_BUILD_TIME = '2026-06-05 22:10';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -192,9 +192,27 @@ let pendingConvertedPricingId = null;
 let initialLocalStorageSnapshot = null;
 
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
+
+function composePaymentTerms(modeValue, detailsValue) {
+  const mode = String(modeValue || 'كاش').trim() || 'كاش';
+  const details = String(detailsValue || '').trim();
+  return details ? `${mode} - ${details}` : mode;
+}
+function parsePaymentTerms(value) {
+  const text = String(value || '').trim();
+  if (!text) return { mode:'كاش', details:'' };
+  const [mode, ...rest] = text.split(' - ');
+  return { mode: mode || 'كاش', details: rest.join(' - ') };
+}
+function setPaymentFields(modeRef, detailsRef, hiddenRef, paymentTerms) {
+  const parsed = parsePaymentTerms(paymentTerms);
+  if (modeRef) modeRef.value = [...modeRef.options].some((option)=>option.value === parsed.mode) ? parsed.mode : 'كاش';
+  if (detailsRef) detailsRef.value = parsed.details || '';
+  if (hiddenRef) hiddenRef.value = composePaymentTerms(modeRef?.value, detailsRef?.value);
+}
 
 function captureLocalStorageSnapshot() {
   ensureRuntimeCollections();
@@ -2047,7 +2065,9 @@ function updatePricingPreview() {
   refs.pricingTotalPreview.textContent = pricing.totalOffer.toLocaleString('ar-EG');
 }
 function pricingPayload(id = uid()) {
-  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:refs.pricingCustomer.value, pricingDate:refs.pricingDate.value, fabricType:refs.pricingFabricType.value, dyehouse:refs.pricingDyehouse.value, colorClass:refs.pricingColorClass.value, quantity:+refs.pricingQuantity.value, inchWidth:+refs.pricingInchWidth.value, finishedWeight:+refs.pricingFinishedWeight.value, materialType:refs.pricingMaterialType.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, paymentTerms:refs.pricingPaymentTerms.value, notes:refs.pricingNotes.value };
+  const paymentTerms = composePaymentTerms(refs.pricingPaymentMode?.value, refs.pricingPaymentDetails?.value);
+  if (refs.pricingPaymentTerms) refs.pricingPaymentTerms.value = paymentTerms;
+  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:refs.pricingCustomer.value, pricingDate:refs.pricingDate.value, fabricType:refs.pricingFabricType.value, dyehouse:refs.pricingDyehouse.value, colorClass:refs.pricingColorClass.value, quantity:+refs.pricingQuantity.value, inchWidth:+refs.pricingInchWidth.value, finishedWeight:+refs.pricingFinishedWeight.value, materialType:refs.pricingMaterialType.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, paymentTerms, notes:refs.pricingNotes.value };
 }
 function fillPricingForm(pricing) {
   const material = pricing.materialType || '';
@@ -2072,7 +2092,7 @@ function fillPricingForm(pricing) {
   refs.pricingWastePercent.value = pricing.wastePercent || '';
   refs.pricingExtraCost.value = pricing.extraCost || 0;
   refs.pricingProfitPerKg.value = pricing.profitPerKg || '';
-  refs.pricingPaymentTerms.value = pricing.paymentTerms || '';
+  setPaymentFields(refs.pricingPaymentMode, refs.pricingPaymentDetails, refs.pricingPaymentTerms, pricing.paymentTerms || '');
   refs.pricingNotes.value = pricing.notes || '';
   updateSuggestedDyeCost();
 }
@@ -2207,27 +2227,21 @@ function openPricingQuotation(id) {
       <div><span>الصنف</span>${escapeHtml(pricing.fabricType || '-')}</div>
       <div><span>درجة اللون</span>${escapeHtml(pricing.colorClass || '-')}</div>
       <div><span>الكمية</span>${money(pricing.quantity)} كجم</div>
-      <div><span>المصبغة</span>${escapeHtml(pricing.dyehouse || '-')}</div>
       <div><span>البوصة</span>${escapeHtml(pricing.inchWidth || '-')}</div>
       <div><span>الوزن المجهز</span>${escapeHtml(pricing.finishedWeight || '-')}</div>
-      <div><span>شروط السداد</span>${escapeHtml(pricing.paymentTerms || '-')}</div>
+      <div><span>طريقة السداد</span>${escapeHtml(pricing.paymentTerms || 'كاش')}</div>
     </div>
     <section class="report-section quotation-summary">
       <h3>ملخص العرض</h3>
       <div class="quotation-kpis">
         <div><span>سعر الكيلو</span><strong>${money(pricing.sellPrice)} جنيه</strong></div>
-        <div class="quotation-total"><span>إجمالي العرض</span><strong>${money(pricing.totalOffer)} جنيه</strong></div>
+        <div class="quotation-total"><span>إجمالي العقد</span><strong>${money(pricing.totalOffer)} جنيه</strong></div>
       </div>
     </section>
     <section class="report-section">
-      <h3>بنود التسعير</h3>
-      <table><thead><tr><th>البند</th><th>القيمة / كجم</th></tr></thead><tbody>
-        <tr><td>تكلفة الخام</td><td>${money(pricing.rawCost)}</td></tr>
-        <tr><td>تكلفة الصباغة</td><td>${money(pricing.dyeCost)}</td></tr>
-        <tr><td>تكلفة الهالك التقديري</td><td>${money(pricing.wasteCost)}</td></tr>
-        <tr><td>تكلفة المراحل الإضافية</td><td>${money(pricing.extraCost)}</td></tr>
-        <tr><td>إجمالي تكلفة الكيلو</td><td>${money(pricing.costPerKg)}</td></tr>
-        <tr><td>هامش الربح للكيلو</td><td>${money(pricing.profitPerKg)}</td></tr>
+      <h3>بنود العرض</h3>
+      <table><thead><tr><th>الصنف</th><th>درجة اللون</th><th>الكمية</th><th>البوصة</th><th>سعر الكيلو</th><th>الإجمالي</th></tr></thead><tbody>
+        <tr><td>${escapeHtml(pricing.fabricType || '-')}</td><td>${escapeHtml(pricing.colorClass || '-')}</td><td>${money(pricing.quantity)} كجم</td><td>${escapeHtml(pricing.inchWidth || '-')}</td><td>${money(pricing.sellPrice)} جنيه</td><td>${money(pricing.totalOffer)} جنيه</td></tr>
       </tbody></table>
     </section>
     <section class="report-section"><h3>ملاحظات</h3><p>${escapeHtml(notes || 'لا توجد ملاحظات إضافية.')}</p></section>
@@ -2598,7 +2612,7 @@ function fillOrderForm(order) {
   renderWidthLinesEditor(order.widthLines || []);
   syncWidthModeUi();
   refs.kiloPrice.value = order.kiloPrice || '';
-  refs.paymentTerms.value = order.paymentTerms || '';
+  setPaymentFields(refs.paymentMode, refs.paymentDetails, refs.paymentTerms, order.paymentTerms || '');
   refs.dyehouse.value = order.dyehouse || '';
   refs.weavingSource.value = order.weavingSource || '';
   refs.accessoryType.value = order.accessoryType || '';
@@ -2613,7 +2627,9 @@ async function addOrder(event) {
   const currentOrder = editingOrderId ? orders.find((order)=>order.id === editingOrderId) : null;
   const accessoryLines = readAccessoryLinesFromEditor();
   const firstAccessory = accessoryLines[0] || {};
-  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms:refs.paymentTerms.value, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
+  const paymentTerms = composePaymentTerms(refs.paymentMode?.value, refs.paymentDetails?.value);
+  if (refs.paymentTerms) refs.paymentTerms.value = paymentTerms;
+  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   const backendCustomer = await ensureBackendCustomer(payload.customer);
@@ -3580,7 +3596,7 @@ async function confirmWeavingSlip(event) {
     refs.pricingFabricType.value = order.fabricType || '';
     refs.pricingQuantity.value = quantity;
     refs.pricingInchWidth.value = order.inchWidth || '';
-    refs.pricingPaymentTerms.value = order.paymentTerms || '';
+    setPaymentFields(refs.pricingPaymentMode, refs.pricingPaymentDetails, refs.pricingPaymentTerms, order.paymentTerms || '');
     refs.pricingNotes.value = refs.weavingSlipNotes.value || '';
     updatePricingPreview();
     refs.weavingSlipDialog.close();
