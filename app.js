@@ -657,6 +657,9 @@ function recordAudit(action, entityType, entityId, beforeValue = null, afterValu
   auditLog.unshift({ id:uid(), action, entityType, entityId, beforeValue:safeClone(beforeValue), afterValue:safeClone(afterValue), note, createdAt:nowIso() });
   auditLog = auditLog.slice(0, 1000);
 }
+async function persistAuditLog() {
+  await saveBackendSetting('auditLog', auditLog);
+}
 function getFirstRawNoteNumber(order) {
   if (!order) return '';
   return [...new Set(rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber).filter(Boolean))].join('، ');
@@ -736,6 +739,7 @@ function enqueueReport(reportType, order, attachmentPath = '') {
     reportOutbox.unshift(row);
     rows.push(row);
     recordAudit('create', 'reportOutbox', row.id, null, row, `إضافة ${reportTypeLabels[reportType] || reportType} إلى قائمة الإرسال`);
+    persistAuditLog().catch((error)=>console.warn('audit-save-failed', error));
   });
   save();
   syncOutboxToWhatsappService();
@@ -1401,7 +1405,7 @@ async function renderA5LedgerDialog(customerName) {
 function openAuditLogDialog() {
   ensureRuntimeCollections();
   const actionLabels = { create:'إنشاء', update:'تعديل', delete:'حذف', retry:'إعادة محاولة', error:'خطأ' };
-  const entityLabels = { order:'طلب', pricing:'تسعيرة', allocation:'لون', reportOutbox:'قائمة الإرسال', whatsappSettings:'إعدادات واتساب', dyehousePriceLibrary:'أسعار المصابغ', customerAccount:'حساب عميل', customerPayment:'دفعة عميل' };
+  const entityLabels = { order:'طلب', pricing:'تسعيرة', allocation:'لون', orderDetails:'تفاصيل طلب', reportOutbox:'قائمة الإرسال', whatsappSettings:'إعدادات واتساب', dyehousePriceLibrary:'أسعار المصابغ', customerAccount:'حساب عميل', customerPayment:'دفعة عميل' };
   const cleanAuditNote = (item) => {
     const text = String(item?.note || '').trim();
     if (text && !isLegacyRecoveredText(text)) return text;
@@ -1646,6 +1650,7 @@ async function retryOutbox(id) {
   item.errorMessage = '';
   item.retryCount = Number(item.retryCount || 0) + 1;
   recordAudit('retry', 'reportOutbox', id, null, item, 'إعادة إرسال التقرير');
+  await persistAuditLog();
   save();
   await syncOutboxToWhatsappService();
   openOutboxDialog();
@@ -2157,6 +2162,7 @@ async function deletePricing(id) {
     return;
   }
   recordAudit('delete', 'pricing', id, pricing, null, `حذف التسعيرة رقم ${pricing.pricingNumber || ''}`);
+  await persistAuditLog();
   if (editingPricingId === id) editingPricingId = null;
   await loadBackendData();
   if (refs.documentDialog.open) refs.documentDialog.close();
@@ -2177,6 +2183,7 @@ async function addPricing(event) {
         return;
       }
       recordAudit('update', 'pricing', editingPricingId, before, updatedPricing, `تعديل التسعيرة رقم ${updatedPricing.pricingNumber || ''}`);
+      await persistAuditLog();
     }
     editingPricingId = null;
   } else {
@@ -2188,6 +2195,7 @@ async function addPricing(event) {
       return;
     }
     recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `إنشاء التسعيرة رقم ${createdPricing.pricingNumber || ''}`);
+    await persistAuditLog();
   }
   await loadBackendData();
   refs.pricingDialog.close();
@@ -2877,23 +2885,14 @@ async function deleteAllocation(id) {
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   if (backendSaveRequired) {
-    const deletions = [
-      ...rawBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/dyehouse/${batch.id}`)),
-      ...rawReturns.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/raw-return/${batch.id}`)),
-      ...productionBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/finished/${batch.id}`)),
-      ...finishedBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/finished/${batch.id}`)),
-      ...customerBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/customer/${batch.id}`)),
-      ...accessoryBatches.filter((batch)=>batch.allocationId===id).map((batch)=>deleteBackend(`/batches/accessory/${batch.id}`)),
-      ...dyehouseTransfers.filter((batch)=>batch.allocationId===id || batch.newAllocationId===id).map((batch)=>deleteBackend(`/transfers/${batch.id}`)),
-      deleteBackend(`/allocations/${id}`),
-    ];
-    const results = await Promise.all(deletions);
-    if (results.some((item)=>!item)) {
+    const deleted = await deleteBackend(`/allocations/${id}`);
+    if (!deleted) {
       await rollbackAfterBackendWriteFailure('تعذر حذف اللون من قاعدة البيانات. لم يتم اعتماد الحذف.');
       return;
     }
   }
   recordAudit('delete', 'allocation', id, allocation, null, `حذف اللون ${allocation.color || allocation.pantoneCode || '-'}`);
+  await persistAuditLog();
   await loadBackendData();
 }
 async function deleteOrder(id) {
@@ -2910,6 +2909,7 @@ async function deleteOrder(id) {
     }
   }
   recordAudit('delete', 'order', id, order, null, `حذف الطلب رقم ${order.orderNumber || ''}`);
+  await persistAuditLog();
   if (selectedOrderId === id) selectedOrderId = null;
   await loadBackendData();
 }
@@ -3893,6 +3893,7 @@ refs.ordersTableBody.onclick = (event) => {
     } catch (error) {
       console.error('Order details failed', error);
       recordAudit('error', 'orderDetails', button.dataset.view, null, { message: error && error.message ? error.message : String(error) }, 'فشل فتح تفاصيل الطلب');
+      persistAuditLog().catch((saveError)=>console.warn('audit-save-failed', saveError));
       refs.orderDetailsPanel.innerHTML = '<div class="empty-state">تعذر فتح تفاصيل الطلب حاليًا. راجع البيانات ثم حاول مرة أخرى.</div>';
       alert(`تعذر فتح تفاصيل الطلب. سبب الخطأ: ${error && error.message ? error.message : String(error)}`);
     }
