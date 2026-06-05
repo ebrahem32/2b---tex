@@ -3069,7 +3069,21 @@ function operationNotesKey(type, dyehouseName = '') {
   const name = String(dyehouseName || '').trim();
   return type === 'dyeing' ? `dyeing:${name || 'default'}` : 'weaving';
 }
+function combinedOperationNotes(order) {
+  const sections = [];
+  if (String(order?.notes || '').trim()) sections.push(`ملاحظات الطلب: ${String(order.notes).trim()}`);
+  const notes = order?.operationNotes && typeof order.operationNotes === 'object' && !Array.isArray(order.operationNotes) ? order.operationNotes : {};
+  if (String(notes.weaving || '').trim()) sections.push(`ملاحظات النسيج: ${String(notes.weaving).trim()}`);
+  Object.entries(notes)
+    .filter(([key, value]) => key.startsWith('dyeing:') && String(value || '').trim())
+    .forEach(([key, value]) => {
+      const dyehouseName = key.slice('dyeing:'.length) || 'المصبغة';
+      sections.push(`ملاحظات الصباغة - ${dyehouseName}: ${String(value).trim()}`);
+    });
+  return uniqueNonEmpty(sections).join('\n') || '-';
+}
 function reportOperationNotes(order) {
+  if (order.reportNotesText !== undefined) return order.reportNotesText || '-';
   if (order.operationNoteText !== undefined) return order.operationNoteText || '-';
   return order.notes || '-';
 }
@@ -3159,9 +3173,9 @@ async function openDocument(type) {
   } else if (type === 'dyeing') {
     body = buildDyeingSummaryDocument(order, fmt, safe);
   } else if (type === 'waste') {
-    body = buildWasteReportDocument(order, fmt, safe);
+    body = buildWasteReportDocument({ ...order, reportNotesText:combinedOperationNotes(order) }, fmt, safe);
   } else if (type === 'fullreport') {
-    body = buildCompactFullReportDocument(order, fmt, safe);
+    body = buildCompactFullReportDocument({ ...order, reportNotesText:combinedOperationNotes(order) }, fmt, safe);
   } else if (type === 'labSamples') {
     body = buildLabSamplesDocument(order, fmt, safe);
     alreadyWrapped = true;
