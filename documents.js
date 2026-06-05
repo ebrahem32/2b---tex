@@ -82,6 +82,7 @@
     }
 
     function basicInfoSection(order, options = {}) {
+      const omitted = new Set(['رقم الطلب', ...(options.omitBasicFields || [])]);
       const fields = [
         ['رقم الطلب', order?.orderNumber],
         ['العميل', customerName(order)],
@@ -89,8 +90,8 @@
         ['الصنف', order?.fabricType],
         ['إجمالي الخام', `${fmt(order?.totalRawOrdered)} كجم`],
         ['المصبغة', options.dyehouse || order?.dyehouse],
-      ].filter(([label]) => !(options.omitBasicFields || []).includes(label));
-      if (options.rawNotes) fields.push(['إذن الخام', options.rawNotes]);
+      ].filter(([label]) => !omitted.has(label));
+      if (options.rawNotes && !omitted.has('إذن الخام')) fields.push(['إذن الخام', options.rawNotes]);
       return `<div class="document-meta">${fields.map(([label, value]) => `<div><span>${safeText(label)}</span>${safeText(value)}</div>`).join('')}</div>`;
     }
 
@@ -154,7 +155,7 @@
 
     function buildWeavingOrderDocument(order) {
       const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>سعر الخام</th><td colspan="3">${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
-      return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { omitBasicFields:['رقم الطلب'] });
+      return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`);
     }
 
     function dyehouseTransfersFor(order, dyehouseName) {
@@ -197,7 +198,7 @@
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
       const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
-      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes });
+      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام'] });
     }
 
     function buildDyeingSummaryDocument(order) {
@@ -226,11 +227,11 @@
 
     function buildCompactFullReportDocument(order) {
       const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order?.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order?.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td></tr><tr><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td><th>هالك فعلي</th><td>${fmt(order?.totalWaste)} (${formatNumber(Number(order?.totalWastePercent || 0), 1)}%)</td></tr></tbody></table></section>`;
-      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeReceived:true, includeWaste:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.' });
+      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeReceived:true, includeWaste:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
     }
 
     function buildWasteReportDocument(order) {
-      return reportShell('تقرير الهالك', order, `${colorRows(order, orderAllocations(order), { includeReceived:true, includeWaste:true, includeDyehouse:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'الهالك الفعلي محسوب من التشغيل الفعلي.' });
+      return reportShell('تقرير الهالك', order, `${colorRows(order, orderAllocations(order), { includeReceived:true, includeWaste:true, includeDyehouse:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'الهالك الفعلي محسوب من التشغيل الفعلي.', omitBasicFields:['المصبغة'] });
     }
 
     function buildQuotationDocument(order) {
