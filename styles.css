@@ -124,6 +124,7 @@
 .connection-badge.is-down .connection-dot{background:var(--danger);box-shadow:0 0 0 3px rgba(239,68,68,.16)}
 .connection-badge.is-ok{color:#bbf7d0}
 .connection-badge.is-down{color:#fecaca}
+.version-badge{display:inline-flex;align-items:center;gap:6px;color:#fde68a;background:rgba(200,165,106,.14);border:1px solid rgba(200,165,106,.28);cursor:default}
 @media(max-width:900px){.flow-strip{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.flow-strip{grid-template-columns:1fr}}
 
