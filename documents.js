@@ -19,6 +19,7 @@
     const safeText = (value) => escapeHtml(value === undefined || value === null || value === '' ? '-' : value);
     const fmt = (value, digits = 3) => formatNumber(Number(value || 0), digits);
     const clean = (value) => String(value || '').trim();
+    const customerName = (order) => clean(order?.customer || order?.customerName || order?.clientName || '');
 
     function uniqueBy(rows, keyFactory) {
       const seen = new Set();
@@ -83,12 +84,12 @@
     function basicInfoSection(order, options = {}) {
       const fields = [
         ['رقم الطلب', order?.orderNumber],
-        ['العميل', order?.customer],
+        ['العميل', customerName(order)],
         ['التاريخ', options.date || order?.orderDate],
         ['الصنف', order?.fabricType],
         ['إجمالي الخام', `${fmt(order?.totalRawOrdered)} كجم`],
         ['المصبغة', options.dyehouse || order?.dyehouse],
-      ];
+      ].filter(([label]) => !(options.omitBasicFields || []).includes(label));
       if (options.rawNotes) fields.push(['إذن الخام', options.rawNotes]);
       return `<div class="document-meta">${fields.map(([label, value]) => `<div><span>${safeText(label)}</span>${safeText(value)}</div>`).join('')}</div>`;
     }
@@ -152,8 +153,8 @@
     }
 
     function buildWeavingOrderDocument(order) {
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td><th>إجمالي الخام المطلوب</th><td>${fmt(order?.totalRawOrdered)}</td></tr></tbody></table></section>`;
-      return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`);
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>سعر الخام</th><td colspan="3">${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
+      return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { omitBasicFields:['رقم الطلب'] });
     }
 
     function dyehouseTransfersFor(order, dyehouseName) {
