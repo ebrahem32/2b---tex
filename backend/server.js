@@ -194,7 +194,22 @@ async function cleanupLegacyTestOrders() {
 app.get('/api/health', asyncHandler(async (_req, res) => {
   const row = await get('SELECT COUNT(*) AS count FROM sqlite_master WHERE type = ?', ['table']);
   const schema = schemaHealth();
-  res.json({ ok: schema.ok, service: '2B Tex Backend', database: DB_PATH, tables: row.count, schema, time: now() });
+  const volumeRoot = path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data');
+  res.json({
+    ok: schema.ok,
+    service: '2B Tex Backend',
+    database: DB_PATH,
+    tables: row.count,
+    schema,
+    storage: {
+      database: DB_PATH,
+      railwayVolumeRoot: volumeRoot,
+      usesRailwayVolumePath: path.resolve(DB_PATH).startsWith(volumeRoot),
+      autoSeedAllowed: process.env.ALLOW_DB_SEED === '1',
+      localImportEnabled: LOCAL_IMPORT_ENABLED,
+    },
+    time: now()
+  });
 }));
 
 app.post('/api/backup', asyncHandler(async (_req, res) => {
