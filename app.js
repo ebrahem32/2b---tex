@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.27';
-const APP_BUILD_TIME = '2026-06-05 23:18';
+const APP_VERSION = 'v2026.06.05.28';
+const APP_BUILD_TIME = '2026-06-05 23:30';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3250,9 +3250,11 @@ async function openDyeingDocumentForDyehouse(dyehouseName) {
   if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
   if (!sourceOrder) return;
-  const order = calculateOrder(sourceOrder);
   const name = String(dyehouseName || '').trim();
-  const operationNoteText = order.operationNotes?.[operationNotesKey('dyeing', name)] || '';
+  const operationNoteText = await promptOperationNotes(sourceOrder, 'dyeing', name);
+  if (operationNoteText === null) return;
+  const refreshedSourceOrder = orders.find((item)=>item.id===selectedOrderId) || sourceOrder;
+  const order = calculateOrder(refreshedSourceOrder);
   const fmt = (value) => roundNumber(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
   const reportOrder = { ...order, operationNoteText, whatsappDyehouseName:name };
   currentDocumentType = 'dyeing';
@@ -3272,7 +3274,7 @@ async function openDocument(type) {
   if (backendAvailable) await loadBackendData();
   const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
   if (!sourceOrder) { alert('اختر طلبًا أولًا.'); return; }
-  const order = calculateOrder(sourceOrder);
+  let order = calculateOrder(sourceOrder);
   if (type === 'dyeing') {
     const names = dyehouseNamesForOrder(order);
     if (names.length > 1) {
@@ -3297,7 +3299,10 @@ async function openDocument(type) {
   if (type === 'quotation') {
     body = buildQuotationDocument(order, fmt, safe);
   } else if (type === 'weaving') {
-    const operationNoteText = order.operationNotes?.[operationNotesKey('weaving')] || '';
+    const operationNoteText = await promptOperationNotes(sourceOrder, 'weaving');
+    if (operationNoteText === null) return;
+    const refreshedSourceOrder = orders.find((item)=>item.id === selectedOrderId) || sourceOrder;
+    order = calculateOrder(refreshedSourceOrder);
     body = buildWeavingOrderDocument({ ...order, operationNoteText }, fmt, safe);
   } else if (type === 'dyeing') {
     body = buildDyeingSummaryDocument(order, fmt, safe);
