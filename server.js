@@ -78,10 +78,16 @@ function backendHealth() {
 }
 
 function safePath(urlPath) {
-  const decoded = decodeURIComponent(urlPath.split('?')[0]);
+  let decoded = '/';
+  try {
+    decoded = decodeURIComponent(urlPath.split('?')[0]);
+  } catch {
+    return null;
+  }
   const clean = decoded === '/' ? '/index.html' : decoded;
   const target = path.normalize(path.join(root, clean));
-  if (!target.startsWith(root)) return null;
+  const relative = path.relative(root, target);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) return null;
   return target;
 }
 

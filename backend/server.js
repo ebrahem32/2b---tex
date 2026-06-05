@@ -23,10 +23,10 @@ const TABLE_FIELDS = {
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','width_line_id','raw_inch','raw_width','finished_width','finished_weight','accessory_quantity_manual','notes','created_at','updated_at'],
   raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','created_at','updated_at'],
   dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','width_line_id','note_number','notes','created_at','updated_at'],
-  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','notes','created_at','updated_at'],
+  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','note_number','notes','created_at','updated_at'],
   customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','notes','created_at','updated_at'],
-  accessory_batches: ['id','order_id','allocation_id','accessory_type','quantity','notes','created_at','updated_at'],
-  raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','notes','created_at','updated_at'],
+  accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','created_at','updated_at'],
+  raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','created_at','updated_at'],
   dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
@@ -115,8 +115,22 @@ async function deleteOrderGraph(orderId) {
   await run('DELETE FROM dyehouse_delivery_batches WHERE order_id = ?', [order.id]);
   await run('DELETE FROM raw_receiving_batches WHERE order_id = ?', [order.id]);
   await run('DELETE FROM order_allocations WHERE order_id = ?', [order.id]);
-  const result = await run('DELETE FROM orders WHERE id = ?', [order.id]);
-  return result.changes || 0;
+  await run('DELETE FROM orders WHERE id = ?', [order.id]);
+  return 1;
+}
+
+async function deleteAllocationGraph(allocationId) {
+  const allocation = await get('SELECT id FROM order_allocations WHERE id = ?', [allocationId]);
+  if (!allocation) return 0;
+  await run('DELETE FROM dyehouse_transfers WHERE from_allocation_id = ? OR to_allocation_id = ?', [allocation.id, allocation.id]);
+  await run('DELETE FROM raw_returns WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM accessory_batches WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM customer_delivery_batches WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM finished_receiving_batches WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM dyehouse_delivery_batches WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM raw_receiving_batches WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM order_allocations WHERE id = ?', [allocation.id]);
+  return 1;
 }
 
 async function cleanupLegacyTestOrders() {
@@ -181,8 +195,8 @@ app.put('/api/allocations/:id', asyncHandler(async (req, res) => {
 }));
 
 app.delete('/api/allocations/:id', asyncHandler(async (req, res) => {
-  await run('DELETE FROM order_allocations WHERE id = ?', [req.params.id]);
-  res.json({ ok: true });
+  const deleted = await deleteAllocationGraph(req.params.id);
+  res.json({ ok: true, deleted });
 }));
 
 const batchTables = {
@@ -518,6 +532,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       quantity: numValue(row, ['quantity']),
       finished_width: numValue(row, ['finishedWidth', 'finished_width']),
       finished_weight: numValue(row, ['finishedWeight', 'finished_weight']),
+      note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
@@ -542,8 +557,11 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       id: row.id,
       order_id: await batchOrderId(row),
       allocation_id: firstValue(row, ['allocationId', 'allocation_id'], null),
+      batch_date: dateValue(row),
       accessory_type: firstValue(row, ['accessoryType', 'accessory_type']),
       quantity: numValue(row, ['quantity']),
+      note_number: firstValue(row, ['noteNumber', 'note_number']),
+      movement: firstValue(row, ['movement'], 'sent'),
       notes: firstValue(row, ['notes']),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
@@ -558,6 +576,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       batch_date: dateValue(row),
       quantity: numValue(row, ['quantity']),
       reason: firstValue(row, ['reason']),
+      note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())

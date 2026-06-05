@@ -49,7 +49,40 @@ function runMigrations() {
     'accessory_quantity_manual REAL',
   ].forEach((definition) => addColumnIfMissing('order_allocations', definition));
   addColumnIfMissing('dyehouse_delivery_batches', 'width_line_id TEXT');
+  addColumnIfMissing('finished_receiving_batches', 'note_number TEXT');
+  [
+    'batch_date TEXT',
+    'note_number TEXT',
+    'movement TEXT',
+  ].forEach((definition) => addColumnIfMissing('accessory_batches', definition));
+  addColumnIfMissing('raw_returns', 'note_number TEXT');
   addColumnIfMissing('dyehouse_transfers', 'note_number TEXT');
+  backfillAccessoryBatchFields();
+}
+
+function notePart(text, label) {
+  const pattern = new RegExp(`${label}\\s*:\\s*([^|]+)`);
+  const match = String(text || '').match(pattern);
+  return match ? match[1].trim() : '';
+}
+
+function backfillAccessoryBatchFields() {
+  const stmt = db.prepare('SELECT id, notes, batch_date, note_number, movement FROM accessory_batches');
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  for (const row of rows) {
+    const notes = String(row.notes || '');
+    const batchDate = row.batch_date || notePart(notes, '\\u0627\\u0644\\u062a\\u0627\\u0631\\u064a\\u062e');
+    const noteNumber = row.note_number || notePart(notes, '\\u0631\\u0642\\u0645 \\u0627\\u0644\\u0625\\u0630\\u0646');
+    const movement = row.movement || notePart(notes, '\\u0627\\u0644\\u062d\\u0631\\u0643\\u0629') || 'sent';
+    if (batchDate !== row.batch_date || noteNumber !== row.note_number || movement !== row.movement) {
+      db.run(
+        'UPDATE accessory_batches SET batch_date = ?, note_number = ?, movement = ? WHERE id = ?',
+        [batchDate || null, noteNumber || null, movement || 'sent', row.id]
+      );
+    }
+  }
 }
 
 function persist() {
