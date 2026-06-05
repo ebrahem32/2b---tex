@@ -14,7 +14,8 @@ function calculateOrderSummary(order, data = {}) {
   const customerDelivered = sum(data.customerDeliveryBatches || []);
   const rawReturned = sum(data.rawReturns || []);
   const requested = Number(order?.total_raw_quantity || order?.totalRawQuantity || 0);
-  const wasteQuantity = Math.max(sentToDyehouse - finishedReceived, 0);
+  const isClosed = Boolean(order?.is_closed || order?.operationClosed);
+  const wasteQuantity = isClosed ? Math.max(sentToDyehouse - finishedReceived - rawReturned, 0) : 0;
   const wastePercentage = sentToDyehouse ? wasteQuantity / sentToDyehouse * 100 : 0;
   const estimatedWaste = requested * Number(order?.expected_waste_percent || order?.expectedWastePercent || 0) / 100;
 
@@ -25,7 +26,7 @@ function calculateOrderSummary(order, data = {}) {
     totalSentToDyehouse: round(sentToDyehouse),
     remainingNotSentToDyehouse: round(Math.max(rawReceived - sentToDyehouse, 0)),
     totalFinishedReceived: round(finishedReceived),
-    remainingAtDyehouse: round(Math.max(sentToDyehouse - finishedReceived, 0)),
+    remainingAtDyehouse: round(Math.max(sentToDyehouse - finishedReceived - rawReturned - wasteQuantity, 0)),
     customerDeliveredQuantity: round(customerDelivered),
     customerRemainingQuantity: round(Math.max(requested - customerDelivered, 0)),
     warehouseBalance: round(Math.max(finishedReceived - customerDelivered, 0)),
