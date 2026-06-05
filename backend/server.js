@@ -21,12 +21,12 @@ const TABLE_FIELDS = {
   pricings: ['id','pricing_number','customer_id','pricing_date','fabric_type','material_type','dyehouse','color_class','quantity','inch_width','finished_weight','raw_cost','dye_cost','waste_percent','extra_cost','profit_per_kg','unit_price','total_price','payment_terms','notes','status','created_at','updated_at'],
   orders: ['id','order_number','pricing_id','customer_id','order_date','product_code','fabric_type','total_raw_quantity','expected_waste_percent','width_mode','width_lines_json','inch_width','kilo_price','raw_cost','payment_terms','accessory_type','accessory_percent','accessory_lines_json','dyehouse','weaving_source','notes','operation_notes_json','status','is_closed','created_at','updated_at'],
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','width_line_id','raw_inch','raw_width','finished_width','finished_weight','accessory_quantity_manual','notes','created_at','updated_at'],
-  raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','created_at','updated_at'],
-  dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','width_line_id','note_number','notes','created_at','updated_at'],
-  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','note_number','notes','created_at','updated_at'],
-  customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','notes','created_at','updated_at'],
-  accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','created_at','updated_at'],
-  raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','created_at','updated_at'],
+  raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','source_document_json','created_at','updated_at'],
+  dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','width_line_id','note_number','notes','source_document_json','created_at','updated_at'],
+  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','note_number','notes','source_document_json','created_at','updated_at'],
+  customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','notes','source_document_json','created_at','updated_at'],
+  accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','source_document_json','created_at','updated_at'],
+  raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','source_document_json','created_at','updated_at'],
   dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
@@ -365,6 +365,12 @@ function dateValue(row) {
   return firstValue(row, ['batchDate', 'date', 'orderDate', 'pricingDate', 'createdAt', 'created_at'], null);
 }
 
+function sourceDocumentValue(row) {
+  const value = row?.sourceDocument || row?.source_document || row?.source_document_json || null;
+  if (!value) return null;
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
 async function backupDatabaseForImport() {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const target = path.join(BACKUP_DIR, `before-import-local-${stamp}.sqlite`);
@@ -523,6 +529,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       width_line_id: firstValue(row, ['widthLineId', 'width_line_id']),
       note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
+      source_document_json: sourceDocumentValue(row),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
     };
@@ -547,6 +554,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       width_line_id: firstValue(row, ['widthLineId', 'width_line_id']),
       note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
+      source_document_json: sourceDocumentValue(row),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
     }, stats);
@@ -563,6 +571,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       finished_weight: numValue(row, ['finishedWeight', 'finished_weight']),
       note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
+      source_document_json: sourceDocumentValue(row),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
     }, stats);
@@ -576,6 +585,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       batch_date: dateValue(row),
       quantity: numValue(row, ['quantity']),
       notes: firstValue(row, ['notes']),
+      source_document_json: sourceDocumentValue(row),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
     }, stats);
@@ -592,6 +602,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       note_number: firstValue(row, ['noteNumber', 'note_number']),
       movement: firstValue(row, ['movement'], 'sent'),
       notes: firstValue(row, ['notes']),
+      source_document_json: sourceDocumentValue(row),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
     }, stats);
@@ -607,6 +618,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
       reason: firstValue(row, ['reason']),
       note_number: firstValue(row, ['noteNumber', 'note_number']),
       notes: firstValue(row, ['notes']),
+      source_document_json: sourceDocumentValue(row),
       created_at: firstValue(row, ['createdAt', 'created_at'], now()),
       updated_at: firstValue(row, ['updatedAt', 'updated_at'], now())
     }, stats);

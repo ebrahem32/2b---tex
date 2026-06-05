@@ -17,8 +17,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.15';
-const APP_BUILD_TIME = '2026-06-05 18:53';
+const APP_VERSION = 'v2026.06.05.16';
+const APP_BUILD_TIME = '2026-06-05 19:00';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -299,6 +299,7 @@ function mapDbBatch(row) {
     widthLineId: row.width_line_id || '',
     noteNumber: row.note_number || '',
     notes: row.notes || row.reason || '',
+    sourceDocument: parseDbJsonObject(row.source_document_json),
     finishedWidth: row.finished_width || '',
     finishedWeight: row.finished_weight || '',
     accessoryType: row.accessory_type || '',
@@ -582,6 +583,7 @@ const batchToApi = (batch) => ({
   width_line_id: batch.widthLineId || null,
   note_number: batch.noteNumber || '',
   notes: batch.notes || '',
+  source_document_json: JSON.stringify(batch.sourceDocument || null),
   finished_width: batch.finishedWidth || null,
   finished_weight: batch.finishedWeight || null,
   accessory_type: batch.accessoryType || null,

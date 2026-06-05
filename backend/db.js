@@ -27,10 +27,12 @@ const REQUIRED_COLUMNS = {
     'raw_width',
     'accessory_quantity_manual',
   ],
-  dyehouse_delivery_batches: ['width_line_id'],
-  finished_receiving_batches: ['note_number'],
-  accessory_batches: ['batch_date', 'note_number', 'movement'],
-  raw_returns: ['note_number'],
+  raw_receiving_batches: ['source_document_json'],
+  dyehouse_delivery_batches: ['width_line_id', 'source_document_json'],
+  finished_receiving_batches: ['note_number', 'source_document_json'],
+  customer_delivery_batches: ['source_document_json'],
+  accessory_batches: ['batch_date', 'note_number', 'movement', 'source_document_json'],
+  raw_returns: ['note_number', 'source_document_json'],
   dyehouse_transfers: ['note_number'],
 };
 
@@ -100,6 +102,14 @@ function runMigrations() {
     'accessory_quantity_manual REAL',
   ].forEach((definition) => addColumnIfMissing('order_allocations', definition));
   addColumnIfMissing('dyehouse_delivery_batches', 'width_line_id TEXT');
+  [
+    'raw_receiving_batches',
+    'dyehouse_delivery_batches',
+    'finished_receiving_batches',
+    'customer_delivery_batches',
+    'accessory_batches',
+    'raw_returns',
+  ].forEach((table) => addColumnIfMissing(table, 'source_document_json TEXT'));
   addColumnIfMissing('finished_receiving_batches', 'note_number TEXT');
   [
     'batch_date TEXT',
