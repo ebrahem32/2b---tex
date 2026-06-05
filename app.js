@@ -39,17 +39,6 @@ const load = (key, fallback, legacyKey) => {
 };
 const save = () => {
   ensureRuntimeCollections();
-  localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(orders));
-  localStorage.setItem(STORAGE_KEYS.allocations, JSON.stringify(allocations));
-  localStorage.setItem(STORAGE_KEYS.raw, JSON.stringify(rawBatches));
-  localStorage.setItem(STORAGE_KEYS.dye, JSON.stringify(dyeBatches));
-  localStorage.setItem(STORAGE_KEYS.finished, JSON.stringify(finishedBatches));
-  localStorage.setItem(STORAGE_KEYS.production, JSON.stringify(productionBatches));
-  localStorage.setItem(STORAGE_KEYS.customer, JSON.stringify(customerBatches));
-  localStorage.setItem(STORAGE_KEYS.accessory, JSON.stringify(accessoryBatches));
-  localStorage.setItem(STORAGE_KEYS.transfers, JSON.stringify(dyehouseTransfers));
-  localStorage.setItem(STORAGE_KEYS.rawReturns, JSON.stringify(rawReturns));
-  localStorage.setItem(STORAGE_KEYS.pricings, JSON.stringify(pricings));
   localStorage.setItem(STORAGE_KEYS.customerAccounts, JSON.stringify(customerAccounts));
   localStorage.setItem(STORAGE_KEYS.reportOutbox, JSON.stringify(reportOutbox));
   localStorage.setItem(STORAGE_KEYS.whatsappSettings, JSON.stringify(whatsappSettings));
@@ -613,8 +602,14 @@ async function saveBackendSetting(key, value) {
 }
 async function ensureBackendForWrite(message = 'تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد التعديل.') {
   try {
-    await backendRequest('/health', { cache: 'no-store' });
-    backendAvailable = true;
+    const health = await backendRequest('/health', { cache: 'no-store' });
+    const schemaOk = health?.schema?.ok !== false;
+    backendAvailable = schemaOk;
+    updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
+    if (!schemaOk) {
+      alert('قاعدة البيانات متصلة لكن هيكلها غير مكتمل. لم يتم اعتماد التعديل حتى تتم الترقية.');
+      return false;
+    }
     return true;
   } catch (error) {
     backendAvailable = false;
@@ -635,6 +630,29 @@ function backendBatchType(type) {
 async function rollbackAfterBackendWriteFailure(message) {
   alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
   await loadBackendData();
+}
+async function verifyOrderPersisted(orderId, expected = {}) {
+  if (!orderId) return false;
+  const row = await backendRequest(`/orders/${orderId}`, { cache:'no-store' });
+  const savedLines = parseDbJsonArray(row.accessory_lines_json);
+  const expectedLines = Array.isArray(expected.accessoryLines) ? expected.accessoryLines : [];
+  if (expectedLines.length && !savedLines.length) return false;
+  if (expectedLines.length) {
+    const expectedSignature = JSON.stringify(expectedLines.map((line)=>({
+      type:String(line.type || ''),
+      percent:Number(line.percent || 0),
+      quantityManual:line.quantityManual === '' || line.quantityManual === null || line.quantityManual === undefined ? '' : Number(line.quantityManual || 0),
+    })));
+    const savedSignature = JSON.stringify(savedLines.map((line)=>({
+      type:String(line.type || ''),
+      percent:Number(line.percent || 0),
+      quantityManual:line.quantityManual === '' || line.quantityManual === null || line.quantityManual === undefined ? '' : Number(line.quantityManual || 0),
+    })));
+    if (expectedSignature !== savedSignature) return false;
+  }
+  if (Number(expected.accessoryPercent || 0) !== Number(row.accessory_percent || 0)) return false;
+  if (String(expected.accessoryType || '') !== String(row.accessory_type || '')) return false;
+  return true;
 }
 const reportTypeLabels = {
   weaving_production_order: 'أمر تشغيل نسيج',
@@ -2452,6 +2470,10 @@ async function addOrder(event) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الطلب في قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
+    if (!(await verifyOrderPersisted(editingOrderId, payload))) {
+      await rollbackAfterBackendWriteFailure('تم إرسال تعديل الطلب لكن بيانات الإكسسوارات لم ترجع من قاعدة البيانات. لم يتم اعتماد التعديل.');
+      return;
+    }
     const changedAllocations = updatedAllocations.filter((allocation) => {
       const original = allocations.find((item)=>item.id === allocation.id);
       return original && original.dyehouse !== allocation.dyehouse;
@@ -2469,6 +2491,10 @@ async function addOrder(event) {
     const savedOrder = await postBackend('/orders', orderToApi(newOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب الجديد في قاعدة البيانات. لم يتم اعتماد الطلب.');
+      return;
+    }
+    if (!(await verifyOrderPersisted(savedOrder.id || newOrder.id, payload))) {
+      await rollbackAfterBackendWriteFailure('تم إرسال الطلب لكن بيانات الإكسسوارات لم ترجع من قاعدة البيانات. لم يتم اعتماد الطلب.');
       return;
     }
     selectedOrderId = savedOrder.id || newOrder.id;
