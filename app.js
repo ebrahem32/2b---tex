@@ -1721,9 +1721,18 @@ function applyPricingDyehouseOptions() {
 function applyPricingColorOptions() {
   if (!refs.pricingColorClass) return;
   const current = refs.pricingColorClass.value;
-  const colors = uniqueNonEmpty(Object.values(activeDyehousePriceLibrary()).flatMap((config)=>Object.values(config.dyeing || {}).flatMap((items)=>Object.keys(items || {}))));
+  const librarySource = activeDyehousePriceLibrary();
+  const dyehouse = refs.pricingDyehouse?.value || '';
+  const material = refs.pricingMaterialType?.value || '';
+  const library = librarySource[dyehouse];
+  const resolved = library?.aliasOf ? librarySource[library.aliasOf] : library;
+  const materialKey = material === 'مخلوط' ? 'قطن' : material;
+  const sourceLibraries = resolved ? [resolved] : Object.values(librarySource).map((config)=>config?.aliasOf ? librarySource[config.aliasOf] : config);
+  const colors = materialKey
+    ? uniqueNonEmpty(sourceLibraries.flatMap((config)=>Object.keys(config?.dyeing?.[materialKey] || {})))
+    : uniqueNonEmpty(Object.values(resolved?.dyeing || {}).flatMap((items)=>Object.keys(items || {})));
   const fallback = ['غسيل - مفتوح','غسيل - مقفول','أبيض / كسر بياض - مفتوح','أبيض / كسر بياض - مقفول','فواتح - مفتوح','فواتح - مقفول','وسط - مفتوح','وسط - مقفول','غوامق - مفتوح','غوامق - مقفول','أسود - مفتوح','أسود - مقفول','أسود خاص - مفتوح','أسود خاص - مقفول','ألوان خاصة - مفتوح','ألوان خاصة - مقفول'];
-  const options = (colors.length ? colors : fallback).filter((name)=>name && !isLegacyRecoveredText(name)).sort((a,b)=>a.localeCompare(b, 'ar'));
+  const options = (colors.length ? colors : (materialKey ? [] : fallback)).filter((name)=>name && !isLegacyRecoveredText(name)).sort((a,b)=>a.localeCompare(b, 'ar'));
   refs.pricingColorClass.innerHTML = `<option value="">اختر الدرجة</option>${options.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
   if (options.includes(current)) refs.pricingColorClass.value = current;
 }
@@ -3769,7 +3778,8 @@ refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; refs.
 refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);
-['pricingDyehouse','pricingMaterialType','pricingColorClass'].forEach((key)=>refs[key].onchange = updateSuggestedDyeCost);
+['pricingDyehouse','pricingMaterialType'].forEach((key)=>refs[key].onchange = () => { applyPricingColorOptions(); updateSuggestedDyeCost(); });
+refs.pricingColorClass.onchange = updateSuggestedDyeCost;
 refs.widthMode.onchange = syncWidthModeUi;
 refs.addWidthLineBtn.onclick = () => refs.widthLinesEditor.insertAdjacentHTML('beforeend', widthLineRowHtml());
 refs.widthLinesEditor.onclick = (event) => { if (event.target.dataset.removeWidthLine !== undefined) event.target.closest('.width-line-row')?.remove(); };
@@ -4044,9 +4054,6 @@ pollBackendStatus();
 pollWhatsappService();
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
-
-
-
 
 
 
