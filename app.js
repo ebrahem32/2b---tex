@@ -999,10 +999,20 @@ async function saveDyehousePricesFromDialog() {
   refs.documentBody.querySelectorAll('[data-dyehouse-price-row]').forEach((row) => {
     const dyehouse = row.querySelector('[data-price-dyehouse]')?.value.trim() || '';
     const material = row.querySelector('[data-price-material]')?.value.trim() || '';
-    const color = row.querySelector('[data-price-color]')?.value.trim() || '';
+    const color = normalizeDyehousePriceLabel(row.querySelector('[data-price-color]')?.value || '');
     const rawPrice = row.querySelector('[data-price-value]')?.value;
     if (!dyehouse || isLegacyRecoveredText(dyehouse) || isLegacyRecoveredText(material) || isLegacyRecoveredText(color)) return;
-    if (!next[dyehouse]) next[dyehouse] = { effectiveFrom:'', dyeing:{}, extras:{} };
+    if (!next[dyehouse]) {
+      const existing = customDyehousePriceLibrary?.[dyehouse] || {};
+      next[dyehouse] = {
+        effectiveFrom: existing.effectiveFrom || '',
+        accountingMode: existing.accountingMode || 'net',
+        dyeing: {},
+        printing: clone(existing.printing || {}),
+        extras: clone(existing.extras || {}),
+      };
+      if (existing.aliasOf) next[dyehouse].aliasOf = existing.aliasOf;
+    }
     if (!material || !color || rawPrice === '') return;
     const price = Number(rawPrice);
     if (!Number.isFinite(price)) return;
