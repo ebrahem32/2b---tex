@@ -279,8 +279,12 @@ function mapDbAllocation(row) {
     pantoneCode: row.pantone_code || '',
     plannedQuantity: Number(row.planned_quantity || 0),
     dyehouse: row.dyehouse || '',
+    widthLineId: row.width_line_id || '',
+    rawInch: row.raw_inch || '',
+    rawWidth: row.raw_width || '',
     targetFinishedWidth: row.finished_width || '',
     targetFinishedWeight: row.finished_weight || '',
+    accessoryQuantityManual: row.accessory_quantity_manual ?? null,
     notes: row.notes || '',
   };
 }
@@ -293,6 +297,7 @@ function mapDbBatch(row) {
     quantity: Number(row.quantity || 0),
     supplier: row.supplier || '',
     dyehouse: row.dyehouse || '',
+    widthLineId: row.width_line_id || '',
     noteNumber: row.note_number || '',
     notes: row.notes || row.reason || '',
     finishedWidth: row.finished_width || '',
@@ -474,8 +479,12 @@ const allocationToApi = (allocation) => ({
   pantone_code: allocation.pantoneCode || '',
   planned_quantity: Number(allocation.plannedQuantity || 0),
   dyehouse: allocation.dyehouse || '',
+  width_line_id: allocation.widthLineId || '',
+  raw_inch: allocation.rawInch || null,
+  raw_width: allocation.rawWidth || null,
   finished_width: allocation.targetFinishedWidth || allocation.rawWidth || '',
   finished_weight: allocation.targetFinishedWeight || '',
+  accessory_quantity_manual: allocation.accessoryQuantityManual ?? null,
   notes: allocation.notes || '',
 });
 const pricingToApi = (pricing, customerId = null) => {
@@ -529,6 +538,7 @@ const batchToApi = (batch) => ({
   quantity: Number(batch.quantity || 0),
   supplier: batch.supplier || '',
   dyehouse: batch.dyehouse || '',
+  width_line_id: batch.widthLineId || null,
   note_number: batch.noteNumber || '',
   notes: batch.notes || '',
   finished_width: batch.finishedWidth || null,
@@ -2154,17 +2164,18 @@ function convertPricingToOrder(id) {
 async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
   const convertedAt = new Date().toISOString();
   const converted = [];
-  pricings = pricings.map((pricing)=>{
+  pricings.forEach((pricing)=>{
     const matches = pricingId ? pricing.id === pricingId : (String(pricing.pricingNumber)===String(pricingNumber) || orderNumberFromPricing(pricing.pricingNumber)===String(pricingNumber));
-    if (!matches) return pricing;
-    const updated = { ...pricing, status:'converted', convertedOrderId: orderId || true, convertedAt };
-    converted.push(updated);
-    return updated;
+    if (matches) converted.push({ ...pricing, status:'converted', convertedOrderId: orderId || true, convertedAt });
   });
   let ok = true;
   for (const pricing of converted) {
     const saved = await putBackend(`/pricings/${pricing.id}`, { status:'converted', notes:pricing.notes || '' });
     if (!saved) ok = false;
+  }
+  if (ok && converted.length) {
+    const convertedById = new Map(converted.map((pricing)=>[pricing.id, pricing]));
+    pricings = pricings.map((pricing)=>convertedById.get(pricing.id) || pricing);
   }
   return ok;
 }
@@ -2616,42 +2627,36 @@ async function addBatch(event) {
     const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
     if (data.movementKind === 'return') {
       if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; }
-      rawReturns.unshift(data);
       backendResult = await postBackend('/batches/raw-return', { ...batchToApi(data), reason:data.reason || data.notes || '' });
     } else {
       if (currentOrder.widthMode === 'multiple' && !data.widthLineId) { alert('اختر العرض المرتبط قبل تسجيل خروج الخام.'); return; }
       if (rawDocumentFile) data.sourceDocument = { type:'raw-batch-image', image: await resizeSlipImage(rawDocumentFile) };
-      rawBatches.unshift(data);
       backendResult = await postBackend('/batches/dyehouse', batchToApi(data));
     }
   }
   if (type === 'rawReturn') {
     if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; }
-    rawReturns.unshift(data);
     backendResult = await postBackend('/batches/raw-return', { ...batchToApi(data), reason:data.reason || data.notes || '' });
   }
   if (type === 'accessory') {
     if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
     data.movement = 'sent'; delete data.allocationId;
-    accessoryBatches.unshift(data);
     backendResult = await postBackend('/batches/accessory', batchToApi(data));
   }
   if (type === 'accessoryReceived') {
     if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
     if (!data.allocationId) { alert('اختر اللون المرتبط باستلام الإكسسوار.'); return; }
     data.movement = 'received';
-    accessoryBatches.unshift(data);
     backendResult = await postBackend('/batches/accessory', batchToApi(data));
   }
   if (type === 'production') {
     if (!data.allocationId || data.allocationId === 'raw') { alert('اختر اللون / المصبغة قبل تسجيل استلام المجهز.'); return; }
-    productionBatches.unshift(data);
     backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'finished') {
     const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
     if (data.quantity > allocation.remainingAtDyehouse) { data.notes = [data.notes, 'تنبيه: الكمية المستلمة أكبر من المتبقي داخل المصبغة'].filter(Boolean).join(' - '); }
-    data.finishedWidth = +data.finishedWidth; data.finishedWeight = +data.finishedWeight; finishedBatches.unshift(data);
+    data.finishedWidth = +data.finishedWidth; data.finishedWeight = +data.finishedWeight;
     backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'customer') {
@@ -2663,14 +2668,12 @@ async function addBatch(event) {
       const deliveredAccessory = sum(accessoryBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement==='customer' && batch.accessoryType===data.accessoryType));
       const availableAccessory = Math.max(receivedAccessory - deliveredAccessory, 0);
       if (data.quantity > availableAccessory) { data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - '); }
-      accessoryBatches.unshift(data);
       backendResult = await postBackend('/batches/accessory', batchToApi(data));
     } else {
       const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
       const alreadyDelivered = sum(customerBatches.filter((batch)=>batch.allocationId===data.allocationId));
       const warehouseAvailable = Math.max(allocation.finishedReceived - alreadyDelivered, 0);
       if (data.quantity > warehouseAvailable) { data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - '); }
-      customerBatches.unshift(data);
       backendResult = await postBackend('/batches/customer', batchToApi(data));
     }
   }
@@ -2678,7 +2681,8 @@ async function addBatch(event) {
     await rollbackAfterBackendWriteFailure('تعذر حفظ الحركة في قاعدة البيانات. لم يتم اعتماد الحركة.');
     return;
   }
-  save(); renderAll();
+  event.target.reset();
+  await loadBackendData();
 }
 async function addAllocation() {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
@@ -2688,14 +2692,14 @@ async function addAllocation() {
   const backendSaveRequired = true;
   if (order.widthMode === 'multiple') {
     const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
-    order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; allocations.push(allocation); createdAllocations.push(allocation); });
+    order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; createdAllocations.push(allocation); });
   } else {
     const plannedQuantity = Number(prompt('اكتب كمية اللون')); if (!plannedQuantity) return;
     const existing = order.allocations[0];
     const targetFinishedWidth = existing?.targetFinishedWidth || Number(prompt('اكتب العرض النهائي')); if (!targetFinishedWidth) return;
     const targetFinishedWeight = existing?.targetFinishedWeight || Number(prompt('اكتب الوزن المجهز')); if (!targetFinishedWeight) return;
     const allocation = { id:uid(), orderId:order.id, color, plannedQuantity, dyehouse:order.dyehouse, targetFinishedWidth, targetFinishedWeight };
-    allocations.push(allocation); createdAllocations.push(allocation);
+    createdAllocations.push(allocation);
   }
   const savedAllocations = [];
   for (const allocation of createdAllocations) savedAllocations.push(await postBackend(`/orders/${order.id}/allocations`, allocationToApi(allocation)));
@@ -2703,7 +2707,7 @@ async function addAllocation() {
     await rollbackAfterBackendWriteFailure('تعذر حفظ اللون في قاعدة البيانات. لم يتم اعتماد الإضافة.');
     return;
   }
-  save(); renderAll();
+  await loadBackendData();
 }
 async function editAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
@@ -4090,4 +4094,3 @@ pollBackendStatus();
 pollWhatsappService();
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
-

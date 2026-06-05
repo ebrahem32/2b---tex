@@ -42,6 +42,13 @@ function runMigrations() {
     'accessory_percent REAL DEFAULT 0',
     'accessory_lines_json TEXT',
   ].forEach((definition) => addColumnIfMissing('orders', definition));
+  [
+    'width_line_id TEXT',
+    'raw_inch REAL DEFAULT 0',
+    'raw_width REAL DEFAULT 0',
+    'accessory_quantity_manual REAL',
+  ].forEach((definition) => addColumnIfMissing('order_allocations', definition));
+  addColumnIfMissing('dyehouse_delivery_batches', 'width_line_id TEXT');
 }
 
 function persist() {
