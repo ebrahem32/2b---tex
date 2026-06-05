@@ -76,17 +76,17 @@ const defaults = {
   whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '' },
 };
 
-let orders = load(STORAGE_KEYS.orders, defaults.orders);
-let allocations = load(STORAGE_KEYS.allocations, defaults.allocations);
-let rawBatches = load(STORAGE_KEYS.raw, defaults.raw);
-let dyeBatches = load(STORAGE_KEYS.dye, defaults.dye);
-let finishedBatches = load(STORAGE_KEYS.finished, defaults.finished);
-let productionBatches = load(STORAGE_KEYS.production, defaults.production);
-let customerBatches = load(STORAGE_KEYS.customer, defaults.customer);
-let accessoryBatches = load(STORAGE_KEYS.accessory, defaults.accessory);
-let dyehouseTransfers = load(STORAGE_KEYS.transfers, defaults.transfers);
-let rawReturns = load(STORAGE_KEYS.rawReturns, defaults.rawReturns);
-let pricings = load(STORAGE_KEYS.pricings, defaults.pricings);
+let orders = clone(defaults.orders);
+let allocations = clone(defaults.allocations);
+let rawBatches = clone(defaults.raw);
+let dyeBatches = clone(defaults.dye);
+let finishedBatches = clone(defaults.finished);
+let productionBatches = clone(defaults.production);
+let customerBatches = clone(defaults.customer);
+let accessoryBatches = clone(defaults.accessory);
+let dyehouseTransfers = clone(defaults.transfers);
+let rawReturns = clone(defaults.rawReturns);
+let pricings = clone(defaults.pricings);
 let customerAccounts = (() => {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.customerAccounts));
@@ -181,7 +181,7 @@ function repairTransferredAllocationDyehouses() {
 }
 if ([rawBatches, rawReturns, dyeBatches, productionBatches, finishedBatches, customerBatches, accessoryBatches, dyehouseTransfers].some(ensureRecordIds) || repairTransferredAllocationDyehouses()) save();
 const saveData = save;
-let selectedOrderId = orders[0]?.id || null;
+let selectedOrderId = null;
 let editingOrderId = null;
 let editingPricingId = null;
 let currentDocumentType = null;
@@ -322,6 +322,23 @@ function mapDbPricing(row, customers) {
     status: row.status || 'active',
   };
 }
+function renderBackendUnavailable() {
+  orders = clone(defaults.orders);
+  allocations = clone(defaults.allocations);
+  rawBatches = clone(defaults.raw);
+  dyeBatches = clone(defaults.dye);
+  finishedBatches = clone(defaults.finished);
+  productionBatches = clone(defaults.production);
+  customerBatches = clone(defaults.customer);
+  accessoryBatches = clone(defaults.accessory);
+  dyehouseTransfers = clone(defaults.transfers);
+  rawReturns = clone(defaults.rawReturns);
+  pricings = clone(defaults.pricings);
+  if (refs.statsGrid) refs.statsGrid.innerHTML = '<div class="metric"><span>حالة قاعدة البيانات</span><strong>غير متاحة</strong></div>';
+  if (refs.pricingTableBody) refs.pricingTableBody.innerHTML = '<tr><td colspan="8">قاعدة البيانات غير متاحة حاليًا. أعد تحميل الصفحة بعد عودة الاتصال.</td></tr>';
+  if (refs.ordersTableBody) refs.ordersTableBody.innerHTML = '<tr><td colspan="9">قاعدة البيانات غير متاحة حاليًا. لن يتم عرض بيانات قديمة من المتصفح.</td></tr>';
+  if (refs.orderDetailsPanel) refs.orderDetailsPanel.innerHTML = '<div class="empty-state">قاعدة البيانات غير متاحة. النظام متوقف عن عرض أو تعديل بيانات التشغيل حتى يعود الاتصال.</div>';
+}
 async function loadBackendData() {
   try {
     const data = await backendRequest('/bootstrap', { cache: 'no-store' });
@@ -337,6 +354,7 @@ async function loadBackendData() {
     rawReturns = (data.rawReturns || []).map(mapDbBatch);
     dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbTransfer);
     purgeLegacyTestOrdersFromMemory();
+    if (!orders.some((order)=>order.id === selectedOrderId)) selectedOrderId = orders[0]?.id || null;
     const backendPriceLibrary = data.systemSettings?.dyehousePriceLibrary;
     if (backendPriceLibrary && typeof backendPriceLibrary === 'object' && !Array.isArray(backendPriceLibrary)) {
       customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(backendPriceLibrary);
@@ -349,7 +367,8 @@ async function loadBackendData() {
     renderAll();
   } catch (error) {
     backendAvailable = false;
-    console.warn('Backend unavailable, using LocalStorage fallback', error);
+    console.warn('Backend unavailable; operational LocalStorage fallback is disabled', error);
+    renderBackendUnavailable();
   }
 }
 
@@ -3986,18 +4005,11 @@ if (refs.shareWhatsAppBtn) {
   refs.shareWhatsAppBtn.onclick = shareCurrentReportPngManual;
 }
 
-if (purgeLegacyTestOrdersFromMemory()) save();
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
-renderAll();
 loadBackendData();
 installAutomationUi();
 pollWhatsappService();
 setInterval(pollWhatsappService, 15000);
-
-
-
-
-
 
 
 
