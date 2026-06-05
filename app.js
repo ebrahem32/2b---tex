@@ -17,8 +17,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.19';
-const APP_BUILD_TIME = '2026-06-05 20:14';
+const APP_VERSION = 'v2026.06.05.20';
+const APP_BUILD_TIME = '2026-06-05 20:32';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2120,8 +2120,46 @@ async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
 function openPricingQuotation(id) {
   const pricing = calculatePricing(pricings.find((item)=>item.id===id));
   if (!pricing) return;
+  const money = (value) => Number(value || 0).toLocaleString('ar-EG');
+  const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
+  const notes = String(pricing.notes || '').trim();
   refs.documentTitle.textContent = 'عرض سعر';
-  refs.documentBody.innerHTML = `<div class="document-sheet">${documentHeader()}<div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing-doc="${pricing.id}">تعديل</button></div><h2>عرض سعر</h2><div class="document-meta"><div><span>رقم التسعيرة</span>${pricing.pricingNumber}</div><div><span>العميل</span>${pricing.customer}</div><div><span>التاريخ</span>${pricing.pricingDate}</div><div><span>الصنف</span>${pricing.fabricType}</div><div><span>درجة اللون</span>${pricing.colorClass}</div><div><span>الكمية</span>${pricing.quantity}</div><div><span>البوصة</span>${pricing.inchWidth}</div><div><span>الوزن المجهز</span>${pricing.finishedWeight}</div><div><span>سعر الوحدة</span>${pricing.sellPrice.toLocaleString('ar-EG')} جنيه</div><div><span>إجمالي العرض</span>${pricing.totalOffer.toLocaleString('ar-EG')} جنيه</div><div><span>شروط السداد</span>${pricing.paymentTerms}</div></div><table><thead><tr><th>البند</th><th>القيمة</th></tr></thead><tbody><tr><td>تكلفة الخام</td><td>${pricing.rawCost.toLocaleString('ar-EG')}</td></tr><tr><td>تكلفة الصباغة</td><td>${pricing.dyeCost.toLocaleString('ar-EG')}</td></tr><tr><td>تكلفة الهالك التقديري</td><td>${pricing.wasteCost.toLocaleString('ar-EG')}</td></tr><tr><td>تكلفة المراحل الإضافية</td><td>${pricing.extraCost.toLocaleString('ar-EG')}</td></tr><tr><td>إجمالي التكلفة</td><td>${pricing.costPerKg.toLocaleString('ar-EG')}</td></tr><tr><td>الربح للكيلو</td><td>${pricing.profitPerKg.toLocaleString('ar-EG')}</td></tr><tr><td><strong>سعر البيع</strong></td><td><strong>${pricing.sellPrice.toLocaleString('ar-EG')}</strong></td></tr></tbody></table><p>${pricing.notes || 'لا توجد ملاحظات إضافية.'}</p>${documentFooter()}</div>`;
+  refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
+    ${documentHeader()}
+    <div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">تعديل</button></div>
+    <div class="report-title"><h2>عرض سعر <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>عرض مقدم للعميل حسب بيانات التسعير الحالية.</span></div>
+    <div class="document-meta">
+      <div><span>العميل</span>${escapeHtml(customer)}</div>
+      <div><span>التاريخ</span>${escapeHtml(pricing.pricingDate || '-')}</div>
+      <div><span>الصنف</span>${escapeHtml(pricing.fabricType || '-')}</div>
+      <div><span>درجة اللون</span>${escapeHtml(pricing.colorClass || '-')}</div>
+      <div><span>الكمية</span>${money(pricing.quantity)} كجم</div>
+      <div><span>المصبغة</span>${escapeHtml(pricing.dyehouse || '-')}</div>
+      <div><span>البوصة</span>${escapeHtml(pricing.inchWidth || '-')}</div>
+      <div><span>الوزن المجهز</span>${escapeHtml(pricing.finishedWeight || '-')}</div>
+      <div><span>شروط السداد</span>${escapeHtml(pricing.paymentTerms || '-')}</div>
+    </div>
+    <section class="report-section quotation-summary">
+      <h3>ملخص العرض</h3>
+      <div class="quotation-kpis">
+        <div><span>سعر الكيلو</span><strong>${money(pricing.sellPrice)} جنيه</strong></div>
+        <div class="quotation-total"><span>إجمالي العرض</span><strong>${money(pricing.totalOffer)} جنيه</strong></div>
+      </div>
+    </section>
+    <section class="report-section">
+      <h3>بنود التسعير</h3>
+      <table><thead><tr><th>البند</th><th>القيمة / كجم</th></tr></thead><tbody>
+        <tr><td>تكلفة الخام</td><td>${money(pricing.rawCost)}</td></tr>
+        <tr><td>تكلفة الصباغة</td><td>${money(pricing.dyeCost)}</td></tr>
+        <tr><td>تكلفة الهالك التقديري</td><td>${money(pricing.wasteCost)}</td></tr>
+        <tr><td>تكلفة المراحل الإضافية</td><td>${money(pricing.extraCost)}</td></tr>
+        <tr><td>إجمالي تكلفة الكيلو</td><td>${money(pricing.costPerKg)}</td></tr>
+        <tr><td>هامش الربح للكيلو</td><td>${money(pricing.profitPerKg)}</td></tr>
+      </tbody></table>
+    </section>
+    <section class="report-section"><h3>ملاحظات</h3><p>${escapeHtml(notes || 'لا توجد ملاحظات إضافية.')}</p></section>
+    ${documentFooter()}
+  </div>`;
   refs.documentDialog.showModal();
 }
 function allOrders() { return orders.map(calculateOrder); }
@@ -3087,8 +3125,8 @@ function combinedOperationNotes(order) {
   return uniqueNonEmpty(sections).join('\n') || '-';
 }
 function reportOperationNotes(order) {
-  if (order.reportNotesText !== undefined) return order.reportNotesText || '-';
-  if (order.operationNoteText !== undefined) return order.operationNoteText || '-';
+  if (order.reportNotesText !== undefined) return String(order.reportNotesText || '').trim() || '-';
+  if (order.operationNoteText !== undefined) return String(order.operationNoteText || '').trim() || '-';
   return order.notes || '-';
 }
 const {
@@ -3543,7 +3581,8 @@ function renderDyehouseDocumentPicker(order) {
 async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   if (!sourceOrder) return null;
   const key = operationNotesKey(type, dyehouseName);
-  const current = sourceOrder.operationNotes?.[key] ?? sourceOrder.notes ?? '';
+  const savedNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
+  const current = Object.prototype.hasOwnProperty.call(savedNotes, key) ? savedNotes[key] : '';
   const title = type === 'dyeing'
     ? `ملاحظات أمر تشغيل الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
     : 'ملاحظات أمر تشغيل النسيج';
@@ -3715,7 +3754,7 @@ function printCurrentDocument(stickerId = null) {
       const selectedId = stickerId || cards[0]?.dataset.stickerId || '';
       document.body.classList.add('printing-stickers');
       stickerPrintStyle = document.createElement('style');
-      stickerPrintStyle.textContent = `@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-card:not([data-sticker-id="${selectedId}"]) { display:none!important; } }`;
+      stickerPrintStyle.textContent = `@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-item:not(:has(.sticker-card[data-sticker-id="${selectedId}"])) { display:none!important; } body.printing-stickers .sticker-card:not([data-sticker-id="${selectedId}"]) { display:none!important; } }`;
       document.head.appendChild(stickerPrintStyle);
     }
   }

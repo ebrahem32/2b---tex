@@ -96,6 +96,14 @@
 .two-b-report .summary-table td{background:#fff;font-weight:800}
 .two-b-report .report-section p{border:1px solid #d7dee8;border-radius:8px;padding:16px 18px;line-height:1.9;background:#fff}
 .two-b-report .document-footer{border-top:3px solid #071527;margin-top:30px;padding-top:14px}
+.quotation-report .document-inline-actions{justify-content:flex-start;margin:-8px 0 10px}
+.quotation-report .report-title{margin-top:0}
+.quotation-kpis{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}
+.quotation-kpis div{border:1px solid #d7dee8;border-radius:10px;padding:14px 16px;background:#f8fafc;text-align:center}
+.quotation-kpis span{display:block;color:#516070;font-size:13px;margin-bottom:6px}
+.quotation-kpis strong{display:block;color:#071527;font-size:22px}
+.quotation-kpis .quotation-total{background:#071527;border-color:#071527}
+.quotation-kpis .quotation-total span,.quotation-kpis .quotation-total strong{color:#fff}
 .report-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 18px;padding-bottom:12px;border-bottom:2px solid #071527}
 .report-title h2{margin:0}
 .report-title span{color:#6b7280;font-size:13px}
@@ -160,8 +168,8 @@
 
 
 
-.sticker-sheet{display:grid;grid-template-columns:repeat(2,55mm);gap:8mm;direction:rtl;align-items:start;justify-content:center}.sticker-title{grid-column:1/-1}.sticker-card{position:relative;border:1px solid #111827;border-radius:1.5mm;padding:1.2mm;width:55mm;height:40mm;background:#fff;color:#111827;page-break-inside:avoid;overflow:hidden}.sticker-brand{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #111827;padding-bottom:.6mm;margin-bottom:.7mm}.sticker-brand strong{font-size:11pt;line-height:1}.sticker-brand span{font-size:6.5pt;color:#4b5563}.sticker-order{font-size:17pt;font-weight:900;text-align:center;border:1px solid #111827;border-radius:1.2mm;padding:.5mm;margin:.6mm 0;line-height:1}.sticker-line{margin:.35mm 0}.sticker-line span,.sticker-grid span{display:block;color:#6b7280;font-size:5.8pt;line-height:1}.sticker-line strong{font-size:7.8pt;line-height:1.05;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sticker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5mm;margin-top:.55mm}.sticker-grid div{border:1px solid #9ca3af;border-radius:.9mm;padding:.35mm;text-align:center;min-width:0}.sticker-grid strong{font-size:7.6pt;line-height:1.05}.sticker-print-btn{position:absolute;left:1.2mm;bottom:1.2mm;padding:2px 5px;font-size:10px}
-@media print{.sticker-sheet{grid-template-columns:repeat(2,55mm)!important;gap:8mm!important}.sticker-card{break-inside:avoid;page-break-inside:avoid}.sticker-print-btn{display:none!important}}
+.sticker-sheet{display:grid;grid-template-columns:repeat(2,55mm);gap:8mm;direction:rtl;align-items:start;justify-content:center}.sticker-title{grid-column:1/-1}.sticker-item{display:grid;gap:6px;justify-items:center}.sticker-card{position:relative;border:1px solid #111827;border-radius:1.5mm;padding:1mm;width:55mm;height:40mm;background:#fff;color:#111827;page-break-inside:avoid;overflow:hidden}.sticker-brand{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #111827;padding-bottom:.45mm;margin-bottom:.45mm}.sticker-brand strong{font-size:9.5pt;line-height:1}.sticker-brand span{font-size:5.6pt;color:#4b5563}.sticker-order{font-size:14pt;font-weight:900;text-align:center;border:1px solid #111827;border-radius:1.1mm;padding:.35mm;margin:.45mm 0;line-height:.95}.sticker-line{margin:.22mm 0}.sticker-line span,.sticker-grid span{display:block;color:#6b7280;font-size:5.2pt;line-height:1}.sticker-line strong{font-size:6.7pt;line-height:1.05;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sticker-line-color strong{font-size:8.2pt}.sticker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.35mm;margin-top:.4mm}.sticker-grid div{border:1px solid #9ca3af;border-radius:.75mm;padding:.25mm;text-align:center;min-width:0}.sticker-grid strong{display:block;font-size:6.8pt;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sticker-print-btn{position:static;padding:5px 8px;font-size:11px}
+@media print{.sticker-sheet{grid-template-columns:repeat(2,55mm)!important;gap:8mm!important}.sticker-item{display:block!important;break-inside:avoid;page-break-inside:avoid}.sticker-card{break-inside:avoid;page-break-inside:avoid}.sticker-print-btn{display:none!important}}
 
 @media print{
   body.printing-stickers #documentDialog,
@@ -170,17 +178,19 @@
   body.printing-stickers .document-sheet{width:55mm!important;max-width:55mm!important;height:40mm!important;max-height:40mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
   body.printing-stickers .document-sheet{border-radius:0!important}
   body.printing-stickers .sticker-sheet{display:block!important;width:55mm!important;max-width:55mm!important;height:40mm!important;margin:0!important;padding:0!important;overflow:hidden!important}
-  body.printing-stickers .sticker-card{width:55mm!important;min-height:40mm!important;height:40mm!important;margin:0!important;padding:1.1mm!important;border:0.7px solid #111827!important;border-radius:1.5mm!important;break-after:auto;page-break-after:auto;overflow:hidden!important}
-  body.printing-stickers .sticker-brand{padding-bottom:.6mm!important;margin-bottom:.7mm!important;border-bottom:1px solid #111827!important}
-  body.printing-stickers .sticker-brand strong{font-size:11pt!important;line-height:1!important}
+  body.printing-stickers .sticker-item{display:block!important;width:55mm!important;height:40mm!important;margin:0!important;padding:0!important;overflow:hidden!important}
+  body.printing-stickers .sticker-card{width:55mm!important;min-height:40mm!important;height:40mm!important;margin:0!important;padding:1mm!important;border:0.7px solid #111827!important;border-radius:1.4mm!important;break-after:auto;page-break-after:auto;overflow:hidden!important}
+  body.printing-stickers .sticker-brand{padding-bottom:.45mm!important;margin-bottom:.45mm!important;border-bottom:1px solid #111827!important}
+  body.printing-stickers .sticker-brand strong{font-size:9.5pt!important;line-height:1!important}
   body.printing-stickers .sticker-brand span{display:none!important}
-  body.printing-stickers .sticker-order{font-size:18pt!important;line-height:1!important;padding:.6mm!important;margin:.7mm 0!important;border:1px solid #111827!important;border-radius:1.2mm!important}
-  body.printing-stickers .sticker-line{margin:.45mm 0!important}
-  body.printing-stickers .sticker-line span,body.printing-stickers .sticker-grid span{font-size:6pt!important;line-height:1!important}
-  body.printing-stickers .sticker-line strong{font-size:8.2pt!important;line-height:1.05!important;display:block!important;max-height:8.7mm!important;overflow:hidden!important}
-  body.printing-stickers .sticker-grid{gap:.55mm!important;margin-top:.7mm!important;grid-template-columns:repeat(4,1fr)!important}
-  body.printing-stickers .sticker-grid div{padding:.45mm!important;border-radius:.9mm!important;min-width:0!important}
-  body.printing-stickers .sticker-grid strong{font-size:8.2pt!important;line-height:1.05!important}
+  body.printing-stickers .sticker-order{font-size:14pt!important;line-height:.95!important;padding:.35mm!important;margin:.45mm 0!important;border:1px solid #111827!important;border-radius:1.1mm!important}
+  body.printing-stickers .sticker-line{margin:.22mm 0!important}
+  body.printing-stickers .sticker-line span,body.printing-stickers .sticker-grid span{font-size:5.2pt!important;line-height:1!important}
+  body.printing-stickers .sticker-line strong{font-size:6.7pt!important;line-height:1.05!important;display:block!important;max-height:4.4mm!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+  body.printing-stickers .sticker-line-color strong{font-size:8.2pt!important}
+  body.printing-stickers .sticker-grid{gap:.35mm!important;margin-top:.4mm!important;grid-template-columns:repeat(4,1fr)!important}
+  body.printing-stickers .sticker-grid div{padding:.25mm!important;border-radius:.75mm!important;min-width:0!important}
+  body.printing-stickers .sticker-grid strong{font-size:6.8pt!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 }
 
 .scan-review-grid{display:grid;grid-template-columns:minmax(320px,1fr) minmax(320px,1fr);gap:18px;align-items:start}.scan-preview{background:#0d141b;border:1px solid var(--line);border-radius:18px;padding:14px}.scan-preview img{display:block;width:100%;max-height:420px;object-fit:contain;margin-top:12px;border-radius:12px;background:#fff}.scan-preview img:not([src]){display:none}.full-row{grid-column:1/-1}.batch-box>button.full{width:100%;margin:8px 0 10px}@media(max-width:900px){.scan-review-grid{grid-template-columns:1fr}}
