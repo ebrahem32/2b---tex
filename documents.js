@@ -103,24 +103,24 @@
       const includeCustomerDelivered = !!options.includeCustomerDelivered;
       const includeWaste = !!options.includeWaste;
       const headers = [
+        'العرض',
+        includeFinished ? 'الوزن المجهز' : '',
         'اللون',
         includeInch ? 'البوصة' : '',
         'الكمية',
         includeDyehouse ? 'المصبغة' : '',
-        'العرض',
-        includeFinished ? 'الوزن المجهز' : '',
         includeReceived ? 'دخل المخزن' : '',
         includeCustomerDelivered ? 'تسليم العميل' : '',
         includeWaste ? 'الهالك الفعلي' : '',
       ].filter(Boolean);
       const body = rows.map((line) => {
         const cells = [
+          safeText(line.targetFinishedWidth || line.rawWidth),
+          includeFinished ? safeText(line.targetFinishedWeight) : '',
           safeText(line.color || line.pantoneCode),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
           fmt(line.plannedQuantity),
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
-          safeText(line.targetFinishedWidth || line.rawWidth),
-          includeFinished ? safeText(line.targetFinishedWeight) : '',
           includeReceived ? fmt(line.finishedReceived) : '',
           includeCustomerDelivered ? fmt(line.deliveredToCustomer || line.customerDelivered) : '',
           includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(Number(line.wastePercent || 0), 1)}%)` : '',
@@ -229,7 +229,7 @@
     }
 
     function buildCompactFullReportDocument(order) {
-      const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order?.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order?.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td></tr><tr><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td><th>هالك فعلي</th><td>${fmt(order?.totalWaste)} (${formatNumber(Number(order?.totalWastePercent || 0), 1)}%)</td></tr></tbody></table></section>`;
+      const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order?.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td></tr></tbody></table></section>`;
       return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeCustomerDelivered:true, includeWaste:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
     }
 
