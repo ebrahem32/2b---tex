@@ -108,9 +108,8 @@ function runMigrations() {
   ].forEach((definition) => addColumnIfMissing('accessory_batches', definition));
   addColumnIfMissing('raw_returns', 'note_number TEXT');
   addColumnIfMissing('dyehouse_transfers', 'note_number TEXT');
+  dropUnsafeUniqueIndexes();
   backfillAccessoryBatchFields();
-  mergeDuplicateOrdersByNumberAndCustomer();
-  ensureUniqueIndexes();
   assertSchemaReady();
 }
 
@@ -126,108 +125,9 @@ function scalar(sql, params = []) {
   return rows(sql, params)[0] || null;
 }
 
-function rowScore(row) {
-  return Number(row.allocations || 0)
-    + Number(row.raw_batches || 0)
-    + Number(row.finished_batches || 0)
-    + Number(row.customer_batches || 0)
-    + Number(row.accessory_batches || 0)
-    + Number(row.transfers || 0)
-    + (row.accessory_lines_json ? 5 : 0)
-    + (row.notes ? 2 : 0);
-}
-
-function mergeOrderFields(primaryId, duplicateId) {
-  const primary = scalar('SELECT * FROM orders WHERE id = ?', [primaryId]);
-  const duplicate = scalar('SELECT * FROM orders WHERE id = ?', [duplicateId]);
-  if (!primary || !duplicate) return;
-  const mergeable = [
-    'pricing_id',
-    'order_date',
-    'product_code',
-    'fabric_type',
-    'total_raw_quantity',
-    'expected_waste_percent',
-    'width_mode',
-    'width_lines_json',
-    'inch_width',
-    'kilo_price',
-    'raw_cost',
-    'payment_terms',
-    'accessory_type',
-    'accessory_percent',
-    'accessory_lines_json',
-    'dyehouse',
-    'weaving_source',
-    'notes',
-    'status',
-    'is_closed',
-  ];
-  const updates = {};
-  for (const field of mergeable) {
-    const current = primary[field];
-    const incoming = duplicate[field];
-    const currentEmpty = current === null || current === undefined || current === '' || current === 0;
-    const incomingUseful = incoming !== null && incoming !== undefined && incoming !== '' && incoming !== 0;
-    if (currentEmpty && incomingUseful) updates[field] = incoming;
-  }
-  if (!Object.keys(updates).length) return;
-  const keys = Object.keys(updates);
-  db.run(
-    `UPDATE orders SET ${keys.map((key)=>`${key} = ?`).join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-    [...keys.map((key)=>updates[key]), primaryId]
-  );
-}
-
-function mergeDuplicateOrdersByNumberAndCustomer() {
-  const groups = rows(`
-    SELECT order_number, customer_id
-    FROM orders
-    WHERE order_number IS NOT NULL AND TRIM(order_number) <> '' AND customer_id IS NOT NULL AND TRIM(customer_id) <> ''
-    GROUP BY order_number, customer_id
-    HAVING COUNT(*) > 1
-  `);
-  const childTables = [
-    'order_allocations',
-    'raw_receiving_batches',
-    'dyehouse_delivery_batches',
-    'finished_receiving_batches',
-    'customer_delivery_batches',
-    'accessory_batches',
-    'raw_returns',
-    'dyehouse_transfers',
-    'report_outbox',
-  ];
-  for (const group of groups) {
-    const duplicates = rows(`
-      SELECT o.*,
-        (SELECT COUNT(*) FROM order_allocations WHERE order_id = o.id) allocations,
-        (SELECT COUNT(*) FROM dyehouse_delivery_batches WHERE order_id = o.id) raw_batches,
-        (SELECT COUNT(*) FROM finished_receiving_batches WHERE order_id = o.id) finished_batches,
-        (SELECT COUNT(*) FROM customer_delivery_batches WHERE order_id = o.id) customer_batches,
-        (SELECT COUNT(*) FROM accessory_batches WHERE order_id = o.id) accessory_batches,
-        (SELECT COUNT(*) FROM dyehouse_transfers WHERE order_id = o.id) transfers
-      FROM orders o
-      WHERE o.order_number = ? AND o.customer_id = ?
-    `, [group.order_number, group.customer_id]).sort((a, b) => {
-      const scoreDiff = rowScore(b) - rowScore(a);
-      return scoreDiff || String(b.updated_at || '').localeCompare(String(a.updated_at || ''));
-    });
-    const primary = duplicates[0];
-    if (!primary) continue;
-    for (const duplicate of duplicates.slice(1)) {
-      mergeOrderFields(primary.id, duplicate.id);
-      for (const table of childTables) {
-        db.run(`UPDATE ${table} SET order_id = ? WHERE order_id = ?`, [primary.id, duplicate.id]);
-      }
-      db.run('DELETE FROM orders WHERE id = ?', [duplicate.id]);
-    }
-  }
-}
-
-function ensureUniqueIndexes() {
-  db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_number_customer_unique ON orders(order_number, customer_id) WHERE order_number IS NOT NULL AND TRIM(order_number) <> '' AND customer_id IS NOT NULL AND TRIM(customer_id) <> ''");
-  db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_pricings_number_customer_unique ON pricings(pricing_number, customer_id) WHERE pricing_number IS NOT NULL AND TRIM(pricing_number) <> '' AND customer_id IS NOT NULL AND TRIM(customer_id) <> ''");
+function dropUnsafeUniqueIndexes() {
+  db.run('DROP INDEX IF EXISTS idx_orders_number_customer_unique');
+  db.run('DROP INDEX IF EXISTS idx_pricings_number_customer_unique');
 }
 
 function notePart(text, label) {

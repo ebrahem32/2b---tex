@@ -245,13 +245,3 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_number_customer_unique
-ON orders(order_number, customer_id)
-WHERE order_number IS NOT NULL AND TRIM(order_number) <> ''
-  AND customer_id IS NOT NULL AND TRIM(customer_id) <> '';
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_pricings_number_customer_unique
-ON pricings(pricing_number, customer_id)
-WHERE pricing_number IS NOT NULL AND TRIM(pricing_number) <> ''
-  AND customer_id IS NOT NULL AND TRIM(customer_id) <> '';
