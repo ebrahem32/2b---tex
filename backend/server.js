@@ -48,6 +48,7 @@ function now() {
 
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
 const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
+const LOCAL_IMPORT_ENABLED = process.env.ALLOW_LOCAL_IMPORT === '1';
 
 function normalizeArabicName(value) {
   return String(value || '').replace(/[إأآ]/g, 'ا').replace(/\s+/g, ' ').trim();
@@ -55,6 +56,17 @@ function normalizeArabicName(value) {
 
 function asyncHandler(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
+
+async function auditMutation(action, entityType, entityId, beforeValue = null, afterValue = null, note = '') {
+  try {
+    await run(
+      'INSERT INTO audit_log (id, action, entity_type, entity_id, before_json, after_json, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [id(), action, entityType, entityId || '', JSON.stringify(beforeValue ?? null), JSON.stringify(afterValue ?? null), note, now()]
+    );
+  } catch (error) {
+    console.warn(`[2B Tex] audit failed for ${action} ${entityType} ${entityId || ''}: ${error.message}`);
+  }
 }
 
 function insertSql(table, data) {
@@ -86,25 +98,36 @@ function crudRoutes(base, table) {
   app.post(`/api/${base}`, asyncHandler(async (req, res) => {
     const existing = await existingUniqueBusinessRow(table, req.body || {});
     if (existing) {
+      const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [existing.id]);
       const query = updateSql(table, req.body || {}, existing.id);
       await run(query.sql, query.values);
-      return res.status(200).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [existing.id]));
+      const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [existing.id]);
+      await auditMutation('update', table, existing.id, before, after, `upsert via POST /api/${base}`);
+      return res.status(200).json(after);
     }
     const query = insertSql(table, req.body || {});
     await run(table === 'customers' ? query.sql.replace('INSERT INTO', 'INSERT OR IGNORE INTO') : query.sql, query.values);
-    res.status(201).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]));
+    const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]);
+    await auditMutation('create', table, query.id, null, after, `POST /api/${base}`);
+    res.status(201).json(after);
   }));
   app.put(`/api/${base}/:id`, asyncHandler(async (req, res) => {
+    const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
     const query = updateSql(table, req.body || {}, req.params.id);
     await run(query.sql, query.values);
-    res.json(await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]));
+    const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
+    await auditMutation('update', table, req.params.id, before, after, `PUT /api/${base}/${req.params.id}`);
+    res.json(after);
   }));
   app.delete(`/api/${base}/:id`, asyncHandler(async (req, res) => {
+    const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
     if (table === 'orders') {
       const deleted = await deleteOrderGraph(req.params.id);
+      await auditMutation('delete', table, req.params.id, before, { deleted }, `DELETE /api/${base}/${req.params.id}`);
       return res.json({ ok: true, deleted });
     }
     const result = await run(`DELETE FROM ${table} WHERE id = ?`, [req.params.id]);
+    await auditMutation('delete', table, req.params.id, before, { deleted: result.changes || 0 }, `DELETE /api/${base}/${req.params.id}`);
     res.json({ ok: true, deleted: result.changes || 0 });
   }));
 }
@@ -186,6 +209,22 @@ app.get('/api/backups', asyncHandler(async (_req, res) => {
   res.json(files.map((name) => ({ name, path: path.join(BACKUP_DIR, name) })));
 }));
 
+app.get('/api/audit-log', asyncHandler(async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const limit = Math.min(Math.max(Number(req.query.limit || 100), 1), 500);
+  if (q) {
+    const like = `%${q}%`;
+    return res.json(await all(
+      `SELECT * FROM audit_log
+       WHERE entity_id LIKE ? OR note LIKE ? OR before_json LIKE ? OR after_json LIKE ?
+       ORDER BY created_at DESC
+       LIMIT ?`,
+      [like, like, like, like, limit]
+    ));
+  }
+  res.json(await all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?', [limit]));
+}));
+
 crudRoutes('customers', 'customers');
 crudRoutes('pricings', 'pricings');
 crudRoutes('orders', 'orders');
@@ -203,17 +242,24 @@ app.get('/api/orders/:orderId/allocations', asyncHandler(async (req, res) => {
 app.post('/api/orders/:orderId/allocations', asyncHandler(async (req, res) => {
   const query = insertSql('order_allocations', { ...req.body, order_id: req.params.orderId });
   await run(query.sql, query.values);
-  res.status(201).json(await get('SELECT * FROM order_allocations WHERE id = ?', [query.id]));
+  const after = await get('SELECT * FROM order_allocations WHERE id = ?', [query.id]);
+  await auditMutation('create', 'order_allocations', query.id, null, after, `POST /api/orders/${req.params.orderId}/allocations`);
+  res.status(201).json(after);
 }));
 
 app.put('/api/allocations/:id', asyncHandler(async (req, res) => {
+  const before = await get('SELECT * FROM order_allocations WHERE id = ?', [req.params.id]);
   const query = updateSql('order_allocations', req.body || {}, req.params.id);
   await run(query.sql, query.values);
-  res.json(await get('SELECT * FROM order_allocations WHERE id = ?', [req.params.id]));
+  const after = await get('SELECT * FROM order_allocations WHERE id = ?', [req.params.id]);
+  await auditMutation('update', 'order_allocations', req.params.id, before, after, `PUT /api/allocations/${req.params.id}`);
+  res.json(after);
 }));
 
 app.delete('/api/allocations/:id', asyncHandler(async (req, res) => {
+  const before = await get('SELECT * FROM order_allocations WHERE id = ?', [req.params.id]);
   const deleted = await deleteAllocationGraph(req.params.id);
+  await auditMutation('delete', 'order_allocations', req.params.id, before, { deleted }, `DELETE /api/allocations/${req.params.id}`);
   res.json({ ok: true, deleted });
 }));
 
@@ -244,7 +290,9 @@ app.post('/api/batches/:type', asyncHandler(async (req, res) => {
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
   const query = insertSql(table, req.body || {});
   await run(query.sql, query.values);
-  res.status(201).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]));
+  const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]);
+  await auditMutation('create', table, query.id, null, after, `POST /api/batches/${req.params.type}`);
+  res.status(201).json(after);
 }));
 
 app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
@@ -299,7 +347,9 @@ function batchPost(route, table) {
   app.post(route, asyncHandler(async (req, res) => {
     const query = insertSql(table, req.body || {});
     await run(query.sql, query.values);
-    res.status(201).json(await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]));
+    const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]);
+    await auditMutation('create', table, query.id, null, after, `POST ${route}`);
+    res.status(201).json(after);
   }));
 }
 
@@ -313,17 +363,24 @@ batchPost('/api/batches/raw-return', 'raw_returns');
 app.post('/api/transfers', asyncHandler(async (req, res) => {
   const query = insertSql('dyehouse_transfers', req.body || {});
   await run(query.sql, query.values);
-  res.status(201).json(await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [query.id]));
+  const after = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [query.id]);
+  await auditMutation('create', 'dyehouse_transfers', query.id, null, after, 'POST /api/transfers');
+  res.status(201).json(after);
 }));
 
 app.put('/api/transfers/:id', asyncHandler(async (req, res) => {
+  const before = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
   const query = updateSql('dyehouse_transfers', req.body || {}, req.params.id);
   await run(query.sql, query.values);
-  res.json(await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]));
+  const after = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
+  await auditMutation('update', 'dyehouse_transfers', req.params.id, before, after, `PUT /api/transfers/${req.params.id}`);
+  res.json(after);
 }));
 
 app.delete('/api/transfers/:id', asyncHandler(async (req, res) => {
+  const before = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
   await run('DELETE FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
+  await auditMutation('delete', 'dyehouse_transfers', req.params.id, before, { deleted: 1 }, `DELETE /api/transfers/${req.params.id}`);
   res.json({ ok: true });
 }));
 
@@ -460,6 +517,9 @@ function mapPricing(row, customerId) {
 
 // Sync browser LocalStorage payload into SQLite through safe field mapping.
 app.post('/api/import-local', asyncHandler(async (req, res) => {
+  if (!LOCAL_IMPORT_ENABLED) {
+    return res.status(403).json({ ok: false, error: 'LOCAL_IMPORT_DISABLED', message: 'Importing browser LocalStorage into Railway is disabled.' });
+  }
   const body = req.body || {};
   const stats = { inserted: 0, updated: 0, skipped: 0, byTable: {}, repairedOrderId: 0 };
   const backup = await backupDatabaseForImport();
@@ -678,16 +738,21 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
 app.delete('/api/batches/:type/:id', asyncHandler(async (req, res) => {
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
+  const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
   await run(`DELETE FROM ${table} WHERE id = ?`, [req.params.id]);
+  await auditMutation('delete', table, req.params.id, before, { deleted: 1 }, `DELETE /api/batches/${req.params.type}/${req.params.id}`);
   res.json({ ok: true });
 }));
 
 app.put('/api/batches/:type/:id', asyncHandler(async (req, res) => {
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
+  const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
   const query = updateSql(table, req.body || {}, req.params.id);
   await run(query.sql, query.values);
-  res.json(await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]));
+  const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
+  await auditMutation('update', table, req.params.id, before, after, `PUT /api/batches/${req.params.type}/${req.params.id}`);
+  res.json(after);
 }));
 
 async function orderSummary(orderId) {
@@ -745,7 +810,6 @@ app.use((error, _req, res, _next) => {
 });
 
 initDb().then(async () => {
-  await cleanupLegacyTestOrders();
   app.listen(PORT, HOST, () => {
     console.log(`2B Tex Backend: http://localhost:${PORT}/api/health`);
   });

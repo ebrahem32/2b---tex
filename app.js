@@ -17,8 +17,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.20';
-const APP_BUILD_TIME = '2026-06-05 20:32';
+const APP_VERSION = 'v2026.06.05.21';
+const APP_BUILD_TIME = '2026-06-05 21:04';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -42,6 +42,23 @@ const save = () => {
   localStorage.setItem(STORAGE_KEYS.auditLog, JSON.stringify(auditLog));
   localStorage.setItem(STORAGE_KEYS.whatsappStatus, JSON.stringify(whatsappStatus));
 };
+const OPERATIONAL_STORAGE_KEYS = [
+  STORAGE_KEYS.orders,
+  STORAGE_KEYS.allocations,
+  STORAGE_KEYS.raw,
+  STORAGE_KEYS.dye,
+  STORAGE_KEYS.finished,
+  STORAGE_KEYS.production,
+  STORAGE_KEYS.customer,
+  STORAGE_KEYS.accessory,
+  STORAGE_KEYS.transfers,
+  STORAGE_KEYS.rawReturns,
+  STORAGE_KEYS.pricings,
+];
+function clearOperationalLocalStorageCache() {
+  try { OPERATIONAL_STORAGE_KEYS.forEach((key)=>localStorage.removeItem(key)); } catch {}
+}
+clearOperationalLocalStorageCache();
 
 const defaults = {
   orders: [],
@@ -663,9 +680,43 @@ function backendBatchType(type) {
     : type === 'dye' ? 'dyehouse'
     : type;
 }
+function backendSnapshotCollection(snapshot, type) {
+  const key = backendBatchType(type);
+  if (key === 'dyehouse') return snapshot.dyehouseDeliveryBatches || [];
+  if (key === 'finished') return snapshot.finishedReceivingBatches || [];
+  if (key === 'customer') return snapshot.customerDeliveryBatches || [];
+  if (key === 'accessory') return snapshot.accessoryBatches || [];
+  if (key === 'raw-return') return snapshot.rawReturns || [];
+  if (key === 'transfer') return snapshot.dyehouseTransfers || [];
+  if (key === 'allocation') return snapshot.allocations || [];
+  if (key === 'pricing') return snapshot.pricings || [];
+  if (key === 'order') return snapshot.orders || [];
+  return [];
+}
+async function backendSnapshot() {
+  return backendRequest('/bootstrap', { cache:'no-store' });
+}
 async function rollbackAfterBackendWriteFailure(message) {
   alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
   await loadBackendData();
+}
+async function verifyRecordPersisted(type, id, predicate = null) {
+  if (!id) return false;
+  const snapshot = await backendSnapshot();
+  const row = backendSnapshotCollection(snapshot, type).find((item)=>item.id === id);
+  if (!row) return false;
+  return typeof predicate === 'function' ? !!predicate(row, snapshot) : true;
+}
+async function verifyRecordDeleted(type, id) {
+  if (!id) return false;
+  const snapshot = await backendSnapshot();
+  return !backendSnapshotCollection(snapshot, type).some((item)=>item.id === id);
+}
+async function verifyPricingPersisted(pricingId, expected = {}) {
+  return verifyRecordPersisted('pricing', pricingId, (row)=>(
+    String(row.pricing_number || '') === String(expected.pricingNumber || row.pricing_number || '')
+    && String(row.fabric_type || '') === String(expected.fabricType || row.fabric_type || '')
+  ));
 }
 async function verifyOrderPersisted(orderId, expected = {}) {
   if (!orderId) return false;
@@ -689,6 +740,21 @@ async function verifyOrderPersisted(orderId, expected = {}) {
   if (Number(expected.accessoryPercent || 0) !== Number(row.accessory_percent || 0)) return false;
   if (String(expected.accessoryType || '') !== String(row.accessory_type || '')) return false;
   return true;
+}
+async function verifyAllocationPersisted(allocationId, expected = {}) {
+  return verifyRecordPersisted('allocation', allocationId, (row)=>(
+    String(row.color || row.pantone_code || '') === String(expected.color || expected.pantoneCode || row.color || row.pantone_code || '')
+  ));
+}
+async function verifyBatchPersisted(type, batchId, expected = {}) {
+  return verifyRecordPersisted(type, batchId, (row)=>(
+    Number(row.quantity || 0) === Number(expected.quantity || row.quantity || 0)
+  ));
+}
+async function verifyTransferPersisted(transferId, expected = {}) {
+  return verifyRecordPersisted('transfer', transferId, (row)=>(
+    String(row.to_dyehouse || '') === String(expected.toDyehouse || expected.to_dyehouse || row.to_dyehouse || '')
+  ));
 }
 const reportTypeLabels = {
   weaving_production_order: 'أمر تشغيل نسيج',
@@ -1534,12 +1600,11 @@ async function openSystemStatusDialog() {
 function installAutomationUi() {
   const actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
-    actionBar.insertAdjacentHTML('beforeend', `<span class="mini-btn version-badge" id="appVersionBadge" title="وقت إصدار هذه النسخة">النسخة ${APP_VERSION} | ${APP_BUILD_TIME}</span><button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="syncLocalStorageBtn" type="button">مزامنة البيانات</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
+    actionBar.insertAdjacentHTML('beforeend', `<span class="mini-btn version-badge" id="appVersionBadge" title="وقت إصدار هذه النسخة">النسخة ${APP_VERSION} | ${APP_BUILD_TIME}</span><button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
   }
   document.getElementById('backendStatusBadge')?.addEventListener('click', pollBackendStatus);
   document.getElementById('whatsappStatusBadge')?.addEventListener('click', pollWhatsappService);
   document.getElementById('systemStatusBtn')?.addEventListener('click', openSystemStatusDialog);
-  document.getElementById('syncLocalStorageBtn')?.addEventListener('click', syncLocalStorageToBackend);
   document.getElementById('whatsappSettingsBtn')?.addEventListener('click', openWhatsappSettingsDialog);
   document.getElementById('dyehousePricesBtn')?.addEventListener('click', renderDyehousePricesDialog);
   document.getElementById('a5AccountsBtn')?.addEventListener('click', renderA5AccountsDialog);
@@ -2052,6 +2117,10 @@ async function addPricing(event) {
         await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل التسعيرة في قاعدة البيانات. لم يتم اعتماد التعديل.');
         return;
       }
+      if (!(await verifyPricingPersisted(editingPricingId, updatedPricing))) {
+        await rollbackAfterBackendWriteFailure('تم إرسال تعديل التسعيرة لكن لم يرجع من قاعدة Railway. لم يتم اعتماد التعديل.');
+        return;
+      }
       recordAudit('update', 'pricing', editingPricingId, before, updatedPricing, `تعديل التسعيرة رقم ${updatedPricing.pricingNumber || ''}`);
       await persistAuditLog();
     }
@@ -2062,6 +2131,10 @@ async function addPricing(event) {
     const savedPricing = await postBackend('/pricings', pricingToApi(createdPricing, backendCustomer));
     if (backendSaveRequired && !savedPricing) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ التسعيرة الجديدة في قاعدة البيانات. لم يتم اعتماد التسعيرة.');
+      return;
+    }
+    if (!(await verifyPricingPersisted(savedPricing.id || createdPricing.id, createdPricing))) {
+      await rollbackAfterBackendWriteFailure('تم إرسال التسعيرة لكن لم ترجع من قاعدة Railway. لم يتم اعتماد التسعيرة.');
       return;
     }
     recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `إنشاء التسعيرة رقم ${createdPricing.pricingNumber || ''}`);
