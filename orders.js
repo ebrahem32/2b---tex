@@ -68,12 +68,13 @@
       const proportionalOrderSent = totalPlanned ? orderRawSent * basePlanned / totalPlanned : 0;
       const sent = roundNumber(allocation.widthLineId ? proportionalWidthSent : (orderAllocations.length <= 1 ? orderRawSent : proportionalOrderSent));
       const finished = sum(data.productionBatches.filter((batch) => batch.allocationId === allocation.id));
+      const deliveredToCustomer = sum(data.customerBatches.filter((batch) => batch.allocationId === allocation.id));
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));
       const actualBase = sent || Number(allocation.plannedQuantity || 0);
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), remainingAtDyehouse:roundNumber(Math.max(sent - finished - rawReturned - actualWaste, 0)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(Math.max(sent - finished - rawReturned - actualWaste, 0)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
     }
 
     function expectedWasteFor(order, quantity) {
