@@ -103,8 +103,6 @@
       const includeCustomerDelivered = !!options.includeCustomerDelivered;
       const includeWaste = !!options.includeWaste;
       const headers = [
-        'العرض',
-        includeFinished ? 'الوزن المجهز' : '',
         'اللون',
         includeInch ? 'البوصة' : '',
         'الكمية',
@@ -112,11 +110,11 @@
         includeReceived ? 'دخل المخزن' : '',
         includeCustomerDelivered ? 'تسليم العميل' : '',
         includeWaste ? 'الهالك الفعلي' : '',
+        includeFinished ? 'الوزن المجهز' : '',
+        'العرض',
       ].filter(Boolean);
       const body = rows.map((line) => {
         const cells = [
-          safeText(line.targetFinishedWidth || line.rawWidth),
-          includeFinished ? safeText(line.targetFinishedWeight) : '',
           safeText(line.color || line.pantoneCode),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
           fmt(line.plannedQuantity),
@@ -124,6 +122,8 @@
           includeReceived ? fmt(line.finishedReceived) : '',
           includeCustomerDelivered ? fmt(line.deliveredToCustomer || line.customerDelivered) : '',
           includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(Number(line.wastePercent || 0), 1)}%)` : '',
+          includeFinished ? safeText(line.targetFinishedWeight) : '',
+          safeText(line.targetFinishedWidth || line.rawWidth),
         ].filter((cell) => cell !== '');
         return `<tr>${cells.map((cell) => `<td>${cell}</td>`).join('')}</tr>`;
       }).join('');
