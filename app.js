@@ -202,6 +202,8 @@ const AI_SERVICE_URL = 'http://127.0.0.1:3030';
 const A5_SERVICE_URL = 'http://127.0.0.1:3041';
 const BACKEND_API_URL = '/api';
 let backendAvailable = false;
+let backendDataLoading = false;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function backendRequest(path, options = {}) {
   const response = await fetch(`${BACKEND_API_URL}${path}`, {
@@ -367,18 +369,38 @@ function updateWhatsappStatusBadge() {
 }
 async function pollBackendStatus() {
   try {
+    const wasUnavailable = !backendAvailable;
     const health = await backendRequest('/health', { cache: 'no-store' });
     const schemaOk = health?.schema?.ok !== false;
     backendAvailable = schemaOk;
     updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
+    if (schemaOk && wasUnavailable && !backendDataLoading && !orders.length) {
+      await loadBackendData({ retries: 2, silentFailure: true });
+    }
   } catch (error) {
     backendAvailable = false;
     updateBackendStatusBadge('قاعدة البيانات غير متاحة');
   }
 }
-async function loadBackendData() {
+async function loadBackendData(options = {}) {
+  if (backendDataLoading) return;
+  const retries = Number.isFinite(options.retries) ? Number(options.retries) : 6;
+  const silentFailure = !!options.silentFailure;
+  backendDataLoading = true;
   try {
-    const data = await backendRequest('/bootstrap', { cache: 'no-store' });
+    let data = null;
+    let lastError = null;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        data = await backendRequest('/bootstrap', { cache: 'no-store' });
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt < retries) await wait(800);
+      }
+    }
+    if (!data) throw lastError || new Error('تعذر تحميل بيانات قاعدة البيانات');
     const customers = data.customers || [];
     orders = (data.orders || []).map((row)=>mapDbOrder(row, customers));
     pricings = (data.pricings || []).map((row)=>mapDbPricing(row, customers));
@@ -424,7 +446,9 @@ async function loadBackendData() {
     backendAvailable = false;
     updateBackendStatusBadge('قاعدة البيانات غير متاحة');
     console.warn('Backend unavailable; operational LocalStorage fallback is disabled', error);
-    renderBackendUnavailable();
+    if (!silentFailure) renderBackendUnavailable();
+  } finally {
+    backendDataLoading = false;
   }
 }
 
@@ -924,6 +948,12 @@ function normalizeDyehousePriceLabel(value) {
     .replace(/^ألوان$/g, 'ألوان خاصة');
   return text;
 }
+const roundNumber = (value, digits = 2) => {
+  const number = Number(value || 0);
+  return Number(Math.round((number + Number.EPSILON) * 10 ** digits) / 10 ** digits);
+};
+const formatNumber = (value, digits = 3) => roundNumber(value, digits).toLocaleString('ar-EG', { maximumFractionDigits: digits });
+const sum = (items) => roundNumber(items.reduce((total, item) => total + Number(item.quantity || 0), 0));
 
 const pricingDomain = window.TwoBTexPricing.createPricingDomain({
   buildItemCode,
@@ -1883,12 +1913,6 @@ function syncWidthModeUi() {
   refs.widthLinesBox.classList.toggle('active', multiple);
   refs.inchWidth.required = !multiple;
 }
-const roundNumber = (value, digits = 2) => {
-  const number = Number(value || 0);
-  return Number(Math.round((number + Number.EPSILON) * 10 ** digits) / 10 ** digits);
-};
-const formatNumber = (value, digits = 3) => roundNumber(value, digits).toLocaleString('ar-EG', { maximumFractionDigits: digits });
-const sum = (items) => roundNumber(items.reduce((total, item) => total + Number(item.quantity || 0), 0));
 const statusLabel = (status) => ({ pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا' }[status]);
 const orderDomain = window.TwoBTexOrders.createOrderDomain({
   buildItemCode,
