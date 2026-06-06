@@ -41,8 +41,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.05.31';
-var APP_BUILD_TIME = '2026-06-06 00:35';
+var APP_VERSION = 'v2026.06.06.01';
+var APP_BUILD_TIME = '2026-06-06 10:05';
 var uid = function uid() {
   return "id-".concat(Date.now(), "-").concat(Math.random().toString(16).slice(2));
 };
@@ -1498,6 +1498,53 @@ function uniqueNonEmpty(values) {
     return String(value || '').trim();
   }).filter(Boolean)));
 }
+function knownCustomerNames() {
+  return uniqueNonEmpty([].concat(_toConsumableArray(orders.map(function (order) {
+    return order.customer;
+  })), _toConsumableArray(pricings.map(function (pricing) {
+    return pricing.customer;
+  })), _toConsumableArray(customerBatches.map(function (batch) {
+    return batch.customer;
+  })))).sort(function (a, b) {
+    return String(a).localeCompare(String(b), 'ar');
+  });
+}
+function knownDyehouseNames() {
+  return uniqueNonEmpty([].concat(_toConsumableArray(orders.map(function (order) {
+    return order.dyehouse;
+  })), _toConsumableArray(allocations.map(function (allocation) {
+    return allocation.dyehouse;
+  })), _toConsumableArray(dyeBatches.map(function (batch) {
+    return batch.dyehouse;
+  })), _toConsumableArray(dyehouseTransfers.flatMap(function (transfer) {
+    return [transfer.fromDyehouse, transfer.toDyehouse];
+  })))).sort(function (a, b) {
+    return String(a).localeCompare(String(b), 'ar');
+  });
+}
+function knownWeavingNames() {
+  return uniqueNonEmpty([].concat(_toConsumableArray(orders.map(function (order) {
+    return order.weavingSource;
+  })), _toConsumableArray(rawBatches.map(function (batch) {
+    return batch.supplier;
+  })))).sort(function (a, b) {
+    return String(a).localeCompare(String(b), 'ar');
+  });
+}
+function normalizeA5CustomerName(value) {
+  return normalizeForCompare(value).replace(/[\u0625\u0623\u0622]/g, "\u0627").replace(/\u0649/g, "\u064A").replace(/\u0629/g, "\u0647").replace(/[\s\-_.?,()\[\]{}]/g, '');
+}
+function findA5CustomerForSystemName(systemName) {
+  var a5Customers = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  var wanted = normalizeA5CustomerName(systemName);
+  if (!wanted) return null;
+  return a5Customers.find(function (customer) {
+    return normalizeA5CustomerName(customer.customerName) === wanted;
+  }) || a5Customers.find(function (customer) {
+    var name = normalizeA5CustomerName(customer.customerName);
+    return name && (name.includes(wanted) || wanted.includes(name));
+  }) || null;
+}
 function mappedGroupFor(name) {
   var groupMap = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var wanted = normalizeForCompare(name);
@@ -2618,33 +2665,43 @@ function renderA5AccountsDialog() {
 }
 function _renderA5AccountsDialog() {
   _renderA5AccountsDialog = _asyncToGenerator(_regenerator().m(function _callee31() {
-    var customers, rows, _t13;
+    var a5Customers, systemCustomers, matchedRows, unmatchedA5, unmatchedNote, _t13;
     return _regenerator().w(function (_context31) {
       while (1) switch (_context31.p = _context31.n) {
         case 0:
-          refs.documentTitle.textContent = 'حسابات A5';
+          refs.documentTitle.textContent = "\u062D\u0633\u0627\u0628\u0627\u062A A5";
           refs.documentBody.dataset.documentType = 'a5-accounts';
-          refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n    <div class=\"subsection-head\"><div><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><p class=\"muted\">\u0642\u0631\u0627\u0621\u0629 \u0623\u0631\u0635\u062F\u0629 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0645\u0646 \u0628\u0631\u0646\u0627\u0645\u062C \u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A A5 \u0628\u062F\u0648\u0646 \u062A\u0639\u062F\u064A\u0644 \u0623\u064A \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0627\u0644\u064A\u0629.</p></div></div>\n    <p class=\"muted\">\u062C\u0627\u0631\u064A \u062A\u062D\u0645\u064A\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0645\u0646 \u062E\u062F\u0645\u0629 A5...</p>\n  </div>";
+          refs.documentBody.innerHTML = "<div class=\"document-sheet\"><div class=\"subsection-head\"><div><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><p class=\"muted\">\u0631\u0628\u0637 \u0639\u0645\u0644\u0627\u0621 \u0627\u0644\u0646\u0638\u0627\u0645 \u0628\u0643\u0634\u0648\u0641\u0627\u062A \u062D\u0633\u0627\u0628\u0627\u062A\u0647\u0645 \u0641\u064A A5.</p></div></div><p class=\"muted\">\u062C\u0627\u0631\u064A \u062A\u062D\u0645\u064A\u0644 \u0628\u064A\u0627\u0646\u0627\u062A A5...</p></div>";
           if (refs.documentDialog.open) refs.documentDialog.close();
           refs.documentDialog.showModal();
           _context31.p = 1;
           _context31.n = 2;
           return fetchA5Customers();
         case 2:
-          customers = _context31.v;
-          rows = customers.map(function (customer) {
-            var tracking = trackingCustomerSummary(customer.customerName);
-            var balance = Number(customer.balance || 0);
+          a5Customers = _context31.v;
+          systemCustomers = knownCustomerNames();
+          matchedRows = systemCustomers.map(function (systemName) {
+            var a5Customer = findA5CustomerForSystemName(systemName, a5Customers);
+            var tracking = trackingCustomerSummary(systemName);
+            var balance = Number((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.balance) || 0);
             var balanceClass = balance > 0 ? 'danger-text' : balance < 0 ? 'success-text' : '';
-            return "<tr>\n        <td>".concat(escapeHtml(customer.customerName || '-'), "</td>\n        <td>").concat(escapeHtml(customer.areaName || '-'), "</td>\n        <td class=\"").concat(balanceClass, "\"><strong>").concat(formatNumber(balance), "</strong></td>\n        <td>").concat(formatNumber(customer.totalDebit || 0), "</td>\n        <td>").concat(formatNumber(customer.totalCredit || 0), "</td>\n        <td>").concat(customer.movementCount || 0, "</td>\n        <td>").concat(tracking.ordersCount, "</td>\n        <td>").concat(tracking.activeOrdersCount, "</td>\n        <td>").concat(formatNumber(tracking.deliveredQuantity), "</td>\n        <td>").concat(tracking.lastOrderNumber || '-', "</td>\n        <td><button class=\"mini-btn\" type=\"button\" data-a5-ledger=\"").concat(escapeHtml(customer.customerName || ''), "\">\u0639\u0631\u0636 \u0627\u0644\u062D\u0633\u0627\u0628</button></td>\n      </tr>");
+            var a5Name = (a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.customerName) || '';
+            var action = a5Customer ? '<button class="mini-btn" type="button" data-a5-ledger="' + escapeHtml(a5Name) + "\">\u0639\u0631\u0636 \u0643\u0634\u0641 \u0627\u0644\u062D\u0633\u0627\u0628</button>" : "<span class=\"status pending\">\u063A\u064A\u0631 \u0645\u0637\u0627\u0628\u0642 \u0641\u064A A5</span>";
+            return '<tr>' + '<td><strong>' + escapeHtml(systemName || '-') + '</strong></td>' + '<td>' + escapeHtml(a5Name || '-') + '</td>' + '<td>' + escapeHtml((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.areaName) || '-') + '</td>' + '<td class="' + balanceClass + '"><strong>' + formatNumber(balance) + '</strong></td>' + '<td>' + formatNumber((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.totalDebit) || 0) + '</td>' + '<td>' + formatNumber((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.totalCredit) || 0) + '</td>' + '<td>' + ((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.movementCount) || 0) + '</td>' + '<td>' + tracking.ordersCount + '</td>' + '<td>' + tracking.activeOrdersCount + '</td>' + '<td>' + formatNumber(tracking.deliveredQuantity) + '</td>' + '<td>' + (tracking.lastOrderNumber || '-') + '</td>' + '<td>' + action + '</td>' + '</tr>';
           }).join('');
-          refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <div class=\"subsection-head\"><div><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><p class=\"muted\">\u0628\u064A\u0627\u0646\u0627\u062A \u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637 \u0645\u0646 A5 \u0645\u0639 \u0631\u0628\u0637\u0647\u0627 \u0628\u0637\u0644\u0628\u0627\u062A \u0646\u0638\u0627\u0645 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629.</p></div><button class=\"mini-btn no-print\" type=\"button\" data-refresh-a5-accounts>\u062A\u062D\u062F\u064A\u062B</button></div>\n      <table><thead><tr><th>\u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0627\u0644\u0645\u0646\u0637\u0642\u0629</th><th>\u0631\u0635\u064A\u062F A5</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u0645\u062F\u064A\u0646</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u062F\u0627\u0626\u0646</th><th>\u0639\u062F\u062F \u0627\u0644\u062D\u0631\u0643\u0627\u062A</th><th>\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629</th><th>\u062A\u062D\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</th><th>\u0643\u0645\u064A\u0629 \u0645\u0633\u0644\u0645\u0629</th><th>\u0622\u062E\u0631 \u0637\u0644\u0628</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr></thead><tbody>".concat(rows || '<tr><td colspan="11">لا توجد بيانات عملاء متاحة من A5.</td></tr>', "</tbody></table>\n    </div>");
+          unmatchedA5 = a5Customers.filter(function (customer) {
+            return !systemCustomers.some(function (name) {
+              return findA5CustomerForSystemName(name, [customer]);
+            });
+          });
+          unmatchedNote = unmatchedA5.length ? "<p class=\"eyebrow\">\u064A\u0648\u062C\u062F " + unmatchedA5.length + " \u0639\u0645\u064A\u0644 \u0641\u064A A5 \u0644\u064A\u0633 \u0644\u0647\u0645 \u0637\u0644\u0628\u0627\u062A \u062D\u0627\u0644\u064A\u0629 \u0641\u064A \u0627\u0644\u0646\u0638\u0627\u0645.</p>" : '';
+          refs.documentBody.innerHTML = '<div class="document-sheet">' + "<div class=\"subsection-head\"><div><h2>\u0643\u0634\u0648\u0641\u0627\u062A \u062D\u0633\u0627\u0628\u0627\u062A A5</h2><p class=\"muted\">\u0627\u0644\u0639\u0631\u0636 \u0645\u0628\u0646\u064A \u0639\u0644\u0649 \u0639\u0645\u0644\u0627\u0621 \u0627\u0644\u0646\u0638\u0627\u0645\u060C \u0648\u064A\u0633\u062D\u0628 \u0627\u0644\u0631\u0635\u064A\u062F \u0648\u0627\u0644\u0643\u0634\u0641 \u0645\u0646 A5 \u0644\u0644\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637.</p></div><button class=\"mini-btn no-print\" type=\"button\" data-refresh-a5-accounts>\u062A\u062D\u062F\u064A\u062B</button></div>" + unmatchedNote + "<table><thead><tr><th>\u0639\u0645\u064A\u0644 \u0627\u0644\u0646\u0638\u0627\u0645</th><th>\u0627\u0633\u0645\u0647 \u0641\u064A A5</th><th>\u0627\u0644\u0645\u0646\u0637\u0642\u0629</th><th>\u0631\u0635\u064A\u062F A5</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u0645\u062F\u064A\u0646</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u062F\u0627\u0626\u0646</th><th>\u0639\u062F\u062F \u0627\u0644\u062D\u0631\u0643\u0627\u062A</th><th>\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0646\u0638\u0627\u0645</th><th>\u062A\u062D\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</th><th>\u0643\u0645\u064A\u0629 \u0645\u0633\u0644\u0645\u0629</th><th>\u0622\u062E\u0631 \u0637\u0644\u0628</th><th>\u0627\u0644\u0643\u0634\u0641</th></tr></thead><tbody>" + (matchedRows || "<tr><td colspan=\"12\">\u0644\u0627 \u064A\u0648\u062C\u062F \u0639\u0645\u0644\u0627\u0621 \u0645\u0633\u062C\u0644\u0648\u0646 \u0641\u064A \u0627\u0644\u0646\u0638\u0627\u0645.</td></tr>") + '</tbody></table></div>';
           _context31.n = 4;
           break;
         case 3:
           _context31.p = 3;
           _t13 = _context31.v;
-          refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2>\n      <div class=\"notice warning\">\u062E\u062F\u0645\u0629 A5 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u064B\u0627. \u0634\u063A\u0651\u0644 \u0645\u0644\u0641 \"\u062A\u0634\u063A\u064A\u0644 \u062E\u062F\u0645\u0629 A5.bat\" \u062B\u0645 \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.</div>\n      <div class=\"document-actions no-print\"><button class=\"primary-btn\" type=\"button\" data-refresh-a5-accounts>\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629</button></div>\n    </div>";
+          refs.documentBody.innerHTML = "<div class=\"document-sheet\"><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><div class=\"notice warning\">\u062E\u062F\u0645\u0629 A5 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627. \u0634\u063A\u0644 \u0645\u0644\u0641 \"\u062A\u0634\u063A\u064A\u0644 \u062E\u062F\u0645\u0629 A5.bat\" \u062B\u0645 \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.</div><div class=\"document-actions no-print\"><button class=\"primary-btn\" type=\"button\" data-refresh-a5-accounts>\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629</button></div></div>";
         case 4:
           return _context31.a(2);
       }

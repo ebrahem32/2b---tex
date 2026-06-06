@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.05.31';
-const APP_BUILD_TIME = '2026-06-06 00:35';
+const APP_VERSION = 'v2026.06.06.01';
+const APP_BUILD_TIME = '2026-06-06 10:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -831,6 +831,44 @@ function orderRawCost(order) {
 function uniqueNonEmpty(values) {
   return [...new Set((values || []).map((value)=>String(value || '').trim()).filter(Boolean))];
 }
+function knownCustomerNames() {
+  return uniqueNonEmpty([
+    ...orders.map((order)=>order.customer),
+    ...pricings.map((pricing)=>pricing.customer),
+    ...customerBatches.map((batch)=>batch.customer),
+  ]).sort((a,b)=>String(a).localeCompare(String(b), 'ar'));
+}
+function knownDyehouseNames() {
+  return uniqueNonEmpty([
+    ...orders.map((order)=>order.dyehouse),
+    ...allocations.map((allocation)=>allocation.dyehouse),
+    ...dyeBatches.map((batch)=>batch.dyehouse),
+    ...dyehouseTransfers.flatMap((transfer)=>[transfer.fromDyehouse, transfer.toDyehouse]),
+  ]).sort((a,b)=>String(a).localeCompare(String(b), 'ar'));
+}
+function knownWeavingNames() {
+  return uniqueNonEmpty([
+    ...orders.map((order)=>order.weavingSource),
+    ...rawBatches.map((batch)=>batch.supplier),
+  ]).sort((a,b)=>String(a).localeCompare(String(b), 'ar'));
+}
+function normalizeA5CustomerName(value) {
+  return normalizeForCompare(value)
+    .replace(/[\u0625\u0623\u0622]/g, '\u0627')
+    .replace(/\u0649/g, '\u064a')
+    .replace(/\u0629/g, '\u0647')
+    .replace(/[\s\-_.?,()\[\]{}]/g, '');
+}
+function findA5CustomerForSystemName(systemName, a5Customers = []) {
+  const wanted = normalizeA5CustomerName(systemName);
+  if (!wanted) return null;
+  return a5Customers.find((customer)=>normalizeA5CustomerName(customer.customerName) === wanted)
+    || a5Customers.find((customer)=>{
+      const name = normalizeA5CustomerName(customer.customerName);
+      return name && (name.includes(wanted) || wanted.includes(name));
+    })
+    || null;
+}
 function mappedGroupFor(name, groupMap = {}) {
   const wanted = normalizeForCompare(name);
   if (!wanted) return '';
@@ -1474,44 +1512,50 @@ function formatA5Date(value) {
   return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US');
 }
 async function renderA5AccountsDialog() {
-  refs.documentTitle.textContent = 'حسابات A5';
+  refs.documentTitle.textContent = '\u062d\u0633\u0627\u0628\u0627\u062a A5';
   refs.documentBody.dataset.documentType = 'a5-accounts';
-  refs.documentBody.innerHTML = `<div class="document-sheet">
-    <div class="subsection-head"><div><h2>حسابات A5</h2><p class="muted">قراءة أرصدة العملاء من برنامج الحسابات A5 بدون تعديل أي بيانات مالية.</p></div></div>
-    <p class="muted">جاري تحميل بيانات العملاء من خدمة A5...</p>
-  </div>`;
+  refs.documentBody.innerHTML = '<div class="document-sheet"><div class="subsection-head"><div><h2>\u062d\u0633\u0627\u0628\u0627\u062a A5</h2><p class="muted">\u0631\u0628\u0637 \u0639\u0645\u0644\u0627\u0621 \u0627\u0644\u0646\u0638\u0627\u0645 \u0628\u0643\u0634\u0648\u0641\u0627\u062a \u062d\u0633\u0627\u0628\u0627\u062a\u0647\u0645 \u0641\u064a A5.</p></div></div><p class="muted">\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0628\u064a\u0627\u0646\u0627\u062a A5...</p></div>';
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
   try {
-    const customers = await fetchA5Customers();
-    const rows = customers.map((customer)=>{
-      const tracking = trackingCustomerSummary(customer.customerName);
-      const balance = Number(customer.balance || 0);
+    const a5Customers = await fetchA5Customers();
+    const systemCustomers = knownCustomerNames();
+    const matchedRows = systemCustomers.map((systemName)=>{
+      const a5Customer = findA5CustomerForSystemName(systemName, a5Customers);
+      const tracking = trackingCustomerSummary(systemName);
+      const balance = Number(a5Customer?.balance || 0);
       const balanceClass = balance > 0 ? 'danger-text' : (balance < 0 ? 'success-text' : '');
-      return `<tr>
-        <td>${escapeHtml(customer.customerName || '-')}</td>
-        <td>${escapeHtml(customer.areaName || '-')}</td>
-        <td class="${balanceClass}"><strong>${formatNumber(balance)}</strong></td>
-        <td>${formatNumber(customer.totalDebit || 0)}</td>
-        <td>${formatNumber(customer.totalCredit || 0)}</td>
-        <td>${customer.movementCount || 0}</td>
-        <td>${tracking.ordersCount}</td>
-        <td>${tracking.activeOrdersCount}</td>
-        <td>${formatNumber(tracking.deliveredQuantity)}</td>
-        <td>${tracking.lastOrderNumber || '-'}</td>
-        <td><button class="mini-btn" type="button" data-a5-ledger="${escapeHtml(customer.customerName || '')}">عرض الحساب</button></td>
-      </tr>`;
+      const a5Name = a5Customer?.customerName || '';
+      const action = a5Customer
+        ? '<button class="mini-btn" type="button" data-a5-ledger="' + escapeHtml(a5Name) + '">\u0639\u0631\u0636 \u0643\u0634\u0641 \u0627\u0644\u062d\u0633\u0627\u0628</button>'
+        : '<span class="status pending">\u063a\u064a\u0631 \u0645\u0637\u0627\u0628\u0642 \u0641\u064a A5</span>';
+      return '<tr>'
+        + '<td><strong>' + escapeHtml(systemName || '-') + '</strong></td>'
+        + '<td>' + escapeHtml(a5Name || '-') + '</td>'
+        + '<td>' + escapeHtml(a5Customer?.areaName || '-') + '</td>'
+        + '<td class="' + balanceClass + '"><strong>' + formatNumber(balance) + '</strong></td>'
+        + '<td>' + formatNumber(a5Customer?.totalDebit || 0) + '</td>'
+        + '<td>' + formatNumber(a5Customer?.totalCredit || 0) + '</td>'
+        + '<td>' + (a5Customer?.movementCount || 0) + '</td>'
+        + '<td>' + tracking.ordersCount + '</td>'
+        + '<td>' + tracking.activeOrdersCount + '</td>'
+        + '<td>' + formatNumber(tracking.deliveredQuantity) + '</td>'
+        + '<td>' + (tracking.lastOrderNumber || '-') + '</td>'
+        + '<td>' + action + '</td>'
+        + '</tr>';
     }).join('');
-    refs.documentBody.innerHTML = `<div class="document-sheet">
-      <div class="subsection-head"><div><h2>حسابات A5</h2><p class="muted">بيانات قراءة فقط من A5 مع ربطها بطلبات نظام المتابعة.</p></div><button class="mini-btn no-print" type="button" data-refresh-a5-accounts>تحديث</button></div>
-      <table><thead><tr><th>العميل</th><th>المنطقة</th><th>رصيد A5</th><th>إجمالي مدين</th><th>إجمالي دائن</th><th>عدد الحركات</th><th>طلبات المتابعة</th><th>تحت التشغيل</th><th>كمية مسلمة</th><th>آخر طلب</th><th>إجراء</th></tr></thead><tbody>${rows || '<tr><td colspan="11">لا توجد بيانات عملاء متاحة من A5.</td></tr>'}</tbody></table>
-    </div>`;
+    const unmatchedA5 = a5Customers.filter((customer)=>!systemCustomers.some((name)=>findA5CustomerForSystemName(name, [customer])));
+    const unmatchedNote = unmatchedA5.length
+      ? '<p class="eyebrow">\u064a\u0648\u062c\u062f ' + unmatchedA5.length + ' \u0639\u0645\u064a\u0644 \u0641\u064a A5 \u0644\u064a\u0633 \u0644\u0647\u0645 \u0637\u0644\u0628\u0627\u062a \u062d\u0627\u0644\u064a\u0629 \u0641\u064a \u0627\u0644\u0646\u0638\u0627\u0645.</p>'
+      : '';
+    refs.documentBody.innerHTML = '<div class="document-sheet">'
+      + '<div class="subsection-head"><div><h2>\u0643\u0634\u0648\u0641\u0627\u062a \u062d\u0633\u0627\u0628\u0627\u062a A5</h2><p class="muted">\u0627\u0644\u0639\u0631\u0636 \u0645\u0628\u0646\u064a \u0639\u0644\u0649 \u0639\u0645\u0644\u0627\u0621 \u0627\u0644\u0646\u0638\u0627\u0645\u060c \u0648\u064a\u0633\u062d\u0628 \u0627\u0644\u0631\u0635\u064a\u062f \u0648\u0627\u0644\u0643\u0634\u0641 \u0645\u0646 A5 \u0644\u0644\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637.</p></div><button class="mini-btn no-print" type="button" data-refresh-a5-accounts>\u062a\u062d\u062f\u064a\u062b</button></div>'
+      + unmatchedNote
+      + '<table><thead><tr><th>\u0639\u0645\u064a\u0644 \u0627\u0644\u0646\u0638\u0627\u0645</th><th>\u0627\u0633\u0645\u0647 \u0641\u064a A5</th><th>\u0627\u0644\u0645\u0646\u0637\u0642\u0629</th><th>\u0631\u0635\u064a\u062f A5</th><th>\u0625\u062c\u0645\u0627\u0644\u064a \u0645\u062f\u064a\u0646</th><th>\u0625\u062c\u0645\u0627\u0644\u064a \u062f\u0627\u0626\u0646</th><th>\u0639\u062f\u062f \u0627\u0644\u062d\u0631\u0643\u0627\u062a</th><th>\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645</th><th>\u062a\u062d\u062a \u0627\u0644\u062a\u0634\u063a\u064a\u0644</th><th>\u0643\u0645\u064a\u0629 \u0645\u0633\u0644\u0645\u0629</th><th>\u0622\u062e\u0631 \u0637\u0644\u0628</th><th>\u0627\u0644\u0643\u0634\u0641</th></tr></thead><tbody>'
+      + (matchedRows || '<tr><td colspan="12">\u0644\u0627 \u064a\u0648\u062c\u062f \u0639\u0645\u0644\u0627\u0621 \u0645\u0633\u062c\u0644\u0648\u0646 \u0641\u064a \u0627\u0644\u0646\u0638\u0627\u0645.</td></tr>')
+      + '</tbody></table></div>';
   } catch (error) {
-    refs.documentBody.innerHTML = `<div class="document-sheet">
-      <h2>حسابات A5</h2>
-      <div class="notice warning">خدمة A5 غير متاحة حاليًا. شغّل ملف "تشغيل خدمة A5.bat" ثم حاول مرة أخرى.</div>
-      <div class="document-actions no-print"><button class="primary-btn" type="button" data-refresh-a5-accounts>إعادة المحاولة</button></div>
-    </div>`;
+    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>\u062d\u0633\u0627\u0628\u0627\u062a A5</h2><div class="notice warning">\u062e\u062f\u0645\u0629 A5 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u062d\u0627\u0644\u064a\u0627. \u0634\u063a\u0644 \u0645\u0644\u0641 \"\u062a\u0634\u063a\u064a\u0644 \u062e\u062f\u0645\u0629 A5.bat\" \u062b\u0645 \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.</div><div class="document-actions no-print"><button class="primary-btn" type="button" data-refresh-a5-accounts>\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629</button></div></div>';
   }
 }
 async function renderA5LedgerDialog(customerName) {
