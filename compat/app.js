@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.09';
-var APP_BUILD_TIME = '2026-06-06 15:05';
+var APP_VERSION = 'v2026.06.06.10';
+var APP_BUILD_TIME = '2026-06-06 15:25';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -2626,22 +2626,31 @@ function openWhatsappSettingsDialog() {
 }
 function _openWhatsappSettingsDialog() {
   _openWhatsappSettingsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee30() {
-    var _t14;
+    var groupNames, _t14;
     return _regenerator().w(function (_context30) {
-      while (1) switch (_context30.n) {
+      while (1) switch (_context30.p = _context30.n) {
         case 0:
           _context30.n = 1;
           return pollWhatsappService();
         case 1:
-          _t14 = renderWhatsappSettingsDialog;
-          _context30.n = 2;
+          groupNames = [];
+          _context30.p = 2;
+          _context30.n = 3;
           return fetchWhatsappGroupNames();
-        case 2:
-          _t14(_context30.v);
         case 3:
+          groupNames = _context30.v;
+          _context30.n = 5;
+          break;
+        case 4:
+          _context30.p = 4;
+          _t14 = _context30.v;
+          groupNames = [];
+        case 5:
+          renderWhatsappSettingsDialog(groupNames);
+        case 6:
           return _context30.a(2);
       }
-    }, _callee30);
+    }, _callee30, null, [[2, 4]]);
   }));
   return _openWhatsappSettingsDialog.apply(this, arguments);
 }
