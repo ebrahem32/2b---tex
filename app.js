@@ -288,6 +288,19 @@ async function logoutCurrentUser() {
 
 const dbDate = (row) => row.batch_date || row.transfer_date || row.order_date || row.pricing_date || row.created_at || '';
 const customerLookupName = (customers, id) => customers.find((item)=>item.id===id)?.name || '';
+function customerNameFromId(id) {
+  const raw = String(id || '').trim();
+  if (!raw.startsWith('customer-')) return '';
+  const body = raw.slice('customer-'.length).trim();
+  if (!body || /^-+$/.test(body)) return '';
+  if (/^[0-9a-f]+$/i.test(body) && body.length % 2 === 0) {
+    try {
+      const decoded = decodeURIComponent(body.match(/.{1,2}/g).map((part)=>`%${part}`).join('')).trim();
+      if (decoded && decoded !== body) return decoded;
+    } catch {}
+  }
+  return body.replace(/-+/g, ' ').trim();
+}
 function parseDbJsonArray(value) {
   if (Array.isArray(value)) return value;
   if (!value) return [];
@@ -317,7 +330,7 @@ function mapDbOrder(row, customers) {
     id: row.id,
     orderNumber: row.order_number || '',
     pricingId: row.pricing_id || '',
-    customer: customerLookupName(customers, row.customer_id) || row.customer || '',
+    customer: customerLookupName(customers, row.customer_id) || row.customer || customerNameFromId(row.customer_id),
     orderDate: row.order_date || '',
     productCode: row.product_code || buildItemCode(row.order_number),
     fabricType: row.fabric_type || '',
@@ -396,7 +409,7 @@ function mapDbPricing(row, customers) {
   return {
     id: row.id,
     pricingNumber: row.pricing_number || '',
-    customer: customerLookupName(customers, row.customer_id) || '',
+    customer: customerLookupName(customers, row.customer_id) || row.customer || customerNameFromId(row.customer_id),
     pricingDate: row.pricing_date || '',
     fabricType: row.fabric_type || '',
     materialType: row.material_type || '',

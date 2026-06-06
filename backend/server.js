@@ -55,6 +55,42 @@ function safeJsonParse(value, fallback = null) {
   }
 }
 
+function readableCustomerNameFromId(customerId) {
+  const raw = String(customerId || '').trim();
+  if (!raw.startsWith('customer-')) return '';
+  const body = raw.slice('customer-'.length).trim();
+  if (!body || /^-+$/.test(body)) return '';
+  if (/^[0-9a-f]+$/i.test(body) && body.length % 2 === 0) {
+    try {
+      const decoded = Buffer.from(body, 'hex').toString('utf8').trim();
+      if (decoded && decoded !== body) return decoded;
+    } catch {}
+  }
+  return body.replace(/-+/g, ' ').trim();
+}
+
+async function repairMissingCustomersFromReferences() {
+  const refs = await all(`
+    SELECT DISTINCT ref.customer_id
+    FROM (
+      SELECT customer_id FROM orders WHERE customer_id IS NOT NULL AND TRIM(customer_id) <> ''
+      UNION
+      SELECT customer_id FROM pricings WHERE customer_id IS NOT NULL AND TRIM(customer_id) <> ''
+    ) ref
+    LEFT JOIN customers c ON c.id = ref.customer_id
+    WHERE c.id IS NULL
+  `);
+  for (const row of refs) {
+    const name = readableCustomerNameFromId(row.customer_id);
+    if (!name) continue;
+    const stamp = now();
+    await run(
+      'INSERT OR IGNORE INTO customers (id, name, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [row.customer_id, name, 'إصلاح تلقائي لعميل مرتبط بطلب أو تسعيرة', stamp, stamp]
+    );
+  }
+}
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.pbkdf2Sync(String(password || ''), salt, 120000, 32, 'sha256').toString('hex');
@@ -263,6 +299,16 @@ function crudRoutes(base, table) {
     res.json(await all(`SELECT * FROM ${table} ORDER BY created_at DESC`));
   }));
   app.post(`/api/${base}`, asyncHandler(async (req, res) => {
+    if (table === 'customers' && req.body?.id) {
+      const before = await get('SELECT * FROM customers WHERE id = ?', [req.body.id]);
+      if (before) {
+        const query = updateSql('customers', req.body || {}, req.body.id);
+        await run(query.sql, query.values);
+        const after = await get('SELECT * FROM customers WHERE id = ?', [req.body.id]);
+        await auditMutation('update', 'customers', req.body.id, before, after, `upsert via POST /api/${base}`);
+        return res.status(200).json(after);
+      }
+    }
     const existing = await existingUniqueBusinessRow(table, req.body || {});
     if (existing) {
       const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [existing.id]);
@@ -596,6 +642,7 @@ app.post('/api/batches/:type', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
+  await repairMissingCustomersFromReferences();
   const systemSettingsRows = await all('SELECT key, value_json FROM system_settings ORDER BY key');
   const systemSettings = {};
   for (const row of systemSettingsRows) {

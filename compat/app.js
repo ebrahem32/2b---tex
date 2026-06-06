@@ -446,13 +446,28 @@ var customerLookupName = function customerLookupName(customers, id) {
     return item.id === id;
   })) === null || _customers$find === void 0 ? void 0 : _customers$find.name) || '';
 };
+function customerNameFromId(id) {
+  var raw = String(id || '').trim();
+  if (!raw.startsWith('customer-')) return '';
+  var body = raw.slice('customer-'.length).trim();
+  if (!body || /^-+$/.test(body)) return '';
+  if (/^[0-9a-f]+$/i.test(body) && body.length % 2 === 0) {
+    try {
+      var decoded = decodeURIComponent(body.match(/.{1,2}/g).map(function (part) {
+        return "%".concat(part);
+      }).join('')).trim();
+      if (decoded && decoded !== body) return decoded;
+    } catch (_unused6) {}
+  }
+  return body.replace(/-+/g, ' ').trim();
+}
 function parseDbJsonArray(value) {
   if (Array.isArray(value)) return value;
   if (!value) return [];
   try {
     var parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (_unused6) {
+  } catch (_unused7) {
     return [];
   }
 }
@@ -462,7 +477,7 @@ function parseDbJsonObject(value) {
   try {
     var parsed = JSON.parse(value);
     return parsed && _typeof(parsed) === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch (_unused7) {
+  } catch (_unused8) {
     return {};
   }
 }
@@ -475,7 +490,7 @@ function mapDbOrder(row, customers) {
     id: row.id,
     orderNumber: row.order_number || '',
     pricingId: row.pricing_id || '',
-    customer: customerLookupName(customers, row.customer_id) || row.customer || '',
+    customer: customerLookupName(customers, row.customer_id) || row.customer || customerNameFromId(row.customer_id),
     orderDate: row.order_date || '',
     productCode: row.product_code || buildItemCode(row.order_number),
     fabricType: row.fabric_type || '',
@@ -555,7 +570,7 @@ function mapDbPricing(row, customers) {
   return {
     id: row.id,
     pricingNumber: row.pricing_number || '',
-    customer: customerLookupName(customers, row.customer_id) || '',
+    customer: customerLookupName(customers, row.customer_id) || row.customer || customerNameFromId(row.customer_id),
     pricingDate: row.pricing_date || '',
     fabricType: row.fabric_type || '',
     materialType: row.material_type || '',
@@ -1517,7 +1532,7 @@ function recordAudit(action, entityType, entityId) {
   var safeClone = function safeClone(value) {
     try {
       return value === null || value === undefined ? null : clone(value);
-    } catch (_unused8) {
+    } catch (_unused9) {
       return value === null || value === undefined ? null : String(value);
     }
   };
@@ -3785,7 +3800,7 @@ var customDyehousePriceLibrary = function () {
   try {
     var saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.dyehousePriceLibrary));
     return saved && _typeof(saved) === 'object' && !Array.isArray(saved) ? saved : {};
-  } catch (_unused0) {
+  } catch (_unused1) {
     return {};
   }
 }();
