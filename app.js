@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.02';
-const APP_BUILD_TIME = '2026-06-06 10:15';
+const APP_VERSION = 'v2026.06.06.03';
+const APP_BUILD_TIME = '2026-06-06 10:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2307,20 +2307,33 @@ function openPricingQuotation(id) {
   refs.documentDialog.showModal();
 }
 function allOrders() { return orders.map(calculateOrder); }
-function orderSearchText(order) {
+function orderNoteNumbers(order) {
   const allocationIds = (order.allocations || []).map((allocation)=>allocation.id);
-  const noteNumbers = [
+  return uniqueNonEmpty([
     ...rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber),
+    ...dyeBatches.filter((batch)=>batch.orderId===order.id || allocationIds.includes(batch.allocationId)).map((batch)=>batch.noteNumber),
     ...rawReturns.filter((batch)=>allocationIds.includes(batch.allocationId)).map((batch)=>batch.noteNumber),
     ...accessoryBatches.filter((batch)=>batch.orderId===order.id || allocationIds.includes(batch.allocationId)).map((batch)=>batch.noteNumber),
     ...productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId)).map((batch)=>batch.noteNumber),
     ...customerBatches.filter((batch)=>allocationIds.includes(batch.allocationId)).map((batch)=>batch.noteNumber),
     ...dyehouseTransfers.filter((batch)=>batch.orderId===order.id || allocationIds.includes(batch.allocationId)).map((batch)=>batch.noteNumber),
-  ];
-  return [order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode, ...noteNumbers].filter(Boolean).join(' ').toLowerCase();
+  ].map(normalizeDigits));
+}
+function orderSearchText(order) {
+  const noteNumbers = orderNoteNumbers(order);
+  const noteAliases = noteNumbers.flatMap((note)=>[
+    note,
+    `اذن ${note}`,
+    `إذن ${note}`,
+    `اذن رقم ${note}`,
+    `إذن رقم ${note}`,
+    `رقم اذن ${note}`,
+    `رقم إذن ${note}`,
+  ]);
+  return normalizeDigits([order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode, ...noteAliases].filter(Boolean).join(' ').toLowerCase());
 }
 function filteredOrders() {
-  const query = refs.searchInput.value.trim().toLowerCase();
+  const query = normalizeDigits(refs.searchInput.value.trim().toLowerCase());
   const status = refs.orderStatusFilter.value;
   const customer = refs.customerFilter.value;
   const dyehouse = refs.dyehouseFilter.value;

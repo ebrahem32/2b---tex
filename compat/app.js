@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.02';
-var APP_BUILD_TIME = '2026-06-06 10:15';
+var APP_VERSION = 'v2026.06.06.03';
+var APP_BUILD_TIME = '2026-06-06 10:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -4017,12 +4017,16 @@ function openPricingQuotation(id) {
 function allOrders() {
   return orders.map(calculateOrder);
 }
-function orderSearchText(order) {
+function orderNoteNumbers(order) {
   var allocationIds = (order.allocations || []).map(function (allocation) {
     return allocation.id;
   });
-  var noteNumbers = [].concat(_toConsumableArray(rawBatches.filter(function (batch) {
+  return uniqueNonEmpty([].concat(_toConsumableArray(rawBatches.filter(function (batch) {
     return batch.orderId === order.id;
+  }).map(function (batch) {
+    return batch.noteNumber;
+  })), _toConsumableArray(dyeBatches.filter(function (batch) {
+    return batch.orderId === order.id || allocationIds.includes(batch.allocationId);
   }).map(function (batch) {
     return batch.noteNumber;
   })), _toConsumableArray(rawReturns.filter(function (batch) {
@@ -4045,11 +4049,17 @@ function orderSearchText(order) {
     return batch.orderId === order.id || allocationIds.includes(batch.allocationId);
   }).map(function (batch) {
     return batch.noteNumber;
-  })));
-  return [order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode].concat(_toConsumableArray(noteNumbers)).filter(Boolean).join(' ').toLowerCase();
+  }))).map(normalizeDigits));
+}
+function orderSearchText(order) {
+  var noteNumbers = orderNoteNumbers(order);
+  var noteAliases = noteNumbers.flatMap(function (note) {
+    return [note, "\u0627\u0630\u0646 ".concat(note), "\u0625\u0630\u0646 ".concat(note), "\u0627\u0630\u0646 \u0631\u0642\u0645 ".concat(note), "\u0625\u0630\u0646 \u0631\u0642\u0645 ".concat(note), "\u0631\u0642\u0645 \u0627\u0630\u0646 ".concat(note), "\u0631\u0642\u0645 \u0625\u0630\u0646 ".concat(note)];
+  });
+  return normalizeDigits([order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode].concat(_toConsumableArray(noteAliases)).filter(Boolean).join(' ').toLowerCase());
 }
 function filteredOrders() {
-  var query = refs.searchInput.value.trim().toLowerCase();
+  var query = normalizeDigits(refs.searchInput.value.trim().toLowerCase());
   var status = refs.orderStatusFilter.value;
   var customer = refs.customerFilter.value;
   var dyehouse = refs.dyehouseFilter.value;
