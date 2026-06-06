@@ -34,6 +34,7 @@ const REQUIRED_COLUMNS = {
   accessory_batches: ['batch_date', 'note_number', 'movement', 'source_document_json'],
   raw_returns: ['note_number', 'source_document_json'],
   dyehouse_transfers: ['note_number'],
+  users: ['name', 'username', 'password_hash', 'role', 'is_active'],
 };
 
 async function initDb() {
@@ -118,6 +119,14 @@ function runMigrations() {
   ].forEach((definition) => addColumnIfMissing('accessory_batches', definition));
   addColumnIfMissing('raw_returns', 'note_number TEXT');
   addColumnIfMissing('dyehouse_transfers', 'note_number TEXT');
+  [
+    'name TEXT',
+    'username TEXT',
+    'password_hash TEXT',
+    "role TEXT DEFAULT 'user'",
+    'is_active INTEGER DEFAULT 1',
+  ].forEach((definition) => addColumnIfMissing('users', definition));
+  db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_unique ON users(username) WHERE username IS NOT NULL AND TRIM(username) <> ''");
   dropUnsafeUniqueIndexes();
   backfillAccessoryBatchFields();
   assertSchemaReady();

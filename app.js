@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.04';
-const APP_BUILD_TIME = '2026-06-06 10:50';
+const APP_VERSION = 'v2026.06.06.05';
+const APP_BUILD_TIME = '2026-06-06 11:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -256,7 +256,14 @@ async function backendRequest(path, options = {}) {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
-  if (!response.ok) throw new Error(`Backend ${response.status}`);
+  if (!response.ok) {
+    let message = `Backend ${response.status}`;
+    try {
+      const data = await response.json();
+      message = data.error || data.message || message;
+    } catch {}
+    throw new Error(message);
+  }
   return response.json();
 }
 
@@ -1611,7 +1618,7 @@ async function renderA5LedgerDialog(customerName) {
 function openAuditLogDialog() {
   ensureRuntimeCollections();
   const actionLabels = { create:'إنشاء', update:'تعديل', delete:'حذف', retry:'إعادة محاولة', error:'خطأ' };
-  const entityLabels = { order:'طلب', pricing:'تسعيرة', allocation:'لون', orderDetails:'تفاصيل طلب', reportOutbox:'قائمة الإرسال', whatsappSettings:'إعدادات واتساب', dyehousePriceLibrary:'أسعار المصابغ', customerAccount:'حساب عميل', customerPayment:'دفعة عميل' };
+  const entityLabels = { order:'طلب', pricing:'تسعيرة', allocation:'لون', orderDetails:'تفاصيل طلب', reportOutbox:'قائمة الإرسال', whatsappSettings:'إعدادات واتساب', dyehousePriceLibrary:'أسعار المصابغ', customerAccount:'حساب عميل', customerPayment:'دفعة عميل', users:'مستخدم' };
   const cleanAuditNote = (item) => {
     const text = String(item?.note || '').trim();
     if (text && !isLegacyRecoveredText(text)) return text;
@@ -1625,6 +1632,82 @@ function openAuditLogDialog() {
   refs.documentBody.dataset.documentType = 'audit-log';
   refs.documentBody.innerHTML = `<div class="document-sheet orders-follow-report"><div class="report-title"><h2>سجل التعديلات</h2><span>آخر العمليات والتعديلات المسجلة داخل النظام.</span></div><section class="report-section"><h3>تفاصيل السجل</h3><table class="follow-table"><thead><tr><th>التاريخ</th><th>الإجراء</th><th>نوع البيان</th><th>الملاحظة</th></tr></thead><tbody>${rows}</tbody></table></section></div>`;
   if (refs.documentDialog.open) refs.documentDialog.close(); refs.documentDialog.showModal();
+}
+async function fetchSystemUsers() {
+  return await backendRequest('/users', { cache:'no-store' });
+}
+function systemUserRoleLabel(role) {
+  return { admin:'مدير', manager:'مسؤول تشغيل', user:'مستخدم' }[role] || role || 'مستخدم';
+}
+async function openUsersDialog() {
+  refs.documentTitle.textContent = 'المستخدمين';
+  refs.documentBody.dataset.documentType = 'system-users';
+  refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><p class="muted">جاري تحميل المستخدمين...</p></div>';
+  if (refs.documentDialog.open) refs.documentDialog.close();
+  refs.documentDialog.showModal();
+  try {
+    const users = await fetchSystemUsers();
+    const rows = users.map((user)=>`<tr>
+      <td><strong>${escapeHtml(user.name || '-')}</strong></td>
+      <td>${escapeHtml(user.username || '-')}</td>
+      <td>${escapeHtml(systemUserRoleLabel(user.role))}</td>
+      <td><span class="status ${Number(user.is_active) === 1 ? 'completed' : 'failed'}">${Number(user.is_active) === 1 ? 'نشط' : 'موقوف'}</span></td>
+      <td>${escapeHtml(arDateTime(user.updated_at || user.created_at))}</td>
+      <td><div class="batch-actions"><button class="mini-btn" type="button" data-edit-system-user="${escapeHtml(user.id)}">تعديل</button><button class="mini-btn danger" type="button" data-delete-system-user="${escapeHtml(user.id)}">حذف</button></div></td>
+    </tr>`).join('');
+    refs.documentBody.innerHTML = `<div class="document-sheet">
+      <div class="subsection-head"><div><h2>المستخدمين</h2><p class="muted">إدارة مستخدمي النظام. الدخول الحالي يظل مؤمنًا ببيانات السيرفر حتى نقل تسجيل الدخول بالكامل للمستخدمين.</p></div><button class="mini-btn gold" type="button" data-new-system-user>إضافة مستخدم</button></div>
+      <table><thead><tr><th>الاسم</th><th>اسم الدخول</th><th>الصلاحية</th><th>الحالة</th><th>آخر تعديل</th><th>إجراءات</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا يوجد مستخدمين حتى الآن.</td></tr>'}</tbody></table>
+    </div>`;
+    refs.documentBody.dataset.usersJson = JSON.stringify(users);
+  } catch (error) {
+    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><div class="notice warning">تعذر تحميل المستخدمين حاليًا.</div></div>';
+  }
+}
+function openSystemUserForm(user = null) {
+  refs.documentTitle.textContent = user ? 'تعديل مستخدم' : 'إضافة مستخدم';
+  refs.documentBody.dataset.documentType = 'system-user-form';
+  refs.documentBody.innerHTML = `<div class="document-sheet">
+    <div class="subsection-head"><h2>${user ? 'تعديل مستخدم' : 'إضافة مستخدم'}</h2><button class="mini-btn" type="button" data-back-system-users>رجوع</button></div>
+    <div class="summary-grid">
+      <label><span>الاسم</span><input data-user-name value="${escapeHtml(user?.name || '')}"></label>
+      <label><span>اسم الدخول</span><input data-user-username value="${escapeHtml(user?.username || '')}" required></label>
+      <label><span>الصلاحية</span><select data-user-role><option value="admin">مدير</option><option value="manager">مسؤول تشغيل</option><option value="user">مستخدم</option></select></label>
+      <label><span>الحالة</span><select data-user-active><option value="1">نشط</option><option value="0">موقوف</option></select></label>
+      <label class="full-row"><span>${user ? 'كلمة مرور جديدة - اختياري' : 'كلمة المرور'}</span><input data-user-password type="password" autocomplete="new-password"></label>
+    </div>
+    <div class="dialog-actions"><button class="primary-btn" type="button" data-save-system-user="${escapeHtml(user?.id || '')}">حفظ المستخدم</button></div>
+  </div>`;
+  refs.documentBody.querySelector('[data-user-role]').value = user?.role || 'user';
+  refs.documentBody.querySelector('[data-user-active]').value = String(Number(user?.is_active ?? 1));
+}
+function systemUserFormPayload(isNew) {
+  const body = refs.documentBody;
+  const payload = {
+    name: body.querySelector('[data-user-name]')?.value || '',
+    username: body.querySelector('[data-user-username]')?.value || '',
+    role: body.querySelector('[data-user-role]')?.value || 'user',
+    is_active: Number(body.querySelector('[data-user-active]')?.value || 1),
+  };
+  const password = body.querySelector('[data-user-password]')?.value || '';
+  if (password || isNew) payload.password = password;
+  return payload;
+}
+async function saveSystemUser(userId = '') {
+  const isNew = !userId;
+  const payload = systemUserFormPayload(isNew);
+  if (!payload.username || (isNew && !payload.password)) {
+    alert('اسم الدخول وكلمة المرور مطلوبين.');
+    return;
+  }
+  if (isNew) await backendRequest('/users', { method:'POST', body:JSON.stringify(payload) });
+  else await backendRequest(`/users/${userId}`, { method:'PUT', body:JSON.stringify(payload) });
+  await openUsersDialog();
+}
+async function deleteSystemUser(userId) {
+  if (!userId || !confirm('حذف المستخدم؟')) return;
+  await backendRequest(`/users/${userId}`, { method:'DELETE' });
+  await openUsersDialog();
 }
 function openOutboxDialog() {
   ensureRuntimeCollections();
@@ -1675,11 +1758,12 @@ async function openSystemStatusDialog() {
 function installAutomationUi() {
   const actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
-    actionBar.insertAdjacentHTML('beforeend', `<span class="mini-btn version-badge" id="appVersionBadge" title="وقت إصدار هذه النسخة">النسخة ${APP_VERSION} | ${APP_BUILD_TIME}</span><button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
+    actionBar.insertAdjacentHTML('beforeend', `<span class="mini-btn version-badge" id="appVersionBadge" title="وقت إصدار هذه النسخة">النسخة ${APP_VERSION} | ${APP_BUILD_TIME}</span><button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="usersBtn" type="button">المستخدمين</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
   }
   document.getElementById('backendStatusBadge')?.addEventListener('click', pollBackendStatus);
   document.getElementById('whatsappStatusBadge')?.addEventListener('click', pollWhatsappService);
   document.getElementById('systemStatusBtn')?.addEventListener('click', openSystemStatusDialog);
+  document.getElementById('usersBtn')?.addEventListener('click', openUsersDialog);
   document.getElementById('whatsappSettingsBtn')?.addEventListener('click', openWhatsappSettingsDialog);
   document.getElementById('dyehousePricesBtn')?.addEventListener('click', renderDyehousePricesDialog);
   document.getElementById('a5AccountsBtn')?.addEventListener('click', renderA5AccountsDialog);
@@ -3820,6 +3904,17 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (paymentButton) addCustomerPayment(paymentButton.dataset.addCustomerPayment).catch((error)=>{ console.error('customer-payment-save-error', error); alert('تعذر حفظ دفعة العميل.'); });
   const deletePaymentButton = event.target.closest('[data-delete-customer-payment]');
   if (deletePaymentButton) deleteCustomerPayment(deletePaymentButton.dataset.customerName, deletePaymentButton.dataset.deleteCustomerPayment).catch((error)=>{ console.error('customer-payment-delete-error', error); alert('تعذر حذف دفعة العميل.'); });
+  if (event.target.closest('[data-new-system-user]')) openSystemUserForm();
+  if (event.target.closest('[data-back-system-users]')) openUsersDialog();
+  const editUserButton = event.target.closest('[data-edit-system-user]');
+  if (editUserButton) {
+    const users = JSON.parse(refs.documentBody.dataset.usersJson || '[]');
+    openSystemUserForm(users.find((user)=>user.id === editUserButton.dataset.editSystemUser) || null);
+  }
+  const saveUserButton = event.target.closest('[data-save-system-user]');
+  if (saveUserButton) saveSystemUser(saveUserButton.dataset.saveSystemUser).catch((error)=>{ console.error('system-user-save-error', error); alert(error.message || 'تعذر حفظ المستخدم.'); });
+  const deleteUserButton = event.target.closest('[data-delete-system-user]');
+  if (deleteUserButton) deleteSystemUser(deleteUserButton.dataset.deleteSystemUser).catch((error)=>{ console.error('system-user-delete-error', error); alert(error.message || 'تعذر حذف المستخدم.'); });
 });
 
 refs.closePricingFormBtn.onclick = () => refs.pricingDialog.close();

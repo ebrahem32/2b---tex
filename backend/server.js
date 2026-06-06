@@ -30,6 +30,7 @@ const TABLE_FIELDS = {
   dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
+  users: ['id','name','username','password_hash','role','is_active','created_at','updated_at'],
 };
 
 function tableData(table, data) {
@@ -44,6 +45,46 @@ function id() {
 
 function now() {
   return new Date().toISOString();
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(String(password || ''), salt, 120000, 32, 'sha256').toString('hex');
+  return `pbkdf2_sha256$120000$${salt}$${hash}`;
+}
+
+function publicUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name || '',
+    username: row.username || '',
+    role: row.role || 'user',
+    is_active: Number(row.is_active) === 1 ? 1 : 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+async function ensureDefaultAdminUser() {
+  const countRow = await get('SELECT COUNT(*) AS count FROM users');
+  if (Number(countRow?.count || 0) > 0) return;
+  const username = process.env.SYSTEM_USER || 'admin';
+  const password = process.env.SYSTEM_PASS || '151297';
+  const user = {
+    id: id(),
+    name: 'مدير النظام',
+    username,
+    password_hash: hashPassword(password),
+    role: 'admin',
+    is_active: 1,
+    created_at: now(),
+    updated_at: now(),
+  };
+  await run(
+    'INSERT INTO users (id, name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [user.id, user.name, user.username, user.password_hash, user.role, user.is_active, user.created_at, user.updated_at]
+  );
 }
 
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
@@ -238,6 +279,82 @@ app.get('/api/audit-log', asyncHandler(async (req, res) => {
     ));
   }
   res.json(await all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?', [limit]));
+}));
+
+app.get('/api/users', asyncHandler(async (_req, res) => {
+  await ensureDefaultAdminUser();
+  const rows = await all('SELECT * FROM users ORDER BY created_at DESC');
+  res.json(rows.map(publicUser));
+}));
+
+app.post('/api/users', asyncHandler(async (req, res) => {
+  await ensureDefaultAdminUser();
+  const body = req.body || {};
+  const username = String(body.username || '').trim();
+  const password = String(body.password || '').trim();
+  if (!username) return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+  if (!password) return res.status(400).json({ error: 'كلمة المرور مطلوبة' });
+  const existing = await get('SELECT id FROM users WHERE username = ?', [username]);
+  if (existing) return res.status(400).json({ error: 'اسم الدخول موجود بالفعل' });
+  const row = {
+    id: body.id || id(),
+    name: String(body.name || username).trim(),
+    username,
+    password_hash: hashPassword(password),
+    role: ['admin','manager','user'].includes(body.role) ? body.role : 'user',
+    is_active: body.is_active === 0 ? 0 : 1,
+    created_at: now(),
+    updated_at: now(),
+  };
+  await run(
+    'INSERT INTO users (id, name, username, password_hash, role, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [row.id, row.name, row.username, row.password_hash, row.role, row.is_active, row.created_at, row.updated_at]
+  );
+  const after = await get('SELECT * FROM users WHERE id = ?', [row.id]);
+  await auditMutation('create', 'users', row.id, null, publicUser(after), 'إضافة مستخدم للنظام');
+  res.status(201).json(publicUser(after));
+}));
+
+app.put('/api/users/:id', asyncHandler(async (req, res) => {
+  await ensureDefaultAdminUser();
+  const before = await get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  if (!before) return res.status(404).json({ error: 'المستخدم غير موجود' });
+  const body = req.body || {};
+  const fields = {
+    name: body.name !== undefined ? String(body.name || '').trim() : before.name,
+    username: body.username !== undefined ? String(body.username || '').trim() : before.username,
+    role: ['admin','manager','user'].includes(body.role) ? body.role : before.role,
+    is_active: body.is_active === 0 || body.is_active === 1 ? body.is_active : before.is_active,
+    updated_at: now(),
+  };
+  if (!fields.username) return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+  const duplicate = await get('SELECT id FROM users WHERE username = ? AND id <> ?', [fields.username, req.params.id]);
+  if (duplicate) return res.status(400).json({ error: 'اسم الدخول موجود بالفعل' });
+  const values = [fields.name, fields.username, fields.role, fields.is_active, fields.updated_at];
+  let sql = 'UPDATE users SET name = ?, username = ?, role = ?, is_active = ?, updated_at = ?';
+  if (body.password) {
+    sql += ', password_hash = ?';
+    values.push(hashPassword(body.password));
+  }
+  sql += ' WHERE id = ?';
+  values.push(req.params.id);
+  await run(sql, values);
+  const after = await get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  await auditMutation('update', 'users', req.params.id, publicUser(before), publicUser(after), 'تعديل مستخدم في النظام');
+  res.json(publicUser(after));
+}));
+
+app.delete('/api/users/:id', asyncHandler(async (req, res) => {
+  await ensureDefaultAdminUser();
+  const before = await get('SELECT * FROM users WHERE id = ?', [req.params.id]);
+  if (!before) return res.status(404).json({ error: 'المستخدم غير موجود' });
+  const activeAdmins = await all("SELECT id FROM users WHERE role = 'admin' AND is_active = 1");
+  if (before.role === 'admin' && activeAdmins.length <= 1) {
+    return res.status(400).json({ error: 'لا يمكن حذف آخر مدير نشط' });
+  }
+  await run('DELETE FROM users WHERE id = ?', [req.params.id]);
+  await auditMutation('delete', 'users', req.params.id, publicUser(before), { deleted: 1 }, 'حذف مستخدم من النظام');
+  res.json({ ok: true, deleted: 1 });
 }));
 
 crudRoutes('customers', 'customers');
@@ -825,6 +942,7 @@ app.use((error, _req, res, _next) => {
 });
 
 initDb().then(async () => {
+  await ensureDefaultAdminUser();
   app.listen(PORT, HOST, () => {
     console.log(`2B Tex Backend: http://localhost:${PORT}/api/health`);
   });
