@@ -348,6 +348,12 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
   let row = await get('SELECT * FROM users WHERE username = ?', [username]);
   const matchesStoredPassword = row && verifyPassword(password, row.password_hash);
   const matchesSystemFallback = username === (process.env.SYSTEM_USER || 'admin') && password === (process.env.SYSTEM_PASS || '151297');
+  if (!row && matchesSystemFallback) {
+    const user = { id:'system-admin', name:'مدير النظام', username, role:'admin', is_active:1 };
+    const token = signSessionPayload({ id:user.id, username:user.username, name:user.name, role:user.role, exp:Date.now() + (8 * 60 * 60 * 1000) });
+    res.setHeader('Set-Cookie', sessionCookie(token));
+    return res.json({ ok: true, user });
+  }
   if (!row || Number(row.is_active) !== 1 || (!matchesStoredPassword && !matchesSystemFallback)) {
     return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
   }
@@ -362,6 +368,9 @@ app.get('/api/auth/me', asyncHandler(async (req, res) => {
   const token = cookieValue(req.headers.cookie, 'twobtex_session');
   const session = verifySessionToken(token);
   if (!session?.id) return res.status(401).json({ error: 'غير مسجل الدخول' });
+  if (session.id === 'system-admin' && session.username === (process.env.SYSTEM_USER || 'admin')) {
+    return res.json({ ok: true, user: { id:'system-admin', name:session.name || 'مدير النظام', username:session.username, role:'admin', is_active:1 } });
+  }
   const row = await get('SELECT * FROM users WHERE id = ?', [session.id]);
   if (!row || Number(row.is_active) !== 1) return res.status(401).json({ error: 'الجلسة غير صالحة' });
   res.json({ ok: true, user: publicUser(row) });
