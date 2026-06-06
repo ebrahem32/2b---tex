@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.11';
-var APP_BUILD_TIME = '2026-06-06 15:40';
+var APP_VERSION = 'v2026.06.06.12';
+var APP_BUILD_TIME = '2026-06-06 15:50';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -1914,11 +1914,34 @@ function whatsappSettingsRowHtml(type, label) {
   var group = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
   return "<tr data-whatsapp-group-row data-group-type=\"".concat(escapeHtml(type), "\">\n    <td><input type=\"text\" data-entity-name value=\"").concat(escapeHtml(name), "\" placeholder=\"").concat(escapeHtml(label), "\"></td>\n    <td><input type=\"text\" data-group-name value=\"").concat(escapeHtml(group), "\" placeholder=\"\u0627\u0633\u0645 \u062C\u0631\u0648\u0628 \u0648\u0627\u062A\u0633\u0627\u0628\"></td>\n    <td><button class=\"mini-btn\" type=\"button\" data-delete-group-row>\u062D\u0630\u0641</button></td>\n  </tr>");
 }
-function whatsappSettingsSectionHtml(type, title, label, map, names) {
-  var rowsHtml = whatsappSettingsRows(map, names).map(function (_ref3) {
+function whatsappSettingsRows() {
+  var map = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var names = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  var rows = [];
+  var seen = new Set();
+  Object.entries(map || {}).forEach(function (_ref3) {
     var _ref4 = _slicedToArray(_ref3, 2),
       name = _ref4[0],
       group = _ref4[1];
+    var cleanName = String(name || '').trim();
+    if (!cleanName) return;
+    seen.add(normalizeForCompare(cleanName));
+    rows.push([cleanName, String(group || '').trim()]);
+  });
+  (names || []).forEach(function (name) {
+    var cleanName = String(name || '').trim();
+    var key = normalizeForCompare(cleanName);
+    if (!cleanName || seen.has(key)) return;
+    seen.add(key);
+    rows.push([cleanName, '']);
+  });
+  return rows.length ? rows : [['', '']];
+}
+function whatsappSettingsSectionHtml(type, title, label, map, names) {
+  var rowsHtml = whatsappSettingsRows(map, names).map(function (_ref5) {
+    var _ref6 = _slicedToArray(_ref5, 2),
+      name = _ref6[0],
+      group = _ref6[1];
     return whatsappSettingsRowHtml(type, label, name, group);
   }).join('');
   return "<section class=\"whatsapp-settings-section\">\n    <div class=\"subsection-head\"><h3>".concat(escapeHtml(title), "</h3><button class=\"mini-btn\" type=\"button\" data-add-whatsapp-group-row=\"").concat(escapeHtml(type), "\" data-row-label=\"").concat(escapeHtml(label), "\">\u0625\u0636\u0627\u0641\u0629</button></div>\n    <table>\n      <thead><tr><th>").concat(escapeHtml(label), "</th><th>\u0627\u0633\u0645 \u062C\u0631\u0648\u0628 \u0648\u0627\u062A\u0633\u0627\u0628</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr></thead>\n      <tbody data-whatsapp-group-rows=\"").concat(escapeHtml(type), "\">").concat(rowsHtml, "</tbody>\n    </table>\n  </section>");
@@ -2055,22 +2078,22 @@ function sanitizeDyehousePriceLibrary() {
 }
 function dyehousePriceRows() {
   var rows = [];
-  Object.entries(activeDyehousePriceLibrary()).forEach(function (_ref5) {
-    var _ref6 = _slicedToArray(_ref5, 2),
-      dyehouse = _ref6[0],
-      config = _ref6[1];
+  Object.entries(activeDyehousePriceLibrary()).forEach(function (_ref7) {
+    var _ref8 = _slicedToArray(_ref7, 2),
+      dyehouse = _ref8[0],
+      config = _ref8[1];
     if (isLegacyRecoveredText(dyehouse)) return;
     if (config !== null && config !== void 0 && config.aliasOf) return;
     var dyeing = (config === null || config === void 0 ? void 0 : config.dyeing) || {};
-    Object.entries(dyeing).forEach(function (_ref7) {
-      var _ref8 = _slicedToArray(_ref7, 2),
-        material = _ref8[0],
-        colors = _ref8[1];
+    Object.entries(dyeing).forEach(function (_ref9) {
+      var _ref0 = _slicedToArray(_ref9, 2),
+        material = _ref0[0],
+        colors = _ref0[1];
       if (isLegacyRecoveredText(material)) return;
-      Object.entries(colors || {}).forEach(function (_ref9) {
-        var _ref0 = _slicedToArray(_ref9, 2),
-          color = _ref0[0],
-          price = _ref0[1];
+      Object.entries(colors || {}).forEach(function (_ref1) {
+        var _ref10 = _slicedToArray(_ref1, 2),
+          color = _ref10[0],
+          price = _ref10[1];
         if (isLegacyRecoveredText(color)) return;
         rows.push({
           dyehouse: dyehouse,
@@ -2100,28 +2123,28 @@ function dyehousePriceRowHtml() {
   return "<tr data-dyehouse-price-row>\n    <td><input type=\"text\" data-price-dyehouse value=\"".concat(escapeHtml(row.dyehouse || ''), "\" placeholder=\"\u0627\u0633\u0645 \u0627\u0644\u0645\u0635\u0628\u063A\u0629\"></td>\n    <td><input type=\"text\" data-price-material value=\"").concat(escapeHtml(row.material || ''), "\" placeholder=\"\u0646\u0648\u0639 \u0627\u0644\u062E\u0627\u0645\u0629\"></td>\n    <td><input type=\"text\" data-price-color value=\"").concat(escapeHtml(row.color || ''), "\" placeholder=\"\u062F\u0631\u062C\u0629 \u0627\u0644\u0644\u0648\u0646\"></td>\n    <td><input type=\"number\" step=\"0.01\" data-price-value value=\"").concat(escapeHtml((_row$price = row.price) !== null && _row$price !== void 0 ? _row$price : ''), "\" placeholder=\"\u0627\u0644\u0633\u0639\u0631\"></td>\n    <td><button class=\"mini-btn\" type=\"button\" data-delete-price-row>\u062D\u0630\u0641</button></td>\n  </tr>");
 }
 function dyehousePriceSummaryHtml() {
-  return Object.entries(activeDyehousePriceLibrary()).filter(function (_ref1) {
-    var _ref10 = _slicedToArray(_ref1, 1),
-      name = _ref10[0];
+  return Object.entries(activeDyehousePriceLibrary()).filter(function (_ref11) {
+    var _ref12 = _slicedToArray(_ref11, 1),
+      name = _ref12[0];
     return name && !isLegacyRecoveredText(name);
-  }).map(function (_ref11) {
-    var _ref12 = _slicedToArray(_ref11, 2),
-      dyehouse = _ref12[0],
-      config = _ref12[1];
-    var extras = Object.entries(config.extras || {}).map(function (_ref13) {
-      var _ref14 = _slicedToArray(_ref13, 2),
-        name = _ref14[0],
-        price = _ref14[1];
+  }).map(function (_ref13) {
+    var _ref14 = _slicedToArray(_ref13, 2),
+      dyehouse = _ref14[0],
+      config = _ref14[1];
+    var extras = Object.entries(config.extras || {}).map(function (_ref15) {
+      var _ref16 = _slicedToArray(_ref15, 2),
+        name = _ref16[0],
+        price = _ref16[1];
       return "<tr><td>".concat(escapeHtml(name), "</td><td>").concat(escapeHtml(price), "</td></tr>");
     }).join('') || '<tr><td colspan="2">لا توجد بنود تجهيز.</td></tr>';
-    var printing = Object.entries(config.printing || {}).flatMap(function (_ref15) {
-      var _ref16 = _slicedToArray(_ref15, 2),
-        type = _ref16[0],
-        rows = _ref16[1];
-      return Object.entries(rows || {}).map(function (_ref17) {
-        var _ref18 = _slicedToArray(_ref17, 2),
-          name = _ref18[0],
-          price = _ref18[1];
+    var printing = Object.entries(config.printing || {}).flatMap(function (_ref17) {
+      var _ref18 = _slicedToArray(_ref17, 2),
+        type = _ref18[0],
+        rows = _ref18[1];
+      return Object.entries(rows || {}).map(function (_ref19) {
+        var _ref20 = _slicedToArray(_ref19, 2),
+          name = _ref20[0],
+          price = _ref20[1];
         return "<tr><td>".concat(escapeHtml(type), "</td><td>").concat(escapeHtml(name), "</td><td>").concat(escapeHtml(price), "</td></tr>");
       });
     }).join('') || '<tr><td colspan="3">لا توجد طباعة.</td></tr>';
@@ -3256,7 +3279,7 @@ function _reportToCanvas() {
           throw new Error('no-sheet');
         case 1:
           renderTarget = /*#__PURE__*/function () {
-            var _ref19 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee42(target) {
+            var _ref21 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee42(target) {
               var targetHeight, scale;
               return _regenerator().w(function (_context42) {
                 while (1) switch (_context42.n) {
@@ -3290,7 +3313,7 @@ function _reportToCanvas() {
               }, _callee42);
             }));
             return function renderTarget(_x50) {
-              return _ref19.apply(this, arguments);
+              return _ref21.apply(this, arguments);
             };
           }();
           _context43.p = 2;
@@ -4457,10 +4480,10 @@ function renderStats(list) {
   }, 0)], ['هالك إجمالي', list.reduce(function (t, o) {
     return t + o.totalWaste;
   }, 0)]];
-  refs.statsGrid.innerHTML = values.map(function (_ref20) {
-    var _ref21 = _slicedToArray(_ref20, 2),
-      label = _ref21[0],
-      value = _ref21[1];
+  refs.statsGrid.innerHTML = values.map(function (_ref22) {
+    var _ref23 = _slicedToArray(_ref22, 2),
+      label = _ref23[0],
+      value = _ref23[1];
     return "<article class=\"stat-card\"><span>".concat(label, "</span><strong>").concat(fmt(value), "</strong></article>");
   }).join('');
 }
@@ -6539,17 +6562,17 @@ function openManagementReportsMenu() {
   refs.documentTitle.textContent = 'التقارير الإدارية';
   refs.documentBody.dataset.documentType = 'management-reports-menu';
   var cards = [['orders-follow', 'تقرير متابعة الطلبات', 'ملخص الطلبات وحالتها من الخام حتى التسليم.'], ['dyehouse-balances', 'تقرير أرصدة المصابغ', 'الكميات المتبقية داخل كل مصبغة حسب الطلبات والألوان.'], ['inventory', 'تقرير رصيد المخزن', 'رصيد المخزن الحالي حسب الداخل والتسليم.'], ['delays', 'تقرير التأخيرات', 'الطلبات المتوقفة أو المتأخرة في مراحل التشغيل.'], ['dyehouse-performance', 'أداء المصابغ', 'مراجعة كميات التشغيل والاستلام والهالك لكل مصبغة.'], ['waste-analysis', 'تحليل الهالك', 'مقارنة الهالك التقديري بالهالك الفعلي.'], ['customer-account', 'تقرير العملاء', 'ملخص كل عميل داخل نظام المتابعة.'], ['order-movement', 'حركة الطلبات', 'تواريخ انتقال الطلبات بين مراحل التشغيل.'], ['raw-returns', 'مرتجعات الخام', 'حركات الخام المرتجع من المصبغة أو التشغيل.'], ['accessories', 'تقرير الإكسسوار', 'حركات الإكسسوار خروجًا واستلامًا وتسليمًا.']];
-  refs.documentBody.innerHTML = "<div class=\"document-sheet orders-follow-report\">".concat(documentHeader(), "<div class=\"report-title\"><h2>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0627\u0644\u0625\u062F\u0627\u0631\u064A\u0629</h2><span>\u0627\u062E\u062A\u0631 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u062D\u0627\u0644\u064A.</span></div><div class=\"management-report-grid no-print\">").concat(cards.map(function (_ref22) {
-    var _ref23 = _slicedToArray(_ref22, 3),
-      type = _ref23[0],
-      title = _ref23[1],
-      desc = _ref23[2];
-    return "<button type=\"button\" class=\"management-report-card\" data-management-report=\"".concat(type, "\"><strong>").concat(title, "</strong><span>").concat(desc, "</span></button>");
-  }).join(''), "</div><section class=\"report-section\"><h3>\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631</h3><table class=\"follow-table\"><thead><tr><th>\u0627\u0644\u062A\u0642\u0631\u064A\u0631</th><th>\u0627\u0644\u0648\u0635\u0641</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr></thead><tbody>").concat(cards.map(function (_ref24) {
+  refs.documentBody.innerHTML = "<div class=\"document-sheet orders-follow-report\">".concat(documentHeader(), "<div class=\"report-title\"><h2>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0627\u0644\u0625\u062F\u0627\u0631\u064A\u0629</h2><span>\u0627\u062E\u062A\u0631 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u062D\u0627\u0644\u064A.</span></div><div class=\"management-report-grid no-print\">").concat(cards.map(function (_ref24) {
     var _ref25 = _slicedToArray(_ref24, 3),
       type = _ref25[0],
       title = _ref25[1],
       desc = _ref25[2];
+    return "<button type=\"button\" class=\"management-report-card\" data-management-report=\"".concat(type, "\"><strong>").concat(title, "</strong><span>").concat(desc, "</span></button>");
+  }).join(''), "</div><section class=\"report-section\"><h3>\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631</h3><table class=\"follow-table\"><thead><tr><th>\u0627\u0644\u062A\u0642\u0631\u064A\u0631</th><th>\u0627\u0644\u0648\u0635\u0641</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr></thead><tbody>").concat(cards.map(function (_ref26) {
+    var _ref27 = _slicedToArray(_ref26, 3),
+      type = _ref27[0],
+      title = _ref27[1],
+      desc = _ref27[2];
     return "<tr><th>".concat(title, "</th><td>").concat(desc, "</td><td><button type=\"button\" class=\"mini-btn gold\" data-management-report=\"").concat(type, "\">\u0641\u062A\u062D \u0627\u0644\u062A\u0642\u0631\u064A\u0631</button></td></tr>");
   }).join(''), "</tbody></table></section>").concat(documentFooter(), "</div>");
   if (refs.documentDialog.open) refs.documentDialog.close();
@@ -6614,11 +6637,11 @@ function openManagementReport(type) {
       };
     }).sort(function (a, b) {
       return b.days - a.days;
-    }).map(function (_ref26) {
-      var order = _ref26.order,
-        stage = _ref26.stage,
-        stageDate = _ref26.stageDate,
-        days = _ref26.days;
+    }).map(function (_ref28) {
+      var order = _ref28.order,
+        stage = _ref28.stage,
+        stageDate = _ref28.stageDate,
+        days = _ref28.days;
       return "<tr><td>".concat(order.orderNumber, "</td><td>").concat(order.customer, "</td><td>").concat(order.fabricType || '-', "</td><td>").concat(order.dyehouse || '-', "</td><td>").concat(stage, "</td><td>").concat(stageDate || '-', "</td><td><strong>").concat(days, "</strong></td><td>").concat(reportFmt(order.totalRawOrdered), "</td><td>").concat(reportFmt(order.totalFinishedReceived), "</td><td>").concat(reportFmt(order.totalDeliveredToCustomer), "</td></tr>");
     }).join('');
     return showManagementReport('تقرير التأخيرات', 'الطلبات المفتوحة أو المتأخرة حسب مرحلة التشغيل وآخر حركة مسجلة.', "<section class=\"report-section\"><h3>\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u062A\u0623\u062E\u064A\u0631</h3><table class=\"follow-table\"><thead><tr><th>\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628</th><th>\u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0627\u0644\u0645\u0631\u062D\u0644\u0629</th><th>\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0631\u062D\u0644\u0629</th><th>\u0623\u064A\u0627\u0645 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631</th><th>\u062E\u0627\u0645 \u0645\u0637\u0644\u0648\u0628</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0639\u0645\u064A\u0644</th></tr></thead><tbody>".concat(rows || '<tr><td colspan="10">لا توجد طلبات متأخرة حاليًا.</td></tr>', "</tbody></table></section>"), type);
@@ -6644,10 +6667,10 @@ function openManagementReport(type) {
     });
     var _rows = Object.entries(groups).sort(function (a, b) {
       return a[0].localeCompare(b[0], 'ar');
-    }).map(function (_ref27) {
-      var _ref28 = _slicedToArray(_ref27, 2),
-        dyehouse = _ref28[0],
-        data = _ref28[1];
+    }).map(function (_ref29) {
+      var _ref30 = _slicedToArray(_ref29, 2),
+        dyehouse = _ref30[0],
+        data = _ref30[1];
       return "<tr><td>".concat(dyehouse, "</td><td>").concat(data.orders.size, "</td><td>").concat(reportFmt(data.planned), "</td><td>").concat(reportFmt(data.finished), "</td><td>").concat(reportFmt(data.waste), "</td><td>").concat(data.planned ? reportFmt(data.waste / data.planned * 100, 2) : 0, "%</td><td>").concat(data.inside, "</td></tr>");
     }).join('');
     return showManagementReport('أداء المصابغ', 'مراجعة كميات التشغيل والاستلام والهالك لكل مصبغة.', "<section class=\"report-section\"><h3>\u0645\u0644\u062E\u0635 \u0627\u0644\u0645\u0635\u0627\u0628\u063A</h3><table class=\"follow-table\"><thead><tr><th>\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0639\u062F\u062F \u0627\u0644\u0637\u0644\u0628\u0627\u062A</th><th>\u0627\u0644\u0645\u062E\u0637\u0637</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u0647\u0627\u0644\u0643 \u0641\u0639\u0644\u064A</th><th>\u0646\u0633\u0628\u0629 \u0627\u0644\u0647\u0627\u0644\u0643</th><th>\u0637\u0644\u0628\u0627\u062A \u062F\u0627\u062E\u0644 \u0627\u0644\u0645\u0635\u0628\u063A\u0629</th></tr></thead><tbody>".concat(_rows || '<tr><td colspan="7">لا توجد بيانات أداء للمصابغ.</td></tr>', "</tbody></table></section>"), type);
@@ -6683,10 +6706,10 @@ function openManagementReport(type) {
     });
     var _rows3 = Object.entries(_groups).sort(function (a, b) {
       return a[0].localeCompare(b[0], 'ar');
-    }).map(function (_ref29) {
-      var _ref30 = _slicedToArray(_ref29, 2),
-        customer = _ref30[0],
-        data = _ref30[1];
+    }).map(function (_ref31) {
+      var _ref32 = _slicedToArray(_ref31, 2),
+        customer = _ref32[0],
+        data = _ref32[1];
       return "<tr><td>".concat(customer, "</td><td>").concat(data.count, "</td><td>").concat(reportFmt(data.contract, 2), "</td><td>").concat(reportFmt(data.raw), "</td><td>").concat(reportFmt(data.finished), "</td><td>").concat(reportFmt(data.delivered), "</td><td>").concat(reportFmt(data.balance), "</td><td>").concat(data.open, "</td></tr>");
     }).join('');
     return showManagementReport('تقرير العملاء', 'ملخص كل عميل داخل نظام المتابعة.', "<section class=\"report-section\"><h3>\u0645\u0644\u062E\u0635 \u0627\u0644\u0639\u0645\u0644\u0627\u0621</h3><table class=\"follow-table\"><thead><tr><th>\u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0639\u062F\u062F \u0627\u0644\u0637\u0644\u0628\u0627\u062A</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0642\u0648\u062F</th><th>\u062E\u0627\u0645 \u0645\u0637\u0644\u0648\u0628</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u0637\u0644\u0628\u0627\u062A \u0645\u0641\u062A\u0648\u062D\u0629</th></tr></thead><tbody>".concat(_rows3 || '<tr><td colspan="8">لا توجد بيانات عملاء.</td></tr>', "</tbody></table></section>"), type);
@@ -6826,10 +6849,10 @@ function openDyehouseBalancesReport() {
   });
   var rows = Object.entries(groups).sort(function (a, b) {
     return a[0].localeCompare(b[0], 'ar');
-  }).map(function (_ref31) {
-    var _ref32 = _slicedToArray(_ref31, 2),
-      name = _ref32[0],
-      data = _ref32[1];
+  }).map(function (_ref33) {
+    var _ref34 = _slicedToArray(_ref33, 2),
+      name = _ref34[0],
+      data = _ref34[1];
     return "<tr><td>".concat(name, "</td><td>").concat(data.colors, "</td><td>").concat(fmt(data.planned), "</td><td>").concat(fmt(data.sent), "</td><td>").concat(fmt(data.finished), "</td><td>").concat(fmt(data.remaining), "</td><td>").concat(fmt(data.waste), "</td><td>").concat(fmt(data.accessoryRequired), "</td><td>").concat(fmt(data.accessoryReceived), "</td><td>").concat(fmt(data.accessoryBalance), "</td></tr>");
   }).join('');
   var table = "<section class=\"report-section\"><h3>\u0623\u0631\u0635\u062F\u0629 \u0627\u0644\u0645\u0635\u0627\u0628\u063A</h3><table class=\"follow-table\"><thead><tr><th>\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0639\u062F\u062F \u0627\u0644\u0623\u0644\u0648\u0627\u0646</th><th>\u0627\u0644\u0645\u062E\u0637\u0637</th><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u0645\u062A\u0628\u0642\u064A \u0628\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0647\u0627\u0644\u0643 \u0641\u0639\u0644\u064A</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0637\u0644\u0648\u0628</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0633\u062A\u0644\u0645</th><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631</th></tr></thead><tbody>".concat(rows || emptyRow(10, 'لا توجد أرصدة مصابغ حالية.'), "</tbody></table></section>");
@@ -6861,15 +6884,15 @@ function combinedOperationNotes(order) {
   if (String((order === null || order === void 0 ? void 0 : order.notes) || '').trim()) sections.push("\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0627\u0644\u0637\u0644\u0628: ".concat(String(order.notes).trim()));
   var notes = order !== null && order !== void 0 && order.operationNotes && _typeof(order.operationNotes) === 'object' && !Array.isArray(order.operationNotes) ? order.operationNotes : {};
   if (String(notes.weaving || '').trim()) sections.push("\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0627\u0644\u0646\u0633\u064A\u062C: ".concat(String(notes.weaving).trim()));
-  Object.entries(notes).filter(function (_ref33) {
-    var _ref34 = _slicedToArray(_ref33, 2),
-      key = _ref34[0],
-      value = _ref34[1];
-    return key.startsWith('dyeing:') && String(value || '').trim();
-  }).forEach(function (_ref35) {
+  Object.entries(notes).filter(function (_ref35) {
     var _ref36 = _slicedToArray(_ref35, 2),
       key = _ref36[0],
       value = _ref36[1];
+    return key.startsWith('dyeing:') && String(value || '').trim();
+  }).forEach(function (_ref37) {
+    var _ref38 = _slicedToArray(_ref37, 2),
+      key = _ref38[0],
+      value = _ref38[1];
     var dyehouseName = key.slice('dyeing:'.length) || 'المصبغة';
     sections.push("\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0627\u0644\u0635\u0628\u0627\u063A\u0629 - ".concat(dyehouseName, ": ").concat(String(value).trim()));
   });
