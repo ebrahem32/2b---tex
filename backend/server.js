@@ -83,12 +83,35 @@ async function repairMissingCustomersFromReferences() {
   for (const row of refs) {
     const name = readableCustomerNameFromId(row.customer_id);
     if (!name) continue;
-    const stamp = now();
-    await run(
-      'INSERT OR IGNORE INTO customers (id, name, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [row.customer_id, name, 'إصلاح تلقائي لعميل مرتبط بطلب أو تسعيرة', stamp, stamp]
-    );
+    const customer = await ensureCustomerReference(row.customer_id, name, 'إصلاح تلقائي لعميل مرتبط بطلب أو تسعيرة');
+    if (customer?.id && customer.id !== row.customer_id) {
+      await run('UPDATE orders SET customer_id = ?, updated_at = ? WHERE customer_id = ?', [customer.id, now(), row.customer_id]);
+      await run('UPDATE pricings SET customer_id = ?, updated_at = ? WHERE customer_id = ?', [customer.id, now(), row.customer_id]);
+    }
   }
+}
+
+async function ensureCustomerReference(customerId, name, notes = 'مضاف من الواجهة') {
+  const cleanId = String(customerId || '').trim();
+  const cleanName = String(name || '').trim() || readableCustomerNameFromId(cleanId);
+  if (!cleanId || !cleanName) return null;
+  const byName = await get('SELECT * FROM customers WHERE name = ?', [cleanName]);
+  if (byName && byName.id !== cleanId) return byName;
+  const byId = await get('SELECT * FROM customers WHERE id = ?', [cleanId]);
+  if (byId) {
+    if (byId.name !== cleanName) {
+      const before = byId;
+      await run('UPDATE customers SET name = ?, notes = COALESCE(notes, ?), updated_at = ? WHERE id = ?', [cleanName, notes, now(), cleanId]);
+      const after = await get('SELECT * FROM customers WHERE id = ?', [cleanId]);
+      await auditMutation('update', 'customers', cleanId, before, after, 'customer reference repair');
+      return after;
+    }
+    return byId;
+  }
+  if (byName) return byName;
+  const stamp = now();
+  await run('INSERT INTO customers (id, name, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [cleanId, cleanName, notes, stamp, stamp]);
+  return get('SELECT * FROM customers WHERE id = ?', [cleanId]);
 }
 
 function hashPassword(password) {
@@ -300,14 +323,8 @@ function crudRoutes(base, table) {
   }));
   app.post(`/api/${base}`, asyncHandler(async (req, res) => {
     if (table === 'customers' && req.body?.id) {
-      const before = await get('SELECT * FROM customers WHERE id = ?', [req.body.id]);
-      if (before) {
-        const query = updateSql('customers', req.body || {}, req.body.id);
-        await run(query.sql, query.values);
-        const after = await get('SELECT * FROM customers WHERE id = ?', [req.body.id]);
-        await auditMutation('update', 'customers', req.body.id, before, after, `upsert via POST /api/${base}`);
-        return res.status(200).json(after);
-      }
+      const customer = await ensureCustomerReference(req.body.id, req.body.name, req.body.notes || 'مضاف من الواجهة');
+      return res.status(200).json(customer);
     }
     const existing = await existingUniqueBusinessRow(table, req.body || {});
     if (existing) {

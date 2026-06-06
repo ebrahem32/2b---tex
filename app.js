@@ -691,8 +691,8 @@ async function ensureBackendCustomer(name) {
   const cleanName = String(name || '').trim();
   if (!backendAvailable || !cleanName) return null;
   const id = backendCustomerId(cleanName);
-  await postBackend('/customers', { id, name: cleanName, notes: 'مضاف من الواجهة' });
-  return id;
+  const saved = await postBackend('/customers', { id, name: cleanName, notes: 'مضاف من الواجهة' });
+  return saved?.id || id;
 }
 async function postBackend(path, payload) {
   if (!backendAvailable) return null;
