@@ -95,15 +95,16 @@
 .two-b-report .summary-table th{background:#f8fafc!important;color:#071527!important}
 .two-b-report .summary-table td{background:#fff;font-weight:800}
 .two-b-report .report-section p{border:1px solid #d7dee8;border-radius:8px;padding:16px 18px;line-height:1.9;background:#fff}
-.two-b-report .document-footer{border-top:3px solid #071527;margin-top:30px;padding-top:14px}
+.two-b-report .document-footer{display:flex;justify-content:space-between;align-items:center;gap:24px;direction:ltr;border-top:3px solid #071527;margin-top:30px;padding-top:14px}
+.two-b-report .document-footer span,.two-b-report .document-footer strong{display:inline-block;white-space:nowrap}
 .quotation-report .document-inline-actions{justify-content:flex-start;margin:-8px 0 10px}
 .quotation-report .report-title{margin-top:0}
-.quotation-kpis{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}
+.quotation-kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .quotation-kpis div{border:1px solid #d7dee8;border-radius:10px;padding:14px 16px;background:#f8fafc;text-align:center}
 .quotation-kpis span{display:block;color:#516070;font-size:13px;margin-bottom:6px}
 .quotation-kpis strong{display:block;color:#071527;font-size:22px}
-.quotation-kpis .quotation-total{background:#071527;border-color:#071527}
-.quotation-kpis .quotation-total span,.quotation-kpis .quotation-total strong{color:#fff}
+.quotation-kpis .quotation-total{background:#fff8e6;border-color:#c8a56a}
+.quotation-kpis .quotation-total span,.quotation-kpis .quotation-total strong{color:#071527}
 .report-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 18px;padding-bottom:12px;border-bottom:2px solid #071527}
 .report-title h2{margin:0}
 .report-title span{color:#6b7280;font-size:13px}
