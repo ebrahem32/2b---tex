@@ -15,7 +15,7 @@
           box = document.createElement('div');
           box.id = 'startupErrorBox';
           box.style.cssText = 'direction:rtl;margin:16px;padding:14px;border-radius:14px;background:#fee2e2;color:#7f1d1d;font-family:Tahoma,Arial,sans-serif;line-height:1.7;border:1px solid #fecaca';
-          document.body.insertBefore(box, document.body.firstChild);
+          (document.body || document.documentElement).insertBefore(box, (document.body || document.documentElement).firstChild);
         }
         box.textContent = '\u062a\u0639\u0630\u0631 \u0641\u062a\u062d \u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632. \u0627\u0644\u062e\u0637\u0623: ' + text;
       }
@@ -62,9 +62,10 @@
   <dialog id="documentDialog"><div class="dialog-card xl printable-card"><div class="dialog-head no-print"><div><p class="eyebrow">مستند تشغيلي</p><h2 id="documentTitle">مستند تشغيلي</h2></div><div class="actions"><button class="mini-btn gold" id="shareWhatsAppBtn">مشاركة PNG</button><button class="mini-btn" id="printDocumentBtn">طباعة / PDF</button><button class="ghost-btn" id="closeDocumentBtn">&#1573;&#1594;&#1604;&#1575;&#1602;</button></div></div><div id="documentBody"></div></div></dialog>
   <dialog id="aiAnalysisDialog"><div class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">مساعد 2B الذكي</p><h2>تحليل التقرير</h2></div><button class="ghost-btn" id="closeAiAnalysisBtn" type="button">إغلاق</button></div><div id="aiAnalysisBody" class="ai-analysis-body"></div><div class="dialog-actions"><button class="mini-btn gold" id="copyAiWhatsappBtn" type="button">نسخ رسالة واتساب</button></div></div></dialog>
   <script src="./html2canvas.min.js"></script>
-  <script charset="UTF-8" src="./compat/documents.js?v=20260605-30"></script>
-  <script charset="UTF-8" src="./compat/pricing.js?v=20260605-30"></script>
-  <script charset="UTF-8" src="./compat/orders.js?v=20260605-30"></script>
-  <script charset="UTF-8" src="./compat/app.js?v=20260605-30"></script>
+  <script charset="UTF-8" src="./compat/polyfills.js?v=20260605-31"></script>
+  <script charset="UTF-8" src="./compat/documents.js?v=20260605-31"></script>
+  <script charset="UTF-8" src="./compat/pricing.js?v=20260605-31"></script>
+  <script charset="UTF-8" src="./compat/orders.js?v=20260605-31"></script>
+  <script charset="UTF-8" src="./compat/app.js?v=20260605-31"></script>
 </body>
 </html>
