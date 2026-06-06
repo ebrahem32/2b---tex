@@ -117,6 +117,7 @@ let whatsappStatus = (() => {
   try { return { ...defaults.whatsappStatus, ...(JSON.parse(localStorage.getItem(STORAGE_KEYS.whatsappStatus)) || {}) }; }
   catch { return clone(defaults.whatsappStatus); }
 })();
+let whatsappSettingsRefreshTimer = null;
 if (!Array.isArray(reportOutbox)) reportOutbox = clone(defaults.reportOutbox);
 if (!Array.isArray(auditLog)) auditLog = clone(defaults.auditLog);
 if (!Array.isArray(customerBatches)) customerBatches = clone(defaults.customer);
@@ -1010,6 +1011,46 @@ async function pollWhatsappService() {
     updateWhatsappStatusBadge();
   }
 }
+function whatsappConnectionStatusText() {
+  return { connected:'متصل', waiting_for_qr:'بانتظار ربط واتساب', disconnected:'غير متصل' }[whatsappStatus?.status] || whatsappStatus?.status || 'غير متصل';
+}
+function whatsappConnectionPanelHtml() {
+  const statusText = whatsappConnectionStatusText();
+  const qrHtml = whatsappStatus?.qrDataUrl
+    ? `<div class="notice"><strong>امسح كود واتساب من الموبايل</strong><br><span class="muted">لو ظهر تعذر ربط الجهاز، امسح الكود الحالي فقط لأن الكود يتحدث تلقائيًا.</span><br><img data-whatsapp-qr src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>`
+    : '';
+  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${qrHtml}`;
+}
+function stopWhatsappSettingsAutoRefresh() {
+  if (whatsappSettingsRefreshTimer) clearInterval(whatsappSettingsRefreshTimer);
+  whatsappSettingsRefreshTimer = null;
+}
+function updateWhatsappSettingsConnectionPanel() {
+  const panel = refs.documentBody?.querySelector('[data-whatsapp-connection-panel]');
+  if (panel) panel.innerHTML = whatsappConnectionPanelHtml();
+}
+function startWhatsappSettingsAutoRefresh() {
+  stopWhatsappSettingsAutoRefresh();
+  whatsappSettingsRefreshTimer = setInterval(async () => {
+    if (!refs.documentDialog?.open || refs.documentBody?.dataset.documentType !== 'whatsapp-settings') {
+      stopWhatsappSettingsAutoRefresh();
+      return;
+    }
+    try {
+      const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/status`, { cache:'no-store' });
+      if (!response.ok) throw new Error('service-offline');
+      const data = await response.json();
+      whatsappStatus = data.whatsapp || { status:'disconnected', updatedAt:nowIso(), errorMessage:'' };
+      save();
+      updateWhatsappStatusBadge();
+      updateWhatsappSettingsConnectionPanel();
+    } catch {
+      whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا' };
+      updateWhatsappStatusBadge();
+      updateWhatsappSettingsConnectionPanel();
+    }
+  }, 5000);
+}
 function reportRowsForOrder(order) {
   ensureRuntimeCollections();
   const types = ['weaving_production_order','dyeing_production_order','dyehouses_report'];
@@ -1074,15 +1115,12 @@ function whatsappSettingsSectionHtml(type, title, label, map, names) {
 function renderWhatsappSettingsDialog(groupNames = []) {
   ensureRuntimeCollections();
   const groupOptions = groupNames.map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('');
-  const statusText = { connected:'متصل', waiting_for_qr:'بانتظار ربط واتساب', disconnected:'غير متصل' }[whatsappStatus?.status] || whatsappStatus?.status || 'غير متصل';
-  const qrHtml = whatsappStatus?.qrDataUrl ? `<div class="notice"><strong>امسح كود واتساب من الموبايل</strong><br><img src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>` : '';
   refs.documentTitle.textContent = 'إعدادات واتساب';
   refs.documentBody.dataset.documentType = 'whatsapp-settings';
   refs.documentBody.innerHTML = `<div class="document-sheet whatsapp-settings-sheet">
     <h2>إعدادات واتساب</h2>
     <p class="muted">اربط كل عميل أو مصبغة أو مصدر نسيج بالجروب الصحيح. الإرسال التلقائي لا يعمل إلا عند تفعيله صراحة.</p>
-    <div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>
-    ${qrHtml}
+    <div data-whatsapp-connection-panel>${whatsappConnectionPanelHtml()}</div>
     <div class="summary-grid">
       <label><span>جروب التقارير العامة</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="مثال: تقارير المصابغ"></label>
       <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل الإرسال التلقائي عند تشغيل خدمة واتساب</span></label>
@@ -1098,6 +1136,7 @@ function renderWhatsappSettingsDialog(groupNames = []) {
   refs.documentBody.querySelectorAll('[data-group-name]').forEach((input)=>input.setAttribute('list', 'whatsappGroupNames'));
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
+  startWhatsappSettingsAutoRefresh();
 }
 async function saveWhatsappSettingsFromDialog() {
   if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ إعدادات واتساب.'))) return;
@@ -4144,6 +4183,7 @@ function printCurrentDocument(stickerId = null) {
 refs.documentBody.addEventListener('click', (event) => { if (event.target.dataset.printSticker) printCurrentDocument(event.target.dataset.printSticker); if (event.target.dataset.editPricingDoc) editPricing(event.target.dataset.editPricingDoc); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); });
 refs.documentsPanel.onclick = (event) => { const type = event.target.dataset.doc; if (!type) return; if (type === 'print') { safeOpenDocument('dyeing'); setTimeout(()=>printCurrentDocument(),150); return; } safeOpenDocument(type); };
 refs.closeDocumentBtn.onclick = () => refs.documentDialog.close();
+refs.documentDialog.addEventListener('close', stopWhatsappSettingsAutoRefresh);
 if (refs.weavingSlipDialog) {
   refs.closeWeavingSlipBtn.onclick = () => refs.weavingSlipDialog.close();
   refs.weavingSlipType.onchange = () => { updateDocumentReviewFields(); if ((refs.weavingSlipType.value === 'amalOrder' || refs.weavingSlipType.value === 'deltexIssue') && refs.weavingSlipFile.files?.[0]) applyAmalSuggestionFromFile(refs.weavingSlipFile.files[0]); };
