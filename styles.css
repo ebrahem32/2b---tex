@@ -420,3 +420,4 @@
   .document-sheet th,.document-sheet td{padding:9px 7px;font-size:12px}
   .sticker-sheet{grid-template-columns:minmax(0,55mm);gap:10mm;justify-content:center}
 }
+.document-action-group{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}.document-action-group h3{margin:0 0 4px;font-size:14px;color:var(--accent2)}

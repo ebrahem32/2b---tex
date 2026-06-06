@@ -2860,7 +2860,25 @@ function orderDetailsHasActiveDraft() {
 }
 
 function renderDocuments() {
-  refs.documentsPanel.innerHTML = `<button class="mini-btn gold" data-doc="quotation">إنشاء عرض سعر</button><button class="mini-btn gold" data-doc="weaving">إنشاء أمر نسيج</button><button class="mini-btn gold" data-doc="dyeing">إنشاء أمر صباغة</button><button class="mini-btn gold" data-doc="labSamples">عينات معمل</button><button class="mini-btn" data-doc="waste">تقرير الهالك</button><button class="mini-btn gold" data-doc="fullreport">تقرير الطلب الكامل</button><button class="mini-btn gold" data-doc="stickers">طباعة استيكرات التشغيل</button><button class="mini-btn" data-doc="print">طباعة</button><button class="mini-btn" disabled>تصدير PDF لاحقًا</button>`;
+  refs.documentsPanel.innerHTML = `
+    <div class="document-action-group">
+      <h3>عرض العميل</h3>
+      <button class="mini-btn gold" data-doc="quotation">إنشاء عرض سعر</button>
+    </div>
+    <div class="document-action-group">
+      <h3>أوامر التشغيل</h3>
+      <button class="mini-btn gold" data-doc="weaving">أمر تشغيل نسيج</button>
+      <button class="mini-btn gold" data-doc="dyeing">أمر تشغيل صباغة</button>
+      <button class="mini-btn gold" data-doc="labSamples">عينات معمل</button>
+      <button class="mini-btn gold" data-doc="stickers">استيكرات التشغيل</button>
+    </div>
+    <div class="document-action-group">
+      <h3>التقارير والكشوفات</h3>
+      <button class="mini-btn" data-doc="waste">تقرير الهالك</button>
+      <button class="mini-btn gold" data-doc="fullreport">التقرير التفصيلي</button>
+      <button class="mini-btn" data-doc="print">طباعة التقرير الحالي</button>
+      <button class="mini-btn" disabled>تصدير PDF لاحقًا</button>
+    </div>`;
 }
 function batchItemHtml(type, batch, label) {
   const quantity = Number(batch?.quantity || 0);
