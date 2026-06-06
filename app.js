@@ -2589,7 +2589,13 @@ function filteredOrders() {
   const customer = refs.customerFilter.value;
   const dyehouse = refs.dyehouseFilter.value;
   const fabric = refs.fabricFilter.value;
-  return allOrders().filter((order) => orderSearchText(order).includes(query) && (status === 'closed' ? order.status === 'closed' : (status === 'all' ? order.status !== 'closed' : order.status === status)) && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric));
+  return allOrders().filter((order) => {
+    const stage = orderStageInfo(order);
+    const statusMatch = status.startsWith('stage:')
+      ? stage.key === status.slice('stage:'.length)
+      : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? order.status !== 'closed' : order.status === status));
+    return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
+  });
 }
 function fillSelectOptions(select, values, allLabel) {
   const current = select.value || 'all';
@@ -2609,7 +2615,7 @@ function renderStats(list) {
     ['خام مستلم', list.reduce((t,o)=>t+o.totalRawReceived,0)],
     ['مرسل للمصبغة', list.reduce((t,o)=>t+o.totalSentToDyehouse,0)],
     ['مجهز مستلم', list.reduce((t,o)=>t+o.totalFinishedReceived,0)],
-    ['هالك إجمالي', list.reduce((t,o)=>t+o.totalWaste,0)],
+    ['واقف بالمخزن', list.reduce((t,o)=>t+o.warehouseBalance,0)],
   ];
   refs.statsGrid.innerHTML = values.map(([label,value]) => `<article class="stat-card"><span>${label}</span><strong>${fmt(value)}</strong></article>`).join('');
 }
@@ -2636,6 +2642,7 @@ function buildAiSummaryStats(list = allOrders()) {
 function collectAiReportPayload() {
   const calculatedOrders = allOrders().map((order)=>({
     ...order,
+    stageInfo: orderStageInfo(order),
     rawNoteNumbers: rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber).filter(Boolean),
   }));
   return {
@@ -2712,7 +2719,10 @@ async function copyAiWhatsappMessage() {
 function renderOrders() {
   const list = filteredOrders();
   renderStats(list);
-  refs.ordersTableBody.innerHTML = list.map((order) => `<tr><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="خام مستلم">${order.totalRawReceived}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="الهالك">${formatNumber(order.totalWastePercent || 0, 1)}%</td><td data-label="الحالة"><span class="status ${order.status}">${statusLabel(order.status)}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button><button class="mini-btn danger" data-delete-order="${order.id}">حذف</button></div></td></tr>`).join('');
+  refs.ordersTableBody.innerHTML = list.map((order) => {
+    const stage = orderStageInfo(order);
+    return `<tr><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="رصيد المخزن">${order.warehouseBalance}</td><td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span></td><td data-label="واقف من">${stage.startDate || '-'}${stage.startDate ? ` / ${stage.days} يوم` : ''}</td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button><button class="mini-btn danger" data-delete-order="${order.id}">حذف</button></div></td></tr>`;
+  }).join('');
 }
 
 function syncOrderFocusMode() {
@@ -3026,6 +3036,42 @@ function noteSuffix(batch) {
   return batch?.noteNumber ? ` / رقم إذن ${batch.noteNumber}` : '';
 }
 
+function consolidateOrderDetailView(order) {
+  const root = refs.orderDetailsPanel;
+  if (!root || !order) return;
+  if (orderFocusMode) root.querySelector('#editOrderBtn')?.remove();
+  const stage = orderStageInfo(order);
+  const statusBadge = root.querySelector('.section-head .status');
+  if (statusBadge) {
+    statusBadge.textContent = stage.label;
+    statusBadge.title = stage.reason;
+  }
+  const colorSection = root.querySelector('#addAllocationBtn')?.closest('.subsection');
+  if (colorSection) {
+    const title = colorSection.querySelector('h3');
+    if (title) title.textContent = 'خطة الألوان والرصيد';
+    const table = colorSection.querySelector('table');
+    if (table) {
+      const hasAccessories = order.accessoryLines.length > 0;
+      const head = table.querySelector('thead');
+      const body = table.querySelector('tbody');
+      if (head && body) {
+        head.innerHTML = `<tr><th>اللون</th><th>المخطط</th><th>المصبغة</th><th>العرض</th><th>الوزن مجهز</th>${hasAccessories ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>مرسل للمصبغة</th><th>دخل المخزن</th><th>تسليم العميل</th><th>رصيد المخزن</th><th>الهالك</th><th>إجراء</th></tr>`;
+        body.innerHTML = order.allocations.map((allocation) => {
+          const delivered = sum(customerBatches.filter((batch)=>batch.allocationId === allocation.id));
+          const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered);
+          const wasteLabel = `${formatNumber(allocation.wasteQuantity || 0)} (${formatNumber(allocation.wastePercent || 0, 1)}%)`;
+          return `<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessories ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td><td>${wasteLabel}</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">تعديل لون</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">نقل مصبغة</button><button class="mini-btn danger" data-delete-allocation="${allocation.id}">حذف لون</button></div></td></tr>`;
+        }).join('');
+      }
+    }
+  }
+  root.querySelectorAll('.subsection').forEach((section) => {
+    const heading = section.querySelector('h3')?.textContent || '';
+    if (heading.includes('رصيد المخزن')) section.remove();
+  });
+}
+
 function renderDetails() {
   ensureRuntimeCollections();
   if (!refs.orderDetailsPanel) return;
@@ -3050,6 +3096,7 @@ function renderDetails() {
   const accessoryStockRows = order.accessoryLines.length ? order.allocations.flatMap((allocation)=>order.accessoryLines.map((line)=>{ const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type)); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type)); const balance = roundNumber(received - delivered); return `<tr><td>${allocation.color}</td><td>${line.type}</td><td>${formatNumber(received || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; })).join('') : '';
   const inventorySection = `<div class="subsection"><div class="subsection-head"><div><h3>رصيد المخزن الحالي</h3><p class="eyebrow">رصيد المخزن حسب التشغيل والتسليم</p></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${stockRows}</tbody></table></div>${order.accessoryLines.length ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${accessoryStockRows}</tbody></table></div>` : ''}</div>`;
   refs.orderDetailsPanel.innerHTML = `<div class="section-head"><div><p class="eyebrow">${order.orderNumber}</p><h2>${order.customer}</h2></div><div class="actions"><button class="mini-btn" id="editOrderBtn">تعديل الطلب</button><button class="mini-btn ${order.operationClosed ? 'gold' : 'danger'}" id="toggleOperationClosedBtn">${order.operationClosed ? 'إعادة فتح التشغيل' : 'إغلاق دورة التشغيل'}</button><span class="status ${order.status}">${statusLabel(order.status)}</span></div></div><h3>&#1605;&#1604;&#1582;&#1589; &#1583;&#1608;&#1585;&#1577; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;</h3><div class="summary-grid"><div class="metric"><span>&#1573;&#1580;&#1605;&#1575;&#1604;&#1610; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;</span><strong>${order.totalRawOrdered}</strong></div><div class="metric"><span>&#1582;&#1585;&#1580; &#1605;&#1606; &#1575;&#1604;&#1606;&#1587;&#1610;&#1580; &#1573;&#1604;&#1609; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalRawReceived}</strong></div><div class="metric"><span>&#1582;&#1575;&#1605; &#1605;&#1578;&#1575;&#1581; &#1576;&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.rawAtDyehouseAvailable}</strong></div><div class="metric"><span>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606; &#1605;&#1606; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalFinishedReceived}</strong></div><div class="metric emphasis"><span>&#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</span><strong>${order.warehouseBalance}</strong></div><div class="metric"><span>&#1578;&#1605; &#1578;&#1587;&#1604;&#1610;&#1605;&#1607; &#1604;&#1604;&#1593;&#1605;&#1610;&#1604;</span><strong>${order.totalDeliveredToCustomer}</strong></div><div class="metric"><span>مرتجع خام للنسيج</span><strong>${order.totalRawReturnedToWeaving}</strong></div><div class="metric"><span>هالك تقديري</span><strong>${order.expectedWasteQuantity} (${order.expectedWastePercent}%)</strong></div><div class="metric"><span>هالك فعلي</span><strong>${order.totalWaste} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div></div>${order.widthMode === 'multiple' ? `<div class="subsection"><div class="subsection-head"><h3>توزيع العروض</h3></div>${order.widthDistributionMatches ? '' : `<div class="warning">تنبيه: مجموع العروض لا يطابق إجمالي الطلب</div>`}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((item)=>`<tr><td>${item.inch}</td><td>${item.width}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<div class="subsection"><div class="subsection-head"><div><h3>&#1582;&#1591;&#1577; &#1578;&#1608;&#1586;&#1610;&#1593; &#1575;&#1604;&#1571;&#1604;&#1608;&#1575;&#1606;</h3><p class="eyebrow">${order.totalAllocated} / ${order.totalRawReceived} &#1603;&#1580;&#1605; &#1605;&#1606; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;</p></div><button class="mini-btn" id="addAllocationBtn">+ &#1573;&#1590;&#1575;&#1601;&#1577; &#1604;&#1608;&#1606;</button></div><div class="allocation-bar"><div class="allocation-fill" style="width:${allocationPercent}%"></div></div>${order.allocationExceedsRaw ? `<div class="warning">&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1589;&#1576;&#1575;&#1594;&#1577; &#1575;&#1604;&#1605;&#1582;&#1591;&#1591;&#1577; &#1571;&#1603;&#1576;&#1585; &#1605;&#1606; &#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1578;&#1575;&#1581;&#1577;</div>` : ''}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>&#1575;&#1604;&#1604;&#1608;&#1606;</th><th>&#1575;&#1604;&#1605;&#1582;&#1591;&#1591;</th><th>&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</th><th>&#1575;&#1604;&#1593;&#1585;&#1590;</th><th>&#1575;&#1604;&#1608;&#1586;&#1606; &#1605;&#1580;&#1607;&#1586;</th>${order.accessoryLines.length ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>&#1578;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604;&#1607;</th><th>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</th><th>هالك تقديري</th><th>هالك فعلي</th><th>إجراء</th></tr></thead><tbody>${order.allocations.map((allocation)=>`<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${order.accessoryLines.length ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${allocation.expectedWasteQuantity || 0} (${allocation.expectedWastePercent || 0}%)</td><td>${allocation.wasteQuantity} (${formatNumber(allocation.wastePercent || 0, 1)}%)</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">&#1578;&#1593;&#1583;&#1610;&#1604;</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">&#1606;&#1602;&#1604; &#1605;&#1589;&#1576;&#1594;&#1577;</button><button class="mini-btn danger" data-delete-allocation="${allocation.id}">&#1581;&#1584;&#1601;</button></div></td></tr>`).join('')}</tbody></table></div></div>${inventorySection}<div class="batch-grid compact"><div class="batch-box"><h3>خروج خام</h3><form class="batch-form" data-form="raw"><select name="movementKind" class="full"><option value="out">خروج خام للمصبغة</option><option value="return">ارتجاع خام للنسيج</option></select><input name="date" type="date" required>${order.widthMode === 'multiple' ? `<select name="widthLineId" data-out-only><option value="">اختر العرض عند خروج الخام</option>${order.widthLines.map((item)=>`<option value="${item.id}">بوصة ${item.inch} - عرض ${item.width} - كمية ${item.quantity}</option>`).join('')}</select>` : ''}<select name="allocationId" data-return-only class="field-hidden"><option value="">اختر اللون / المصبغة للمرتجع</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="supplier" placeholder="مصدر النسيج" value="${order.weavingSource}"><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><label class="full batch-file-label" data-out-only><span>صورة إذن الخام</span><input name="sourceDocumentFile" type="file" accept="image/*"></label><button class="mini-btn full">إضافة حركة</button></form><div class="batch-list">${rawItems}</div></div>${order.accessoryLines.length ? `<div class="batch-box"><h3>خروج إكسسوار</h3><form class="batch-form" data-form="accessory"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة خروج</button></form><div class="batch-list">${accessoryItems}</div></div><div class="batch-box"><h3>استلام إكسسوار</h3><form class="batch-form" data-form="accessoryReceived"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<select name="allocationId" required><option value="">اختر اللون</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية المستلمة" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة استلام</button></form><div class="batch-list">${accessoryReceivedItems}</div></div>` : ''}<div class="batch-box"><h3>استلام مجهز</h3><form class="batch-form" data-form="production"><select name="allocationId"><option value="raw">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1573;&#1584;&#1606; &#1575;&#1604;&#1575;&#1587;&#1578;&#1604;&#1575;&#1605;"><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1575;&#1587;&#1578;&#1604;&#1575;&#1605;</button></form><div class="batch-list">${productionItems}</div></div><div class="batch-box"><h3>تسليم عميل</h3><form class="batch-form" data-form="customer"><select name="movementKind" class="full"><option value="cloth">تسليم قماش</option>${order.accessoryLines.length ? '<option value="accessory">تسليم إكسسوار</option>' : ''}</select><select name="allocationId">${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required>${order.accessoryLines.length ? `<span data-accessory-only class="field-hidden">${accessoryTypeSelectHtml(order)}</span>` : ''}<input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class="batch-list">${customerItems}</div></div><div class="batch-box"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class="eyebrow">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class="batch-list">${transferItems}</div></div></div>`;
+  consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
   refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach((form) => {
     ensureRawDispatchSelect(form, order);
@@ -3511,6 +3558,39 @@ function cleanOperationalStage(stage) {
   const text = String(stage || '').trim();
   return isLegacyRecoveredText(text) ? 'مراجعة' : (text || '-');
 }
+function firstDate(items) {
+  return (items || []).map((item)=>item.date || item.orderDate || item.batchDate || '').filter(Boolean).sort()[0] || '';
+}
+function orderStageInfo(order) {
+  const allocationIds = (order.allocations || []).map((allocation)=>allocation.id);
+  const rawDate = firstDate(rawBatches.filter((batch)=>batch.orderId === order.id));
+  const finishedDate = firstDate(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId)));
+  const customerDate = firstDate(customerBatches.filter((batch)=>allocationIds.includes(batch.allocationId)));
+  let key = 'completed';
+  let label = 'مكتمل';
+  let startDate = customerDate || finishedDate || rawDate || order.orderDate || '';
+  let reason = 'اكتملت دورة التشغيل.';
+  if (order.operationClosed || order.status === 'closed') {
+    key = 'closed'; label = 'مغلق تشغيليًا'; reason = 'تم إغلاق دورة التشغيل.';
+  } else if (Number(order.totalRawReceived || 0) === 0 && Number(order.totalAllocated || 0) > 0) {
+    key = 'weaving'; label = 'واقف في النسيج'; startDate = order.orderDate || ''; reason = 'تم توزيع الألوان ولم يتم خروج الخام للمصبغة.';
+  } else if (Number(order.totalRawReceived || 0) === 0) {
+    key = 'weaving'; label = 'واقف في النسيج'; startDate = order.orderDate || ''; reason = 'لم يتم تسجيل خروج خام من النسيج للمصبغة.';
+  } else if (Number(order.totalAllocated || 0) === 0) {
+    key = 'color-planning'; label = 'بانتظار توزيع الألوان'; startDate = order.orderDate || rawDate || ''; reason = 'الخام موجود لكن لم يتم توزيع الألوان.';
+  } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.totalFinishedReceived || 0) < Math.min(Number(order.totalRawReceived || 0), Number(order.totalAllocated || 0))) {
+    key = 'dyehouse'; label = 'واقف في المصبغة'; startDate = rawDate || order.orderDate || ''; reason = 'تم تسليم خام للمصبغة ولم يكتمل استلام المجهز.';
+  } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
+    key = 'warehouse'; label = 'واقف في المخزن'; startDate = finishedDate || order.orderDate || ''; reason = 'دخل مجهز إلى المخزن ولم يكتمل تسليمه للعميل.';
+  } else if (Number(order.totalDeliveredToCustomer || 0) < Number(order.totalAllocated || 0)) {
+    key = 'delivery'; label = 'جاهز للتسليم'; startDate = finishedDate || order.orderDate || ''; reason = 'التسليم للعميل لم يكتمل.';
+  }
+  return { key, label, startDate, days:daysSince(startDate), reason };
+}
+function orderFilterLabel(value) {
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
+  return labels[value] || statusLabel(value) || value || '-';
+}
 function dateRangeLabel(items) {
   const dates = items.map((item)=>item.date).filter(Boolean).sort();
   if (!dates.length) return '-';
@@ -3639,7 +3719,7 @@ function activeOrderFilterSummary() {
   if (refs.customerFilter?.value && refs.customerFilter.value !== 'all') parts.push(`العميل: ${refs.customerFilter.value}`);
   if (refs.dyehouseFilter?.value && refs.dyehouseFilter.value !== 'all') parts.push(`المصبغة: ${refs.dyehouseFilter.value}`);
   if (refs.fabricFilter?.value && refs.fabricFilter.value !== 'all') parts.push(`الصنف: ${refs.fabricFilter.value}`);
-  if (refs.orderStatusFilter?.value && refs.orderStatusFilter.value !== 'all') parts.push(`الحالة: ${statusLabel(refs.orderStatusFilter.value) || refs.orderStatusFilter.value}`);
+  if (refs.orderStatusFilter?.value && refs.orderStatusFilter.value !== 'all') parts.push(`الحالة: ${orderFilterLabel(refs.orderStatusFilter.value)}`);
   return parts.join(' | ') || 'كل الطلبات الظاهرة';
 }
 function openOrdersReport(sourceList = null, title = 'تقرير متابعة الطلبات', subtitle = 'ملخص الطلبات وحالتها من الخام والإكسسوار حتى التسليم.', reportKey = 'orders-follow') {

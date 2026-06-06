@@ -4533,7 +4533,9 @@ function filteredOrders() {
   var dyehouse = refs.dyehouseFilter.value;
   var fabric = refs.fabricFilter.value;
   return allOrders().filter(function (order) {
-    return orderSearchText(order).includes(query) && (status === 'closed' ? order.status === 'closed' : status === 'all' ? order.status !== 'closed' : order.status === status) && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
+    var stage = orderStageInfo(order);
+    var statusMatch = status.startsWith('stage:') ? stage.key === status.slice('stage:'.length) : status === 'closed' ? order.status === 'closed' : status === 'all' ? order.status !== 'closed' : order.status === status;
+    return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
   });
 }
 function fillSelectOptions(select, values, allLabel) {
@@ -4570,8 +4572,8 @@ function renderStats(list) {
     return t + o.totalSentToDyehouse;
   }, 0)], ['مجهز مستلم', list.reduce(function (t, o) {
     return t + o.totalFinishedReceived;
-  }, 0)], ['هالك إجمالي', list.reduce(function (t, o) {
-    return t + o.totalWaste;
+  }, 0)], ['واقف بالمخزن', list.reduce(function (t, o) {
+    return t + o.warehouseBalance;
   }, 0)]];
   refs.statsGrid.innerHTML = values.map(function (_ref23) {
     var _ref24 = _slicedToArray(_ref23, 2),
@@ -4632,6 +4634,7 @@ function buildAiSummaryStats() {
 function collectAiReportPayload() {
   var calculatedOrders = allOrders().map(function (order) {
     return _objectSpread(_objectSpread({}, order), {}, {
+      stageInfo: orderStageInfo(order),
       rawNoteNumbers: rawBatches.filter(function (batch) {
         return batch.orderId === order.id;
       }).map(function (batch) {
@@ -4783,7 +4786,8 @@ function renderOrders() {
   var list = filteredOrders();
   renderStats(list);
   refs.ordersTableBody.innerHTML = list.map(function (order) {
-    return "<tr><td data-label=\"\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628\">".concat(order.orderNumber, "</td><td data-label=\"\u0627\u0644\u0639\u0645\u064A\u0644\">").concat(order.customer, "</td><td data-label=\"\u0627\u0644\u0635\u0646\u0641\">").concat(order.fabricType, "</td><td data-label=\"\u062E\u0627\u0645 \u0645\u0637\u0644\u0648\u0628\">").concat(order.totalRawOrdered, "</td><td data-label=\"\u062E\u0627\u0645 \u0645\u0633\u062A\u0644\u0645\">").concat(order.totalRawReceived, "</td><td data-label=\"\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629\">").concat(order.totalSentToDyehouse, "</td><td data-label=\"\u0645\u062C\u0647\u0632 \u0645\u0633\u062A\u0644\u0645\">").concat(order.totalFinishedReceived, "</td><td data-label=\"\u0627\u0644\u0647\u0627\u0644\u0643\">").concat(formatNumber(order.totalWastePercent || 0, 1), "%</td><td data-label=\"\u0627\u0644\u062D\u0627\u0644\u0629\"><span class=\"status ").concat(order.status, "\">").concat(statusLabel(order.status), "</span></td><td data-label=\"\u0625\u062C\u0631\u0627\u0621\u0627\u062A\"><div class=\"batch-actions\"><button class=\"mini-btn\" data-view=\"").concat(order.id, "\">\u0639\u0631\u0636</button><button class=\"mini-btn\" data-edit-order=\"").concat(order.id, "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" data-delete-order=\"").concat(order.id, "\">\u062D\u0630\u0641</button></div></td></tr>");
+    var stage = orderStageInfo(order);
+    return "<tr><td data-label=\"\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628\">".concat(order.orderNumber, "</td><td data-label=\"\u0627\u0644\u0639\u0645\u064A\u0644\">").concat(order.customer, "</td><td data-label=\"\u0627\u0644\u0635\u0646\u0641\">").concat(order.fabricType, "</td><td data-label=\"\u062E\u0627\u0645 \u0645\u0637\u0644\u0648\u0628\">").concat(order.totalRawOrdered, "</td><td data-label=\"\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629\">").concat(order.totalSentToDyehouse, "</td><td data-label=\"\u0645\u062C\u0647\u0632 \u0645\u0633\u062A\u0644\u0645\">").concat(order.totalFinishedReceived, "</td><td data-label=\"\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062E\u0632\u0646\">").concat(order.warehouseBalance, "</td><td data-label=\"\u0627\u0644\u0645\u0631\u062D\u0644\u0629\"><span class=\"status ").concat(order.status, "\" title=\"").concat(escapeHtml(stage.reason), "\">").concat(escapeHtml(stage.label), "</span></td><td data-label=\"\u0648\u0627\u0642\u0641 \u0645\u0646\">").concat(stage.startDate || '-').concat(stage.startDate ? " / ".concat(stage.days, " \u064A\u0648\u0645") : '', "</td><td data-label=\"\u0625\u062C\u0631\u0627\u0621\u0627\u062A\"><div class=\"batch-actions\"><button class=\"mini-btn\" data-view=\"").concat(order.id, "\">\u0639\u0631\u0636</button><button class=\"mini-btn\" data-edit-order=\"").concat(order.id, "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" data-delete-order=\"").concat(order.id, "\">\u062D\u0630\u0641</button></div></td></tr>");
   }).join('');
 }
 function syncOrderFocusMode() {
@@ -5197,6 +5201,45 @@ function movementLine() {
 function noteSuffix(batch) {
   return batch !== null && batch !== void 0 && batch.noteNumber ? " / \u0631\u0642\u0645 \u0625\u0630\u0646 ".concat(batch.noteNumber) : '';
 }
+function consolidateOrderDetailView(order) {
+  var _root$querySelector, _root$querySelector2;
+  var root = refs.orderDetailsPanel;
+  if (!root || !order) return;
+  if (orderFocusMode) (_root$querySelector = root.querySelector('#editOrderBtn')) === null || _root$querySelector === void 0 || _root$querySelector.remove();
+  var stage = orderStageInfo(order);
+  var statusBadge = root.querySelector('.section-head .status');
+  if (statusBadge) {
+    statusBadge.textContent = stage.label;
+    statusBadge.title = stage.reason;
+  }
+  var colorSection = (_root$querySelector2 = root.querySelector('#addAllocationBtn')) === null || _root$querySelector2 === void 0 ? void 0 : _root$querySelector2.closest('.subsection');
+  if (colorSection) {
+    var title = colorSection.querySelector('h3');
+    if (title) title.textContent = 'خطة الألوان والرصيد';
+    var table = colorSection.querySelector('table');
+    if (table) {
+      var hasAccessories = order.accessoryLines.length > 0;
+      var head = table.querySelector('thead');
+      var body = table.querySelector('tbody');
+      if (head && body) {
+        head.innerHTML = "<tr><th>\u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0645\u062E\u0637\u0637</th><th>\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0627\u0644\u0639\u0631\u0636</th><th>\u0627\u0644\u0648\u0632\u0646 \u0645\u062C\u0647\u0632</th>".concat(hasAccessories ? "<th>".concat(accessoryTypesLabel(order), "</th>") : '', "<th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u0627\u0644\u0647\u0627\u0644\u0643</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr>");
+        body.innerHTML = order.allocations.map(function (allocation) {
+          var delivered = sum(customerBatches.filter(function (batch) {
+            return batch.allocationId === allocation.id;
+          }));
+          var balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered);
+          var wasteLabel = "".concat(formatNumber(allocation.wasteQuantity || 0), " (").concat(formatNumber(allocation.wastePercent || 0, 1), "%)");
+          return "<tr><td>".concat(allocation.color, "</td><td>").concat(allocation.plannedQuantity, "</td><td>").concat(allocation.dyehouse, "</td><td>").concat(allocation.targetFinishedWidth, "</td><td>").concat(allocation.targetFinishedWeight, "</td>").concat(hasAccessories ? "<td>".concat(allocation.accessoryQuantity, "</td>") : '', "<td>").concat(allocation.sentToDyehouse, "</td><td>").concat(allocation.finishedReceived, "</td><td>").concat(formatNumber(delivered || 0), "</td><td><strong>").concat(formatNumber(balance), "</strong></td><td>").concat(wasteLabel, "</td><td><div class=\"batch-actions\"><button class=\"mini-btn\" data-edit-allocation=\"").concat(allocation.id, "\">\u062A\u0639\u062F\u064A\u0644 \u0644\u0648\u0646</button><button class=\"mini-btn\" data-transfer-allocation=\"").concat(allocation.id, "\">\u0646\u0642\u0644 \u0645\u0635\u0628\u063A\u0629</button><button class=\"mini-btn danger\" data-delete-allocation=\"").concat(allocation.id, "\">\u062D\u0630\u0641 \u0644\u0648\u0646</button></div></td></tr>");
+        }).join('');
+      }
+    }
+  }
+  root.querySelectorAll('.subsection').forEach(function (section) {
+    var _section$querySelecto;
+    var heading = ((_section$querySelecto = section.querySelector('h3')) === null || _section$querySelecto === void 0 ? void 0 : _section$querySelecto.textContent) || '';
+    if (heading.includes('رصيد المخزن')) section.remove();
+  });
+}
 function renderDetails() {
   ensureRuntimeCollections();
   if (!refs.orderDetailsPanel) return;
@@ -5360,6 +5403,7 @@ function renderDetails() {
   }).join(''), "</select><input name=\"date\" type=\"date\" required><input name=\"quantity\" type=\"number\" step=\"0.01\" placeholder=\"&#1575;&#1604;&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;&#1577;\" required><input name=\"noteNumber\" placeholder=\"&#1585;&#1602;&#1605; &#1573;&#1584;&#1606; &#1575;&#1604;&#1575;&#1587;&#1578;&#1604;&#1575;&#1605;\"><input class=\"full\" name=\"notes\" placeholder=\"&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;\"><button class=\"mini-btn full\">&#1573;&#1590;&#1575;&#1601;&#1577; &#1575;&#1587;&#1578;&#1604;&#1575;&#1605;</button></form><div class=\"batch-list\">").concat(productionItems, "</div></div><div class=\"batch-box\"><h3>\u062A\u0633\u0644\u064A\u0645 \u0639\u0645\u064A\u0644</h3><form class=\"batch-form\" data-form=\"customer\"><select name=\"movementKind\" class=\"full\"><option value=\"cloth\">\u062A\u0633\u0644\u064A\u0645 \u0642\u0645\u0627\u0634</option>").concat(order.accessoryLines.length ? '<option value="accessory">تسليم إكسسوار</option>' : '', "</select><select name=\"allocationId\">").concat(order.allocations.map(function (allocation) {
     return "<option value=\"".concat(allocation.id, "\">").concat(allocationColorLabel(order, allocation), "</option>");
   }).join(''), "</select><input name=\"date\" type=\"date\" required>").concat(order.accessoryLines.length ? "<span data-accessory-only class=\"field-hidden\">".concat(accessoryTypeSelectHtml(order), "</span>") : '', "<input name=\"quantity\" type=\"number\" step=\"0.01\" placeholder=\"&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;\" required><input class=\"full\" name=\"notes\" placeholder=\"&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;\"><button class=\"mini-btn full\">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class=\"batch-list\">").concat(customerItems, "</div></div><div class=\"batch-box\"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class=\"eyebrow\">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class=\"batch-list\">").concat(transferItems, "</div></div></div>");
+  consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
   refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach(function (form) {
     ensureRawDispatchSelect(form, order);
@@ -6782,6 +6826,86 @@ function cleanOperationalStage(stage) {
   var text = String(stage || '').trim();
   return isLegacyRecoveredText(text) ? 'مراجعة' : text || '-';
 }
+function firstDate(items) {
+  return (items || []).map(function (item) {
+    return item.date || item.orderDate || item.batchDate || '';
+  }).filter(Boolean).sort()[0] || '';
+}
+function orderStageInfo(order) {
+  var allocationIds = (order.allocations || []).map(function (allocation) {
+    return allocation.id;
+  });
+  var rawDate = firstDate(rawBatches.filter(function (batch) {
+    return batch.orderId === order.id;
+  }));
+  var finishedDate = firstDate(productionBatches.filter(function (batch) {
+    return allocationIds.includes(batch.allocationId);
+  }));
+  var customerDate = firstDate(customerBatches.filter(function (batch) {
+    return allocationIds.includes(batch.allocationId);
+  }));
+  var key = 'completed';
+  var label = 'مكتمل';
+  var startDate = customerDate || finishedDate || rawDate || order.orderDate || '';
+  var reason = 'اكتملت دورة التشغيل.';
+  if (order.operationClosed || order.status === 'closed') {
+    key = 'closed';
+    label = 'مغلق تشغيليًا';
+    reason = 'تم إغلاق دورة التشغيل.';
+  } else if (Number(order.totalRawReceived || 0) === 0 && Number(order.totalAllocated || 0) > 0) {
+    key = 'weaving';
+    label = 'واقف في النسيج';
+    startDate = order.orderDate || '';
+    reason = 'تم توزيع الألوان ولم يتم خروج الخام للمصبغة.';
+  } else if (Number(order.totalRawReceived || 0) === 0) {
+    key = 'weaving';
+    label = 'واقف في النسيج';
+    startDate = order.orderDate || '';
+    reason = 'لم يتم تسجيل خروج خام من النسيج للمصبغة.';
+  } else if (Number(order.totalAllocated || 0) === 0) {
+    key = 'color-planning';
+    label = 'بانتظار توزيع الألوان';
+    startDate = order.orderDate || rawDate || '';
+    reason = 'الخام موجود لكن لم يتم توزيع الألوان.';
+  } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.totalFinishedReceived || 0) < Math.min(Number(order.totalRawReceived || 0), Number(order.totalAllocated || 0))) {
+    key = 'dyehouse';
+    label = 'واقف في المصبغة';
+    startDate = rawDate || order.orderDate || '';
+    reason = 'تم تسليم خام للمصبغة ولم يكتمل استلام المجهز.';
+  } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
+    key = 'warehouse';
+    label = 'واقف في المخزن';
+    startDate = finishedDate || order.orderDate || '';
+    reason = 'دخل مجهز إلى المخزن ولم يكتمل تسليمه للعميل.';
+  } else if (Number(order.totalDeliveredToCustomer || 0) < Number(order.totalAllocated || 0)) {
+    key = 'delivery';
+    label = 'جاهز للتسليم';
+    startDate = finishedDate || order.orderDate || '';
+    reason = 'التسليم للعميل لم يكتمل.';
+  }
+  return {
+    key: key,
+    label: label,
+    startDate: startDate,
+    days: daysSince(startDate),
+    reason: reason
+  };
+}
+function orderFilterLabel(value) {
+  var labels = {
+    all: 'كل الطلبات المفتوحة',
+    pending: 'بانتظار الاستلام',
+    'in-progress': 'قيد التشغيل',
+    completed: 'مكتمل',
+    closed: 'مغلق تشغيليًا',
+    'stage:weaving': 'واقف في النسيج',
+    'stage:color-planning': 'بانتظار توزيع الألوان',
+    'stage:dyehouse': 'واقف في المصبغة',
+    'stage:warehouse': 'واقف في المخزن',
+    'stage:delivery': 'جاهز للتسليم'
+  };
+  return labels[value] || statusLabel(value) || value || '-';
+}
 function dateRangeLabel(items) {
   var dates = items.map(function (item) {
     return item.date;
@@ -7046,7 +7170,7 @@ function activeOrderFilterSummary() {
   if ((_refs$customerFilter = refs.customerFilter) !== null && _refs$customerFilter !== void 0 && _refs$customerFilter.value && refs.customerFilter.value !== 'all') parts.push("\u0627\u0644\u0639\u0645\u064A\u0644: ".concat(refs.customerFilter.value));
   if ((_refs$dyehouseFilter = refs.dyehouseFilter) !== null && _refs$dyehouseFilter !== void 0 && _refs$dyehouseFilter.value && refs.dyehouseFilter.value !== 'all') parts.push("\u0627\u0644\u0645\u0635\u0628\u063A\u0629: ".concat(refs.dyehouseFilter.value));
   if ((_refs$fabricFilter = refs.fabricFilter) !== null && _refs$fabricFilter !== void 0 && _refs$fabricFilter.value && refs.fabricFilter.value !== 'all') parts.push("\u0627\u0644\u0635\u0646\u0641: ".concat(refs.fabricFilter.value));
-  if ((_refs$orderStatusFilt = refs.orderStatusFilter) !== null && _refs$orderStatusFilt !== void 0 && _refs$orderStatusFilt.value && refs.orderStatusFilter.value !== 'all') parts.push("\u0627\u0644\u062D\u0627\u0644\u0629: ".concat(statusLabel(refs.orderStatusFilter.value) || refs.orderStatusFilter.value));
+  if ((_refs$orderStatusFilt = refs.orderStatusFilter) !== null && _refs$orderStatusFilt !== void 0 && _refs$orderStatusFilt.value && refs.orderStatusFilter.value !== 'all') parts.push("\u0627\u0644\u062D\u0627\u0644\u0629: ".concat(orderFilterLabel(refs.orderStatusFilter.value)));
   return parts.join(' | ') || 'كل الطلبات الظاهرة';
 }
 function openOrdersReport() {
