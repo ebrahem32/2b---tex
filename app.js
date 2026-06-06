@@ -202,7 +202,7 @@ let pendingConvertedPricingId = null;
 let initialLocalStorageSnapshot = null;
 
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
@@ -3449,8 +3449,18 @@ function openManagementReport(type) {
   }
 }
 
-function openOrdersReport() {
-  const list = allOrders();
+function activeOrderFilterSummary() {
+  const parts = [];
+  const query = refs.searchInput?.value?.trim();
+  if (query) parts.push(`بحث: ${query}`);
+  if (refs.customerFilter?.value && refs.customerFilter.value !== 'all') parts.push(`العميل: ${refs.customerFilter.value}`);
+  if (refs.dyehouseFilter?.value && refs.dyehouseFilter.value !== 'all') parts.push(`المصبغة: ${refs.dyehouseFilter.value}`);
+  if (refs.fabricFilter?.value && refs.fabricFilter.value !== 'all') parts.push(`الصنف: ${refs.fabricFilter.value}`);
+  if (refs.orderStatusFilter?.value && refs.orderStatusFilter.value !== 'all') parts.push(`الحالة: ${statusLabel(refs.orderStatusFilter.value) || refs.orderStatusFilter.value}`);
+  return parts.join(' | ') || 'كل الطلبات الظاهرة';
+}
+function openOrdersReport(sourceList = null, title = 'تقرير متابعة الطلبات', subtitle = 'ملخص الطلبات وحالتها من الخام والإكسسوار حتى التسليم.', reportKey = 'orders-follow') {
+  const list = Array.isArray(sourceList) ? sourceList : allOrders();
   const fmt = (value) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
   const totals = list.reduce((acc, order)=>{
     acc.raw += Number(order.totalRawOrdered || 0);
@@ -3470,7 +3480,12 @@ function openOrdersReport() {
   const rows = list.map((order)=>`<tr><td>${order.orderNumber || '-'}</td><td>${order.customer || '-'}</td><td>${order.fabricType || '-'}</td><td>${order.dyehouse || '-'}</td><td><span class="status ${order.status || ''}">${statusLabel(order.status)}</span></td><td>${cleanOperationalStage(getOperationalStage(order))}</td><td>${fmt(order.totalRawOrdered)}</td><td>${fmt(order.totalRawReceived)}</td><td>${fmt(order.totalSentToDyehouse)}</td><td>${fmt(order.totalFinishedReceived)}</td><td>${fmt(order.warehouseBalance)}</td><td>${fmt(order.totalDeliveredToCustomer)}</td><td>${fmt(order.totalWaste)} (${formatNumber(order.totalWastePercent || 0, 1)}%)</td><td>${fmt(order.accessoryRequired || 0)}</td><td>${fmt(order.accessorySent || 0)}</td><td>${fmt(order.accessoryReceived || 0)}</td><td>${fmt(order.accessoryDelivered || 0)}</td><td>${fmt(order.accessoryBalance || 0)}</td></tr>`).join('');
   const summary = `<section class="report-section"><h3>ملخص الكميات</h3><table class="summary-table"><tbody><tr><th>إجمالي الخام المطلوب</th><td>${fmt(totals.raw)}</td><th>الخامة المستلمة</th><td>${fmt(totals.received)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(totals.sent)}</td><th>دخل المخزن</th><td>${fmt(totals.finished)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(totals.delivered)}</td><th>رصيد المخزن</th><td>${fmt(totals.balance)}</td></tr><tr><th>إكسسوار مطلوب</th><td>${fmt(totals.accessoryRequired)}</td><th>إكسسوار مستلم</th><td>${fmt(totals.accessoryReceived)}</td></tr><tr><th>رصيد الإكسسوار</th><td>${fmt(totals.accessoryBalance)}</td><th>عدد الطلبات</th><td>${list.length}</td></tr></tbody></table></section>`;
   const table = `<section class="report-section"><h3>تفاصيل الطلبات</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الحالة</th><th>المرحلة</th><th>خام مطلوب</th><th>خام مستلم</th><th>مرسل للمصبغة</th><th>دخل المخزن</th><th>رصيد المخزن</th><th>تسليم العميل</th><th>الهالك</th><th>إكسسوار مطلوب</th><th>إكسسوار مرسل</th><th>إكسسوار مستلم</th><th>إكسسوار مسلم</th><th>رصيد الإكسسوار</th></tr></thead><tbody>${rows || emptyRow(18, 'لا توجد طلبات مسجلة.')}</tbody></table></section>`;
-  showManagementReport('تقرير متابعة الطلبات', 'ملخص الطلبات وحالتها من الخام والإكسسوار حتى التسليم.', `${summary}${table}`, 'orders-follow');
+  showManagementReport(title, subtitle, `${summary}${table}`, reportKey);
+}
+function openFilteredOrdersReport() {
+  const list = filteredOrders();
+  const summary = activeOrderFilterSummary();
+  openOrdersReport(list, 'تقرير الطلبات حسب الفلترة', `${summary} - عدد الطلبات: ${list.length}`, 'filtered-orders');
 }
 function openDyehouseBalancesReport() {
   const list = allOrders();
@@ -4021,6 +4036,7 @@ refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(edit
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
 refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
+if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
 if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
