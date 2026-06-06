@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.07';
-const APP_BUILD_TIME = '2026-06-06 14:05';
+const APP_VERSION = 'v2026.06.06.08';
+const APP_BUILD_TIME = '2026-06-06 14:42';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -85,7 +85,7 @@ const defaults = {
   reportOutbox: [],
   whatsappSettings: { weavingGroupName: '2B - النسيج', dyeingGroupName: '2B - المصبغة', dyehousesReportGroupName: 'اوردارات 2B', dyehouseGroups: {}, weavingGroups: {}, customerGroups: {}, sendingEnabled: false },
   auditLog: [],
-  whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '' },
+  whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '', qrDataUrl: '' },
 };
 
 let orders = clone(defaults.orders);
@@ -243,7 +243,7 @@ function captureLocalStorageSnapshot() {
   };
 }
 
-const WHATSAPP_SERVICE_URL = 'http://127.0.0.1:3020';
+const WHATSAPP_SERVICE_URL = '/whatsapp';
 const AI_SERVICE_URL = 'http://127.0.0.1:3030';
 const A5_SERVICE_URL = 'http://127.0.0.1:3041';
 const BACKEND_API_URL = '/api';
@@ -1055,11 +1055,15 @@ function whatsappSettingsSectionHtml(type, title, label, map, names) {
 function renderWhatsappSettingsDialog(groupNames = []) {
   ensureRuntimeCollections();
   const groupOptions = groupNames.map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('');
+  const statusText = { connected:'متصل', waiting_for_qr:'بانتظار ربط واتساب', disconnected:'غير متصل' }[whatsappStatus?.status] || whatsappStatus?.status || 'غير متصل';
+  const qrHtml = whatsappStatus?.qrDataUrl ? `<div class="notice"><strong>امسح كود واتساب من الموبايل</strong><br><img src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>` : '';
   refs.documentTitle.textContent = 'إعدادات واتساب';
   refs.documentBody.dataset.documentType = 'whatsapp-settings';
   refs.documentBody.innerHTML = `<div class="document-sheet whatsapp-settings-sheet">
     <h2>إعدادات واتساب</h2>
     <p class="muted">اربط كل عميل أو مصبغة أو مصدر نسيج بالجروب الصحيح. الإرسال التلقائي لا يعمل إلا عند تفعيله صراحة.</p>
+    <div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>
+    ${qrHtml}
     <div class="summary-grid">
       <label><span>جروب التقارير العامة</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="مثال: تقارير المصابغ"></label>
       <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل الإرسال التلقائي عند تشغيل خدمة واتساب</span></label>
@@ -1506,6 +1510,7 @@ function refreshOutboxTargetsAfterSettings() {
   if (changed) save();
 }
 async function openWhatsappSettingsDialog() {
+  await pollWhatsappService();
   renderWhatsappSettingsDialog(await fetchWhatsappGroupNames());
 }
 function trackingCustomerSummary(customerName) {
@@ -2767,7 +2772,11 @@ function allocationWidthSuffix(order, allocation) {
   const widthLine = (order.widthLines || []).find((item) => item.id === allocation.widthLineId) || {};
   const inch = allocation.rawInch || widthLine.inch || '-';
   const width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '-';
-  return ` / بوصة ${inch} - عرض ${width}`;
+  const finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
+  return ` / بوصة ${inch} - عرض ${width}${finishedWeight ? ` - وزن ${finishedWeight}` : ''}`;
+}
+function allocationAvailableToCustomer(allocation) {
+  return roundNumber(Math.max(Number(allocation?.finishedReceived || 0) - Number(allocation?.deliveredToCustomer || 0), 0));
 }
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
@@ -2775,7 +2784,11 @@ function allocationOptionLabel(order, allocation) {
 }
 function allocationColorLabel(order, allocation) {
   if (!allocation) return '-';
-  return `${allocation.color || '-'}${allocationWidthSuffix(order, allocation)}`;
+  return allocationOptionLabel(order, allocation);
+}
+function customerDeliveryAllocationLabel(order, allocation) {
+  if (!allocation) return '-';
+  return `${allocationOptionLabel(order, allocation)} / متاح ${formatNumber(allocationAvailableToCustomer(allocation))}`;
 }
 function movementLine(...parts) {
   return parts.map((part)=>String(part ?? '').trim()).filter(Boolean).join(' - ');

@@ -9,10 +9,13 @@ const fs = require('fs');
 
 const BACKEND_PORT = process.env.BACKEND_PORT || '3050';
 const FRONTEND_PORT = process.env.PORT || '3000';
+const WHATSAPP_PORT = process.env.WHATSAPP_PORT || '3020';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'backend', 'data', '2btex.sqlite');
 const SEED_PATH = path.join(__dirname, 'backend', 'data', '2btex.sqlite');
 const IS_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_SERVICE_ID);
 const ALLOW_DB_SEED = process.env.ALLOW_DB_SEED === '1';
+const VOLUME_ROOT = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data';
+const WHATSAPP_DATA_DIR = process.env.WHATSAPP_DATA_DIR || (IS_RAILWAY ? path.join(VOLUME_ROOT, 'whatsapp') : path.join(__dirname, 'whatsapp-service', 'data'));
 
 function failStartup(message) {
   console.error('==========================================');
@@ -45,6 +48,7 @@ console.log('[2B Tex] Starting system...');
 console.log(`[2B Tex] DB:       ${DB_PATH}`);
 console.log(`[2B Tex] Backend:  port ${BACKEND_PORT}`);
 console.log(`[2B Tex] Frontend: port ${FRONTEND_PORT}`);
+console.log(`[2B Tex] WhatsApp: port ${WHATSAPP_PORT}`);
 console.log('==========================================');
 
 function launch(name, args, cwd, env = {}) {
@@ -70,10 +74,19 @@ launch('backend', ['server.js'], path.join(__dirname, 'backend'), {
   DB_PATH
 });
 
+// تشغيل خدمة واتساب داخليًا حتى يتعامل الكمبيوتر والموبايل مع نفس رابط Railway.
+launch('whatsapp', ['server.js'], path.join(__dirname, 'whatsapp-service'), {
+  PORT: WHATSAPP_PORT,
+  DATA_DIR: WHATSAPP_DATA_DIR,
+  REPORTS_DIR: path.join(WHATSAPP_DATA_DIR, 'reports'),
+  PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+});
+
 // تشغيل الـ frontend بعد 3 ثواني للتأكد أن الـ backend جاهز
 setTimeout(() => {
   launch('frontend', ['server.js'], __dirname, {
     PORT: FRONTEND_PORT,
-    BACKEND_PORT
+    BACKEND_PORT,
+    WHATSAPP_PORT
   });
 }, 3000);

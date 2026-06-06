@@ -10,6 +10,7 @@
   "dependencies": {
     "cors": "latest",
     "express": "latest",
+    "qrcode": "latest",
     "qrcode-terminal": "latest",
     "whatsapp-web.js": "latest"
   }

@@ -13,6 +13,10 @@ const apiTarget = {
   host: '127.0.0.1',
   port: Number(process.env.BACKEND_PORT || 3050),
 };
+const whatsappTarget = {
+  host: process.env.WHATSAPP_HOST || '127.0.0.1',
+  port: Number(process.env.WHATSAPP_PORT || 3020),
+};
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -74,6 +78,18 @@ function isProcessRunning(name) {
 function backendHealth() {
   return new Promise((resolve) => {
     const req = http.request({ hostname: apiTarget.host, port: apiTarget.port, path: '/api/health', method: 'GET', timeout: 2500 }, (res) => {
+      res.resume();
+      resolve(res.statusCode >= 200 && res.statusCode < 300);
+    });
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.on('error', () => resolve(false));
+    req.end();
+  });
+}
+
+function whatsappHealth() {
+  return new Promise((resolve) => {
+    const req = http.request({ hostname: whatsappTarget.host, port: whatsappTarget.port, path: '/api/status', method: 'GET', timeout: 2500 }, (res) => {
       res.resume();
       resolve(res.statusCode >= 200 && res.statusCode < 300);
     });
@@ -206,6 +222,26 @@ function proxyApi(req, res) {
   req.pipe(proxyReq);
 }
 
+function proxyWhatsapp(req, res) {
+  const pathName = (req.url || '').replace(/^\/whatsapp/, '') || '/';
+  const options = {
+    hostname: whatsappTarget.host,
+    port: whatsappTarget.port,
+    path: pathName,
+    method: req.method,
+    headers: { ...req.headers, host: `${whatsappTarget.host}:${whatsappTarget.port}` },
+  };
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+  proxyReq.on('error', () => {
+    res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: false, error: 'خدمة واتساب غير متصلة حاليًا' }));
+  });
+  req.pipe(proxyReq);
+}
+
 const server = http.createServer((req, res) => {
   if (!systemUser || !systemPass) {
     sendMissingCredentials(res);
@@ -216,17 +252,22 @@ const server = http.createServer((req, res) => {
     return;
   }
   if ((req.url || '').startsWith('/system/status')) {
-    backendHealth().then((backendOk) => {
+    Promise.all([backendHealth(), whatsappHealth()]).then(([backendOk, whatsappOk]) => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         ok: true,
         frontend: { ok: true, port },
         backend: { ok: backendOk, port: apiTarget.port },
+        whatsapp: { ok: whatsappOk, port: whatsappTarget.port },
         cloudflare: { ok: isProcessRunning('cloudflared.exe'), url: currentCloudflareUrl() },
         backup: { ok: !!latestBackupInfo(), latest: latestBackupInfo() },
         updatedAt: new Date().toISOString(),
       }));
     });
+    return;
+  }
+  if ((req.url || '').startsWith('/whatsapp')) {
+    proxyWhatsapp(req, res);
     return;
   }
   if ((req.url || '').startsWith('/api')) {

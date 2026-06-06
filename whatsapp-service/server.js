@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 
 const PORT = Number(process.env.PORT || 3020);
@@ -45,7 +46,7 @@ function safeFilePart(value) {
 let outbox = readJson(OUTBOX_FILE, []);
 let settings = { ...defaultSettings, ...readJson(SETTINGS_FILE, {}) };
 let attempts = readJson(ATTEMPTS_FILE, []);
-let whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: '', qr: '' };
+let whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
 let clientReady = false;
 let isProcessing = false;
 
@@ -55,7 +56,12 @@ function persist() {
   writeJson(ATTEMPTS_FILE, attempts.slice(-1000));
 }
 function publicWhatsappState() {
-  return { status: whatsapp.status, updatedAt: whatsapp.updatedAt, errorMessage: whatsapp.errorMessage };
+  return {
+    status: whatsapp.status,
+    updatedAt: whatsapp.updatedAt,
+    errorMessage: whatsapp.errorMessage,
+    qrDataUrl: whatsapp.status === 'waiting_for_qr' ? whatsapp.qrDataUrl || '' : '',
+  };
 }
 function mergeOutbox(incoming = []) {
   const byId = new Map(outbox.map((item) => [item.id, item]));
@@ -244,24 +250,28 @@ const client = new Client({
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
   }
 });
-client.on('qr', (qr) => {
-  whatsapp = { status: 'waiting_for_qr', updatedAt: nowIso(), errorMessage: '', qr };
+client.on('qr', async (qr) => {
+  let qrDataUrl = '';
+  try {
+    qrDataUrl = await QRCode.toDataURL(qr, { margin: 1, width: 280 });
+  } catch {}
+  whatsapp = { status: 'waiting_for_qr', updatedAt: nowIso(), errorMessage: '', qr, qrDataUrl };
   console.log('\nامسح QR التالي من واتساب أول مرة فقط:\n');
   qrcode.generate(qr, { small: true });
 });
 client.on('ready', () => {
   clientReady = true;
-  whatsapp = { status: 'connected', updatedAt: nowIso(), errorMessage: '', qr: '' };
+  whatsapp = { status: 'connected', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
   console.log('WhatsApp connected');
 });
 client.on('authenticated', () => console.log('WhatsApp authenticated'));
 client.on('auth_failure', (msg) => {
   clientReady = false;
-  whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: msg || 'فشل تسجيل الدخول', qr: '' };
+  whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: msg || 'فشل تسجيل الدخول', qr: '', qrDataUrl: '' };
 });
 client.on('disconnected', (reason) => {
   clientReady = false;
-  whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: reason || 'انقطع الاتصال', qr: '' };
+  whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: reason || 'انقطع الاتصال', qr: '', qrDataUrl: '' };
 });
 
 app.listen(PORT, () => {

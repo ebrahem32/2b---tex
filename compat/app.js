@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.07';
-var APP_BUILD_TIME = '2026-06-06 14:05';
+var APP_VERSION = 'v2026.06.06.08';
+var APP_BUILD_TIME = '2026-06-06 14:42';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -117,7 +117,8 @@ var defaults = {
   whatsappStatus: {
     status: 'disconnected',
     updatedAt: '',
-    errorMessage: ''
+    errorMessage: '',
+    qrDataUrl: ''
   }
 };
 var orders = clone(defaults.orders);
@@ -320,7 +321,7 @@ function captureLocalStorageSnapshot() {
     auditLog: clone(auditLog)
   };
 }
-var WHATSAPP_SERVICE_URL = 'http://127.0.0.1:3020';
+var WHATSAPP_SERVICE_URL = '/whatsapp';
 var AI_SERVICE_URL = 'http://127.0.0.1:3030';
 var A5_SERVICE_URL = 'http://127.0.0.1:3041';
 var BACKEND_API_URL = '/api';
@@ -1926,14 +1927,21 @@ function whatsappSettingsSectionHtml(type, title, label, map, names) {
   return "<section class=\"whatsapp-settings-section\">\n    <div class=\"subsection-head\"><h3>".concat(escapeHtml(title), "</h3><button class=\"mini-btn\" type=\"button\" data-add-whatsapp-group-row=\"").concat(escapeHtml(type), "\" data-row-label=\"").concat(escapeHtml(label), "\">\u0625\u0636\u0627\u0641\u0629</button></div>\n    <table>\n      <thead><tr><th>").concat(escapeHtml(label), "</th><th>\u0627\u0633\u0645 \u062C\u0631\u0648\u0628 \u0648\u0627\u062A\u0633\u0627\u0628</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr></thead>\n      <tbody data-whatsapp-group-rows=\"").concat(escapeHtml(type), "\">").concat(rowsHtml, "</tbody>\n    </table>\n  </section>");
 }
 function renderWhatsappSettingsDialog() {
+  var _whatsappStatus4, _whatsappStatus5, _whatsappStatus6, _whatsappStatus7, _whatsappStatus8;
   var groupNames = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   ensureRuntimeCollections();
   var groupOptions = groupNames.map(function (name) {
     return "<option value=\"".concat(escapeHtml(name), "\"></option>");
   }).join('');
+  var statusText = {
+    connected: 'متصل',
+    waiting_for_qr: 'بانتظار ربط واتساب',
+    disconnected: 'غير متصل'
+  }[(_whatsappStatus4 = whatsappStatus) === null || _whatsappStatus4 === void 0 ? void 0 : _whatsappStatus4.status] || ((_whatsappStatus5 = whatsappStatus) === null || _whatsappStatus5 === void 0 ? void 0 : _whatsappStatus5.status) || 'غير متصل';
+  var qrHtml = (_whatsappStatus6 = whatsappStatus) !== null && _whatsappStatus6 !== void 0 && _whatsappStatus6.qrDataUrl ? "<div class=\"notice\"><strong>\u0627\u0645\u0633\u062D \u0643\u0648\u062F \u0648\u0627\u062A\u0633\u0627\u0628 \u0645\u0646 \u0627\u0644\u0645\u0648\u0628\u0627\u064A\u0644</strong><br><img src=\"".concat(escapeHtml(whatsappStatus.qrDataUrl), "\" alt=\"WhatsApp QR\" style=\"width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px\"></div>") : '';
   refs.documentTitle.textContent = 'إعدادات واتساب';
   refs.documentBody.dataset.documentType = 'whatsapp-settings';
-  refs.documentBody.innerHTML = "<div class=\"document-sheet whatsapp-settings-sheet\">\n    <h2>\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0648\u0627\u062A\u0633\u0627\u0628</h2>\n    <p class=\"muted\">\u0627\u0631\u0628\u0637 \u0643\u0644 \u0639\u0645\u064A\u0644 \u0623\u0648 \u0645\u0635\u0628\u063A\u0629 \u0623\u0648 \u0645\u0635\u062F\u0631 \u0646\u0633\u064A\u062C \u0628\u0627\u0644\u062C\u0631\u0648\u0628 \u0627\u0644\u0635\u062D\u064A\u062D. \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A \u0644\u0627 \u064A\u0639\u0645\u0644 \u0625\u0644\u0627 \u0639\u0646\u062F \u062A\u0641\u0639\u064A\u0644\u0647 \u0635\u0631\u0627\u062D\u0629.</p>\n    <div class=\"summary-grid\">\n      <label><span>\u062C\u0631\u0648\u0628 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0627\u0644\u0639\u0627\u0645\u0629</span><input type=\"text\" data-general-report-group value=\"".concat(escapeHtml(whatsappSettings.dyehousesReportGroupName || ''), "\" placeholder=\"\u0645\u062B\u0627\u0644: \u062A\u0642\u0627\u0631\u064A\u0631 \u0627\u0644\u0645\u0635\u0627\u0628\u063A\"></label>\n      <label class=\"checkbox-row\"><input type=\"checkbox\" data-sending-enabled ").concat(whatsappSettings.sendingEnabled ? 'checked' : '', "> <span>\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A \u0639\u0646\u062F \u062A\u0634\u063A\u064A\u0644 \u062E\u062F\u0645\u0629 \u0648\u0627\u062A\u0633\u0627\u0628</span></label>\n    </div>\n    ").concat(whatsappSettingsSectionHtml('dyehouse', 'ربط المصابغ بالجروبات', 'اسم المصبغة', whatsappSettings.dyehouseGroups, knownDyehouseNames()), "\n    ").concat(whatsappSettingsSectionHtml('weaving', 'ربط مصادر النسيج بالجروبات', 'مصدر النسيج', whatsappSettings.weavingGroups, knownWeavingNames()), "\n    ").concat(whatsappSettingsSectionHtml('customer', 'ربط العملاء بالجروبات', 'اسم العميل', whatsappSettings.customerGroups, knownCustomerNames()), "\n    <datalist id=\"whatsappGroupNames\">").concat(groupOptions, "</datalist>\n    <div class=\"document-actions no-print\">\n      <button class=\"primary-btn\" type=\"button\" data-save-whatsapp-settings>\u062D\u0641\u0638 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A</button>\n    </div>\n  </div>");
+  refs.documentBody.innerHTML = "<div class=\"document-sheet whatsapp-settings-sheet\">\n    <h2>\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0648\u0627\u062A\u0633\u0627\u0628</h2>\n    <p class=\"muted\">\u0627\u0631\u0628\u0637 \u0643\u0644 \u0639\u0645\u064A\u0644 \u0623\u0648 \u0645\u0635\u0628\u063A\u0629 \u0623\u0648 \u0645\u0635\u062F\u0631 \u0646\u0633\u064A\u062C \u0628\u0627\u0644\u062C\u0631\u0648\u0628 \u0627\u0644\u0635\u062D\u064A\u062D. \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A \u0644\u0627 \u064A\u0639\u0645\u0644 \u0625\u0644\u0627 \u0639\u0646\u062F \u062A\u0641\u0639\u064A\u0644\u0647 \u0635\u0631\u0627\u062D\u0629.</p>\n    <div class=\"notice ".concat(((_whatsappStatus7 = whatsappStatus) === null || _whatsappStatus7 === void 0 ? void 0 : _whatsappStatus7.status) === 'connected' ? 'success' : 'warning', "\"><strong>\u062D\u0627\u0644\u0629 \u0648\u0627\u062A\u0633\u0627\u0628:</strong> ").concat(escapeHtml(statusText)).concat((_whatsappStatus8 = whatsappStatus) !== null && _whatsappStatus8 !== void 0 && _whatsappStatus8.errorMessage ? " - ".concat(escapeHtml(whatsappStatus.errorMessage)) : '', "</div>\n    ").concat(qrHtml, "\n    <div class=\"summary-grid\">\n      <label><span>\u062C\u0631\u0648\u0628 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0627\u0644\u0639\u0627\u0645\u0629</span><input type=\"text\" data-general-report-group value=\"").concat(escapeHtml(whatsappSettings.dyehousesReportGroupName || ''), "\" placeholder=\"\u0645\u062B\u0627\u0644: \u062A\u0642\u0627\u0631\u064A\u0631 \u0627\u0644\u0645\u0635\u0627\u0628\u063A\"></label>\n      <label class=\"checkbox-row\"><input type=\"checkbox\" data-sending-enabled ").concat(whatsappSettings.sendingEnabled ? 'checked' : '', "> <span>\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A \u0639\u0646\u062F \u062A\u0634\u063A\u064A\u0644 \u062E\u062F\u0645\u0629 \u0648\u0627\u062A\u0633\u0627\u0628</span></label>\n    </div>\n    ").concat(whatsappSettingsSectionHtml('dyehouse', 'ربط المصابغ بالجروبات', 'اسم المصبغة', whatsappSettings.dyehouseGroups, knownDyehouseNames()), "\n    ").concat(whatsappSettingsSectionHtml('weaving', 'ربط مصادر النسيج بالجروبات', 'مصدر النسيج', whatsappSettings.weavingGroups, knownWeavingNames()), "\n    ").concat(whatsappSettingsSectionHtml('customer', 'ربط العملاء بالجروبات', 'اسم العميل', whatsappSettings.customerGroups, knownCustomerNames()), "\n    <datalist id=\"whatsappGroupNames\">").concat(groupOptions, "</datalist>\n    <div class=\"document-actions no-print\">\n      <button class=\"primary-btn\" type=\"button\" data-save-whatsapp-settings>\u062D\u0641\u0638 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A</button>\n    </div>\n  </div>");
   refs.documentBody.querySelectorAll('[data-group-name]').forEach(function (input) {
     return input.setAttribute('list', 'whatsappGroupNames');
   });
@@ -2625,12 +2633,15 @@ function _openWhatsappSettingsDialog() {
     return _regenerator().w(function (_context30) {
       while (1) switch (_context30.n) {
         case 0:
-          _t14 = renderWhatsappSettingsDialog;
           _context30.n = 1;
-          return fetchWhatsappGroupNames();
+          return pollWhatsappService();
         case 1:
-          _t14(_context30.v);
+          _t14 = renderWhatsappSettingsDialog;
+          _context30.n = 2;
+          return fetchWhatsappGroupNames();
         case 2:
+          _t14(_context30.v);
+        case 3:
           return _context30.a(2);
       }
     }, _callee30);
@@ -4856,7 +4867,11 @@ function allocationWidthSuffix(order, allocation) {
   }) || {};
   var inch = allocation.rawInch || widthLine.inch || '-';
   var width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '-';
-  return " / \u0628\u0648\u0635\u0629 ".concat(inch, " - \u0639\u0631\u0636 ").concat(width);
+  var finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
+  return " / \u0628\u0648\u0635\u0629 ".concat(inch, " - \u0639\u0631\u0636 ").concat(width).concat(finishedWeight ? " - \u0648\u0632\u0646 ".concat(finishedWeight) : '');
+}
+function allocationAvailableToCustomer(allocation) {
+  return roundNumber(Math.max(Number((allocation === null || allocation === void 0 ? void 0 : allocation.finishedReceived) || 0) - Number((allocation === null || allocation === void 0 ? void 0 : allocation.deliveredToCustomer) || 0), 0));
 }
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
@@ -4864,7 +4879,11 @@ function allocationOptionLabel(order, allocation) {
 }
 function allocationColorLabel(order, allocation) {
   if (!allocation) return '-';
-  return "".concat(allocation.color || '-').concat(allocationWidthSuffix(order, allocation));
+  return allocationOptionLabel(order, allocation);
+}
+function customerDeliveryAllocationLabel(order, allocation) {
+  if (!allocation) return '-';
+  return "".concat(allocationOptionLabel(order, allocation), " / \u0645\u062A\u0627\u062D ").concat(formatNumber(allocationAvailableToCustomer(allocation)));
 }
 function movementLine() {
   for (var _len = arguments.length, parts = new Array(_len), _key = 0; _key < _len; _key++) {
