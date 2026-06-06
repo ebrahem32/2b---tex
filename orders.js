@@ -59,14 +59,16 @@
       const data = state();
       const order = orderContext || data.orders.find((item)=>item.id===allocation.orderId) || {};
       const orderAllocations = getAllocations(order);
-      const orderRawSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId));
+      const directAllocationIds = new Set(orderAllocations.map((item)=>item.id));
+      const orderRawSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && !directAllocationIds.has(batch.widthLineId)));
+      const directAllocationSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && batch.widthLineId === allocation.id));
       const widthRawSent = allocation.widthLineId ? sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && batch.widthLineId === allocation.widthLineId)) : 0;
       const widthPlanned = allocation.widthLineId ? orderAllocations.filter((item)=>item.widthLineId === allocation.widthLineId).reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) : 0;
       const totalPlanned = roundNumber(orderAllocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0));
       const basePlanned = Number(allocation.plannedQuantity || 0);
       const proportionalWidthSent = widthPlanned ? widthRawSent * basePlanned / widthPlanned : 0;
       const proportionalOrderSent = totalPlanned ? orderRawSent * basePlanned / totalPlanned : 0;
-      const sent = roundNumber(allocation.widthLineId ? proportionalWidthSent : (orderAllocations.length <= 1 ? orderRawSent : proportionalOrderSent));
+      const sent = roundNumber(directAllocationSent || (allocation.widthLineId ? proportionalWidthSent : (orderAllocations.length <= 1 ? orderRawSent : proportionalOrderSent)));
       const finished = sum(data.productionBatches.filter((batch) => batch.allocationId === allocation.id));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => batch.allocationId === allocation.id));
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));

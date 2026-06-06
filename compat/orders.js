@@ -82,8 +82,14 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         return item.id === allocation.orderId;
       }) || {};
       var orderAllocations = getAllocations(order);
+      var directAllocationIds = new Set(orderAllocations.map(function (item) {
+        return item.id;
+      }));
       var orderRawSent = sum(data.rawBatches.filter(function (batch) {
-        return batch.orderId === allocation.orderId;
+        return batch.orderId === allocation.orderId && !directAllocationIds.has(batch.widthLineId);
+      }));
+      var directAllocationSent = sum(data.rawBatches.filter(function (batch) {
+        return batch.orderId === allocation.orderId && batch.widthLineId === allocation.id;
       }));
       var widthRawSent = allocation.widthLineId ? sum(data.rawBatches.filter(function (batch) {
         return batch.orderId === allocation.orderId && batch.widthLineId === allocation.widthLineId;
@@ -99,7 +105,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var basePlanned = Number(allocation.plannedQuantity || 0);
       var proportionalWidthSent = widthPlanned ? widthRawSent * basePlanned / widthPlanned : 0;
       var proportionalOrderSent = totalPlanned ? orderRawSent * basePlanned / totalPlanned : 0;
-      var sent = roundNumber(allocation.widthLineId ? proportionalWidthSent : orderAllocations.length <= 1 ? orderRawSent : proportionalOrderSent);
+      var sent = roundNumber(directAllocationSent || (allocation.widthLineId ? proportionalWidthSent : orderAllocations.length <= 1 ? orderRawSent : proportionalOrderSent));
       var finished = sum(data.productionBatches.filter(function (batch) {
         return batch.allocationId === allocation.id;
       }));

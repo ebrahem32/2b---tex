@@ -5054,6 +5054,54 @@ function customerDeliveryAllocationLabel(order, allocation) {
   if (!allocation) return '-';
   return "".concat(allocationOptionLabel(order, allocation), " / \u0645\u062A\u0627\u062D ").concat(formatNumber(allocationAvailableToCustomer(allocation)));
 }
+function rawDispatchOptions(order) {
+  var widthLines = Array.isArray(order === null || order === void 0 ? void 0 : order.widthLines) ? order.widthLines : [];
+  if (widthLines.length) {
+    return widthLines.map(function (line) {
+      return {
+        id: line.id,
+        label: "\u0628\u0648\u0635\u0629 ".concat(line.inch || '-', " - \u0639\u0631\u0636 ").concat(line.width || '-', " - \u0643\u0645\u064A\u0629 ").concat(formatNumber(line.quantity || 0))
+      };
+    }).filter(function (item) {
+      return item.id;
+    });
+  }
+  return ((order === null || order === void 0 ? void 0 : order.allocations) || []).map(function (allocation) {
+    return {
+      id: allocation.id,
+      label: allocationOptionLabel(order, allocation)
+    };
+  }).filter(function (item) {
+    return item.id;
+  });
+}
+function rawDispatchLabel(order, id) {
+  if (!id) return '';
+  var option = rawDispatchOptions(order).find(function (item) {
+    return item.id === id;
+  });
+  return (option === null || option === void 0 ? void 0 : option.label) || '';
+}
+function ensureRawDispatchSelect(form, order) {
+  if (!form || !order) return;
+  var options = rawDispatchOptions(order);
+  if (!options.length) return;
+  var select = form.elements.widthLineId;
+  if (!select) {
+    select = document.createElement('select');
+    select.name = 'widthLineId';
+    select.setAttribute('data-out-only', '');
+    var dateInput = form.elements.date;
+    dateInput === null || dateInput === void 0 || dateInput.insertAdjacentElement('afterend', select);
+  }
+  var current = select.value;
+  select.innerHTML = "<option value=\"\">\u0627\u062E\u062A\u0631 \u0627\u0644\u0639\u0631\u0636 / \u0627\u0644\u0628\u0646\u062F \u0639\u0646\u062F \u062E\u0631\u0648\u062C \u0627\u0644\u062E\u0627\u0645</option>".concat(options.map(function (item) {
+    return "<option value=\"".concat(item.id, "\">").concat(item.label, "</option>");
+  }).join(''));
+  if (_toConsumableArray(select.options).some(function (option) {
+    return option.value === current;
+  })) select.value = current;
+}
 function movementLine() {
   for (var _len = arguments.length, parts = new Array(_len), _key = 0; _key < _len; _key++) {
     parts[_key] = arguments[_key];
@@ -5081,10 +5129,7 @@ function renderDetails() {
     var outgoing = rawBatches.filter(function (batch) {
       return batch.orderId === order.id;
     }).map(function (batch) {
-      var widthLine = order.widthLines.find(function (item) {
-        return item.id === batch.widthLineId;
-      });
-      var widthLabel = widthLine ? "\u0628\u0648\u0635\u0629 ".concat(widthLine.inch, " / \u0639\u0631\u0636 ").concat(widthLine.width) : '';
+      var widthLabel = rawDispatchLabel(order, batch.widthLineId);
       return {
         type: 'raw',
         batch: batch,
@@ -5232,7 +5277,10 @@ function renderDetails() {
     return "<option value=\"".concat(allocation.id, "\">").concat(allocationColorLabel(order, allocation), "</option>");
   }).join(''), "</select><input name=\"date\" type=\"date\" required>").concat(order.accessoryLines.length ? "<span data-accessory-only class=\"field-hidden\">".concat(accessoryTypeSelectHtml(order), "</span>") : '', "<input name=\"quantity\" type=\"number\" step=\"0.01\" placeholder=\"&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;\" required><input class=\"full\" name=\"notes\" placeholder=\"&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;\"><button class=\"mini-btn full\">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class=\"batch-list\">").concat(customerItems, "</div></div><div class=\"batch-box\"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class=\"eyebrow\">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class=\"batch-list\">").concat(transferItems, "</div></div></div>");
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
-  refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach(updateRawMovementVisibility);
+  refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach(function (form) {
+    ensureRawDispatchSelect(form, order);
+    updateRawMovementVisibility(form);
+  });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"] select[name="movementKind"]').forEach(function (select) {
     if (!_toConsumableArray(select.options).some(function (option) {
       return option.value === 'clothReturn';
@@ -5593,11 +5641,11 @@ function _addBatch() {
           _context59.n = 10;
           break;
         case 5:
-          if (!(currentOrder.widthMode === 'multiple' && !data.widthLineId)) {
+          if (!(rawDispatchOptions(currentOrder).length && !data.widthLineId)) {
             _context59.n = 6;
             break;
           }
-          alert('اختر العرض المرتبط قبل تسجيل خروج الخام.');
+          alert('اختر العرض / البند المرتبط قبل تسجيل خروج الخام.');
           return _context59.a(2);
         case 6:
           if (!rawDocumentFile) {
