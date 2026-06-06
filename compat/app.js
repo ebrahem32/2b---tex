@@ -5034,10 +5034,17 @@ function allocationWidthSuffix(order, allocation) {
 function allocationAvailableToCustomer(allocation) {
   return roundNumber(Math.max(Number((allocation === null || allocation === void 0 ? void 0 : allocation.finishedReceived) || 0) - Number((allocation === null || allocation === void 0 ? void 0 : allocation.deliveredToCustomer) || 0), 0));
 }
+function allocationOrdinalLabel(order, allocation) {
+  var index = ((order === null || order === void 0 ? void 0 : order.allocations) || []).findIndex(function (item) {
+    return item.id === (allocation === null || allocation === void 0 ? void 0 : allocation.id);
+  });
+  return index >= 0 ? "\u0628\u0646\u062F ".concat(index + 1) : '';
+}
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
   var planned = Number(allocation.plannedQuantity || 0) ? " / \u0645\u062E\u0637\u0637 ".concat(formatNumber(allocation.plannedQuantity)) : '';
-  return "".concat(allocation.color || '-', " / ").concat(allocation.dyehouse || '-').concat(allocationWidthSuffix(order, allocation)).concat(planned);
+  var ordinal = allocationOrdinalLabel(order, allocation);
+  return "".concat(ordinal ? "".concat(ordinal, " / ") : '').concat(allocation.color || '-', " / ").concat(allocation.dyehouse || '-').concat(allocationWidthSuffix(order, allocation)).concat(planned);
 }
 function allocationColorLabel(order, allocation) {
   if (!allocation) return '-';

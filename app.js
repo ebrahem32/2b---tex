@@ -2885,10 +2885,15 @@ function allocationWidthSuffix(order, allocation) {
 function allocationAvailableToCustomer(allocation) {
   return roundNumber(Math.max(Number(allocation?.finishedReceived || 0) - Number(allocation?.deliveredToCustomer || 0), 0));
 }
+function allocationOrdinalLabel(order, allocation) {
+  const index = (order?.allocations || []).findIndex((item)=>item.id === allocation?.id);
+  return index >= 0 ? `بند ${index + 1}` : '';
+}
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
   const planned = Number(allocation.plannedQuantity || 0) ? ` / مخطط ${formatNumber(allocation.plannedQuantity)}` : '';
-  return `${allocation.color || '-'} / ${allocation.dyehouse || '-'}${allocationWidthSuffix(order, allocation)}${planned}`;
+  const ordinal = allocationOrdinalLabel(order, allocation);
+  return `${ordinal ? `${ordinal} / ` : ''}${allocation.color || '-'} / ${allocation.dyehouse || '-'}${allocationWidthSuffix(order, allocation)}${planned}`;
 }
 function allocationColorLabel(order, allocation) {
   if (!allocation) return '-';
