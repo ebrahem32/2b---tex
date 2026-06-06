@@ -6884,11 +6884,59 @@ function openOrdersReport() {
     accessoryDelivered: 0,
     accessoryBalance: 0
   });
+  var hasAccessory = ['accessoryRequired', 'accessorySent', 'accessoryReceived', 'accessoryDelivered', 'accessoryBalance'].some(function (key) {
+    return Number(totals[key] || 0) !== 0;
+  });
+  var summaryAccessoryRow = hasAccessory ? "<tr><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0637\u0644\u0648\u0628</th><td>".concat(fmt(totals.accessoryRequired), "</td><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0633\u062A\u0644\u0645</th><td>").concat(fmt(totals.accessoryReceived), "</td><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631</th><td>").concat(fmt(totals.accessoryBalance), "</td></tr>") : '';
+  var summary = "<section class=\"report-section\"><h3>\u0645\u0644\u062E\u0635 \u0627\u0644\u0643\u0645\u064A\u0627\u062A</h3><table class=\"summary-table compact-summary\"><tbody><tr><th>\u0639\u062F\u062F \u0627\u0644\u0637\u0644\u0628\u0627\u062A</th><td>".concat(list.length, "</td><th>\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u062E\u0627\u0645 \u0627\u0644\u0645\u0637\u0644\u0648\u0628</th><td>").concat(fmt(totals.raw), "</td><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629</th><td>").concat(fmt(totals.sent), "</td></tr><tr><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><td>").concat(fmt(totals.finished), "</td><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062E\u0632\u0646</th><td>").concat(fmt(totals.balance), "</td><th>\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0639\u0645\u064A\u0644</th><td>").concat(fmt(totals.delivered), "</td></tr>").concat(summaryAccessoryRow, "</tbody></table></section>");
+  var columns = [['رقم الطلب', function (order) {
+    return order.orderNumber || '-';
+  }], ['العميل', function (order) {
+    return order.customer || '-';
+  }], ['الصنف', function (order) {
+    return order.fabricType || '-';
+  }], ['المصبغة', function (order) {
+    return order.dyehouse || '-';
+  }], ['المرحلة', function (order) {
+    return cleanOperationalStage(getOperationalStage(order));
+  }], ['مطلوب', function (order) {
+    return fmt(order.totalRawOrdered);
+  }], ['مرسل', function (order) {
+    return fmt(order.totalSentToDyehouse);
+  }], ['مخزن', function (order) {
+    return fmt(order.totalFinishedReceived);
+  }], ['رصيد', function (order) {
+    return fmt(order.warehouseBalance);
+  }], ['تسليم', function (order) {
+    return fmt(order.totalDeliveredToCustomer);
+  }], ['هالك', function (order) {
+    return "".concat(fmt(order.totalWaste), " (").concat(formatNumber(order.totalWastePercent || 0, 1), "%)");
+  }]];
+  if (hasAccessory) {
+    columns.push(['إكس مطلوب', function (order) {
+      return fmt(order.accessoryRequired || 0);
+    }], ['إكس مرسل', function (order) {
+      return fmt(order.accessorySent || 0);
+    }], ['إكس مستلم', function (order) {
+      return fmt(order.accessoryReceived || 0);
+    }], ['إكس مسلم', function (order) {
+      return fmt(order.accessoryDelivered || 0);
+    }], ['رصيد إكس', function (order) {
+      return fmt(order.accessoryBalance || 0);
+    }]);
+  }
   var rows = list.map(function (order) {
-    return "<tr><td>".concat(order.orderNumber || '-', "</td><td>").concat(order.customer || '-', "</td><td>").concat(order.fabricType || '-', "</td><td>").concat(order.dyehouse || '-', "</td><td><span class=\"status ").concat(order.status || '', "\">").concat(statusLabel(order.status), "</span></td><td>").concat(cleanOperationalStage(getOperationalStage(order)), "</td><td>").concat(fmt(order.totalRawOrdered), "</td><td>").concat(fmt(order.totalRawReceived), "</td><td>").concat(fmt(order.totalSentToDyehouse), "</td><td>").concat(fmt(order.totalFinishedReceived), "</td><td>").concat(fmt(order.warehouseBalance), "</td><td>").concat(fmt(order.totalDeliveredToCustomer), "</td><td>").concat(fmt(order.totalWaste), " (").concat(formatNumber(order.totalWastePercent || 0, 1), "%)</td><td>").concat(fmt(order.accessoryRequired || 0), "</td><td>").concat(fmt(order.accessorySent || 0), "</td><td>").concat(fmt(order.accessoryReceived || 0), "</td><td>").concat(fmt(order.accessoryDelivered || 0), "</td><td>").concat(fmt(order.accessoryBalance || 0), "</td></tr>");
+    return "<tr>".concat(columns.map(function (_ref34) {
+      var _ref35 = _slicedToArray(_ref34, 2),
+        getter = _ref35[1];
+      return "<td>".concat(getter(order), "</td>");
+    }).join(''), "</tr>");
   }).join('');
-  var summary = "<section class=\"report-section\"><h3>\u0645\u0644\u062E\u0635 \u0627\u0644\u0643\u0645\u064A\u0627\u062A</h3><table class=\"summary-table\"><tbody><tr><th>\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u062E\u0627\u0645 \u0627\u0644\u0645\u0637\u0644\u0648\u0628</th><td>".concat(fmt(totals.raw), "</td><th>\u0627\u0644\u062E\u0627\u0645\u0629 \u0627\u0644\u0645\u0633\u062A\u0644\u0645\u0629</th><td>").concat(fmt(totals.received), "</td></tr><tr><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629</th><td>").concat(fmt(totals.sent), "</td><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><td>").concat(fmt(totals.finished), "</td></tr><tr><th>\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0639\u0645\u064A\u0644</th><td>").concat(fmt(totals.delivered), "</td><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062E\u0632\u0646</th><td>").concat(fmt(totals.balance), "</td></tr><tr><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0637\u0644\u0648\u0628</th><td>").concat(fmt(totals.accessoryRequired), "</td><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0633\u062A\u0644\u0645</th><td>").concat(fmt(totals.accessoryReceived), "</td></tr><tr><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631</th><td>").concat(fmt(totals.accessoryBalance), "</td><th>\u0639\u062F\u062F \u0627\u0644\u0637\u0644\u0628\u0627\u062A</th><td>").concat(list.length, "</td></tr></tbody></table></section>");
-  var table = "<section class=\"report-section\"><h3>\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0637\u0644\u0628\u0627\u062A</h3><table class=\"follow-table\"><thead><tr><th>\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628</th><th>\u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0627\u0644\u062D\u0627\u0644\u0629</th><th>\u0627\u0644\u0645\u0631\u062D\u0644\u0629</th><th>\u062E\u0627\u0645 \u0645\u0637\u0644\u0648\u0628</th><th>\u062E\u0627\u0645 \u0645\u0633\u062A\u0644\u0645</th><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0639\u0645\u064A\u0644</th><th>\u0627\u0644\u0647\u0627\u0644\u0643</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0637\u0644\u0648\u0628</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0631\u0633\u0644</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0633\u062A\u0644\u0645</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0633\u0644\u0645</th><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631</th></tr></thead><tbody>".concat(rows || emptyRow(18, 'لا توجد طلبات مسجلة.'), "</tbody></table></section>");
+  var table = "<section class=\"report-section\"><h3>\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0637\u0644\u0628\u0627\u062A</h3><table class=\"follow-table filtered-follow-table\"><thead><tr>".concat(columns.map(function (_ref36) {
+    var _ref37 = _slicedToArray(_ref36, 1),
+      label = _ref37[0];
+    return "<th>".concat(label, "</th>");
+  }).join(''), "</tr></thead><tbody>").concat(rows || emptyRow(columns.length, 'لا توجد طلبات مسجلة.'), "</tbody></table></section>");
   showManagementReport(title, subtitle, "".concat(summary).concat(table), reportKey);
 }
 function openFilteredOrdersReport() {
@@ -6945,10 +6993,10 @@ function openDyehouseBalancesReport() {
   });
   var rows = Object.entries(groups).sort(function (a, b) {
     return a[0].localeCompare(b[0], 'ar');
-  }).map(function (_ref34) {
-    var _ref35 = _slicedToArray(_ref34, 2),
-      name = _ref35[0],
-      data = _ref35[1];
+  }).map(function (_ref38) {
+    var _ref39 = _slicedToArray(_ref38, 2),
+      name = _ref39[0],
+      data = _ref39[1];
     return "<tr><td>".concat(name, "</td><td>").concat(data.colors, "</td><td>").concat(fmt(data.planned), "</td><td>").concat(fmt(data.sent), "</td><td>").concat(fmt(data.finished), "</td><td>").concat(fmt(data.remaining), "</td><td>").concat(fmt(data.waste), "</td><td>").concat(fmt(data.accessoryRequired), "</td><td>").concat(fmt(data.accessoryReceived), "</td><td>").concat(fmt(data.accessoryBalance), "</td></tr>");
   }).join('');
   var table = "<section class=\"report-section\"><h3>\u0623\u0631\u0635\u062F\u0629 \u0627\u0644\u0645\u0635\u0627\u0628\u063A</h3><table class=\"follow-table\"><thead><tr><th>\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0639\u062F\u062F \u0627\u0644\u0623\u0644\u0648\u0627\u0646</th><th>\u0627\u0644\u0645\u062E\u0637\u0637</th><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u062F\u062E\u0644 \u0627\u0644\u0645\u062E\u0632\u0646</th><th>\u0645\u062A\u0628\u0642\u064A \u0628\u0627\u0644\u0645\u0635\u0628\u063A\u0629</th><th>\u0647\u0627\u0644\u0643 \u0641\u0639\u0644\u064A</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0637\u0644\u0648\u0628</th><th>\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0633\u062A\u0644\u0645</th><th>\u0631\u0635\u064A\u062F \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631</th></tr></thead><tbody>".concat(rows || emptyRow(10, 'لا توجد أرصدة مصابغ حالية.'), "</tbody></table></section>");
@@ -6980,15 +7028,15 @@ function combinedOperationNotes(order) {
   if (String((order === null || order === void 0 ? void 0 : order.notes) || '').trim()) sections.push("\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0627\u0644\u0637\u0644\u0628: ".concat(String(order.notes).trim()));
   var notes = order !== null && order !== void 0 && order.operationNotes && _typeof(order.operationNotes) === 'object' && !Array.isArray(order.operationNotes) ? order.operationNotes : {};
   if (String(notes.weaving || '').trim()) sections.push("\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0627\u0644\u0646\u0633\u064A\u062C: ".concat(String(notes.weaving).trim()));
-  Object.entries(notes).filter(function (_ref36) {
-    var _ref37 = _slicedToArray(_ref36, 2),
-      key = _ref37[0],
-      value = _ref37[1];
+  Object.entries(notes).filter(function (_ref40) {
+    var _ref41 = _slicedToArray(_ref40, 2),
+      key = _ref41[0],
+      value = _ref41[1];
     return key.startsWith('dyeing:') && String(value || '').trim();
-  }).forEach(function (_ref38) {
-    var _ref39 = _slicedToArray(_ref38, 2),
-      key = _ref39[0],
-      value = _ref39[1];
+  }).forEach(function (_ref42) {
+    var _ref43 = _slicedToArray(_ref42, 2),
+      key = _ref43[0],
+      value = _ref43[1];
     var dyehouseName = key.slice('dyeing:'.length) || 'المصبغة';
     sections.push("\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0627\u0644\u0635\u0628\u0627\u063A\u0629 - ".concat(dyehouseName, ": ").concat(String(value).trim()));
   });
@@ -8395,10 +8443,14 @@ function _safeOpenDocument() {
 function printCurrentDocument() {
   var stickerId = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
   var isSticker = currentDocumentType === 'stickers' || !!refs.documentBody.querySelector('.sticker-sheet');
+  var isOrdersFollowReport = !isSticker && !!refs.documentBody.querySelector('.orders-follow-report');
   var stickerPrintStyle = null;
+  var reportPrintStyle = null;
   var cleanup = function cleanup() {
     document.body.classList.remove('printing-stickers');
+    document.body.classList.remove('printing-orders-follow');
     if (stickerPrintStyle) stickerPrintStyle.remove();
+    if (reportPrintStyle) reportPrintStyle.remove();
   };
   if (isSticker) {
     var cards = _toConsumableArray(refs.documentBody.querySelectorAll('.sticker-card'));
@@ -8410,6 +8462,12 @@ function printCurrentDocument() {
       stickerPrintStyle.textContent = "@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-item:not(:has(.sticker-card[data-sticker-id=\"".concat(selectedId, "\"])) { display:none!important; } body.printing-stickers .sticker-card:not([data-sticker-id=\"").concat(selectedId, "\"]) { display:none!important; } }");
       document.head.appendChild(stickerPrintStyle);
     }
+  }
+  if (isOrdersFollowReport) {
+    document.body.classList.add('printing-orders-follow');
+    reportPrintStyle = document.createElement('style');
+    reportPrintStyle.textContent = '@media print { @page { size: A4 landscape; margin: 7mm; } }';
+    document.head.appendChild(reportPrintStyle);
   }
   window.addEventListener('afterprint', cleanup, {
     once: true

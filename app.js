@@ -3477,9 +3477,33 @@ function openOrdersReport(sourceList = null, title = 'تقرير متابعة ا
     acc.accessoryBalance += Number(order.accessoryBalance || 0);
     return acc;
   }, { raw:0, received:0, sent:0, finished:0, delivered:0, balance:0, waste:0, accessoryRequired:0, accessorySent:0, accessoryReceived:0, accessoryDelivered:0, accessoryBalance:0 });
-  const rows = list.map((order)=>`<tr><td>${order.orderNumber || '-'}</td><td>${order.customer || '-'}</td><td>${order.fabricType || '-'}</td><td>${order.dyehouse || '-'}</td><td><span class="status ${order.status || ''}">${statusLabel(order.status)}</span></td><td>${cleanOperationalStage(getOperationalStage(order))}</td><td>${fmt(order.totalRawOrdered)}</td><td>${fmt(order.totalRawReceived)}</td><td>${fmt(order.totalSentToDyehouse)}</td><td>${fmt(order.totalFinishedReceived)}</td><td>${fmt(order.warehouseBalance)}</td><td>${fmt(order.totalDeliveredToCustomer)}</td><td>${fmt(order.totalWaste)} (${formatNumber(order.totalWastePercent || 0, 1)}%)</td><td>${fmt(order.accessoryRequired || 0)}</td><td>${fmt(order.accessorySent || 0)}</td><td>${fmt(order.accessoryReceived || 0)}</td><td>${fmt(order.accessoryDelivered || 0)}</td><td>${fmt(order.accessoryBalance || 0)}</td></tr>`).join('');
-  const summary = `<section class="report-section"><h3>ملخص الكميات</h3><table class="summary-table"><tbody><tr><th>إجمالي الخام المطلوب</th><td>${fmt(totals.raw)}</td><th>الخامة المستلمة</th><td>${fmt(totals.received)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(totals.sent)}</td><th>دخل المخزن</th><td>${fmt(totals.finished)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(totals.delivered)}</td><th>رصيد المخزن</th><td>${fmt(totals.balance)}</td></tr><tr><th>إكسسوار مطلوب</th><td>${fmt(totals.accessoryRequired)}</td><th>إكسسوار مستلم</th><td>${fmt(totals.accessoryReceived)}</td></tr><tr><th>رصيد الإكسسوار</th><td>${fmt(totals.accessoryBalance)}</td><th>عدد الطلبات</th><td>${list.length}</td></tr></tbody></table></section>`;
-  const table = `<section class="report-section"><h3>تفاصيل الطلبات</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الحالة</th><th>المرحلة</th><th>خام مطلوب</th><th>خام مستلم</th><th>مرسل للمصبغة</th><th>دخل المخزن</th><th>رصيد المخزن</th><th>تسليم العميل</th><th>الهالك</th><th>إكسسوار مطلوب</th><th>إكسسوار مرسل</th><th>إكسسوار مستلم</th><th>إكسسوار مسلم</th><th>رصيد الإكسسوار</th></tr></thead><tbody>${rows || emptyRow(18, 'لا توجد طلبات مسجلة.')}</tbody></table></section>`;
+  const hasAccessory = ['accessoryRequired','accessorySent','accessoryReceived','accessoryDelivered','accessoryBalance'].some((key)=>Number(totals[key] || 0) !== 0);
+  const summaryAccessoryRow = hasAccessory ? `<tr><th>إكسسوار مطلوب</th><td>${fmt(totals.accessoryRequired)}</td><th>إكسسوار مستلم</th><td>${fmt(totals.accessoryReceived)}</td><th>رصيد الإكسسوار</th><td>${fmt(totals.accessoryBalance)}</td></tr>` : '';
+  const summary = `<section class="report-section"><h3>ملخص الكميات</h3><table class="summary-table compact-summary"><tbody><tr><th>عدد الطلبات</th><td>${list.length}</td><th>إجمالي الخام المطلوب</th><td>${fmt(totals.raw)}</td><th>مرسل للمصبغة</th><td>${fmt(totals.sent)}</td></tr><tr><th>دخل المخزن</th><td>${fmt(totals.finished)}</td><th>رصيد المخزن</th><td>${fmt(totals.balance)}</td><th>تسليم العميل</th><td>${fmt(totals.delivered)}</td></tr>${summaryAccessoryRow}</tbody></table></section>`;
+  const columns = [
+    ['رقم الطلب', (order)=>order.orderNumber || '-'],
+    ['العميل', (order)=>order.customer || '-'],
+    ['الصنف', (order)=>order.fabricType || '-'],
+    ['المصبغة', (order)=>order.dyehouse || '-'],
+    ['المرحلة', (order)=>cleanOperationalStage(getOperationalStage(order))],
+    ['مطلوب', (order)=>fmt(order.totalRawOrdered)],
+    ['مرسل', (order)=>fmt(order.totalSentToDyehouse)],
+    ['مخزن', (order)=>fmt(order.totalFinishedReceived)],
+    ['رصيد', (order)=>fmt(order.warehouseBalance)],
+    ['تسليم', (order)=>fmt(order.totalDeliveredToCustomer)],
+    ['هالك', (order)=>`${fmt(order.totalWaste)} (${formatNumber(order.totalWastePercent || 0, 1)}%)`],
+  ];
+  if (hasAccessory) {
+    columns.push(
+      ['إكس مطلوب', (order)=>fmt(order.accessoryRequired || 0)],
+      ['إكس مرسل', (order)=>fmt(order.accessorySent || 0)],
+      ['إكس مستلم', (order)=>fmt(order.accessoryReceived || 0)],
+      ['إكس مسلم', (order)=>fmt(order.accessoryDelivered || 0)],
+      ['رصيد إكس', (order)=>fmt(order.accessoryBalance || 0)],
+    );
+  }
+  const rows = list.map((order)=>`<tr>${columns.map(([, getter])=>`<td>${getter(order)}</td>`).join('')}</tr>`).join('');
+  const table = `<section class="report-section"><h3>تفاصيل الطلبات</h3><table class="follow-table filtered-follow-table"><thead><tr>${columns.map(([label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${rows || emptyRow(columns.length, 'لا توجد طلبات مسجلة.')}</tbody></table></section>`;
   showManagementReport(title, subtitle, `${summary}${table}`, reportKey);
 }
 function openFilteredOrdersReport() {
@@ -4177,10 +4201,14 @@ async function safeOpenDocument(type) {
 }
 function printCurrentDocument(stickerId = null) {
   const isSticker = currentDocumentType === 'stickers' || !!refs.documentBody.querySelector('.sticker-sheet');
+  const isOrdersFollowReport = !isSticker && !!refs.documentBody.querySelector('.orders-follow-report');
   let stickerPrintStyle = null;
+  let reportPrintStyle = null;
   const cleanup = () => {
     document.body.classList.remove('printing-stickers');
+    document.body.classList.remove('printing-orders-follow');
     if (stickerPrintStyle) stickerPrintStyle.remove();
+    if (reportPrintStyle) reportPrintStyle.remove();
   };
   if (isSticker) {
     const cards = [...refs.documentBody.querySelectorAll('.sticker-card')];
@@ -4191,6 +4219,12 @@ function printCurrentDocument(stickerId = null) {
       stickerPrintStyle.textContent = `@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-item:not(:has(.sticker-card[data-sticker-id="${selectedId}"])) { display:none!important; } body.printing-stickers .sticker-card:not([data-sticker-id="${selectedId}"]) { display:none!important; } }`;
       document.head.appendChild(stickerPrintStyle);
     }
+  }
+  if (isOrdersFollowReport) {
+    document.body.classList.add('printing-orders-follow');
+    reportPrintStyle = document.createElement('style');
+    reportPrintStyle.textContent = '@media print { @page { size: A4 landscape; margin: 7mm; } }';
+    document.head.appendChild(reportPrintStyle);
   }
   window.addEventListener('afterprint', cleanup, { once:true });
   setTimeout(() => window.print(), 80);
