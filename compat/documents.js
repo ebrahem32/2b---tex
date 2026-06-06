@@ -170,18 +170,34 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return (order === null || order === void 0 ? void 0 : order.inchWidth) || '-';
     }
     function buildWeavingOrderDocument(order) {
-      var rawRows = "<section class=\"report-section\"><h3>\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3><table class=\"summary-table\"><tbody><tr><th>\u0645\u0635\u062F\u0631 \u0627\u0644\u0646\u0633\u064A\u062C</th><td>".concat(safeText(order === null || order === void 0 ? void 0 : order.weavingSource), "</td><th>\u0627\u0644\u0628\u0648\u0635\u0629</th><td>").concat(safeText(widthSummary(order)), "</td></tr><tr><th>\u0633\u0639\u0631 \u0627\u0644\u062E\u0627\u0645</th><td colspan=\"3\">").concat(fmt(orderRawCost(order)), "</td></tr></tbody></table></section>");
+      var rawNotes = orderRawPermitNotes(order);
+      var rawRows = "<section class=\"report-section\"><h3>\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3><table class=\"summary-table\"><tbody><tr><th>\u0645\u0635\u062F\u0631 \u0627\u0644\u0646\u0633\u064A\u062C</th><td>".concat(safeText(order === null || order === void 0 ? void 0 : order.weavingSource), "</td><th>\u0627\u0644\u0628\u0648\u0635\u0629</th><td>").concat(safeText(widthSummary(order)), "</td></tr><tr><th>\u0625\u0630\u0646 \u0627\u0644\u062E\u0627\u0645</th><td>").concat(safeText(rawNotes), "</td><th>\u0633\u0639\u0631 \u0627\u0644\u062E\u0627\u0645</th><td>").concat(fmt(orderRawCost(order)), "</td></tr></tbody></table></section>");
       return reportShell('أمر تشغيل نسيج', order, "".concat(rawRows).concat(colorRows(order, orderAllocations(order), {
         includeDyehouse: false,
         includeReceived: false,
         includeWaste: false
       })).concat(accessoriesSection(order)).concat(notesSection(order)));
     }
+    function orderRawPermitNoteList(order) {
+      return [].concat(_toConsumableArray(Array.isArray(order === null || order === void 0 ? void 0 : order.rawNoteNumbers) ? order.rawNoteNumbers : []), _toConsumableArray(rawBatchesFor(order).map(function (batch) {
+        return batch.noteNumber;
+      })));
+    }
+    function orderRawPermitNotes(order) {
+      return uniqueNonEmpty(orderRawPermitNoteList(order)).join('، ') || '-';
+    }
     function dyehouseTransfersFor(order, dyehouseName) {
       var name = clean(dyehouseName);
       return (Array.isArray(order === null || order === void 0 ? void 0 : order.dyehouseTransfers) ? order.dyehouseTransfers : []).filter(function (transfer) {
         return clean(transfer.toDyehouse) === name;
       });
+    }
+    function transferNoteNumber(transfer) {
+      var direct = String((transfer === null || transfer === void 0 ? void 0 : transfer.noteNumber) || '').trim();
+      if (direct) return direct;
+      var text = String((transfer === null || transfer === void 0 ? void 0 : transfer.reason) || (transfer === null || transfer === void 0 ? void 0 : transfer.notes) || '').trim();
+      var match = text.match(/(?:رقم\s*الإذن|رقم\s*اذن|إذن|اذن)\s*[:：-]?\s*([0-9٠-٩A-Za-z/-]+)/);
+      return match ? match[1] : '';
     }
     function rawBatchesFor(order) {
       return (Array.isArray(order === null || order === void 0 ? void 0 : order.rawBatches) ? order.rawBatches : []).filter(function (batch) {
@@ -193,10 +209,21 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return uniqueNonEmpty(notes).join('، ') || '-';
     }
     function dyehouseRawNoteList(order, dyehouseName, isOriginalDyehouse) {
-      return isOriginalDyehouse ? rawBatchesFor(order).map(function (batch) {
+      var name = clean(dyehouseName);
+      if (!isOriginalDyehouse) return dyehouseTransfersFor(order, dyehouseName).map(function (transfer) {
+        return transferNoteNumber(transfer);
+      });
+      var outgoingTransferNotes = new Set(uniqueNonEmpty((Array.isArray(order === null || order === void 0 ? void 0 : order.dyehouseTransfers) ? order.dyehouseTransfers : []).filter(function (transfer) {
+        return clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name;
+      }).map(function (transfer) {
+        return transferNoteNumber(transfer);
+      })).map(function (note) {
+        return clean(note);
+      }));
+      return rawBatchesFor(order).map(function (batch) {
         return batch.noteNumber;
-      }) : dyehouseTransfersFor(order, dyehouseName).map(function (transfer) {
-        return transfer.noteNumber;
+      }).filter(function (note) {
+        return !outgoingTransferNotes.has(clean(note));
       });
     }
     function buildDyeingOrderDocument(order, dyehouseName) {

@@ -157,13 +157,33 @@
     }
 
     function buildWeavingOrderDocument(order) {
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>سعر الخام</th><td colspan="3">${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
+      const rawNotes = orderRawPermitNotes(order);
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>إذن الخام</th><td>${safeText(rawNotes)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
       return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`);
+    }
+
+    function orderRawPermitNoteList(order) {
+      return [
+        ...(Array.isArray(order?.rawNoteNumbers) ? order.rawNoteNumbers : []),
+        ...rawBatchesFor(order).map((batch) => batch.noteNumber),
+      ];
+    }
+
+    function orderRawPermitNotes(order) {
+      return uniqueNonEmpty(orderRawPermitNoteList(order)).join('، ') || '-';
     }
 
     function dyehouseTransfersFor(order, dyehouseName) {
       const name = clean(dyehouseName);
       return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : []).filter((transfer) => clean(transfer.toDyehouse) === name);
+    }
+
+    function transferNoteNumber(transfer) {
+      const direct = String(transfer?.noteNumber || '').trim();
+      if (direct) return direct;
+      const text = String(transfer?.reason || transfer?.notes || '').trim();
+      const match = text.match(/(?:رقم\s*الإذن|رقم\s*اذن|إذن|اذن)\s*[:：-]?\s*([0-9٠-٩A-Za-z/-]+)/);
+      return match ? match[1] : '';
     }
 
     function rawBatchesFor(order) {
@@ -176,9 +196,14 @@
     }
 
     function dyehouseRawNoteList(order, dyehouseName, isOriginalDyehouse) {
-      return isOriginalDyehouse
-        ? rawBatchesFor(order).map((batch) => batch.noteNumber)
-        : dyehouseTransfersFor(order, dyehouseName).map((transfer) => transfer.noteNumber);
+      const name = clean(dyehouseName);
+      if (!isOriginalDyehouse) return dyehouseTransfersFor(order, dyehouseName).map((transfer) => transferNoteNumber(transfer));
+      const outgoingTransferNotes = new Set(uniqueNonEmpty((Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
+        .filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name)
+        .map((transfer) => transferNoteNumber(transfer))).map((note) => clean(note)));
+      return rawBatchesFor(order)
+        .map((batch) => batch.noteNumber)
+        .filter((note) => !outgoingTransferNotes.has(clean(note)));
     }
 
     function buildDyeingOrderDocument(order, dyehouseName) {

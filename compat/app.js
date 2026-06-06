@@ -7091,7 +7091,9 @@ function _openDocument() {
           }) || sourceOrder;
           order = calculateOrder(refreshedSourceOrder);
           body = buildWeavingOrderDocument(_objectSpread(_objectSpread({}, order), {}, {
-            operationNoteText: operationNoteText
+            operationNoteText: operationNoteText,
+            rawBatches: rawBatches,
+            dyehouseTransfers: dyehouseTransfers
           }), fmt, safe);
           _context67.n = 10;
           break;

@@ -3579,7 +3579,7 @@ async function openDocument(type) {
     if (operationNoteText === null) return;
     const refreshedSourceOrder = orders.find((item)=>item.id === selectedOrderId) || sourceOrder;
     order = calculateOrder(refreshedSourceOrder);
-    body = buildWeavingOrderDocument({ ...order, operationNoteText }, fmt, safe);
+    body = buildWeavingOrderDocument({ ...order, operationNoteText, rawBatches, dyehouseTransfers }, fmt, safe);
   } else if (type === 'dyeing') {
     body = buildDyeingSummaryDocument(order, fmt, safe);
   } else if (type === 'waste') {
