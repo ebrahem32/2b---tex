@@ -4741,12 +4741,12 @@ function copyAiWhatsappMessage() {
 }
 function _copyAiWhatsappMessage() {
   _copyAiWhatsappMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee55() {
-    var _document$getElementB10;
+    var _document$getElementB12;
     var text, area, _t25;
     return _regenerator().w(function (_context55) {
       while (1) switch (_context55.p = _context55.n) {
         case 0:
-          text = ((_document$getElementB10 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB10 === void 0 || (_document$getElementB10 = _document$getElementB10.textContent) === null || _document$getElementB10 === void 0 ? void 0 : _document$getElementB10.trim()) || '';
+          text = ((_document$getElementB12 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB12 === void 0 || (_document$getElementB12 = _document$getElementB12.textContent) === null || _document$getElementB12 === void 0 ? void 0 : _document$getElementB12.trim()) || '';
           if (!(!text || text === '-')) {
             _context55.n = 1;
             break;
@@ -5014,11 +5014,23 @@ function renderDocuments() {
   refs.documentsPanel.innerHTML = "\n    <div class=\"document-action-group\">\n      <h3>\u0639\u0631\u0636 \u0627\u0644\u0639\u0645\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"quotation\">\u0625\u0646\u0634\u0627\u0621 \u0639\u0631\u0636 \u0633\u0639\u0631</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0623\u0648\u0627\u0645\u0631 \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"weaving\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0646\u0633\u064A\u062C</button>\n      <button class=\"mini-btn gold\" data-doc=\"dyeing\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0635\u0628\u0627\u063A\u0629</button>\n      <button class=\"mini-btn gold\" data-doc=\"labSamples\">\u0639\u064A\u0646\u0627\u062A \u0645\u0639\u0645\u0644</button>\n      <button class=\"mini-btn gold\" data-doc=\"stickers\">\u0627\u0633\u062A\u064A\u0643\u0631\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0643\u0634\u0648\u0641\u0627\u062A</h3>\n      <button class=\"mini-btn\" data-doc=\"waste\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0647\u0627\u0644\u0643</button>\n      <button class=\"mini-btn gold\" data-doc=\"fullreport\">\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A</button>\n      <button class=\"mini-btn\" data-doc=\"print\">\u0637\u0628\u0627\u0639\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u064A</button>\n      <button class=\"mini-btn\" disabled>\u062A\u0635\u062F\u064A\u0631 PDF \u0644\u0627\u062D\u0642\u064B\u0627</button>\n    </div>";
 }
 function handleNavMenuAction(action) {
-  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$querySelect, _refs$searchInput, _refs$orderDetailsPan2;
+  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB0, _document$querySelect, _refs$searchInput, _refs$orderDetailsPan2;
   if (!action) return;
   if (action === 'pricingNew') (_refs$openPricingForm = refs.openPricingFormBtn) === null || _refs$openPricingForm === void 0 || _refs$openPricingForm.click();
   if (action === 'orderNew') (_refs$openOrderFormBt = refs.openOrderFormBtn) === null || _refs$openOrderFormBt === void 0 || _refs$openOrderFormBt.click();
   if (action === 'managementReports') (_refs$openManagementR = refs.openManagementReportsBtn) === null || _refs$openManagementR === void 0 || _refs$openManagementR.click();
+  if (action === 'aiModel') (_document$getElementB0 = document.getElementById('aiModelPanel')) === null || _document$getElementB0 === void 0 || _document$getElementB0.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+  if (action === 'aiAnalyze') {
+    var _document$getElementB1, _refs$analyzeReportBt;
+    (_document$getElementB1 = document.getElementById('aiModelPanel')) === null || _document$getElementB1 === void 0 || _document$getElementB1.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+    (_refs$analyzeReportBt = refs.analyzeReportBtn) === null || _refs$analyzeReportBt === void 0 || _refs$analyzeReportBt.click();
+  }
   if (action === 'pricingList') (_document$querySelect = document.querySelector('.pricing-panel')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
     behavior: 'smooth',
     block: 'start'
@@ -7416,15 +7428,15 @@ function _openDocument() {
   return _openDocument.apply(this, arguments);
 }
 function installAmalReviewUi() {
-  var _document$getElementB0;
+  var _document$getElementB10;
   refs.weavingSlipType.innerHTML = '<option value="weaving">إذن خام رايح للمصبغة</option>';
-  (_document$getElementB0 = document.getElementById('amalReviewBox')) === null || _document$getElementB0 === void 0 || _document$getElementB0.remove();
+  (_document$getElementB10 = document.getElementById('amalReviewBox')) === null || _document$getElementB10 === void 0 || _document$getElementB10.remove();
 }
 function toggleAmalReviewMode() {
-  var _document$getElementB1;
+  var _document$getElementB11;
   var normalGrid = refs.weavingSlipOrderNumber.closest('.form-grid');
   if (normalGrid) normalGrid.style.display = '';
-  (_document$getElementB1 = document.getElementById('amalReviewBox')) === null || _document$getElementB1 === void 0 || _document$getElementB1.remove();
+  (_document$getElementB11 = document.getElementById('amalReviewBox')) === null || _document$getElementB11 === void 0 || _document$getElementB11.remove();
   refs.weavingSlipForm.querySelector('.dialog-actions .primary-btn').textContent = 'تسجيل المستند';
 }
 function renderAmalSuggestion() {

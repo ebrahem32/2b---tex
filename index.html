@@ -37,7 +37,8 @@
       <div class="erp-menu"><button type="button">الطلبات</button><div class="erp-menu-list"><button type="button" data-nav-action="orderNew">طلب جديد</button><button type="button" data-nav-action="ordersList">قائمة الطلبات</button></div></div>
       <div class="erp-menu"><button type="button">التشغيل</button><div class="erp-menu-list"><button type="button" data-nav-action="orderDetails">تفاصيل الطلب</button><button type="button" data-nav-action="ordersList">استلام/صرف/تسليم</button></div></div>
       <div class="erp-menu"><button type="button">أوامر التشغيل</button><div class="erp-menu-list"><button type="button" data-doc-menu="weaving">أمر تشغيل نسيج</button><button type="button" data-doc-menu="dyeing">أمر تشغيل صباغة</button><button type="button" data-doc-menu="labSamples">عينات معمل</button><button type="button" data-doc-menu="stickers">استيكرات التشغيل</button></div></div>
-      <div class="erp-menu"><button type="button">التقارير</button><div class="erp-menu-list"><button type="button" data-nav-action="managementReports">كل التقارير</button><button type="button" data-doc-menu="fullreport">التقرير التفصيلي</button><button type="button" data-doc-menu="waste">تقرير الهالك</button></div></div>
+      <div class="erp-menu"><button type="button">التقارير</button><div class="erp-menu-list"><button type="button" data-nav-action="managementReports">كل التقارير</button><button type="button" data-doc-menu="fullreport">التقرير التفصيلي</button><button type="button" data-doc-menu="waste">تقرير الهالك</button><button type="button" data-nav-action="aiModel">تقرير الذكاء الاصطناعي</button></div></div>
+      <div class="erp-menu"><button type="button">نموذج الذكاء الاصطناعي</button><div class="erp-menu-list"><button type="button" data-nav-action="aiModel">لوحة النموذج</button><button type="button" data-nav-action="aiAnalyze">تحليل التشغيل الحالي</button><button type="button" data-nav-action="managementReports">مصادر التقارير</button></div></div>
       <div class="erp-menu"><button type="button">الإعدادات</button><div class="erp-menu-list"><button type="button" data-nav-action="managementReports">حالة النظام والتقارير</button></div></div>
     </nav>
     <header class="hero-header">
@@ -55,7 +56,7 @@
     </header>
     <main>
       <section class="panel pricing-panel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">قبل التشغيل</p><h2>التسعيرات</h2></div></div><div class="table-wrap"><table class="mobile-card-table pricing-table"><thead><tr><th>رقم التسعيرة</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>إجمالي العقد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="pricingTableBody"></tbody></table></div></section><section class="stats-grid" id="statsGrid"></section>
-      <section class="panel ai-panel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">مساعد 2B الذكي</p><h2>تحليل إداري سريع للتشغيل الحالي</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التقرير</button></div><p id="aiStatusText" class="eyebrow">يعتمد على خدمة AI المحلية ولا يوقف عمل النظام الأساسي.</p></section>
+      <section class="panel ai-panel" id="aiModelPanel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">نموذج الذكاء الاصطناعي لـ 2B</p><h2>تحليل التقارير وقراءة النظام برؤية التشغيل الخاصة بك</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><p id="aiStatusText" class="eyebrow">مرحلة تأسيس نموذج متخصص في قراءة بيانات 2B، تحليل التقارير، واستخراج ملاحظات تشغيلية قابلة للتنفيذ.</p></section>
       <section class="panel">
         <div class="section-head stacked-on-mobile"><div><p class="eyebrow">الطلبات الرئيسية</p><h2>الطلبات الرئيسية</h2></div><div class="filters-row"><input id="searchInput" type="search" placeholder="بحث بالعميل، رقم الطلب، رقم إذن النسيج، المصبغة..."><select id="customerFilter"><option value="all">كل العملاء</option></select><select id="dyehouseFilter"><option value="all">كل المصابغ</option></select><select id="fabricFilter"><option value="all">كل الأصناف</option></select><select id="orderStatusFilter"><option value="all">كل الحالات</option><option value="pending">بانتظار الاستلام</option><option value="in-progress">قيد التشغيل</option><option value="completed">مكتمل</option><option value="closed">مغلق تشغيليًا</option></select><button class="mini-btn gold" id="printFilteredOrdersBtn" type="button">طباعة الفلترة</button></div></div>
         <div class="table-wrap"><table class="mobile-card-table orders-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>خام مطلوب</th><th>خام مستلم</th><th>مرسل للمصبغة</th><th>مجهز مستلم</th><th>الهالك</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
@@ -74,6 +75,6 @@
   <script charset="UTF-8" src="./compat/documents.js?v=20260606-14"></script>
   <script charset="UTF-8" src="./compat/pricing.js?v=20260606-06"></script>
   <script charset="UTF-8" src="./compat/orders.js?v=20260606-08"></script>
-  <script charset="UTF-8" src="./compat/app.js?v=20260606-25"></script>
+  <script charset="UTF-8" src="./compat/app.js?v=20260607-01"></script>
 </body>
 </html>

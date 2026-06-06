@@ -2890,6 +2890,11 @@ function handleNavMenuAction(action) {
   if (action === 'pricingNew') refs.openPricingFormBtn?.click();
   if (action === 'orderNew') refs.openOrderFormBtn?.click();
   if (action === 'managementReports') refs.openManagementReportsBtn?.click();
+  if (action === 'aiModel') document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (action === 'aiAnalyze') {
+    document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    refs.analyzeReportBtn?.click();
+  }
   if (action === 'pricingList') document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
   if (action === 'ordersList') refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
   if (action === 'orderDetails') refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' });
