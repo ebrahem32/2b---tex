@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.10';
-const APP_BUILD_TIME = '2026-06-06 15:25';
+const APP_VERSION = 'v2026.06.06.11';
+const APP_BUILD_TIME = '2026-06-06 15:40';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1511,10 +1511,13 @@ function refreshOutboxTargetsAfterSettings() {
   if (changed) save();
 }
 async function openWhatsappSettingsDialog() {
-  await pollWhatsappService();
+  renderWhatsappSettingsDialog([]);
+  try {
+    await Promise.race([pollWhatsappService(), wait(3000)]);
+  } catch {}
   let groupNames = [];
   try {
-    groupNames = await fetchWhatsappGroupNames();
+    groupNames = await Promise.race([fetchWhatsappGroupNames(), wait(3000).then(()=>[])]);
   } catch {
     groupNames = [];
   }
@@ -1853,7 +1856,11 @@ function installAutomationUi() {
   document.getElementById('logoutBtn')?.addEventListener('click', logoutCurrentUser);
   document.getElementById('systemStatusBtn')?.addEventListener('click', openSystemStatusDialog);
   document.getElementById('usersBtn')?.addEventListener('click', openUsersDialog);
-  document.getElementById('whatsappSettingsBtn')?.addEventListener('click', openWhatsappSettingsDialog);
+  const whatsappSettingsButton = document.getElementById('whatsappSettingsBtn');
+  if (whatsappSettingsButton) whatsappSettingsButton.onclick = (event) => {
+    event.preventDefault();
+    openWhatsappSettingsDialog().catch((error)=>{ console.error('whatsapp-settings-open-error', error); renderWhatsappSettingsDialog([]); });
+  };
   document.getElementById('dyehousePricesBtn')?.addEventListener('click', renderDyehousePricesDialog);
   document.getElementById('a5AccountsBtn')?.addEventListener('click', renderA5AccountsDialog);
   document.getElementById('outboxBtn')?.addEventListener('click', openOutboxDialog);

@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.10';
-var APP_BUILD_TIME = '2026-06-06 15:25';
+var APP_VERSION = 'v2026.06.06.11';
+var APP_BUILD_TIME = '2026-06-06 15:40';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -2626,31 +2626,41 @@ function openWhatsappSettingsDialog() {
 }
 function _openWhatsappSettingsDialog() {
   _openWhatsappSettingsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee30() {
-    var groupNames, _t14;
+    var groupNames, _t14, _t15;
     return _regenerator().w(function (_context30) {
       while (1) switch (_context30.p = _context30.n) {
         case 0:
-          _context30.n = 1;
-          return pollWhatsappService();
-        case 1:
-          groupNames = [];
-          _context30.p = 2;
-          _context30.n = 3;
-          return fetchWhatsappGroupNames();
-        case 3:
-          groupNames = _context30.v;
-          _context30.n = 5;
+          renderWhatsappSettingsDialog([]);
+          _context30.p = 1;
+          _context30.n = 2;
+          return Promise.race([pollWhatsappService(), wait(3000)]);
+        case 2:
+          _context30.n = 4;
           break;
-        case 4:
-          _context30.p = 4;
+        case 3:
+          _context30.p = 3;
           _t14 = _context30.v;
+        case 4:
           groupNames = [];
-        case 5:
-          renderWhatsappSettingsDialog(groupNames);
+          _context30.p = 5;
+          _context30.n = 6;
+          return Promise.race([fetchWhatsappGroupNames(), wait(3000).then(function () {
+            return [];
+          })]);
         case 6:
+          groupNames = _context30.v;
+          _context30.n = 8;
+          break;
+        case 7:
+          _context30.p = 7;
+          _t15 = _context30.v;
+          groupNames = [];
+        case 8:
+          renderWhatsappSettingsDialog(groupNames);
+        case 9:
           return _context30.a(2);
       }
-    }, _callee30, null, [[2, 4]]);
+    }, _callee30, null, [[5, 7], [1, 3]]);
   }));
   return _openWhatsappSettingsDialog.apply(this, arguments);
 }
@@ -2765,7 +2775,7 @@ function renderA5AccountsDialog() {
 }
 function _renderA5AccountsDialog() {
   _renderA5AccountsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee33() {
-    var a5Customers, systemCustomers, matchedRows, unmatchedA5, unmatchedNote, _t15;
+    var a5Customers, systemCustomers, matchedRows, unmatchedA5, unmatchedNote, _t16;
     return _regenerator().w(function (_context33) {
       while (1) switch (_context33.p = _context33.n) {
         case 0:
@@ -2800,7 +2810,7 @@ function _renderA5AccountsDialog() {
           break;
         case 3:
           _context33.p = 3;
-          _t15 = _context33.v;
+          _t16 = _context33.v;
           refs.documentBody.innerHTML = "<div class=\"document-sheet\"><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><div class=\"notice warning\">\u062E\u062F\u0645\u0629 A5 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627. \u0634\u063A\u0644 \u0645\u0644\u0641 \"\u062A\u0634\u063A\u064A\u0644 \u062E\u062F\u0645\u0629 A5.bat\" \u062B\u0645 \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.</div><div class=\"document-actions no-print\"><button class=\"primary-btn\" type=\"button\" data-refresh-a5-accounts>\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629</button></div></div>";
         case 4:
           return _context33.a(2);
@@ -2814,7 +2824,7 @@ function renderA5LedgerDialog(_x24) {
 }
 function _renderA5LedgerDialog() {
   _renderA5LedgerDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee34(customerName) {
-    var name, movements, tracking, totals, currentBalance, rows, _t16;
+    var name, movements, tracking, totals, currentBalance, rows, _t17;
     return _regenerator().w(function (_context34) {
       while (1) switch (_context34.p = _context34.n) {
         case 0:
@@ -2845,7 +2855,7 @@ function _renderA5LedgerDialog() {
           break;
         case 3:
           _context34.p = 3;
-          _t16 = _context34.v;
+          _t17 = _context34.v;
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <div class=\"subsection-head\"><h2>\u0643\u0634\u0641 \u062D\u0633\u0627\u0628 A5</h2><button class=\"mini-btn no-print\" type=\"button\" data-back-a5-accounts>\u0631\u062C\u0648\u0639</button></div>\n      <div class=\"notice warning\">\u062A\u0639\u0630\u0631 \u062A\u062D\u0645\u064A\u0644 \u0643\u0634\u0641 \u0627\u0644\u062D\u0633\u0627\u0628 \u0645\u0646 A5. \u062A\u0623\u0643\u062F \u0623\u0646 \u062E\u062F\u0645\u0629 A5 \u062A\u0639\u0645\u0644 \u062B\u0645 \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.</div>\n    </div>";
         case 4:
           return _context34.a(2);
@@ -2941,7 +2951,7 @@ function openAuditLogDialog() {
 }
 function _openAuditLogDialog() {
   _openAuditLogDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee36() {
-    var rows, _t17;
+    var rows, _t18;
     return _regenerator().w(function (_context36) {
       while (1) switch (_context36.p = _context36.n) {
         case 0:
@@ -2960,7 +2970,7 @@ function _openAuditLogDialog() {
           break;
         case 3:
           _context36.p = 3;
-          _t17 = _context36.v;
+          _t18 = _context36.v;
           refs.documentBody.innerHTML = '<div class="document-sheet orders-follow-report"><div class="report-title"><h2>سجل التعديلات</h2><span>تعذر تحميل سجل التعديلات من قاعدة البيانات.</span></div><div class="notice warning">السجل لا يعرض بيانات قديمة من المتصفح. أعد المحاولة بعد التأكد من اتصال قاعدة البيانات.</div></div>';
         case 4:
           return _context36.a(2);
@@ -3000,7 +3010,7 @@ function openUsersDialog() {
 }
 function _openUsersDialog() {
   _openUsersDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee38() {
-    var users, rows, _t18;
+    var users, rows, _t19;
     return _regenerator().w(function (_context38) {
       while (1) switch (_context38.p = _context38.n) {
         case 0:
@@ -3023,7 +3033,7 @@ function _openUsersDialog() {
           break;
         case 3:
           _context38.p = 3;
-          _t18 = _context38.v;
+          _t19 = _context38.v;
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><div class="notice warning">تعذر تحميل المستخدمين حاليًا.</div></div>';
         case 4:
           return _context38.a(2);
@@ -3158,7 +3168,7 @@ function openSystemStatusDialog() {
 }
 function _openSystemStatusDialog() {
   _openSystemStatusDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee41() {
-    var _status$cloudflare, _status$frontend, _status$frontend2, _status$backend, _status$backend2, _status$cloudflare2, _status$backup, _status$backup2, status, cloudflareUrl, row, _t19;
+    var _status$cloudflare, _status$frontend, _status$frontend2, _status$backend, _status$backend2, _status$cloudflare2, _status$backup, _status$backup2, status, cloudflareUrl, row, _t20;
     return _regenerator().w(function (_context41) {
       while (1) switch (_context41.p = _context41.n) {
         case 0:
@@ -3184,7 +3194,7 @@ function _openSystemStatusDialog() {
           break;
         case 3:
           _context41.p = 3;
-          _t19 = _context41.v;
+          _t20 = _context41.v;
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
         case 4:
           return _context41.a(2);
@@ -3194,7 +3204,7 @@ function _openSystemStatusDialog() {
   return _openSystemStatusDialog.apply(this, arguments);
 }
 function installAutomationUi() {
-  var _document$getElementB, _document$getElementB2, _document$getElementB3, _document$getElementB4, _document$getElementB5, _document$getElementB6, _document$getElementB7, _document$getElementB8, _document$getElementB9, _document$getElementB0;
+  var _document$getElementB, _document$getElementB2, _document$getElementB3, _document$getElementB4, _document$getElementB5, _document$getElementB6, _document$getElementB7, _document$getElementB8, _document$getElementB9;
   var actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
     var _currentUser, _currentUser2;
@@ -3206,11 +3216,18 @@ function installAutomationUi() {
   (_document$getElementB3 = document.getElementById('logoutBtn')) === null || _document$getElementB3 === void 0 || _document$getElementB3.addEventListener('click', logoutCurrentUser);
   (_document$getElementB4 = document.getElementById('systemStatusBtn')) === null || _document$getElementB4 === void 0 || _document$getElementB4.addEventListener('click', openSystemStatusDialog);
   (_document$getElementB5 = document.getElementById('usersBtn')) === null || _document$getElementB5 === void 0 || _document$getElementB5.addEventListener('click', openUsersDialog);
-  (_document$getElementB6 = document.getElementById('whatsappSettingsBtn')) === null || _document$getElementB6 === void 0 || _document$getElementB6.addEventListener('click', openWhatsappSettingsDialog);
-  (_document$getElementB7 = document.getElementById('dyehousePricesBtn')) === null || _document$getElementB7 === void 0 || _document$getElementB7.addEventListener('click', renderDyehousePricesDialog);
-  (_document$getElementB8 = document.getElementById('a5AccountsBtn')) === null || _document$getElementB8 === void 0 || _document$getElementB8.addEventListener('click', renderA5AccountsDialog);
-  (_document$getElementB9 = document.getElementById('outboxBtn')) === null || _document$getElementB9 === void 0 || _document$getElementB9.addEventListener('click', openOutboxDialog);
-  (_document$getElementB0 = document.getElementById('auditLogBtn')) === null || _document$getElementB0 === void 0 || _document$getElementB0.addEventListener('click', function () {
+  var whatsappSettingsButton = document.getElementById('whatsappSettingsBtn');
+  if (whatsappSettingsButton) whatsappSettingsButton.onclick = function (event) {
+    event.preventDefault();
+    openWhatsappSettingsDialog()["catch"](function (error) {
+      console.error('whatsapp-settings-open-error', error);
+      renderWhatsappSettingsDialog([]);
+    });
+  };
+  (_document$getElementB6 = document.getElementById('dyehousePricesBtn')) === null || _document$getElementB6 === void 0 || _document$getElementB6.addEventListener('click', renderDyehousePricesDialog);
+  (_document$getElementB7 = document.getElementById('a5AccountsBtn')) === null || _document$getElementB7 === void 0 || _document$getElementB7.addEventListener('click', renderA5AccountsDialog);
+  (_document$getElementB8 = document.getElementById('outboxBtn')) === null || _document$getElementB8 === void 0 || _document$getElementB8.addEventListener('click', openOutboxDialog);
+  (_document$getElementB9 = document.getElementById('auditLogBtn')) === null || _document$getElementB9 === void 0 || _document$getElementB9.addEventListener('click', function () {
     return openAuditLogDialog()["catch"](console.error);
   });
   updateBackendStatusBadge();
@@ -3226,7 +3243,7 @@ function _reportToCanvas() {
       renderTarget,
       cloneWrap,
       _args42 = arguments,
-      _t20;
+      _t21;
     return _regenerator().w(function (_context43) {
       while (1) switch (_context43.p = _context43.n) {
         case 0:
@@ -3283,7 +3300,7 @@ function _reportToCanvas() {
           return _context43.a(2, _context43.v);
         case 4:
           _context43.p = 4;
-          _t20 = _context43.v;
+          _t21 = _context43.v;
           cloneWrap = document.createElement('div');
           cloneWrap.style.cssText = 'position:absolute;left:-20000px;top:0;width:1100px;background:#fff;pointer-events:none;';
           cloneWrap.appendChild(sheet.cloneNode(true));
@@ -3684,7 +3701,7 @@ function saveDyehousePriceLibrary() {
 }
 function _saveDyehousePriceLibrary() {
   _saveDyehousePriceLibrary = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee49() {
-    var _t21;
+    var _t22;
     return _regenerator().w(function (_context49) {
       while (1) switch (_context49.p = _context49.n) {
         case 0:
@@ -3708,9 +3725,9 @@ function _saveDyehousePriceLibrary() {
           return _context49.a(2, true);
         case 3:
           _context49.p = 3;
-          _t21 = _context49.v;
+          _t22 = _context49.v;
           backendAvailable = false;
-          console.warn('Dyehouse price library backend save failed', _t21);
+          console.warn('Dyehouse price library backend save failed', _t22);
           return _context49.a(2, false);
       }
     }, _callee49, null, [[1, 3]]);
@@ -4538,7 +4555,7 @@ function analyzeReportWithAi() {
 }
 function _analyzeReportWithAi() {
   _analyzeReportWithAi = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee53() {
-    var oldText, response, data, message, _t22;
+    var oldText, response, data, message, _t23;
     return _regenerator().w(function (_context53) {
       while (1) switch (_context53.p = _context53.n) {
         case 0:
@@ -4587,8 +4604,8 @@ function _analyzeReportWithAi() {
           break;
         case 7:
           _context53.p = 7;
-          _t22 = _context53.v;
-          message = _t22.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? _t22.message : _t22.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا';
+          _t23 = _context53.v;
+          message = _t23.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? _t23.message : _t23.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا';
           if (refs.aiStatusText) refs.aiStatusText.textContent = message;
           refs.aiAnalysisBody.innerHTML = "<div class=\"empty-state\">".concat(message, "</div>");
           refs.aiAnalysisDialog.showModal();
@@ -4609,12 +4626,12 @@ function copyAiWhatsappMessage() {
 }
 function _copyAiWhatsappMessage() {
   _copyAiWhatsappMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee54() {
-    var _document$getElementB11;
-    var text, area, _t23;
+    var _document$getElementB10;
+    var text, area, _t24;
     return _regenerator().w(function (_context54) {
       while (1) switch (_context54.p = _context54.n) {
         case 0:
-          text = ((_document$getElementB11 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB11 === void 0 || (_document$getElementB11 = _document$getElementB11.textContent) === null || _document$getElementB11 === void 0 ? void 0 : _document$getElementB11.trim()) || '';
+          text = ((_document$getElementB10 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB10 === void 0 || (_document$getElementB10 = _document$getElementB10.textContent) === null || _document$getElementB10 === void 0 ? void 0 : _document$getElementB10.trim()) || '';
           if (!(!text || text === '-')) {
             _context54.n = 1;
             break;
@@ -4631,7 +4648,7 @@ function _copyAiWhatsappMessage() {
           break;
         case 3:
           _context54.p = 3;
-          _t23 = _context54.v;
+          _t24 = _context54.v;
           area = document.createElement('textarea');
           area.value = text;
           document.body.appendChild(area);
@@ -5163,7 +5180,7 @@ function addOrder(_x34) {
 function _addOrder() {
   _addOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee57(event) {
     var _refs$paymentMode, _refs$paymentDetails, _firstAccessory$perce;
-    var widthLines, currentOrder, accessoryLines, firstAccessory, paymentTerms, payload, backendSaveRequired, backendCustomer, previousDyehouse, transferredAllocationIds, updatedOrder, updatedAllocations, savedOrder, changedAllocations, _iterator, _step, allocation, savedAllocation, newOrder, _savedOrder, pricingMarked, _t24;
+    var widthLines, currentOrder, accessoryLines, firstAccessory, paymentTerms, payload, backendSaveRequired, backendCustomer, previousDyehouse, transferredAllocationIds, updatedOrder, updatedAllocations, savedOrder, changedAllocations, _iterator, _step, allocation, savedAllocation, newOrder, _savedOrder, pricingMarked, _t25;
     return _regenerator().w(function (_context57) {
       while (1) switch (_context57.p = _context57.n) {
         case 0:
@@ -5300,8 +5317,8 @@ function _addOrder() {
           break;
         case 17:
           _context57.p = 17;
-          _t24 = _context57.v;
-          _iterator.e(_t24);
+          _t25 = _context57.v;
+          _iterator.e(_t25);
         case 18:
           _context57.p = 18;
           _iterator.f();
@@ -5373,7 +5390,7 @@ function addBatch(_x35) {
 function _addBatch() {
   _addBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee58(event) {
     var _event$target$element;
-    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, _allocation, alreadyDelivered, warehouseAvailable, _t25;
+    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, _allocation, alreadyDelivered, warehouseAvailable, _t26;
     return _regenerator().w(function (_context58) {
       while (1) switch (_context58.n) {
         case 0:
@@ -5437,10 +5454,10 @@ function _addBatch() {
           _context58.n = 7;
           return resizeSlipImage(rawDocumentFile);
         case 7:
-          _t25 = _context58.v;
+          _t26 = _context58.v;
           data.sourceDocument = {
             type: 'raw-batch-image',
-            image: _t25
+            image: _t26
           };
         case 8:
           _context58.n = 9;
@@ -5620,7 +5637,7 @@ function addAllocation() {
 }
 function _addAllocation() {
   _addAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee59() {
-    var order, color, createdAllocations, backendSaveRequired, targetFinishedWeight, plannedQuantity, existing, targetFinishedWidth, _targetFinishedWeight, allocation, savedAllocations, _i2, _createdAllocations, _allocation2, _t26;
+    var order, color, createdAllocations, backendSaveRequired, targetFinishedWeight, plannedQuantity, existing, targetFinishedWidth, _targetFinishedWeight, allocation, savedAllocations, _i2, _createdAllocations, _allocation2, _t27;
     return _regenerator().w(function (_context59) {
       while (1) switch (_context59.n) {
         case 0:
@@ -5715,11 +5732,11 @@ function _addAllocation() {
             break;
           }
           _allocation2 = _createdAllocations[_i2];
-          _t26 = savedAllocations;
+          _t27 = savedAllocations;
           _context59.n = 11;
           return postBackend("/orders/".concat(order.id, "/allocations"), allocationToApi(_allocation2));
         case 11:
-          _t26.push.call(_t26, _context59.v);
+          _t27.push.call(_t27, _context59.v);
         case 12:
           _i2++;
           _context59.n = 10;
@@ -5750,7 +5767,7 @@ function editAllocation(_x36) {
 }
 function _editAllocation() {
   _editAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee60(id) {
-    var allocation, order, colorValue, cleanedColor, targetFinishedWidth, targetFinishedWeight, backendSaveRequired, changedAllocations, primaryUpdate, savedAllocations, _iterator2, _step2, item, _t27, _t28;
+    var allocation, order, colorValue, cleanedColor, targetFinishedWidth, targetFinishedWeight, backendSaveRequired, changedAllocations, primaryUpdate, savedAllocations, _iterator2, _step2, item, _t28, _t29;
     return _regenerator().w(function (_context60) {
       while (1) switch (_context60.p = _context60.n) {
         case 0:
@@ -5842,11 +5859,11 @@ function _editAllocation() {
             break;
           }
           item = _step2.value;
-          _t27 = savedAllocations;
+          _t28 = savedAllocations;
           _context60.n = 10;
           return putBackend("/allocations/".concat(item.id), allocationToApi(item));
         case 10:
-          _t27.push.call(_t27, _context60.v);
+          _t28.push.call(_t28, _context60.v);
         case 11:
           _context60.n = 9;
           break;
@@ -5855,8 +5872,8 @@ function _editAllocation() {
           break;
         case 13:
           _context60.p = 13;
-          _t28 = _context60.v;
-          _iterator2.e(_t28);
+          _t29 = _context60.v;
+          _iterator2.e(_t29);
         case 14:
           _context60.p = 14;
           _iterator2.f();
@@ -5887,7 +5904,7 @@ function transferAllocationDyehouse(_x37) {
 }
 function _transferAllocationDyehouse() {
   _transferAllocationDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee61(id) {
-    var allocation, order, calculated, currentDyehouse, newDyehouseValue, newDyehouse, originalQuantity, suggestedQuantity, quantityValue, quantity, transferWarnings, dateValue, noteNumber, reason, newAllocationId, roundedQuantity, transferRecord, allocationUpdate, newAllocation, backendSaveRequired, ratio, originalAccessory, newAccessory, updatedAllocation, insertedAllocation, insertedTransfer, _t29, _t30, _t31;
+    var allocation, order, calculated, currentDyehouse, newDyehouseValue, newDyehouse, originalQuantity, suggestedQuantity, quantityValue, quantity, transferWarnings, dateValue, noteNumber, reason, newAllocationId, roundedQuantity, transferRecord, allocationUpdate, newAllocation, backendSaveRequired, ratio, originalAccessory, newAccessory, updatedAllocation, insertedAllocation, insertedTransfer, _t30, _t31, _t32;
     return _regenerator().w(function (_context61) {
       while (1) switch (_context61.n) {
         case 0:
@@ -6030,13 +6047,13 @@ function _transferAllocationDyehouse() {
           _context61.n = 10;
           return putBackend("/allocations/".concat(id), allocationToApi(allocationUpdate));
         case 10:
-          _t29 = _context61.v;
+          _t30 = _context61.v;
           _context61.n = 12;
           break;
         case 11:
-          _t29 = true;
+          _t30 = true;
         case 12:
-          updatedAllocation = _t29;
+          updatedAllocation = _t30;
           if (!newAllocation) {
             _context61.n = 14;
             break;
@@ -6044,13 +6061,13 @@ function _transferAllocationDyehouse() {
           _context61.n = 13;
           return postBackend("/orders/".concat(allocation.orderId, "/allocations"), allocationToApi(newAllocation));
         case 13:
-          _t30 = _context61.v;
+          _t31 = _context61.v;
           _context61.n = 15;
           break;
         case 14:
-          _t30 = true;
+          _t31 = true;
         case 15:
-          insertedAllocation = _t30;
+          insertedAllocation = _t31;
           if (!transferRecord) {
             _context61.n = 17;
             break;
@@ -6058,13 +6075,13 @@ function _transferAllocationDyehouse() {
           _context61.n = 16;
           return postBackend('/transfers', transferToApi(transferRecord));
         case 16:
-          _t31 = _context61.v;
+          _t32 = _context61.v;
           _context61.n = 18;
           break;
         case 17:
-          _t31 = true;
+          _t32 = true;
         case 18:
-          insertedTransfer = _t31;
+          insertedTransfer = _t32;
           if (!(!updatedAllocation || !insertedAllocation || !insertedTransfer)) {
             _context61.n = 20;
             break;
@@ -6341,7 +6358,7 @@ function editBatch(_x42, _x43) {
 }
 function _editBatch() {
   _editBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee65(type, id) {
-    var collection, batch, backendSaveRequired, updatedBatch, quantity, saved, _t32;
+    var collection, batch, backendSaveRequired, updatedBatch, quantity, saved, _t33;
     return _regenerator().w(function (_context65) {
       while (1) switch (_context65.n) {
         case 0:
@@ -6419,7 +6436,7 @@ function _editBatch() {
           _context65.n = 5;
           return putBackend("/transfers/".concat(id), transferToApi(updatedBatch));
         case 5:
-          _t32 = _context65.v;
+          _t33 = _context65.v;
           _context65.n = 8;
           break;
         case 6:
@@ -6428,9 +6445,9 @@ function _editBatch() {
             reason: updatedBatch.reason || updatedBatch.notes || ''
           }) : batchToApi(updatedBatch));
         case 7:
-          _t32 = _context65.v;
+          _t33 = _context65.v;
         case 8:
-          saved = _t32;
+          saved = _t33;
           if (saved) {
             _context65.n = 10;
             break;
@@ -7087,15 +7104,15 @@ function _openDocument() {
   return _openDocument.apply(this, arguments);
 }
 function installAmalReviewUi() {
-  var _document$getElementB1;
+  var _document$getElementB0;
   refs.weavingSlipType.innerHTML = '<option value="weaving">إذن خام رايح للمصبغة</option>';
-  (_document$getElementB1 = document.getElementById('amalReviewBox')) === null || _document$getElementB1 === void 0 || _document$getElementB1.remove();
+  (_document$getElementB0 = document.getElementById('amalReviewBox')) === null || _document$getElementB0 === void 0 || _document$getElementB0.remove();
 }
 function toggleAmalReviewMode() {
-  var _document$getElementB10;
+  var _document$getElementB1;
   var normalGrid = refs.weavingSlipOrderNumber.closest('.form-grid');
   if (normalGrid) normalGrid.style.display = '';
-  (_document$getElementB10 = document.getElementById('amalReviewBox')) === null || _document$getElementB10 === void 0 || _document$getElementB10.remove();
+  (_document$getElementB1 = document.getElementById('amalReviewBox')) === null || _document$getElementB1 === void 0 || _document$getElementB1.remove();
   refs.weavingSlipForm.querySelector('.dialog-actions .primary-btn').textContent = 'تسجيل المستند';
 }
 function renderAmalSuggestion() {
@@ -7201,7 +7218,7 @@ function confirmAmalOrderImport() {
 function _confirmAmalOrderImport() {
   _confirmAmalOrderImport = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee68() {
     var _accessoryRows$, _accessoryRows$find;
-    var suggestion, reviewType, clothRows, accessoryRows, existing, deleted, orderId, totalRawQuantity, firstCloth, accessoryType, accessoryPercent, backendCustomer, importedOrder, savedOrder, _iterator3, _step3, _loop, _ret, rawSaved, _iterator4, _step4, row, savedAccessory, _t33, _t34;
+    var suggestion, reviewType, clothRows, accessoryRows, existing, deleted, orderId, totalRawQuantity, firstCloth, accessoryType, accessoryPercent, backendCustomer, importedOrder, savedOrder, _iterator3, _step3, _loop, _ret, rawSaved, _iterator4, _step4, row, savedAccessory, _t34, _t35;
     return _regenerator().w(function (_context69) {
       while (1) switch (_context69.p = _context69.n) {
         case 0:
@@ -7369,8 +7386,8 @@ function _confirmAmalOrderImport() {
           break;
         case 18:
           _context69.p = 18;
-          _t33 = _context69.v;
-          _iterator3.e(_t33);
+          _t34 = _context69.v;
+          _iterator3.e(_t34);
         case 19:
           _context69.p = 19;
           _iterator3.f();
@@ -7443,8 +7460,8 @@ function _confirmAmalOrderImport() {
           break;
         case 30:
           _context69.p = 30;
-          _t34 = _context69.v;
-          _iterator4.e(_t34);
+          _t35 = _context69.v;
+          _iterator4.e(_t35);
         case 31:
           _context69.p = 31;
           _iterator4.f();
@@ -7650,7 +7667,7 @@ function confirmWeavingSlip(_x46) {
 }
 function _confirmWeavingSlip() {
   _confirmWeavingSlip = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee70(event) {
-    var order, type, isRawIssue, quantity, common, saved, existingRawBatch, rawBatch, _t35;
+    var order, type, isRawIssue, quantity, common, saved, existingRawBatch, rawBatch, _t36;
     return _regenerator().w(function (_context71) {
       while (1) switch (_context71.n) {
         case 0:
@@ -7760,16 +7777,16 @@ function _confirmWeavingSlip() {
           _context71.n = 10;
           return putBackend("/batches/dyehouse/".concat(existingRawBatch.id), batchToApi(rawBatch));
         case 10:
-          _t35 = _context71.v;
+          _t36 = _context71.v;
           _context71.n = 13;
           break;
         case 11:
           _context71.n = 12;
           return postBackend('/batches/dyehouse', batchToApi(rawBatch));
         case 12:
-          _t35 = _context71.v;
+          _t36 = _context71.v;
         case 13:
-          saved = _t35;
+          saved = _t36;
         case 14:
           if (!(type === 'production')) {
             _context71.n = 16;
@@ -8231,7 +8248,7 @@ function safeOpenDocument(_x49) {
 }
 function _safeOpenDocument() {
   _safeOpenDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee72(type) {
-    var _t36;
+    var _t37;
     return _regenerator().w(function (_context73) {
       while (1) switch (_context73.p = _context73.n) {
         case 0:
@@ -8243,8 +8260,8 @@ function _safeOpenDocument() {
           break;
         case 2:
           _context73.p = 2;
-          _t36 = _context73.v;
-          console.error('document-open-error', _t36);
+          _t37 = _context73.v;
+          console.error('document-open-error', _t37);
           alert('تعذر فتح المستند حاليًا. راجع بيانات الطلب ثم حاول مرة أخرى.');
         case 3:
           return _context73.a(2);
@@ -8395,7 +8412,7 @@ function shareCurrentReportPdf() {
 }
 function _shareCurrentReportPdf() {
   _shareCurrentReportPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee73() {
-    var reportType, order, oldText, _refs$documentTitle3, blob, fileName, file, _refs$documentTitle4, url, link, _t37, _t38;
+    var reportType, order, oldText, _refs$documentTitle3, blob, fileName, file, _refs$documentTitle4, url, link, _t38, _t39;
     return _regenerator().w(function (_context74) {
       while (1) switch (_context74.p = _context74.n) {
         case 0:
@@ -8449,8 +8466,8 @@ function _shareCurrentReportPdf() {
           return _context74.a(2);
         case 8:
           _context74.p = 8;
-          _t37 = _context74.v;
-          console.warn('share-png-clipboard-skipped', _t37);
+          _t38 = _context74.v;
+          console.warn('share-png-clipboard-skipped', _t38);
         case 9:
           url = URL.createObjectURL(blob);
           link = document.createElement('a');
@@ -8467,8 +8484,8 @@ function _shareCurrentReportPdf() {
           break;
         case 10:
           _context74.p = 10;
-          _t38 = _context74.v;
-          console.error('share-png-error', _t38);
+          _t39 = _context74.v;
+          console.error('share-png-error', _t39);
           alert('تعذر تجهيز صورة المشاركة. جرّب الطباعة PDF أو أعد فتح التقرير مرة أخرى.');
         case 11:
           _context74.p = 11;
