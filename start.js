@@ -1,6 +1,6 @@
-/**
+﻿/**
  * 2B Tex - Railway startup script
- * يشغّل backend + frontend معاً في نفس الـ container
+ * ظٹط´ط؛ظ‘ظ„ backend + frontend ظ…ط¹ط§ظ‹ ظپظٹ ظ†ظپط³ ط§ظ„ظ€ container
  */
 
 const { spawn } = require('child_process');
@@ -29,7 +29,7 @@ if (IS_RAILWAY && path.resolve(DB_PATH) === path.resolve(SEED_PATH) && process.e
   failStartup('[2B Tex] Railway must use a persistent DB_PATH such as /data/2btex.sqlite. Bundled GitHub SQLite is not allowed for production.');
 }
 
-// --- حماية الإنتاج: لا ننسخ قاعدة GitHub تلقائيًا فوق تشغيل Railway ---
+// --- ط­ظ…ط§ظٹط© ط§ظ„ط¥ظ†طھط§ط¬: ظ„ط§ ظ†ظ†ط³ط® ظ‚ط§ط¹ط¯ط© GitHub طھظ„ظ‚ط§ط¦ظٹظ‹ط§ ظپظˆظ‚ طھط´ط؛ظٹظ„ Railway ---
 if (DB_PATH !== SEED_PATH && !fs.existsSync(DB_PATH)) {
   const dbDir = path.dirname(DB_PATH);
   fs.mkdirSync(dbDir, { recursive: true });
@@ -51,7 +51,8 @@ console.log(`[2B Tex] Frontend: port ${FRONTEND_PORT}`);
 console.log(`[2B Tex] WhatsApp: port ${WHATSAPP_PORT}`);
 console.log('==========================================');
 
-function launch(name, args, cwd, env = {}) {
+function launch(name, args, cwd, env = {}, options = {}) {
+  const critical = options.critical !== false;
   const proc = spawn('node', args, {
     cwd,
     env: { ...process.env, ...env },
@@ -59,30 +60,30 @@ function launch(name, args, cwd, env = {}) {
   });
   proc.on('error', (err) => {
     console.error(`[${name}] ERROR: ${err.message}`);
-    process.exit(1);
+    if (critical) process.exit(1);
   });
   proc.on('exit', (code, signal) => {
-    console.error(`[${name}] Exited — code=${code}, signal=${signal}`);
-    process.exit(code || 1);
+    console.error(`[${name}] Exited â€” code=${code}, signal=${signal}`);
+    if (critical) process.exit(code || 1);
   });
   return proc;
 }
 
-// تشغيل الـ backend أولاً
+// طھط´ط؛ظٹظ„ ط§ظ„ظ€ backend ط£ظˆظ„ط§ظ‹
 launch('backend', ['server.js'], path.join(__dirname, 'backend'), {
   PORT: BACKEND_PORT,
   DB_PATH
 });
 
-// تشغيل خدمة واتساب داخليًا حتى يتعامل الكمبيوتر والموبايل مع نفس رابط Railway.
+// طھط´ط؛ظٹظ„ ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨ ط¯ط§ط®ظ„ظٹظ‹ط§ ط­طھظ‰ ظٹطھط¹ط§ظ…ظ„ ط§ظ„ظƒظ…ط¨ظٹظˆطھط± ظˆط§ظ„ظ…ظˆط¨ط§ظٹظ„ ظ…ط¹ ظ†ظپط³ ط±ط§ط¨ط· Railway.
 launch('whatsapp', ['server.js'], path.join(__dirname, 'whatsapp-service'), {
   PORT: WHATSAPP_PORT,
   DATA_DIR: WHATSAPP_DATA_DIR,
   REPORTS_DIR: path.join(WHATSAPP_DATA_DIR, 'reports'),
   PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-});
+}, { critical: false });
 
-// تشغيل الـ frontend بعد 3 ثواني للتأكد أن الـ backend جاهز
+// طھط´ط؛ظٹظ„ ط§ظ„ظ€ frontend ط¨ط¹ط¯ 3 ط«ظˆط§ظ†ظٹ ظ„ظ„طھط£ظƒط¯ ط£ظ† ط§ظ„ظ€ backend ط¬ط§ظ‡ط²
 setTimeout(() => {
   launch('frontend', ['server.js'], __dirname, {
     PORT: FRONTEND_PORT,
@@ -90,3 +91,4 @@ setTimeout(() => {
     WHATSAPP_PORT
   });
 }, 3000);
+

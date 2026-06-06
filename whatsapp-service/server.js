@@ -42,6 +42,18 @@ function nowIso() { return new Date().toISOString(); }
 function safeFilePart(value) {
   return String(value || '').replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').slice(0, 80) || 'report';
 }
+function cleanupChromiumLocks(dir) {
+  try {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) cleanupChromiumLocks(fullPath);
+      else if (/^Singleton/.test(entry.name)) fs.rmSync(fullPath, { force: true });
+    }
+  } catch (error) {
+    console.warn(`WhatsApp session lock cleanup skipped: ${error.message}`);
+  }
+}
 
 let outbox = readJson(OUTBOX_FILE, []);
 let settings = { ...defaultSettings, ...readJson(SETTINGS_FILE, {}) };
@@ -49,6 +61,8 @@ let attempts = readJson(ATTEMPTS_FILE, []);
 let whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
 let clientReady = false;
 let isProcessing = false;
+
+cleanupChromiumLocks(path.join(DATA_DIR, 'sessions'));
 
 function persist() {
   writeJson(OUTBOX_FILE, outbox);
