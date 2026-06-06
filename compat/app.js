@@ -4893,8 +4893,11 @@ function repairOrderDetailsArabic(order) {
   root.querySelector('form[data-form="customer"] button') && (root.querySelector('form[data-form="customer"] button').textContent = 'إضافة حركة');
   var customerForm = root.querySelector('form[data-form="customer"]');
   if (customerForm !== null && customerForm !== void 0 && customerForm.elements.movementKind) {
-    customerForm.elements.movementKind.options[0].textContent = 'تسليم قماش';
-    if (customerForm.elements.movementKind.options[1]) customerForm.elements.movementKind.options[1].textContent = 'تسليم إكسسوار';
+    _toConsumableArray(customerForm.elements.movementKind.options).forEach(function (option) {
+      if (option.value === 'cloth') option.textContent = 'تسليم قماش';
+      if (option.value === 'clothReturn') option.textContent = 'مرتجع قماش من العميل';
+      if (option.value === 'accessory') option.textContent = 'تسليم إكسسوار';
+    });
   }
   setPlaceholder('input[name="quantity"]', 'الكمية');
   setPlaceholder('form[data-form="production"] input[name="quantity"], form[data-form="accessoryReceived"] input[name="quantity"]', 'الكمية المستلمة');
