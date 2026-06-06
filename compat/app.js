@@ -5022,7 +5022,7 @@ function allocationWidthSuffix(order, allocation) {
   var widthLine = (order.widthLines || []).find(function (item) {
     return item.id === allocation.widthLineId;
   }) || {};
-  var inch = allocation.rawInch || widthLine.inch || order.inchWidth || '';
+  var inch = allocation.rawInch || widthLine.inch || '';
   var width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '';
   var finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
   var parts = [];

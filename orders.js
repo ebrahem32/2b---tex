@@ -94,13 +94,10 @@
       const expectedWastePercent = Number(order.expectedWastePercent || 0);
       const isClosed = Boolean(order.operationClosed);
       const baseAllocations = getAllocations(order).map((allocation)=>calculateAllocation(allocation, order));
-      const singleWidthValue = order.widthMode !== 'multiple' ? baseAllocations.find((item)=>item.targetFinishedWidth)?.targetFinishedWidth : null;
-      const singleWeightValue = order.widthMode !== 'multiple' ? baseAllocations.find((item)=>item.targetFinishedWeight)?.targetFinishedWeight : null;
       const orderAllocations = baseAllocations.map((allocation) => {
         const widthLine = (order.widthLines || []).find((item)=>item.id===allocation.widthLineId);
         const expectedWasteQuantity = isClosed ? expectedWasteFor(order, allocation.plannedQuantity) : 0;
         if (widthLine) return { ...allocation, rawInch:widthLine.inch, rawWidth:widthLine.width, targetFinishedWidth:widthLine.width, accessoryQuantity: allocationAccessoryQuantity(order, allocation), expectedWastePercent, expectedWasteQuantity };
-        if (order.widthMode !== 'multiple') return { ...allocation, targetFinishedWidth: singleWidthValue || allocation.targetFinishedWidth || '', targetFinishedWeight: singleWeightValue || allocation.targetFinishedWeight || '', accessoryQuantity: allocationAccessoryQuantity(order, allocation), expectedWastePercent, expectedWasteQuantity };
         return { ...allocation, accessoryQuantity: allocationAccessoryQuantity(order, allocation), expectedWastePercent, expectedWasteQuantity };
       });
       const rawToDyehouse = sum(data.rawBatches.filter((batch) => batch.orderId === order.id));

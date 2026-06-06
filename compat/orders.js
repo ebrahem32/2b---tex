@@ -1,3 +1,5 @@
+"use strict";
+
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -140,7 +142,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       return roundNumber(Number(allocation.plannedQuantity || 0) * percent / 100);
     }
     function calculateOrder(order) {
-      var _baseAllocations$find, _baseAllocations$find2;
       var data = state();
       order = normalizeOrderForRuntime(order);
       var expectedWastePercent = Number(order.expectedWastePercent || 0);
@@ -148,12 +149,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var baseAllocations = getAllocations(order).map(function (allocation) {
         return calculateAllocation(allocation, order);
       });
-      var singleWidthValue = order.widthMode !== 'multiple' ? (_baseAllocations$find = baseAllocations.find(function (item) {
-        return item.targetFinishedWidth;
-      })) === null || _baseAllocations$find === void 0 ? void 0 : _baseAllocations$find.targetFinishedWidth : null;
-      var singleWeightValue = order.widthMode !== 'multiple' ? (_baseAllocations$find2 = baseAllocations.find(function (item) {
-        return item.targetFinishedWeight;
-      })) === null || _baseAllocations$find2 === void 0 ? void 0 : _baseAllocations$find2.targetFinishedWeight : null;
       var orderAllocations = baseAllocations.map(function (allocation) {
         var widthLine = (order.widthLines || []).find(function (item) {
           return item.id === allocation.widthLineId;
@@ -163,13 +158,6 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           rawInch: widthLine.inch,
           rawWidth: widthLine.width,
           targetFinishedWidth: widthLine.width,
-          accessoryQuantity: allocationAccessoryQuantity(order, allocation),
-          expectedWastePercent: expectedWastePercent,
-          expectedWasteQuantity: expectedWasteQuantity
-        });
-        if (order.widthMode !== 'multiple') return _objectSpread(_objectSpread({}, allocation), {}, {
-          targetFinishedWidth: singleWidthValue || allocation.targetFinishedWidth || '',
-          targetFinishedWeight: singleWeightValue || allocation.targetFinishedWeight || '',
           accessoryQuantity: allocationAccessoryQuantity(order, allocation),
           expectedWastePercent: expectedWastePercent,
           expectedWasteQuantity: expectedWasteQuantity

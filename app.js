@@ -2873,7 +2873,7 @@ function listHtml(items, formatter) { const rows = Array.isArray(items) ? items 
 function allocationWidthSuffix(order, allocation) {
   if (!order || !allocation) return '';
   const widthLine = (order.widthLines || []).find((item) => item.id === allocation.widthLineId) || {};
-  const inch = allocation.rawInch || widthLine.inch || order.inchWidth || '';
+  const inch = allocation.rawInch || widthLine.inch || '';
   const width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '';
   const finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
   const parts = [];
