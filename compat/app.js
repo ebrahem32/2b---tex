@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.08';
-var APP_BUILD_TIME = '2026-06-06 14:42';
+var APP_VERSION = 'v2026.06.06.09';
+var APP_BUILD_TIME = '2026-06-06 15:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -1540,10 +1540,7 @@ function _persistAuditLog() {
     return _regenerator().w(function (_context21) {
       while (1) switch (_context21.n) {
         case 0:
-          _context21.n = 1;
-          return saveBackendSetting('auditLog', auditLog);
-        case 1:
-          return _context21.a(2);
+          return _context21.a(2, true);
       }
     }, _callee21);
   }));

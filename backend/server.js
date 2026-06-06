@@ -633,6 +633,9 @@ app.get('/api/settings/:key', asyncHandler(async (req, res) => {
 }));
 
 app.put('/api/settings/:key', asyncHandler(async (req, res) => {
+  if (req.params.key === 'auditLog') {
+    return res.json({ key: req.params.key, value: null, ignored: true });
+  }
   const valueJson = JSON.stringify(req.body?.value ?? null);
   const existing = await get('SELECT key, value_json, created_at, updated_at FROM system_settings WHERE key = ?', [req.params.key]);
   const before = existing ? { key: existing.key, value: safeJsonParse(existing.value_json, null), created_at: existing.created_at, updated_at: existing.updated_at } : null;

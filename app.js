@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.08';
-const APP_BUILD_TIME = '2026-06-06 14:42';
+const APP_VERSION = 'v2026.06.06.09';
+const APP_BUILD_TIME = '2026-06-06 15:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -837,7 +837,8 @@ function recordAudit(action, entityType, entityId, beforeValue = null, afterValu
   auditLog = auditLog.slice(0, 1000);
 }
 async function persistAuditLog() {
-  await saveBackendSetting('auditLog', auditLog);
+  // سجل التعديلات الرسمي أصبح في جدول audit_log داخل قاعدة البيانات.
+  return true;
 }
 function getFirstRawNoteNumber(order) {
   if (!order) return '';
