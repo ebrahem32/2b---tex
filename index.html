@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>2B Tex | نظام التشغيل</title>
-  <link rel="stylesheet" href="./styles.css?v=20260606-19" />
+  <link rel="stylesheet" href="./styles.css?v=20260606-20" />
   <script>
     (function () {
       function showStartupError(message) {
@@ -32,6 +32,14 @@
 </head>
 <body>
   <div class="app-shell">
+    <nav class="erp-menu-bar" aria-label="قوائم النظام">
+      <div class="erp-menu"><button type="button">قبل التشغيل</button><div class="erp-menu-list"><button type="button" data-nav-action="pricingNew">تسعيرة جديدة</button><button type="button" data-nav-action="pricingList">قائمة التسعيرات</button></div></div>
+      <div class="erp-menu"><button type="button">الطلبات</button><div class="erp-menu-list"><button type="button" data-nav-action="orderNew">طلب جديد</button><button type="button" data-nav-action="ordersList">قائمة الطلبات</button></div></div>
+      <div class="erp-menu"><button type="button">التشغيل</button><div class="erp-menu-list"><button type="button" data-nav-action="orderDetails">تفاصيل الطلب</button><button type="button" data-nav-action="ordersList">استلام/صرف/تسليم</button></div></div>
+      <div class="erp-menu"><button type="button">أوامر التشغيل</button><div class="erp-menu-list"><button type="button" data-doc-menu="weaving">أمر تشغيل نسيج</button><button type="button" data-doc-menu="dyeing">أمر تشغيل صباغة</button><button type="button" data-doc-menu="labSamples">عينات معمل</button><button type="button" data-doc-menu="stickers">استيكرات التشغيل</button></div></div>
+      <div class="erp-menu"><button type="button">التقارير</button><div class="erp-menu-list"><button type="button" data-nav-action="managementReports">كل التقارير</button><button type="button" data-doc-menu="fullreport">التقرير التفصيلي</button><button type="button" data-doc-menu="waste">تقرير الهالك</button></div></div>
+      <div class="erp-menu"><button type="button">الإعدادات</button><div class="erp-menu-list"><button type="button" data-nav-action="managementReports">حالة النظام والتقارير</button></div></div>
+    </nav>
     <header class="hero-header">
       <div class="hero-overlay">
         <div class="brand-block hero-brand">
@@ -66,6 +74,6 @@
   <script charset="UTF-8" src="./compat/documents.js?v=20260606-14"></script>
   <script charset="UTF-8" src="./compat/pricing.js?v=20260606-06"></script>
   <script charset="UTF-8" src="./compat/orders.js?v=20260606-08"></script>
-  <script charset="UTF-8" src="./compat/app.js?v=20260606-24"></script>
+  <script charset="UTF-8" src="./compat/app.js?v=20260606-25"></script>
 </body>
 </html>

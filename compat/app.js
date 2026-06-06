@@ -1804,7 +1804,7 @@ function pollWhatsappService() {
 }
 function _pollWhatsappService() {
   _pollWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee24() {
-    var _refs$orderDetailsPan3, response, data, localById, _t13;
+    var _refs$orderDetailsPan4, response, data, localById, _t13;
     return _regenerator().w(function (_context24) {
       while (1) switch (_context24.p = _context24.n) {
         case 0:
@@ -1842,7 +1842,7 @@ function _pollWhatsappService() {
           }
           save();
           updateWhatsappStatusBadge();
-          if (selectedOrderId && (_refs$orderDetailsPan3 = refs.orderDetailsPanel) !== null && _refs$orderDetailsPan3 !== void 0 && _refs$orderDetailsPan3.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
+          if (selectedOrderId && (_refs$orderDetailsPan4 = refs.orderDetailsPanel) !== null && _refs$orderDetailsPan4 !== void 0 && _refs$orderDetailsPan4.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
           _context24.n = 6;
           break;
         case 5:
@@ -4836,9 +4836,13 @@ function accessoryDocumentSection(order, fmt, safe) {
 function updateCustomerDeliveryFields(form) {
   var _form$elements$moveme2;
   if (!form) return;
-  var isAccessory = ((_form$elements$moveme2 = form.elements.movementKind) === null || _form$elements$moveme2 === void 0 ? void 0 : _form$elements$moveme2.value) === 'accessory';
+  var isAccessory = ['accessory', 'accessoryReturn'].includes((_form$elements$moveme2 = form.elements.movementKind) === null || _form$elements$moveme2 === void 0 ? void 0 : _form$elements$moveme2.value);
   form.querySelectorAll('[data-accessory-only]').forEach(function (field) {
     return field.classList.toggle('field-hidden', !isAccessory);
+  });
+  form.querySelectorAll('[data-accessory-only] select, [data-accessory-only] input').forEach(function (field) {
+    field.disabled = !isAccessory;
+    if (field.name === 'accessoryType') field.required = isAccessory;
   });
   var sourceOrder = orders.find(function (item) {
     return item.id === selectedOrderId;
@@ -4911,6 +4915,7 @@ function repairOrderDetailsArabic(order) {
       if (option.value === 'cloth') option.textContent = 'تسليم قماش';
       if (option.value === 'clothReturn') option.textContent = 'مرتجع قماش من العميل';
       if (option.value === 'accessory') option.textContent = 'تسليم إكسسوار';
+      if (option.value === 'accessoryReturn') option.textContent = 'مرتجع إكسسوار من العميل';
     });
   }
   setPlaceholder('input[name="quantity"]', 'الكمية');
@@ -5008,9 +5013,28 @@ function orderDetailsHasActiveDraft() {
 function renderDocuments() {
   refs.documentsPanel.innerHTML = "\n    <div class=\"document-action-group\">\n      <h3>\u0639\u0631\u0636 \u0627\u0644\u0639\u0645\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"quotation\">\u0625\u0646\u0634\u0627\u0621 \u0639\u0631\u0636 \u0633\u0639\u0631</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0623\u0648\u0627\u0645\u0631 \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"weaving\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0646\u0633\u064A\u062C</button>\n      <button class=\"mini-btn gold\" data-doc=\"dyeing\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0635\u0628\u0627\u063A\u0629</button>\n      <button class=\"mini-btn gold\" data-doc=\"labSamples\">\u0639\u064A\u0646\u0627\u062A \u0645\u0639\u0645\u0644</button>\n      <button class=\"mini-btn gold\" data-doc=\"stickers\">\u0627\u0633\u062A\u064A\u0643\u0631\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0643\u0634\u0648\u0641\u0627\u062A</h3>\n      <button class=\"mini-btn\" data-doc=\"waste\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0647\u0627\u0644\u0643</button>\n      <button class=\"mini-btn gold\" data-doc=\"fullreport\">\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A</button>\n      <button class=\"mini-btn\" data-doc=\"print\">\u0637\u0628\u0627\u0639\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u064A</button>\n      <button class=\"mini-btn\" disabled>\u062A\u0635\u062F\u064A\u0631 PDF \u0644\u0627\u062D\u0642\u064B\u0627</button>\n    </div>";
 }
+function handleNavMenuAction(action) {
+  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$querySelect, _refs$searchInput, _refs$orderDetailsPan2;
+  if (!action) return;
+  if (action === 'pricingNew') (_refs$openPricingForm = refs.openPricingFormBtn) === null || _refs$openPricingForm === void 0 || _refs$openPricingForm.click();
+  if (action === 'orderNew') (_refs$openOrderFormBt = refs.openOrderFormBtn) === null || _refs$openOrderFormBt === void 0 || _refs$openOrderFormBt.click();
+  if (action === 'managementReports') (_refs$openManagementR = refs.openManagementReportsBtn) === null || _refs$openManagementR === void 0 || _refs$openManagementR.click();
+  if (action === 'pricingList') (_document$querySelect = document.querySelector('.pricing-panel')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+  if (action === 'ordersList') (_refs$searchInput = refs.searchInput) === null || _refs$searchInput === void 0 || (_refs$searchInput = _refs$searchInput.closest('.panel')) === null || _refs$searchInput === void 0 || _refs$searchInput.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+  if (action === 'orderDetails') (_refs$orderDetailsPan2 = refs.orderDetailsPanel) === null || _refs$orderDetailsPan2 === void 0 || _refs$orderDetailsPan2.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
 function batchItemHtml(type, batch, label) {
   var quantity = Number((batch === null || batch === void 0 ? void 0 : batch.quantity) || 0);
-  var displayLabel = type === 'customer' && quantity < 0 ? String(label).replace('تسليم قماش للعميل', 'مرتجع قماش من العميل').replace(String(batch.quantity), formatNumber(Math.abs(quantity))) : label;
+  var displayLabel = quantity < 0 ? String(label).replace('تسليم قماش للعميل', 'مرتجع قماش من العميل').replace('تسليم إكسسوار للعميل', 'مرتجع إكسسوار من العميل').replace(String(batch.quantity), formatNumber(Math.abs(quantity))) : label;
   return "<div class=\"batch-item\"><span>".concat(displayLabel, "</span><div class=\"batch-actions\"><button class=\"mini-btn\" data-batch-action=\"edit\" data-batch-type=\"").concat(type, "\" data-batch-id=\"").concat(batch.id, "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" data-batch-action=\"delete\" data-batch-type=\"").concat(type, "\" data-batch-id=\"").concat(batch.id, "\">\u062D\u0630\u0641</button></div></div>");
 }
 function listHtml(items, formatter) {
@@ -5286,6 +5310,11 @@ function renderDetails() {
       return option.value === 'clothReturn';
     })) {
       select.options.add(new Option('مرتجع قماش من العميل', 'clothReturn'), 1);
+    }
+    if (order.accessoryLines.length && !_toConsumableArray(select.options).some(function (option) {
+      return option.value === 'accessoryReturn';
+    })) {
+      select.options.add(new Option('مرتجع إكسسوار من العميل', 'accessoryReturn'));
     }
   });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
@@ -5591,7 +5620,7 @@ function addBatch(_x35) {
 function _addBatch() {
   _addBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee59(event) {
     var _event$target$element;
-    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, isCustomerReturn, _allocation, alreadyDelivered, warehouseAvailable, returnQuantity, _t27;
+    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, isAccessoryReturn, receivedAccessory, deliveredAccessory, availableAccessory, returnQuantity, isCustomerReturn, _allocation, alreadyDelivered, warehouseAvailable, _returnQuantity, _t27;
     return _regenerator().w(function (_context59) {
       while (1) switch (_context59.n) {
         case 0:
@@ -5763,7 +5792,7 @@ function _addBatch() {
             _context59.n = 31;
             break;
           }
-          if (!(data.movementKind === 'accessory')) {
+          if (!(data.movementKind === 'accessory' || data.movementKind === 'accessoryReturn')) {
             _context59.n = 29;
             break;
           }
@@ -5781,6 +5810,7 @@ function _addBatch() {
           alert('اختر اللون المرتبط بتسليم الإكسسوار.');
           return _context59.a(2);
         case 27:
+          isAccessoryReturn = data.movementKind === 'accessoryReturn';
           data.movement = 'customer';
           receivedAccessory = sum(accessoryBatches.filter(function (batch) {
             return batch.allocationId === data.allocationId && batch.movement === 'received' && batch.accessoryType === data.accessoryType;
@@ -5789,7 +5819,12 @@ function _addBatch() {
             return batch.allocationId === data.allocationId && batch.movement === 'customer' && batch.accessoryType === data.accessoryType;
           }));
           availableAccessory = Math.max(receivedAccessory - deliveredAccessory, 0);
-          if (data.quantity > availableAccessory) {
+          if (isAccessoryReturn) {
+            returnQuantity = Math.abs(Number(data.quantity || 0));
+            if (returnQuantity > Math.max(deliveredAccessory, 0)) data.notes = [data.notes, 'تنبيه: كمية مرتجع الإكسسوار أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
+            data.quantity = -returnQuantity;
+            data.notes = [data.notes, 'مرتجع إكسسوار من العميل'].filter(Boolean).join(' - ');
+          } else if (data.quantity > availableAccessory) {
             data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - ');
           }
           _context59.n = 28;
@@ -5808,9 +5843,9 @@ function _addBatch() {
           }));
           warehouseAvailable = Math.max(_allocation.finishedReceived - alreadyDelivered, 0);
           if (isCustomerReturn) {
-            returnQuantity = Math.abs(Number(data.quantity || 0));
-            if (returnQuantity > Math.max(alreadyDelivered, 0)) data.notes = [data.notes, 'تنبيه: كمية المرتجع أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
-            data.quantity = -returnQuantity;
+            _returnQuantity = Math.abs(Number(data.quantity || 0));
+            if (_returnQuantity > Math.max(alreadyDelivered, 0)) data.notes = [data.notes, 'تنبيه: كمية المرتجع أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
+            data.quantity = -_returnQuantity;
             data.notes = [data.notes, 'مرتجع من العميل'].filter(Boolean).join(' - ');
           } else if (data.quantity > warehouseAvailable) {
             data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - ');
@@ -6943,9 +6978,9 @@ function openManagementReport(type) {
   }
 }
 function activeOrderFilterSummary() {
-  var _refs$searchInput, _refs$customerFilter, _refs$dyehouseFilter, _refs$fabricFilter, _refs$orderStatusFilt;
+  var _refs$searchInput2, _refs$customerFilter, _refs$dyehouseFilter, _refs$fabricFilter, _refs$orderStatusFilt;
   var parts = [];
-  var query = (_refs$searchInput = refs.searchInput) === null || _refs$searchInput === void 0 || (_refs$searchInput = _refs$searchInput.value) === null || _refs$searchInput === void 0 ? void 0 : _refs$searchInput.trim();
+  var query = (_refs$searchInput2 = refs.searchInput) === null || _refs$searchInput2 === void 0 || (_refs$searchInput2 = _refs$searchInput2.value) === null || _refs$searchInput2 === void 0 ? void 0 : _refs$searchInput2.trim();
   if (query) parts.push("\u0628\u062D\u062B: ".concat(query));
   if ((_refs$customerFilter = refs.customerFilter) !== null && _refs$customerFilter !== void 0 && _refs$customerFilter.value && refs.customerFilter.value !== 'all') parts.push("\u0627\u0644\u0639\u0645\u064A\u0644: ".concat(refs.customerFilter.value));
   if ((_refs$dyehouseFilter = refs.dyehouseFilter) !== null && _refs$dyehouseFilter !== void 0 && _refs$dyehouseFilter.value && refs.dyehouseFilter.value !== 'all') parts.push("\u0627\u0644\u0645\u0635\u0628\u063A\u0629: ".concat(refs.dyehouseFilter.value));
@@ -8270,6 +8305,24 @@ if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersRepor
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
+document.addEventListener('click', function (event) {
+  var _event$target$closest, _event$target$closest2;
+  var navAction = (_event$target$closest = event.target.closest('[data-nav-action]')) === null || _event$target$closest === void 0 ? void 0 : _event$target$closest.dataset.navAction;
+  if (navAction) {
+    event.preventDefault();
+    handleNavMenuAction(navAction);
+    return;
+  }
+  var docType = (_event$target$closest2 = event.target.closest('[data-doc-menu]')) === null || _event$target$closest2 === void 0 ? void 0 : _event$target$closest2.dataset.docMenu;
+  if (docType) {
+    event.preventDefault();
+    if (!selectedOrderId) {
+      alert('اختر طلبًا أولًا لفتح المستند.');
+      return;
+    }
+    safeOpenDocument(docType);
+  }
+});
 if (refs.documentBody) refs.documentBody.addEventListener('click', function (event) {
   var _deleteButton$closest, _deletePriceButton$cl;
   var button = event.target.closest('[data-management-report]');
@@ -8386,15 +8439,15 @@ refs.addWidthLineBtn.onclick = function () {
   return refs.widthLinesEditor.insertAdjacentHTML('beforeend', widthLineRowHtml());
 };
 refs.widthLinesEditor.onclick = function (event) {
-  var _event$target$closest;
-  if (event.target.dataset.removeWidthLine !== undefined) (_event$target$closest = event.target.closest('.width-line-row')) === null || _event$target$closest === void 0 || _event$target$closest.remove();
+  var _event$target$closest3;
+  if (event.target.dataset.removeWidthLine !== undefined) (_event$target$closest3 = event.target.closest('.width-line-row')) === null || _event$target$closest3 === void 0 || _event$target$closest3.remove();
 };
 refs.addAccessoryLineBtn.onclick = function () {
   return refs.accessoryLinesEditor.insertAdjacentHTML('beforeend', accessoryLineRowHtml());
 };
 refs.accessoryLinesEditor.onclick = function (event) {
-  var _event$target$closest2;
-  if (event.target.dataset.removeAccessoryLine !== undefined) (_event$target$closest2 = event.target.closest('.accessory-line-row')) === null || _event$target$closest2 === void 0 || _event$target$closest2.remove();
+  var _event$target$closest4;
+  if (event.target.dataset.removeAccessoryLine !== undefined) (_event$target$closest4 = event.target.closest('.accessory-line-row')) === null || _event$target$closest4 === void 0 || _event$target$closest4.remove();
 };
 refs.orderForm.onsubmit = function (event) {
   return addOrder(event)["catch"](function (error) {
@@ -8419,9 +8472,9 @@ refs.ordersTableBody.onclick = function (event) {
   if (button.dataset.view) {
     selectedOrderId = button.dataset.view;
     try {
-      var _refs$orderDetailsPan2;
+      var _refs$orderDetailsPan3;
       renderDetails();
-      (_refs$orderDetailsPan2 = refs.orderDetailsPanel) === null || _refs$orderDetailsPan2 === void 0 || _refs$orderDetailsPan2.scrollIntoView({
+      (_refs$orderDetailsPan3 = refs.orderDetailsPanel) === null || _refs$orderDetailsPan3 === void 0 || _refs$orderDetailsPan3.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });

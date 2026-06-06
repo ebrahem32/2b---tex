@@ -2749,8 +2749,12 @@ function accessoryDocumentSection(order, fmt, safe) {
 }
 function updateCustomerDeliveryFields(form) {
   if (!form) return;
-  const isAccessory = form.elements.movementKind?.value === 'accessory';
+  const isAccessory = ['accessory', 'accessoryReturn'].includes(form.elements.movementKind?.value);
   form.querySelectorAll('[data-accessory-only]').forEach((field) => field.classList.toggle('field-hidden', !isAccessory));
+  form.querySelectorAll('[data-accessory-only] select, [data-accessory-only] input').forEach((field) => {
+    field.disabled = !isAccessory;
+    if (field.name === 'accessoryType') field.required = isAccessory;
+  });
   const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
   const order = sourceOrder ? calculateOrder(sourceOrder) : null;
   const allocationSelect = form.elements.allocationId;
@@ -2799,6 +2803,7 @@ function repairOrderDetailsArabic(order) {
       if (option.value === 'cloth') option.textContent = 'تسليم قماش';
       if (option.value === 'clothReturn') option.textContent = 'مرتجع قماش من العميل';
       if (option.value === 'accessory') option.textContent = 'تسليم إكسسوار';
+      if (option.value === 'accessoryReturn') option.textContent = 'مرتجع إكسسوار من العميل';
     });
   }
   setPlaceholder('input[name="quantity"]', 'الكمية');
@@ -2880,10 +2885,22 @@ function renderDocuments() {
       <button class="mini-btn" disabled>تصدير PDF لاحقًا</button>
     </div>`;
 }
+function handleNavMenuAction(action) {
+  if (!action) return;
+  if (action === 'pricingNew') refs.openPricingFormBtn?.click();
+  if (action === 'orderNew') refs.openOrderFormBtn?.click();
+  if (action === 'managementReports') refs.openManagementReportsBtn?.click();
+  if (action === 'pricingList') document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (action === 'ordersList') refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (action === 'orderDetails') refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 function batchItemHtml(type, batch, label) {
   const quantity = Number(batch?.quantity || 0);
-  const displayLabel = type === 'customer' && quantity < 0
-    ? String(label).replace('تسليم قماش للعميل', 'مرتجع قماش من العميل').replace(String(batch.quantity), formatNumber(Math.abs(quantity)))
+  const displayLabel = quantity < 0
+    ? String(label)
+      .replace('تسليم قماش للعميل', 'مرتجع قماش من العميل')
+      .replace('تسليم إكسسوار للعميل', 'مرتجع إكسسوار من العميل')
+      .replace(String(batch.quantity), formatNumber(Math.abs(quantity)))
     : label;
   return `<div class="batch-item"><span>${displayLabel}</span><div class="batch-actions"><button class="mini-btn" data-batch-action="edit" data-batch-type="${type}" data-batch-id="${batch.id}">تعديل</button><button class="mini-btn danger" data-batch-action="delete" data-batch-type="${type}" data-batch-id="${batch.id}">حذف</button></div></div>`;
 }
@@ -2994,6 +3011,9 @@ function renderDetails() {
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"] select[name="movementKind"]').forEach((select) => {
     if (![...select.options].some((option)=>option.value === 'clothReturn')) {
       select.options.add(new Option('مرتجع قماش من العميل', 'clothReturn'), 1);
+    }
+    if (order.accessoryLines.length && ![...select.options].some((option)=>option.value === 'accessoryReturn')) {
+      select.options.add(new Option('مرتجع إكسسوار من العميل', 'accessoryReturn'));
     }
   });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
@@ -3156,14 +3176,20 @@ async function addBatch(event) {
     backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'customer') {
-    if (data.movementKind === 'accessory') {
+    if (data.movementKind === 'accessory' || data.movementKind === 'accessoryReturn') {
       if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
       if (!data.allocationId) { alert('اختر اللون المرتبط بتسليم الإكسسوار.'); return; }
+      const isAccessoryReturn = data.movementKind === 'accessoryReturn';
       data.movement = 'customer';
       const receivedAccessory = sum(accessoryBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement==='received' && batch.accessoryType===data.accessoryType));
       const deliveredAccessory = sum(accessoryBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement==='customer' && batch.accessoryType===data.accessoryType));
       const availableAccessory = Math.max(receivedAccessory - deliveredAccessory, 0);
-      if (data.quantity > availableAccessory) { data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - '); }
+      if (isAccessoryReturn) {
+        const returnQuantity = Math.abs(Number(data.quantity || 0));
+        if (returnQuantity > Math.max(deliveredAccessory, 0)) data.notes = [data.notes, 'تنبيه: كمية مرتجع الإكسسوار أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
+        data.quantity = -returnQuantity;
+        data.notes = [data.notes, 'مرتجع إكسسوار من العميل'].filter(Boolean).join(' - ');
+      } else if (data.quantity > availableAccessory) { data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - '); }
       backendResult = await postBackend('/batches/accessory', batchToApi(data));
     } else {
       const isCustomerReturn = data.movementKind === 'clothReturn';
@@ -4172,6 +4198,20 @@ if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersRepor
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
+document.addEventListener('click', (event) => {
+  const navAction = event.target.closest('[data-nav-action]')?.dataset.navAction;
+  if (navAction) {
+    event.preventDefault();
+    handleNavMenuAction(navAction);
+    return;
+  }
+  const docType = event.target.closest('[data-doc-menu]')?.dataset.docMenu;
+  if (docType) {
+    event.preventDefault();
+    if (!selectedOrderId) { alert('اختر طلبًا أولًا لفتح المستند.'); return; }
+    safeOpenDocument(docType);
+  }
+});
 if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   const button = event.target.closest('[data-management-report]');
   if (button) {
