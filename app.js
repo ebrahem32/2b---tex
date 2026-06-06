@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.01';
-const APP_BUILD_TIME = '2026-06-06 10:05';
+const APP_VERSION = 'v2026.06.06.02';
+const APP_BUILD_TIME = '2026-06-06 10:15';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -859,12 +859,16 @@ function normalizeA5CustomerName(value) {
     .replace(/\u0629/g, '\u0647')
     .replace(/[\s\-_.?,()\[\]{}]/g, '');
 }
+function a5CustomerDisplayName(customer) {
+  if (!customer) return '';
+  return String(customer.customerName || customer.name || customer.accountName || customer.account_name || customer.customer_name || '').trim();
+}
 function findA5CustomerForSystemName(systemName, a5Customers = []) {
   const wanted = normalizeA5CustomerName(systemName);
   if (!wanted) return null;
-  return a5Customers.find((customer)=>normalizeA5CustomerName(customer.customerName) === wanted)
+  return a5Customers.find((customer)=>normalizeA5CustomerName(a5CustomerDisplayName(customer)) === wanted)
     || a5Customers.find((customer)=>{
-      const name = normalizeA5CustomerName(customer.customerName);
+      const name = normalizeA5CustomerName(a5CustomerDisplayName(customer));
       return name && (name.includes(wanted) || wanted.includes(name));
     })
     || null;
@@ -1525,7 +1529,7 @@ async function renderA5AccountsDialog() {
       const tracking = trackingCustomerSummary(systemName);
       const balance = Number(a5Customer?.balance || 0);
       const balanceClass = balance > 0 ? 'danger-text' : (balance < 0 ? 'success-text' : '');
-      const a5Name = a5Customer?.customerName || '';
+      const a5Name = a5CustomerDisplayName(a5Customer);
       const action = a5Customer
         ? '<button class="mini-btn" type="button" data-a5-ledger="' + escapeHtml(a5Name) + '">\u0639\u0631\u0636 \u0643\u0634\u0641 \u0627\u0644\u062d\u0633\u0627\u0628</button>'
         : '<span class="status pending">\u063a\u064a\u0631 \u0645\u0637\u0627\u0628\u0642 \u0641\u064a A5</span>';

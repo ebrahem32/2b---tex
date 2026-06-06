@@ -1,10 +1,12 @@
+"use strict";
+
 var _refs$orderNotes;
 function _regeneratorValues(e) { if (null != e) { var t = e["function" == typeof Symbol && Symbol.iterator || "@@iterator"], r = 0; if (t) return t.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) return { next: function next() { return e && r >= e.length && (e = void 0), { value: e && e[r++], done: !e }; } }; } throw new TypeError(_typeof(e) + " is not iterable"); }
-function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
-function _regenerator() { var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i.return) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
-function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
@@ -41,8 +43,10 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.01';
-var APP_BUILD_TIME = '2026-06-06 10:05';
+var APP_VERSION = 'v2026.06.06.02';
+var APP_BUILD_TIME = '2026-06-06 10:15';
+// LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
+// المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
   return "id-".concat(Date.now(), "-").concat(Math.random().toString(16).slice(2));
 };
@@ -331,7 +335,7 @@ function backendRequest(_x) {
   return _backendRequest.apply(this, arguments);
 }
 function _backendRequest() {
-  _backendRequest = _asyncToGenerator(_regenerator().m(function _callee2(path) {
+  _backendRequest = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(path) {
     var options,
       response,
       _args = arguments;
@@ -539,7 +543,7 @@ function pollBackendStatus() {
   return _pollBackendStatus.apply(this, arguments);
 }
 function _pollBackendStatus() {
-  _pollBackendStatus = _asyncToGenerator(_regenerator().m(function _callee3() {
+  _pollBackendStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
     var _health$schema, wasUnavailable, health, schemaOk, _t2;
     return _regenerator().w(function (_context3) {
       while (1) switch (_context3.p = _context3.n) {
@@ -583,7 +587,7 @@ function loadBackendData() {
   return _loadBackendData.apply(this, arguments);
 }
 function _loadBackendData() {
-  _loadBackendData = _asyncToGenerator(_regenerator().m(function _callee4() {
+  _loadBackendData = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
     var options,
       retries,
       silentFailure,
@@ -732,7 +736,7 @@ function syncLocalStorageToBackend() {
   return _syncLocalStorageToBackend.apply(this, arguments);
 }
 function _syncLocalStorageToBackend() {
-  _syncLocalStorageToBackend = _asyncToGenerator(_regenerator().m(function _callee5() {
+  _syncLocalStorageToBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
     var snapshot, result, _t5;
     return _regenerator().w(function (_context5) {
       while (1) switch (_context5.p = _context5.n) {
@@ -907,7 +911,7 @@ function ensureBackendCustomer(_x2) {
   return _ensureBackendCustomer.apply(this, arguments);
 }
 function _ensureBackendCustomer() {
-  _ensureBackendCustomer = _asyncToGenerator(_regenerator().m(function _callee6(name) {
+  _ensureBackendCustomer = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(name) {
     var cleanName, id;
     return _regenerator().w(function (_context6) {
       while (1) switch (_context6.n) {
@@ -937,7 +941,7 @@ function postBackend(_x3, _x4) {
   return _postBackend.apply(this, arguments);
 }
 function _postBackend() {
-  _postBackend = _asyncToGenerator(_regenerator().m(function _callee7(path, payload) {
+  _postBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7(path, payload) {
     var _t6;
     return _regenerator().w(function (_context7) {
       while (1) switch (_context7.p = _context7.n) {
@@ -971,7 +975,7 @@ function putBackend(_x5, _x6) {
   return _putBackend.apply(this, arguments);
 }
 function _putBackend() {
-  _putBackend = _asyncToGenerator(_regenerator().m(function _callee8(path, payload) {
+  _putBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(path, payload) {
     var _t7;
     return _regenerator().w(function (_context8) {
       while (1) switch (_context8.p = _context8.n) {
@@ -1005,7 +1009,7 @@ function deleteBackend(_x7) {
   return _deleteBackend.apply(this, arguments);
 }
 function _deleteBackend() {
-  _deleteBackend = _asyncToGenerator(_regenerator().m(function _callee9(path) {
+  _deleteBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(path) {
     var _t8;
     return _regenerator().w(function (_context9) {
       while (1) switch (_context9.p = _context9.n) {
@@ -1038,7 +1042,7 @@ function saveBackendSetting(_x8, _x9) {
   return _saveBackendSetting.apply(this, arguments);
 }
 function _saveBackendSetting() {
-  _saveBackendSetting = _asyncToGenerator(_regenerator().m(function _callee0(key, value) {
+  _saveBackendSetting = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(key, value) {
     var _t9;
     return _regenerator().w(function (_context0) {
       while (1) switch (_context0.p = _context0.n) {
@@ -1074,7 +1078,7 @@ function ensureBackendForWrite() {
   return _ensureBackendForWrite.apply(this, arguments);
 }
 function _ensureBackendForWrite() {
-  _ensureBackendForWrite = _asyncToGenerator(_regenerator().m(function _callee1() {
+  _ensureBackendForWrite = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
     var message,
       _health$schema3,
       health,
@@ -1135,7 +1139,7 @@ function backendSnapshot() {
   return _backendSnapshot.apply(this, arguments);
 }
 function _backendSnapshot() {
-  _backendSnapshot = _asyncToGenerator(_regenerator().m(function _callee10() {
+  _backendSnapshot = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
     return _regenerator().w(function (_context10) {
       while (1) switch (_context10.n) {
         case 0:
@@ -1151,7 +1155,7 @@ function rollbackAfterBackendWriteFailure(_x0) {
   return _rollbackAfterBackendWriteFailure.apply(this, arguments);
 }
 function _rollbackAfterBackendWriteFailure() {
-  _rollbackAfterBackendWriteFailure = _asyncToGenerator(_regenerator().m(function _callee11(message) {
+  _rollbackAfterBackendWriteFailure = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11(message) {
     return _regenerator().w(function (_context11) {
       while (1) switch (_context11.n) {
         case 0:
@@ -1169,7 +1173,7 @@ function verifyRecordPersisted(_x1, _x10) {
   return _verifyRecordPersisted.apply(this, arguments);
 }
 function _verifyRecordPersisted() {
-  _verifyRecordPersisted = _asyncToGenerator(_regenerator().m(function _callee12(type, id) {
+  _verifyRecordPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12(type, id) {
     var predicate,
       snapshot,
       row,
@@ -1207,7 +1211,7 @@ function verifyRecordDeleted(_x11, _x12) {
   return _verifyRecordDeleted.apply(this, arguments);
 }
 function _verifyRecordDeleted() {
-  _verifyRecordDeleted = _asyncToGenerator(_regenerator().m(function _callee13(type, id) {
+  _verifyRecordDeleted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(type, id) {
     var snapshot;
     return _regenerator().w(function (_context13) {
       while (1) switch (_context13.n) {
@@ -1234,7 +1238,7 @@ function verifyPricingPersisted(_x13) {
   return _verifyPricingPersisted.apply(this, arguments);
 }
 function _verifyPricingPersisted() {
-  _verifyPricingPersisted = _asyncToGenerator(_regenerator().m(function _callee14(pricingId) {
+  _verifyPricingPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14(pricingId) {
     var expected,
       _args13 = arguments;
     return _regenerator().w(function (_context14) {
@@ -1253,7 +1257,7 @@ function verifyOrderPersisted(_x14) {
   return _verifyOrderPersisted.apply(this, arguments);
 }
 function _verifyOrderPersisted() {
-  _verifyOrderPersisted = _asyncToGenerator(_regenerator().m(function _callee15(orderId) {
+  _verifyOrderPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15(orderId) {
     var expected,
       row,
       savedLines,
@@ -1331,7 +1335,7 @@ function verifyAllocationPersisted(_x15) {
   return _verifyAllocationPersisted.apply(this, arguments);
 }
 function _verifyAllocationPersisted() {
-  _verifyAllocationPersisted = _asyncToGenerator(_regenerator().m(function _callee16(allocationId) {
+  _verifyAllocationPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16(allocationId) {
     var expected,
       _args15 = arguments;
     return _regenerator().w(function (_context16) {
@@ -1350,7 +1354,7 @@ function verifyBatchPersisted(_x16, _x17) {
   return _verifyBatchPersisted.apply(this, arguments);
 }
 function _verifyBatchPersisted() {
-  _verifyBatchPersisted = _asyncToGenerator(_regenerator().m(function _callee17(type, batchId) {
+  _verifyBatchPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(type, batchId) {
     var expected,
       _args16 = arguments;
     return _regenerator().w(function (_context17) {
@@ -1369,7 +1373,7 @@ function verifyTransferPersisted(_x18) {
   return _verifyTransferPersisted.apply(this, arguments);
 }
 function _verifyTransferPersisted() {
-  _verifyTransferPersisted = _asyncToGenerator(_regenerator().m(function _callee18(transferId) {
+  _verifyTransferPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18(transferId) {
     var expected,
       _args17 = arguments;
     return _regenerator().w(function (_context18) {
@@ -1421,14 +1425,14 @@ function normalizeForCompare(value) {
   return String(value || '').trim().toLowerCase();
 }
 function escapeHtml(value) {
-  return String(value !== null && value !== void 0 ? value : '').replace(/[&<>"']/g, function (char) {
+  return String(value !== null && value !== void 0 ? value : '').replace(/[&<>"']/g, function (_char) {
     return {
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
       "'": '&#39;'
-    }[char];
+    }[_char];
   });
 }
 function recordAudit(action, entityType, entityId) {
@@ -1459,7 +1463,7 @@ function persistAuditLog() {
   return _persistAuditLog.apply(this, arguments);
 }
 function _persistAuditLog() {
-  _persistAuditLog = _asyncToGenerator(_regenerator().m(function _callee19() {
+  _persistAuditLog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19() {
     return _regenerator().w(function (_context19) {
       while (1) switch (_context19.n) {
         case 0:
@@ -1534,14 +1538,18 @@ function knownWeavingNames() {
 function normalizeA5CustomerName(value) {
   return normalizeForCompare(value).replace(/[\u0625\u0623\u0622]/g, "\u0627").replace(/\u0649/g, "\u064A").replace(/\u0629/g, "\u0647").replace(/[\s\-_.?,()\[\]{}]/g, '');
 }
+function a5CustomerDisplayName(customer) {
+  if (!customer) return '';
+  return String(customer.customerName || customer.name || customer.accountName || customer.account_name || customer.customer_name || '').trim();
+}
 function findA5CustomerForSystemName(systemName) {
   var a5Customers = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
   var wanted = normalizeA5CustomerName(systemName);
   if (!wanted) return null;
   return a5Customers.find(function (customer) {
-    return normalizeA5CustomerName(customer.customerName) === wanted;
+    return normalizeA5CustomerName(a5CustomerDisplayName(customer)) === wanted;
   }) || a5Customers.find(function (customer) {
-    var name = normalizeA5CustomerName(customer.customerName);
+    var name = normalizeA5CustomerName(a5CustomerDisplayName(customer));
     return name && (name.includes(wanted) || wanted.includes(name));
   }) || null;
 }
@@ -1581,6 +1589,7 @@ function targetGroupForReport(reportType) {
 function reportNeedsManualWhatsappGroup(reportType) {
   return ['weaving_production_order', 'dyeing_production_order', 'customerreport_pdf_report', 'quotation_pdf_report'].includes(reportType);
 }
+// LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic reportMessage implementation.
 function reportMessage(reportType, order) {
   var rawNote = getFirstRawNoteNumber(order) || '-';
   if (reportType === 'weaving_production_order') {
@@ -1640,7 +1649,7 @@ function enqueueReport(reportType, order) {
     reportOutbox.unshift(row);
     rows.push(row);
     recordAudit('create', 'reportOutbox', row.id, null, row, "\u0625\u0636\u0627\u0641\u0629 ".concat(reportTypeLabels[reportType] || reportType, " \u0625\u0644\u0649 \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0625\u0631\u0633\u0627\u0644"));
-    persistAuditLog().catch(function (error) {
+    persistAuditLog()["catch"](function (error) {
       return console.warn('audit-save-failed', error);
     });
   });
@@ -1673,7 +1682,7 @@ function syncOutboxToWhatsappService() {
   return _syncOutboxToWhatsappService.apply(this, arguments);
 }
 function _syncOutboxToWhatsappService() {
-  _syncOutboxToWhatsappService = _asyncToGenerator(_regenerator().m(function _callee20() {
+  _syncOutboxToWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20() {
     var _t1;
     return _regenerator().w(function (_context20) {
       while (1) switch (_context20.p = _context20.n) {
@@ -1707,7 +1716,7 @@ function pollWhatsappService() {
   return _pollWhatsappService.apply(this, arguments);
 }
 function _pollWhatsappService() {
-  _pollWhatsappService = _asyncToGenerator(_regenerator().m(function _callee21() {
+  _pollWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21() {
     var _refs$orderDetailsPan3, response, data, localById, _t10;
     return _regenerator().w(function (_context21) {
       while (1) switch (_context21.p = _context21.n) {
@@ -1785,17 +1794,19 @@ function reportRowsForOrder(order) {
     });
   });
 }
+// LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic renderReportSendStatus implementation.
 function renderReportSendStatus(order) {
   var rows = reportRowsForOrder(order).map(function (row) {
     return "<tr><td>".concat(escapeHtml(reportTypeLabels[row.reportType] || row.reportType), "</td><td>").concat(escapeHtml(row.targetGroup || '-'), "</td><td>").concat(reportTypeIcons[row.status] || '', " ").concat(reportStatusText[row.status] || row.status, "</td><td>").concat(row.sentAt ? arDateTime(row.sentAt) : '-', "</td><td>").concat(escapeHtml(row.errorMessage || '-'), "</td><td>").concat(row.id && row.status === 'failed' ? "<button class=\"mini-btn\" data-retry-outbox=\"".concat(row.id, "\">\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629</button>") : '', "</td></tr>");
   }).join('') || '<tr><td colspan="6">لا توجد تقارير في قائمة الإرسال.</td></tr>';
   return "<section class=\"report-send-status panel-card\"><div class=\"subsection-head\"><div><h3>\u062D\u0627\u0644\u0629 \u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631</h3><p class=\"eyebrow\">\u0627\u0644\u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A\u0629 \u062A\u0639\u0645\u0644 \u0641\u0642\u0637 \u0639\u0646\u062F \u062A\u0641\u0639\u064A\u0644 \u0648\u0627\u062A\u0633\u0627\u0628 \u0648\u0631\u0628\u0637 \u0627\u0644\u062C\u0631\u0648\u0628\u0627\u062A.</p></div></div><table><thead><tr><th>\u0627\u0644\u062A\u0642\u0631\u064A\u0631</th><th>\u0627\u0644\u062C\u0631\u0648\u0628</th><th>\u0627\u0644\u062D\u0627\u0644\u0629</th><th>\u0648\u0642\u062A \u0627\u0644\u0625\u0631\u0633\u0627\u0644</th><th>\u0645\u0644\u0627\u062D\u0638\u0627\u062A</th><th>\u0625\u062C\u0631\u0627\u0621</th></tr></thead><tbody>".concat(rows, "</tbody></table></section>");
 }
+// LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic whatsappGroupsPromptHint implementation.
 function whatsappGroupsPromptHint() {
   return _whatsappGroupsPromptHint.apply(this, arguments);
 }
 function _whatsappGroupsPromptHint() {
-  _whatsappGroupsPromptHint = _asyncToGenerator(_regenerator().m(function _callee22() {
+  _whatsappGroupsPromptHint = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22() {
     var response, data, names, _t11;
     return _regenerator().w(function (_context22) {
       while (1) switch (_context22.p = _context22.n) {
@@ -1861,7 +1872,7 @@ function saveWhatsappSettingsFromDialog() {
   return _saveWhatsappSettingsFromDialog.apply(this, arguments);
 }
 function _saveWhatsappSettingsFromDialog() {
-  _saveWhatsappSettingsFromDialog = _asyncToGenerator(_regenerator().m(function _callee23() {
+  _saveWhatsappSettingsFromDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee23() {
     var _refs$documentBody$qu2, _refs$documentBody$qu3;
     var before, nextMaps, nextSettings, saved;
     return _regenerator().w(function (_context23) {
@@ -2052,7 +2063,7 @@ function saveDyehousePricesFromDialog() {
   return _saveDyehousePricesFromDialog.apply(this, arguments);
 }
 function _saveDyehousePricesFromDialog() {
-  _saveDyehousePricesFromDialog = _asyncToGenerator(_regenerator().m(function _callee24() {
+  _saveDyehousePricesFromDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee24() {
     var before, next, saved;
     return _regenerator().w(function (_context24) {
       while (1) switch (_context24.n) {
@@ -2302,7 +2313,7 @@ function saveCustomerOpeningBalance(_x19) {
   return _saveCustomerOpeningBalance.apply(this, arguments);
 }
 function _saveCustomerOpeningBalance() {
-  _saveCustomerOpeningBalance = _asyncToGenerator(_regenerator().m(function _callee25(customerName) {
+  _saveCustomerOpeningBalance = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee25(customerName) {
     var _refs$documentBody$qu4;
     var account, before, nextAccounts, saved;
     return _regenerator().w(function (_context25) {
@@ -2364,7 +2375,7 @@ function addCustomerPayment(_x20) {
   return _addCustomerPayment.apply(this, arguments);
 }
 function _addCustomerPayment() {
-  _addCustomerPayment = _asyncToGenerator(_regenerator().m(function _callee26(customerName) {
+  _addCustomerPayment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee26(customerName) {
     var _refs$documentBody$qu5, _refs$documentBody$qu6, _refs$documentBody$qu7, _refs$documentBody$qu8;
     var account, amount, payment, before, nextAccounts, nextAccount, saved;
     return _regenerator().w(function (_context26) {
@@ -2442,7 +2453,7 @@ function deleteCustomerPayment(_x21, _x22) {
   return _deleteCustomerPayment.apply(this, arguments);
 }
 function _deleteCustomerPayment() {
-  _deleteCustomerPayment = _asyncToGenerator(_regenerator().m(function _callee27(customerName, paymentId) {
+  _deleteCustomerPayment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee27(customerName, paymentId) {
     var account, before, nextAccounts, nextAccount, saved;
     return _regenerator().w(function (_context27) {
       while (1) switch (_context27.n) {
@@ -2537,7 +2548,7 @@ function openWhatsappSettingsDialog() {
   return _openWhatsappSettingsDialog.apply(this, arguments);
 }
 function _openWhatsappSettingsDialog() {
-  _openWhatsappSettingsDialog = _asyncToGenerator(_regenerator().m(function _callee28() {
+  _openWhatsappSettingsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee28() {
     var _t12;
     return _regenerator().w(function (_context28) {
       while (1) switch (_context28.n) {
@@ -2584,7 +2595,7 @@ function fetchA5Customers() {
   return _fetchA5Customers.apply(this, arguments);
 }
 function _fetchA5Customers() {
-  _fetchA5Customers = _asyncToGenerator(_regenerator().m(function _callee29() {
+  _fetchA5Customers = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee29() {
     var response, data;
     return _regenerator().w(function (_context29) {
       while (1) switch (_context29.n) {
@@ -2621,7 +2632,7 @@ function fetchA5CustomerLedger(_x23) {
   return _fetchA5CustomerLedger.apply(this, arguments);
 }
 function _fetchA5CustomerLedger() {
-  _fetchA5CustomerLedger = _asyncToGenerator(_regenerator().m(function _callee30(customerName) {
+  _fetchA5CustomerLedger = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee30(customerName) {
     var response, data;
     return _regenerator().w(function (_context30) {
       while (1) switch (_context30.n) {
@@ -2664,7 +2675,7 @@ function renderA5AccountsDialog() {
   return _renderA5AccountsDialog.apply(this, arguments);
 }
 function _renderA5AccountsDialog() {
-  _renderA5AccountsDialog = _asyncToGenerator(_regenerator().m(function _callee31() {
+  _renderA5AccountsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee31() {
     var a5Customers, systemCustomers, matchedRows, unmatchedA5, unmatchedNote, _t13;
     return _regenerator().w(function (_context31) {
       while (1) switch (_context31.p = _context31.n) {
@@ -2685,7 +2696,7 @@ function _renderA5AccountsDialog() {
             var tracking = trackingCustomerSummary(systemName);
             var balance = Number((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.balance) || 0);
             var balanceClass = balance > 0 ? 'danger-text' : balance < 0 ? 'success-text' : '';
-            var a5Name = (a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.customerName) || '';
+            var a5Name = a5CustomerDisplayName(a5Customer);
             var action = a5Customer ? '<button class="mini-btn" type="button" data-a5-ledger="' + escapeHtml(a5Name) + "\">\u0639\u0631\u0636 \u0643\u0634\u0641 \u0627\u0644\u062D\u0633\u0627\u0628</button>" : "<span class=\"status pending\">\u063A\u064A\u0631 \u0645\u0637\u0627\u0628\u0642 \u0641\u064A A5</span>";
             return '<tr>' + '<td><strong>' + escapeHtml(systemName || '-') + '</strong></td>' + '<td>' + escapeHtml(a5Name || '-') + '</td>' + '<td>' + escapeHtml((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.areaName) || '-') + '</td>' + '<td class="' + balanceClass + '"><strong>' + formatNumber(balance) + '</strong></td>' + '<td>' + formatNumber((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.totalDebit) || 0) + '</td>' + '<td>' + formatNumber((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.totalCredit) || 0) + '</td>' + '<td>' + ((a5Customer === null || a5Customer === void 0 ? void 0 : a5Customer.movementCount) || 0) + '</td>' + '<td>' + tracking.ordersCount + '</td>' + '<td>' + tracking.activeOrdersCount + '</td>' + '<td>' + formatNumber(tracking.deliveredQuantity) + '</td>' + '<td>' + (tracking.lastOrderNumber || '-') + '</td>' + '<td>' + action + '</td>' + '</tr>';
           }).join('');
@@ -2713,7 +2724,7 @@ function renderA5LedgerDialog(_x24) {
   return _renderA5LedgerDialog.apply(this, arguments);
 }
 function _renderA5LedgerDialog() {
-  _renderA5LedgerDialog = _asyncToGenerator(_regenerator().m(function _callee32(customerName) {
+  _renderA5LedgerDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee32(customerName) {
     var name, movements, tracking, totals, currentBalance, rows, _t14;
     return _regenerator().w(function (_context32) {
       while (1) switch (_context32.p = _context32.n) {
@@ -2759,7 +2770,7 @@ function openAuditLogDialog() {
   var actionLabels = {
     create: 'إنشاء',
     update: 'تعديل',
-    delete: 'حذف',
+    "delete": 'حذف',
     retry: 'إعادة محاولة',
     error: 'خطأ'
   };
@@ -2817,7 +2828,7 @@ function openSystemStatusDialog() {
   return _openSystemStatusDialog.apply(this, arguments);
 }
 function _openSystemStatusDialog() {
-  _openSystemStatusDialog = _asyncToGenerator(_regenerator().m(function _callee33() {
+  _openSystemStatusDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee33() {
     var _status$cloudflare, _status$frontend, _status$frontend2, _status$backend, _status$backend2, _status$cloudflare2, _status$backup, _status$backup2, status, cloudflareUrl, row, _t15;
     return _regenerator().w(function (_context33) {
       while (1) switch (_context33.p = _context33.n) {
@@ -2874,7 +2885,7 @@ function reportToCanvas() {
   return _reportToCanvas.apply(this, arguments);
 }
 function _reportToCanvas() {
-  _reportToCanvas = _asyncToGenerator(_regenerator().m(function _callee35() {
+  _reportToCanvas = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee35() {
     var options,
       sheet,
       renderTarget,
@@ -2892,8 +2903,8 @@ function _reportToCanvas() {
           }
           throw new Error('no-sheet');
         case 1:
-          renderTarget = function () {
-            var _ref19 = _asyncToGenerator(_regenerator().m(function _callee34(target) {
+          renderTarget = /*#__PURE__*/function () {
+            var _ref19 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee34(target) {
               var targetHeight, scale;
               return _regenerator().w(function (_context34) {
                 while (1) switch (_context34.n) {
@@ -3032,7 +3043,7 @@ function reportToPdfBlob() {
   return _reportToPdfBlob.apply(this, arguments);
 }
 function _reportToPdfBlob() {
-  _reportToPdfBlob = _asyncToGenerator(_regenerator().m(function _callee36() {
+  _reportToPdfBlob = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee36() {
     var canvas, pageHeight, pageCanvases, top, sliceHeight, pageCanvas, ctx;
     return _regenerator().w(function (_context36) {
       while (1) switch (_context36.n) {
@@ -3064,7 +3075,7 @@ function uploadCurrentDocumentPdf(_x25, _x26) {
   return _uploadCurrentDocumentPdf.apply(this, arguments);
 }
 function _uploadCurrentDocumentPdf() {
-  _uploadCurrentDocumentPdf = _asyncToGenerator(_regenerator().m(function _callee37(reportType, order) {
+  _uploadCurrentDocumentPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee37(reportType, order) {
     var blob, dataUrl, customerName, response, data;
     return _regenerator().w(function (_context37) {
       while (1) switch (_context37.n) {
@@ -3128,7 +3139,7 @@ function getWhatsappServiceStatus() {
   return _getWhatsappServiceStatus.apply(this, arguments);
 }
 function _getWhatsappServiceStatus() {
-  _getWhatsappServiceStatus = _asyncToGenerator(_regenerator().m(function _callee38() {
+  _getWhatsappServiceStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee38() {
     var response;
     return _regenerator().w(function (_context38) {
       while (1) switch (_context38.n) {
@@ -3159,7 +3170,7 @@ function ensureWhatsappGroupExists(_x27) {
   return _ensureWhatsappGroupExists.apply(this, arguments);
 }
 function _ensureWhatsappGroupExists() {
-  _ensureWhatsappGroupExists = _asyncToGenerator(_regenerator().m(function _callee39(groupName) {
+  _ensureWhatsappGroupExists = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee39(groupName) {
     var response, data, wanted, groups, found, preview, error;
     return _regenerator().w(function (_context39) {
       while (1) switch (_context39.n) {
@@ -3209,7 +3220,7 @@ function queueDocumentReport(type, order) {
     fullreport: 'dyehouses_report'
   }[type];
   if (!reportType || !order) return;
-  setTimeout(_asyncToGenerator(_regenerator().m(function _callee() {
+  setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
     var attachmentPath, row, _t;
     return _regenerator().w(function (_context) {
       while (1) switch (_context.p = _context.n) {
@@ -3241,7 +3252,7 @@ function retryOutbox(_x28) {
   return _retryOutbox.apply(this, arguments);
 }
 function _retryOutbox() {
-  _retryOutbox = _asyncToGenerator(_regenerator().m(function _callee40(id) {
+  _retryOutbox = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee40(id) {
     var item;
     return _regenerator().w(function (_context40) {
       while (1) switch (_context40.n) {
@@ -3337,7 +3348,7 @@ function saveDyehousePriceLibrary() {
   return _saveDyehousePriceLibrary.apply(this, arguments);
 }
 function _saveDyehousePriceLibrary() {
-  _saveDyehousePriceLibrary = _asyncToGenerator(_regenerator().m(function _callee41() {
+  _saveDyehousePriceLibrary = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee41() {
     var _t17;
     return _regenerator().w(function (_context41) {
       while (1) switch (_context41.p = _context41.n) {
@@ -3720,7 +3731,7 @@ function deletePricing(_x29) {
   return _deletePricing.apply(this, arguments);
 }
 function _deletePricing() {
-  _deletePricing = _asyncToGenerator(_regenerator().m(function _callee42(id) {
+  _deletePricing = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee42(id) {
     var pricing, backendSaveRequired, deleted;
     return _regenerator().w(function (_context42) {
       while (1) switch (_context42.n) {
@@ -3783,7 +3794,7 @@ function addPricing(_x30) {
   return _addPricing.apply(this, arguments);
 }
 function _addPricing() {
-  _addPricing = _asyncToGenerator(_regenerator().m(function _callee43(event) {
+  _addPricing = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee43(event) {
     var backendSaveRequired, index, before, updatedPricing, backendCustomer, savedPricing, createdPricing, _backendCustomer, _savedPricing;
     return _regenerator().w(function (_context43) {
       while (1) switch (_context43.n) {
@@ -3929,7 +3940,7 @@ function markPricingConverted(_x31, _x32) {
   return _markPricingConverted.apply(this, arguments);
 }
 function _markPricingConverted() {
-  _markPricingConverted = _asyncToGenerator(_regenerator().m(function _callee44(pricingNumber, orderId) {
+  _markPricingConverted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee44(pricingNumber, orderId) {
     var pricingId,
       convertedAt,
       converted,
@@ -4181,7 +4192,7 @@ function analyzeReportWithAi() {
   return _analyzeReportWithAi.apply(this, arguments);
 }
 function _analyzeReportWithAi() {
-  _analyzeReportWithAi = _asyncToGenerator(_regenerator().m(function _callee45() {
+  _analyzeReportWithAi = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee45() {
     var oldText, response, data, message, _t18;
     return _regenerator().w(function (_context45) {
       while (1) switch (_context45.p = _context45.n) {
@@ -4208,7 +4219,7 @@ function _analyzeReportWithAi() {
         case 3:
           response = _context45.v;
           _context45.n = 4;
-          return response.json().catch(function () {
+          return response.json()["catch"](function () {
             return {};
           });
         case 4:
@@ -4252,7 +4263,7 @@ function copyAiWhatsappMessage() {
   return _copyAiWhatsappMessage.apply(this, arguments);
 }
 function _copyAiWhatsappMessage() {
-  _copyAiWhatsappMessage = _asyncToGenerator(_regenerator().m(function _callee46() {
+  _copyAiWhatsappMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee46() {
     var _document$getElementB1;
     var text, area, _t19;
     return _regenerator().w(function (_context46) {
@@ -4474,7 +4485,7 @@ function reportToPngBlob() {
   return _reportToPngBlob.apply(this, arguments);
 }
 function _reportToPngBlob() {
-  _reportToPngBlob = _asyncToGenerator(_regenerator().m(function _callee47() {
+  _reportToPngBlob = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee47() {
     var canvas;
     return _regenerator().w(function (_context47) {
       while (1) switch (_context47.n) {
@@ -4714,7 +4725,7 @@ function toggleOperationClosed() {
   return _toggleOperationClosed.apply(this, arguments);
 }
 function _toggleOperationClosed() {
-  _toggleOperationClosed = _asyncToGenerator(_regenerator().m(function _callee48() {
+  _toggleOperationClosed = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee48() {
     var order, backendSaveRequired, updatedOrder, backendCustomer, savedOrder;
     return _regenerator().w(function (_context48) {
       while (1) switch (_context48.n) {
@@ -4797,7 +4808,7 @@ function addOrder(_x33) {
   return _addOrder.apply(this, arguments);
 }
 function _addOrder() {
-  _addOrder = _asyncToGenerator(_regenerator().m(function _callee49(event) {
+  _addOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee49(event) {
     var _refs$paymentMode, _refs$paymentDetails, _firstAccessory$perce;
     var widthLines, currentOrder, accessoryLines, firstAccessory, paymentTerms, payload, backendSaveRequired, backendCustomer, previousDyehouse, transferredAllocationIds, updatedOrder, updatedAllocations, savedOrder, changedAllocations, _iterator, _step, allocation, savedAllocation, newOrder, _savedOrder, pricingMarked, _t20;
     return _regenerator().w(function (_context49) {
@@ -5007,7 +5018,7 @@ function addBatch(_x34) {
   return _addBatch.apply(this, arguments);
 }
 function _addBatch() {
-  _addBatch = _asyncToGenerator(_regenerator().m(function _callee50(event) {
+  _addBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee50(event) {
     var _event$target$element;
     var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, _allocation, alreadyDelivered, warehouseAvailable, _t21;
     return _regenerator().w(function (_context50) {
@@ -5255,7 +5266,7 @@ function addAllocation() {
   return _addAllocation.apply(this, arguments);
 }
 function _addAllocation() {
-  _addAllocation = _asyncToGenerator(_regenerator().m(function _callee51() {
+  _addAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee51() {
     var order, color, createdAllocations, backendSaveRequired, targetFinishedWeight, plannedQuantity, existing, targetFinishedWidth, _targetFinishedWeight, allocation, savedAllocations, _i2, _createdAllocations, _allocation2, _t22;
     return _regenerator().w(function (_context51) {
       while (1) switch (_context51.n) {
@@ -5385,7 +5396,7 @@ function editAllocation(_x35) {
   return _editAllocation.apply(this, arguments);
 }
 function _editAllocation() {
-  _editAllocation = _asyncToGenerator(_regenerator().m(function _callee52(id) {
+  _editAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee52(id) {
     var allocation, order, colorValue, cleanedColor, targetFinishedWidth, targetFinishedWeight, backendSaveRequired, changedAllocations, primaryUpdate, savedAllocations, _iterator2, _step2, item, _t23, _t24;
     return _regenerator().w(function (_context52) {
       while (1) switch (_context52.p = _context52.n) {
@@ -5458,7 +5469,7 @@ function _editAllocation() {
               }));
             });
           } else {
-            changedAllocations.delete(primaryUpdate);
+            changedAllocations["delete"](primaryUpdate);
             changedAllocations.add(_objectSpread(_objectSpread({}, primaryUpdate), {}, {
               targetFinishedWidth: targetFinishedWidth,
               targetFinishedWeight: targetFinishedWeight
@@ -5522,7 +5533,7 @@ function transferAllocationDyehouse(_x36) {
   return _transferAllocationDyehouse.apply(this, arguments);
 }
 function _transferAllocationDyehouse() {
-  _transferAllocationDyehouse = _asyncToGenerator(_regenerator().m(function _callee53(id) {
+  _transferAllocationDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee53(id) {
     var allocation, order, calculated, currentDyehouse, newDyehouseValue, newDyehouse, originalQuantity, suggestedQuantity, quantityValue, quantity, transferWarnings, dateValue, noteNumber, reason, newAllocationId, roundedQuantity, transferRecord, allocationUpdate, newAllocation, backendSaveRequired, ratio, originalAccessory, newAccessory, updatedAllocation, insertedAllocation, insertedTransfer, _t25, _t26, _t27;
     return _regenerator().w(function (_context53) {
       while (1) switch (_context53.n) {
@@ -5723,7 +5734,7 @@ function deleteAllocation(_x37) {
   return _deleteAllocation.apply(this, arguments);
 }
 function _deleteAllocation() {
-  _deleteAllocation = _asyncToGenerator(_regenerator().m(function _callee54(id) {
+  _deleteAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee54(id) {
     var allocation, backendSaveRequired, deleted;
     return _regenerator().w(function (_context54) {
       while (1) switch (_context54.n) {
@@ -5787,7 +5798,7 @@ function deleteOrder(_x38) {
   return _deleteOrder.apply(this, arguments);
 }
 function _deleteOrder() {
-  _deleteOrder = _asyncToGenerator(_regenerator().m(function _callee55(id) {
+  _deleteOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee55(id) {
     var order, backendSaveRequired, deleted;
     return _regenerator().w(function (_context55) {
       while (1) switch (_context55.n) {
@@ -5852,7 +5863,7 @@ function deleteBatch(_x39, _x40) {
   return _deleteBatch.apply(this, arguments);
 }
 function _deleteBatch() {
-  _deleteBatch = _asyncToGenerator(_regenerator().m(function _callee56(type, id) {
+  _deleteBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee56(type, id) {
     var backendSaveRequired, transfer, newAllocation, originalAllocation, hasLinkedMovements, newQty, backendTasks, _transfer, _transfer2, _originalAllocation, results;
     return _regenerator().w(function (_context56) {
       while (1) switch (_context56.n) {
@@ -5976,7 +5987,7 @@ function editBatch(_x41, _x42) {
   return _editBatch.apply(this, arguments);
 }
 function _editBatch() {
-  _editBatch = _asyncToGenerator(_regenerator().m(function _callee57(type, id) {
+  _editBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee57(type, id) {
     var collection, batch, backendSaveRequired, updatedBatch, quantity, saved, _t28;
     return _regenerator().w(function (_context57) {
       while (1) switch (_context57.n) {
@@ -6528,7 +6539,7 @@ function openDyeingDocumentForDyehouse(_x43) {
   return _openDyeingDocumentForDyehouse.apply(this, arguments);
 }
 function _openDyeingDocumentForDyehouse() {
-  _openDyeingDocumentForDyehouse = _asyncToGenerator(_regenerator().m(function _callee58(dyehouseName) {
+  _openDyeingDocumentForDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee58(dyehouseName) {
     var sourceOrder, name, operationNoteText, refreshedSourceOrder, order, fmt, reportOrder;
     return _regenerator().w(function (_context58) {
       while (1) switch (_context58.n) {
@@ -6595,7 +6606,7 @@ function openDocument(_x44) {
   return _openDocument.apply(this, arguments);
 }
 function _openDocument() {
-  _openDocument = _asyncToGenerator(_regenerator().m(function _callee59(type) {
+  _openDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee59(type) {
     var sourceOrder, order, names, fmt, safe, titleMap, title, body, alreadyWrapped, operationNoteText, refreshedSourceOrder;
     return _regenerator().w(function (_context59) {
       while (1) switch (_context59.n) {
@@ -6835,7 +6846,7 @@ function confirmAmalOrderImport() {
   return _confirmAmalOrderImport.apply(this, arguments);
 }
 function _confirmAmalOrderImport() {
-  _confirmAmalOrderImport = _asyncToGenerator(_regenerator().m(function _callee60() {
+  _confirmAmalOrderImport = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee60() {
     var _accessoryRows$, _accessoryRows$find;
     var suggestion, reviewType, clothRows, accessoryRows, existing, deleted, orderId, totalRawQuantity, firstCloth, accessoryType, accessoryPercent, backendCustomer, importedOrder, savedOrder, _iterator3, _step3, _loop, _ret, rawSaved, _iterator4, _step4, row, savedAccessory, _t29, _t30;
     return _regenerator().w(function (_context61) {
@@ -6943,7 +6954,7 @@ function _confirmAmalOrderImport() {
         case 12:
           _iterator3 = _createForOfIteratorHelper(clothRows);
           _context61.p = 13;
-          _loop = _regenerator().m(function _loop() {
+          _loop = /*#__PURE__*/_regenerator().m(function _loop() {
             var row, relatedAccessory, allocation, savedAllocation;
             return _regenerator().w(function (_context60) {
               while (1) switch (_context60.n) {
@@ -7255,7 +7266,7 @@ function handleWeavingSlipFile() {
   return _handleWeavingSlipFile.apply(this, arguments);
 }
 function _handleWeavingSlipFile() {
-  _handleWeavingSlipFile = _asyncToGenerator(_regenerator().m(function _callee61() {
+  _handleWeavingSlipFile = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee61() {
     var _refs$weavingSlipFile2;
     var file;
     return _regenerator().w(function (_context62) {
@@ -7285,7 +7296,7 @@ function confirmWeavingSlip(_x45) {
   return _confirmWeavingSlip.apply(this, arguments);
 }
 function _confirmWeavingSlip() {
-  _confirmWeavingSlip = _asyncToGenerator(_regenerator().m(function _callee62(event) {
+  _confirmWeavingSlip = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee62(event) {
     var order, type, isRawIssue, quantity, common, saved, existingRawBatch, rawBatch, _t31;
     return _regenerator().w(function (_context63) {
       while (1) switch (_context63.n) {
@@ -7503,7 +7514,7 @@ function promptOperationNotes(_x46, _x47) {
   return _promptOperationNotes.apply(this, arguments);
 }
 function _promptOperationNotes() {
-  _promptOperationNotes = _asyncToGenerator(_regenerator().m(function _callee63(sourceOrder, type) {
+  _promptOperationNotes = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee63(sourceOrder, type) {
     var dyehouseName,
       key,
       savedNotes,
@@ -7591,7 +7602,7 @@ refs.openPricingFormBtn.onclick = function () {
   refs.pricingDialog.showModal();
 };
 refs.deletePricingBtn.onclick = function () {
-  if (editingPricingId) deletePricing(editingPricingId).catch(function (error) {
+  if (editingPricingId) deletePricing(editingPricingId)["catch"](function (error) {
     console.error('pricing-delete-error', error);
     alert('تعذر حذف التسعيرة.');
   });
@@ -7636,7 +7647,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', function (eve
   }
   var deleteButton = event.target.closest('[data-delete-group-row]');
   if (deleteButton) (_deleteButton$closest = deleteButton.closest('[data-whatsapp-group-row]')) === null || _deleteButton$closest === void 0 || _deleteButton$closest.remove();
-  if (event.target.closest('[data-save-whatsapp-settings]')) saveWhatsappSettingsFromDialog().catch(function (error) {
+  if (event.target.closest('[data-save-whatsapp-settings]')) saveWhatsappSettingsFromDialog()["catch"](function (error) {
     console.error('whatsapp-settings-save-error', error);
     alert('تعذر حفظ إعدادات واتساب.');
   });
@@ -7646,12 +7657,12 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', function (eve
   }
   var deletePriceButton = event.target.closest('[data-delete-price-row]');
   if (deletePriceButton) (_deletePriceButton$cl = deletePriceButton.closest('[data-dyehouse-price-row]')) === null || _deletePriceButton$cl === void 0 || _deletePriceButton$cl.remove();
-  if (event.target.closest('[data-save-dyehouse-prices]')) saveDyehousePricesFromDialog().catch(function (error) {
+  if (event.target.closest('[data-save-dyehouse-prices]')) saveDyehousePricesFromDialog()["catch"](function (error) {
     console.error('dyehouse-prices-save-error', error);
     alert('تعذر حفظ أسعار المصابغ.');
   });
   var dyeingDocButton = event.target.closest('[data-open-dyeing-for]');
-  if (dyeingDocButton) openDyeingDocumentForDyehouse(dyeingDocButton.dataset.openDyeingFor).catch(function (error) {
+  if (dyeingDocButton) openDyeingDocumentForDyehouse(dyeingDocButton.dataset.openDyeingFor)["catch"](function (error) {
     console.error('dyeing-document-open-error', error);
     alert('تعذر فتح أمر الصباغة حاليًا.');
   });
@@ -7664,17 +7675,17 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', function (eve
   if (ledgerButton) renderCustomerLedgerDialog(ledgerButton.dataset.customerLedger);
   if (event.target.closest('[data-back-customer-accounts]')) renderCustomerAccountsDialog();
   var openingButton = event.target.closest('[data-save-opening-balance]');
-  if (openingButton) saveCustomerOpeningBalance(openingButton.dataset.saveOpeningBalance).catch(function (error) {
+  if (openingButton) saveCustomerOpeningBalance(openingButton.dataset.saveOpeningBalance)["catch"](function (error) {
     console.error('customer-opening-save-error', error);
     alert('تعذر حفظ رصيد العميل.');
   });
   var paymentButton = event.target.closest('[data-add-customer-payment]');
-  if (paymentButton) addCustomerPayment(paymentButton.dataset.addCustomerPayment).catch(function (error) {
+  if (paymentButton) addCustomerPayment(paymentButton.dataset.addCustomerPayment)["catch"](function (error) {
     console.error('customer-payment-save-error', error);
     alert('تعذر حفظ دفعة العميل.');
   });
   var deletePaymentButton = event.target.closest('[data-delete-customer-payment]');
-  if (deletePaymentButton) deleteCustomerPayment(deletePaymentButton.dataset.customerName, deletePaymentButton.dataset.deleteCustomerPayment).catch(function (error) {
+  if (deletePaymentButton) deleteCustomerPayment(deletePaymentButton.dataset.customerName, deletePaymentButton.dataset.deleteCustomerPayment)["catch"](function (error) {
     console.error('customer-payment-delete-error', error);
     alert('تعذر حذف دفعة العميل.');
   });
@@ -7687,7 +7698,7 @@ refs.closeOrderFormBtn.onclick = function () {
   refs.orderDialog.close();
 };
 refs.pricingForm.onsubmit = function (event) {
-  return addPricing(event).catch(function (error) {
+  return addPricing(event)["catch"](function (error) {
     console.error('pricing-save-error', error);
     alert('تعذر حفظ التسعيرة.');
   });
@@ -7719,7 +7730,7 @@ refs.accessoryLinesEditor.onclick = function (event) {
   if (event.target.dataset.removeAccessoryLine !== undefined) (_event$target$closest2 = event.target.closest('.accessory-line-row')) === null || _event$target$closest2 === void 0 || _event$target$closest2.remove();
 };
 refs.orderForm.onsubmit = function (event) {
-  return addOrder(event).catch(function (error) {
+  return addOrder(event)["catch"](function (error) {
     console.error('order-save-error', error);
     alert('تعذر حفظ الطلب.');
   });
@@ -7730,7 +7741,7 @@ refs.pricingTableBody.onclick = function (event) {
   if (event.target.dataset.pricingQuote) openPricingQuotation(event.target.dataset.pricingQuote);
   if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing);
   if (event.target.dataset.editPricing) editPricing(event.target.dataset.editPricing);
-  if (event.target.dataset.deletePricing) deletePricing(event.target.dataset.deletePricing).catch(function (error) {
+  if (event.target.dataset.deletePricing) deletePricing(event.target.dataset.deletePricing)["catch"](function (error) {
     console.error('pricing-delete-error', error);
     alert('تعذر حذف التسعيرة.');
   });
@@ -7752,7 +7763,7 @@ refs.ordersTableBody.onclick = function (event) {
       recordAudit('error', 'orderDetails', button.dataset.view, null, {
         message: error && error.message ? error.message : String(error)
       }, 'فشل فتح تفاصيل الطلب');
-      persistAuditLog().catch(function (saveError) {
+      persistAuditLog()["catch"](function (saveError) {
         return console.warn('audit-save-failed', saveError);
       });
       refs.orderDetailsPanel.innerHTML = '<div class="empty-state">تعذر فتح تفاصيل الطلب حاليًا. راجع البيانات ثم حاول مرة أخرى.</div>';
@@ -7772,13 +7783,13 @@ refs.ordersTableBody.onclick = function (event) {
     }
     return;
   }
-  if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch(function (error) {
+  if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder)["catch"](function (error) {
     console.error('order-delete-error', error);
     alert('تعذر حذف الطلب.');
   });
 };
 refs.orderDetailsPanel.addEventListener('submit', function (event) {
-  addBatch(event).catch(function (error) {
+  addBatch(event)["catch"](function (error) {
     console.error('batch-save-error', error);
     alert('تعذر حفظ الحركة. راجع البيانات ثم حاول مرة أخرى.');
   });
@@ -7810,34 +7821,34 @@ refs.orderDetailsPanel.addEventListener('click', function (event) {
   }
   if (target.id === 'toggleOperationClosedBtn') {
     event.preventDefault();
-    toggleOperationClosed().catch(function (error) {
+    toggleOperationClosed()["catch"](function (error) {
       console.error('operation-close-error', error);
       alert('تعذر حفظ حالة دورة التشغيل.');
     });
     return;
   }
-  if (target.id === 'addAllocationBtn') addAllocation().catch(function (error) {
+  if (target.id === 'addAllocationBtn') addAllocation()["catch"](function (error) {
     console.error('allocation-add-error', error);
     alert('تعذر حفظ اللون.');
   });
-  if (target.dataset.editAllocation) editAllocation(target.dataset.editAllocation).catch(function (error) {
+  if (target.dataset.editAllocation) editAllocation(target.dataset.editAllocation)["catch"](function (error) {
     console.error('allocation-edit-error', error);
     alert('تعذر تعديل اللون.');
   });
-  if (target.dataset.deleteAllocation) deleteAllocation(target.dataset.deleteAllocation).catch(function (error) {
+  if (target.dataset.deleteAllocation) deleteAllocation(target.dataset.deleteAllocation)["catch"](function (error) {
     console.error('allocation-delete-error', error);
     alert('تعذر حذف اللون.');
   });
-  if (target.dataset.transferAllocation) transferAllocationDyehouse(target.dataset.transferAllocation).catch(function (error) {
+  if (target.dataset.transferAllocation) transferAllocationDyehouse(target.dataset.transferAllocation)["catch"](function (error) {
     console.error('allocation-transfer-error', error);
     alert('تعذر حفظ تحويل المصبغة.');
   });
   var action = target.dataset.batchAction;
-  if (action === 'delete') deleteBatch(target.dataset.batchType, target.dataset.batchId).catch(function (error) {
+  if (action === 'delete') deleteBatch(target.dataset.batchType, target.dataset.batchId)["catch"](function (error) {
     console.error('batch-delete-error', error);
     alert('تعذر حذف الحركة.');
   });
-  if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId).catch(function (error) {
+  if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId)["catch"](function (error) {
     console.error('batch-edit-error', error);
     alert('تعذر تعديل الحركة.');
   });
@@ -7847,7 +7858,7 @@ function safeOpenDocument(_x48) {
   return _safeOpenDocument.apply(this, arguments);
 }
 function _safeOpenDocument() {
-  _safeOpenDocument = _asyncToGenerator(_regenerator().m(function _callee64(type) {
+  _safeOpenDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee64(type) {
     var _t32;
     return _regenerator().w(function (_context65) {
       while (1) switch (_context65.p = _context65.n) {
@@ -7929,12 +7940,12 @@ if (refs.weavingSlipDialog) {
   refs.weavingSlipOrderNumber.onchange = updateDocumentReviewFields;
   refs.reviewMatchNoteBtn.onclick = matchReviewByNoteNumber;
   refs.weavingSlipFile.onchange = function () {
-    return handleWeavingSlipFile().catch(function () {
+    return handleWeavingSlipFile()["catch"](function () {
       return alert('تعذر قراءة صورة المستند. جرّب صورة أوضح أو ملفًا آخر.');
     });
   };
   refs.weavingSlipForm.onsubmit = function (event) {
-    return confirmWeavingSlip(event).catch(function (error) {
+    return confirmWeavingSlip(event)["catch"](function (error) {
       console.error('document-review-save-error', error);
       alert('تعذر تسجيل المستند.');
     });
@@ -8011,7 +8022,7 @@ function shareCurrentReportPdf() {
   return _shareCurrentReportPdf.apply(this, arguments);
 }
 function _shareCurrentReportPdf() {
-  _shareCurrentReportPdf = _asyncToGenerator(_regenerator().m(function _callee65() {
+  _shareCurrentReportPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee65() {
     var reportType, order, oldText, _refs$documentTitle3, blob, fileName, file, _refs$documentTitle4, url, link, _t33, _t34;
     return _regenerator().w(function (_context66) {
       while (1) switch (_context66.p = _context66.n) {
@@ -8103,7 +8114,7 @@ function shareCurrentReportPngManual() {
   return _shareCurrentReportPngManual.apply(this, arguments);
 }
 function _shareCurrentReportPngManual() {
-  _shareCurrentReportPngManual = _asyncToGenerator(_regenerator().m(function _callee66() {
+  _shareCurrentReportPngManual = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee66() {
     return _regenerator().w(function (_context67) {
       while (1) switch (_context67.n) {
         case 0:
