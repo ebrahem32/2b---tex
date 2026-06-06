@@ -47,6 +47,14 @@ function now() {
   return new Date().toISOString();
 }
 
+function safeJsonParse(value, fallback = null) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.pbkdf2Sync(String(password || ''), salt, 120000, 32, 'sha256').toString('hex');
@@ -158,11 +166,70 @@ function asyncHandler(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 }
 
+function auditEntityLabel(entityType) {
+  return {
+    customers: 'عميل',
+    pricings: 'تسعيرة',
+    orders: 'طلب',
+    order_allocations: 'لون',
+    raw_receiving_batches: 'استلام خام من النسيج',
+    dyehouse_delivery_batches: 'صرف خام للمصبغة',
+    finished_receiving_batches: 'استلام مجهز',
+    customer_delivery_batches: 'تسليم عميل',
+    accessory_batches: 'إكسسوار',
+    raw_returns: 'مرتجع خام',
+    dyehouse_transfers: 'تحويل مصبغة',
+    report_outbox: 'إرسال تقرير',
+    system_settings: 'إعدادات النظام',
+    audit_log: 'سجل التعديلات',
+    users: 'مستخدم',
+  }[entityType] || entityType || 'بيان';
+}
+
+function auditActionLabel(action) {
+  return { create:'إضافة', update:'تعديل', delete:'حذف' }[action] || action || 'حركة';
+}
+
+function auditRowValue(row, keys) {
+  for (const key of keys) {
+    const value = row?.[key];
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+  return '';
+}
+
+function describeAudit(action, entityType, entityId, beforeValue = null, afterValue = null, note = '') {
+  const row = afterValue && !afterValue.deleted ? afterValue : beforeValue;
+  const entity = auditEntityLabel(entityType);
+  const actionText = auditActionLabel(action);
+  const orderNumber = auditRowValue(row, ['order_number', 'orderNumber']);
+  const pricingNumber = auditRowValue(row, ['pricing_number', 'pricingNumber']);
+  const color = auditRowValue(row, ['color', 'pantone_code', 'pantoneCode']);
+  const quantity = auditRowValue(row, ['quantity', 'planned_quantity', 'total_raw_quantity']);
+  const noteNumber = auditRowValue(row, ['note_number', 'noteNumber']);
+  const username = auditRowValue(row, ['username']);
+  const name = auditRowValue(row, ['name']);
+  const dyehouse = auditRowValue(row, ['dyehouse', 'to_dyehouse', 'from_dyehouse']);
+  const parts = [`${actionText} ${entity}`];
+  if (orderNumber) parts.push(`رقم الطلب ${orderNumber}`);
+  if (pricingNumber) parts.push(`رقم التسعيرة ${pricingNumber}`);
+  if (color) parts.push(`اللون ${color}`);
+  if (quantity) parts.push(`كمية ${quantity}`);
+  if (noteNumber) parts.push(`إذن ${noteNumber}`);
+  if (dyehouse) parts.push(`المصبغة ${dyehouse}`);
+  if (username || name) parts.push(username ? `المستخدم ${username}` : `الاسم ${name}`);
+  if (!orderNumber && !pricingNumber && !color && !quantity && !noteNumber && !username && entityId) parts.push(`ID ${entityId}`);
+  const cleanNote = String(note || '').trim();
+  if (cleanNote && !/^POST |^PUT |^DELETE |^upsert via POST /.test(cleanNote)) parts.push(cleanNote);
+  return parts.join(' - ');
+}
+
 async function auditMutation(action, entityType, entityId, beforeValue = null, afterValue = null, note = '') {
   try {
+    const readableNote = describeAudit(action, entityType, entityId, beforeValue, afterValue, note);
     await run(
       'INSERT INTO audit_log (id, action, entity_type, entity_id, before_json, after_json, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id(), action, entityType, entityId || '', JSON.stringify(beforeValue ?? null), JSON.stringify(afterValue ?? null), note, now()]
+      [id(), action, entityType, entityId || '', JSON.stringify(beforeValue ?? null), JSON.stringify(afterValue ?? null), readableNote, now()]
     );
   } catch (error) {
     console.warn(`[2B Tex] audit failed for ${action} ${entityType} ${entityId || ''}: ${error.message}`);
@@ -316,6 +383,7 @@ app.post('/api/backup', asyncHandler(async (_req, res) => {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const target = path.join(BACKUP_DIR, `2btex-${stamp}.sqlite`);
   if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, target);
+  await auditMutation('create', 'system_settings', 'backup', null, { file: target, created_at: now() }, 'إنشاء نسخة احتياطية');
   res.json({ ok: true, file: target });
 }));
 
@@ -566,13 +634,16 @@ app.get('/api/settings/:key', asyncHandler(async (req, res) => {
 
 app.put('/api/settings/:key', asyncHandler(async (req, res) => {
   const valueJson = JSON.stringify(req.body?.value ?? null);
-  const existing = await get('SELECT key FROM system_settings WHERE key = ?', [req.params.key]);
+  const existing = await get('SELECT key, value_json, created_at, updated_at FROM system_settings WHERE key = ?', [req.params.key]);
+  const before = existing ? { key: existing.key, value: safeJsonParse(existing.value_json, null), created_at: existing.created_at, updated_at: existing.updated_at } : null;
   if (existing) {
     await run('UPDATE system_settings SET value_json = ?, updated_at = ? WHERE key = ?', [valueJson, now(), req.params.key]);
   } else {
     await run('INSERT INTO system_settings (key, value_json, created_at, updated_at) VALUES (?, ?, ?, ?)', [req.params.key, valueJson, now(), now()]);
   }
-  res.json({ key: req.params.key, value: req.body?.value ?? null });
+  const after = { key: req.params.key, value: req.body?.value ?? null, updated_at: now() };
+  await auditMutation(existing ? 'update' : 'create', 'system_settings', req.params.key, before, after, 'حفظ إعدادات النظام');
+  res.json(after);
 }));
 
 function batchPost(route, table) {
