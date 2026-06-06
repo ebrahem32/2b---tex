@@ -53,6 +53,65 @@ function hashPassword(password) {
   return `pbkdf2_sha256$120000$${salt}$${hash}`;
 }
 
+function verifyPassword(password, storedHash) {
+  const parts = String(storedHash || '').split('$');
+  if (parts.length !== 4 || parts[0] !== 'pbkdf2_sha256') return false;
+  const iterations = Number(parts[1] || 0);
+  const salt = parts[2];
+  const hash = parts[3];
+  if (!iterations || !salt || !hash) return false;
+  const candidate = crypto.pbkdf2Sync(String(password || ''), salt, iterations, 32, 'sha256').toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(candidate, 'hex'), Buffer.from(hash, 'hex'));
+}
+
+function sessionSecret() {
+  return process.env.AUTH_SECRET || process.env.SESSION_SECRET || process.env.SYSTEM_PASS || '2btex-development-session-secret';
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(value).toString('base64url');
+}
+
+function base64UrlJson(value) {
+  return base64UrlEncode(JSON.stringify(value));
+}
+
+function signSessionPayload(payload) {
+  const body = base64UrlJson(payload);
+  const signature = crypto.createHmac('sha256', sessionSecret()).update(body).digest('base64url');
+  return `${body}.${signature}`;
+}
+
+function verifySessionToken(token) {
+  const [body, signature] = String(token || '').split('.');
+  if (!body || !signature) return null;
+  const expected = crypto.createHmac('sha256', sessionSecret()).update(body).digest('base64url');
+  if (expected.length !== signature.length) return null;
+  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload.exp || Date.now() > Number(payload.exp)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function cookieValue(header, name) {
+  const match = String(header || '').split(';').map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : '';
+}
+
+function sessionCookie(token) {
+  const secure = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID ? '; Secure' : '';
+  return `twobtex_session=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800${secure}`;
+}
+
+function clearSessionCookie() {
+  const secure = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID ? '; Secure' : '';
+  return `twobtex_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secure}`;
+}
+
 function publicUser(row) {
   if (!row) return null;
   return {
@@ -279,6 +338,36 @@ app.get('/api/audit-log', asyncHandler(async (req, res) => {
     ));
   }
   res.json(await all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?', [limit]));
+}));
+
+app.post('/api/auth/login', asyncHandler(async (req, res) => {
+  await ensureDefaultAdminUser();
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '');
+  if (!username || !password) return res.status(400).json({ error: 'اسم الدخول وكلمة المرور مطلوبين' });
+  const row = await get('SELECT * FROM users WHERE username = ?', [username]);
+  if (!row || Number(row.is_active) !== 1 || !verifyPassword(password, row.password_hash)) {
+    return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+  }
+  const user = publicUser(row);
+  const token = signSessionPayload({ id:user.id, username:user.username, name:user.name, role:user.role, exp:Date.now() + (8 * 60 * 60 * 1000) });
+  res.setHeader('Set-Cookie', sessionCookie(token));
+  res.json({ ok: true, user });
+}));
+
+app.get('/api/auth/me', asyncHandler(async (req, res) => {
+  await ensureDefaultAdminUser();
+  const token = cookieValue(req.headers.cookie, 'twobtex_session');
+  const session = verifySessionToken(token);
+  if (!session?.id) return res.status(401).json({ error: 'غير مسجل الدخول' });
+  const row = await get('SELECT * FROM users WHERE id = ?', [session.id]);
+  if (!row || Number(row.is_active) !== 1) return res.status(401).json({ error: 'الجلسة غير صالحة' });
+  res.json({ ok: true, user: publicUser(row) });
+}));
+
+app.post('/api/auth/logout', asyncHandler(async (_req, res) => {
+  res.setHeader('Set-Cookie', clearSessionCookie());
+  res.json({ ok: true });
 }));
 
 app.get('/api/users', asyncHandler(async (_req, res) => {

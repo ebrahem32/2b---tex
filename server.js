@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const childProcess = require('child_process');
+const crypto = require('crypto');
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -114,7 +115,32 @@ function cryptoSafeEqual(left, right) {
   return result === 0;
 }
 
+function sessionSecret() {
+  return process.env.AUTH_SECRET || process.env.SESSION_SECRET || process.env.SYSTEM_PASS || '2btex-development-session-secret';
+}
+
+function cookieValue(header, name) {
+  const match = String(header || '').split(';').map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : '';
+}
+
+function verifySessionToken(token) {
+  const [body, signature] = String(token || '').split('.');
+  if (!body || !signature) return null;
+  const expected = crypto.createHmac('sha256', sessionSecret()).update(body).digest('base64url');
+  if (expected.length !== signature.length) return null;
+  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload.exp || Date.now() > Number(payload.exp)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 function isAuthorized(req) {
+  if (verifySessionToken(cookieValue(req.headers.cookie, 'twobtex_session'))) return true;
   const header = req.headers.authorization || '';
   if (!header.startsWith('Basic ')) return false;
   try {
@@ -127,6 +153,30 @@ function isAuthorized(req) {
   } catch {
     return false;
   }
+}
+
+function isAuthPublicRequest(req) {
+  const url = req.url || '/';
+  return url === '/login.html'
+    || url.startsWith('/api/auth/login')
+    || url.startsWith('/api/auth/logout')
+    || url.startsWith('/api/auth/me')
+    || url.startsWith('/2b-mark.svg')
+    || url.startsWith('/2B%20Tex%20Circular.ico');
+}
+
+function redirectToLogin(res) {
+  res.writeHead(302, { Location: '/login.html', ...noStoreHeaders });
+  res.end();
+}
+
+function requestAppLogin(req, res) {
+  if ((req.url || '').startsWith('/api')) {
+    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8', ...noStoreHeaders });
+    res.end(JSON.stringify({ error: 'غير مسجل الدخول' }));
+    return;
+  }
+  redirectToLogin(res);
 }
 
 function requestLogin(res) {
@@ -161,8 +211,8 @@ const server = http.createServer((req, res) => {
     sendMissingCredentials(res);
     return;
   }
-  if (!isAuthorized(req)) {
-    requestLogin(res);
+  if (!isAuthPublicRequest(req) && !isAuthorized(req)) {
+    requestAppLogin(req, res);
     return;
   }
   if ((req.url || '').startsWith('/system/status')) {

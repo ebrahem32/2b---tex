@@ -17,8 +17,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.05';
-const APP_BUILD_TIME = '2026-06-06 11:05';
+const APP_VERSION = 'v2026.06.06.06';
+const APP_BUILD_TIME = '2026-06-06 11:25';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -249,6 +249,7 @@ const A5_SERVICE_URL = 'http://127.0.0.1:3041';
 const BACKEND_API_URL = '/api';
 let backendAvailable = false;
 let backendDataLoading = false;
+let currentUser = null;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function backendRequest(path, options = {}) {
@@ -265,6 +266,23 @@ async function backendRequest(path, options = {}) {
     throw new Error(message);
   }
   return response.json();
+}
+
+async function loadCurrentUser() {
+  try {
+    const data = await backendRequest('/auth/me', { cache:'no-store' });
+    currentUser = data.user || null;
+  } catch {
+    currentUser = null;
+  }
+}
+
+async function logoutCurrentUser() {
+  try {
+    await backendRequest('/auth/logout', { method:'POST', body:JSON.stringify({}) });
+  } finally {
+    window.location.href = '/login.html';
+  }
 }
 
 const dbDate = (row) => row.batch_date || row.transfer_date || row.order_date || row.pricing_date || row.created_at || '';
@@ -1758,10 +1776,12 @@ async function openSystemStatusDialog() {
 function installAutomationUi() {
   const actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
-    actionBar.insertAdjacentHTML('beforeend', `<span class="mini-btn version-badge" id="appVersionBadge" title="وقت إصدار هذه النسخة">النسخة ${APP_VERSION} | ${APP_BUILD_TIME}</span><button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="usersBtn" type="button">المستخدمين</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
+    const userName = currentUser?.name || currentUser?.username || 'مستخدم';
+    actionBar.insertAdjacentHTML('beforeend', `<span class="mini-btn version-badge" id="appVersionBadge" title="وقت إصدار هذه النسخة">النسخة ${APP_VERSION} | ${APP_BUILD_TIME}</span><span class="mini-btn version-badge" id="currentUserBadge">المستخدم: ${escapeHtml(userName)}</span><button class="mini-btn" id="logoutBtn" type="button">خروج</button><button class="mini-btn connection-badge is-down" id="backendStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>قاعدة البيانات: غير متصل</span></button><button class="mini-btn connection-badge is-down" id="whatsappStatusBadge" type="button"><span class="connection-dot"></span><span data-connection-text>واتساب: غير متصل</span></button><button class="mini-btn" id="systemStatusBtn" type="button">حالة النظام</button><button class="mini-btn" id="usersBtn" type="button">المستخدمين</button><button class="mini-btn" id="whatsappSettingsBtn" type="button">إعدادات واتساب</button><button class="mini-btn" id="dyehousePricesBtn" type="button">أسعار المصابغ</button><button class="mini-btn" id="a5AccountsBtn" type="button">حسابات A5</button><button class="mini-btn" id="outboxBtn" type="button">قائمة الإرسال</button><button class="mini-btn" id="auditLogBtn" type="button">سجل التعديلات</button>`);
   }
   document.getElementById('backendStatusBadge')?.addEventListener('click', pollBackendStatus);
   document.getElementById('whatsappStatusBadge')?.addEventListener('click', pollWhatsappService);
+  document.getElementById('logoutBtn')?.addEventListener('click', logoutCurrentUser);
   document.getElementById('systemStatusBtn')?.addEventListener('click', openSystemStatusDialog);
   document.getElementById('usersBtn')?.addEventListener('click', openUsersDialog);
   document.getElementById('whatsappSettingsBtn')?.addEventListener('click', openWhatsappSettingsDialog);
@@ -4123,9 +4143,11 @@ if (refs.shareWhatsAppBtn) {
 }
 
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
+loadCurrentUser().finally(() => {
+  installAutomationUi();
+  pollBackendStatus();
+  pollWhatsappService();
+});
 loadBackendData();
-installAutomationUi();
-pollBackendStatus();
-pollWhatsappService();
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);

@@ -43,8 +43,8 @@ var STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1'
 };
-var APP_VERSION = 'v2026.06.06.05';
-var APP_BUILD_TIME = '2026-06-06 11:05';
+var APP_VERSION = 'v2026.06.06.06';
+var APP_BUILD_TIME = '2026-06-06 11:25';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 var uid = function uid() {
@@ -326,6 +326,7 @@ var A5_SERVICE_URL = 'http://127.0.0.1:3041';
 var BACKEND_API_URL = '/api';
 var backendAvailable = false;
 var backendDataLoading = false;
+var currentUser = null;
 var wait = function wait(ms) {
   return new Promise(function (resolve) {
     return setTimeout(resolve, ms);
@@ -378,6 +379,61 @@ function _backendRequest() {
     }, _callee2, null, [[2, 4]]);
   }));
   return _backendRequest.apply(this, arguments);
+}
+function loadCurrentUser() {
+  return _loadCurrentUser.apply(this, arguments);
+}
+function _loadCurrentUser() {
+  _loadCurrentUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+    var data, _t3;
+    return _regenerator().w(function (_context3) {
+      while (1) switch (_context3.p = _context3.n) {
+        case 0:
+          _context3.p = 0;
+          _context3.n = 1;
+          return backendRequest('/auth/me', {
+            cache: 'no-store'
+          });
+        case 1:
+          data = _context3.v;
+          currentUser = data.user || null;
+          _context3.n = 3;
+          break;
+        case 2:
+          _context3.p = 2;
+          _t3 = _context3.v;
+          currentUser = null;
+        case 3:
+          return _context3.a(2);
+      }
+    }, _callee3, null, [[0, 2]]);
+  }));
+  return _loadCurrentUser.apply(this, arguments);
+}
+function logoutCurrentUser() {
+  return _logoutCurrentUser.apply(this, arguments);
+}
+function _logoutCurrentUser() {
+  _logoutCurrentUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+    return _regenerator().w(function (_context4) {
+      while (1) switch (_context4.p = _context4.n) {
+        case 0:
+          _context4.p = 0;
+          _context4.n = 1;
+          return backendRequest('/auth/logout', {
+            method: 'POST',
+            body: JSON.stringify({})
+          });
+        case 1:
+          _context4.p = 1;
+          window.location.href = '/login.html';
+          return _context4.f(1);
+        case 2:
+          return _context4.a(2);
+      }
+    }, _callee4, null, [[0,, 1, 2]]);
+  }));
+  return _logoutCurrentUser.apply(this, arguments);
 }
 var dbDate = function dbDate(row) {
   return row.batch_date || row.transfer_date || row.order_date || row.pricing_date || row.created_at || '';
@@ -559,43 +615,43 @@ function pollBackendStatus() {
   return _pollBackendStatus.apply(this, arguments);
 }
 function _pollBackendStatus() {
-  _pollBackendStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-    var _health$schema, wasUnavailable, health, schemaOk, _t3;
-    return _regenerator().w(function (_context3) {
-      while (1) switch (_context3.p = _context3.n) {
+  _pollBackendStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
+    var _health$schema, wasUnavailable, health, schemaOk, _t4;
+    return _regenerator().w(function (_context5) {
+      while (1) switch (_context5.p = _context5.n) {
         case 0:
-          _context3.p = 0;
+          _context5.p = 0;
           wasUnavailable = !backendAvailable;
-          _context3.n = 1;
+          _context5.n = 1;
           return backendRequest('/health', {
             cache: 'no-store'
           });
         case 1:
-          health = _context3.v;
+          health = _context5.v;
           schemaOk = (health === null || health === void 0 || (_health$schema = health.schema) === null || _health$schema === void 0 ? void 0 : _health$schema.ok) !== false;
           backendAvailable = schemaOk;
           updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
           if (!(schemaOk && wasUnavailable && !backendDataLoading && !orders.length)) {
-            _context3.n = 2;
+            _context5.n = 2;
             break;
           }
-          _context3.n = 2;
+          _context5.n = 2;
           return loadBackendData({
             retries: 2,
             silentFailure: true
           });
         case 2:
-          _context3.n = 4;
+          _context5.n = 4;
           break;
         case 3:
-          _context3.p = 3;
-          _t3 = _context3.v;
+          _context5.p = 3;
+          _t4 = _context5.v;
           backendAvailable = false;
           updateBackendStatusBadge('قاعدة البيانات غير متاحة');
         case 4:
-          return _context3.a(2);
+          return _context5.a(2);
       }
-    }, _callee3, null, [[0, 3]]);
+    }, _callee5, null, [[0, 3]]);
   }));
   return _pollBackendStatus.apply(this, arguments);
 }
@@ -603,7 +659,7 @@ function loadBackendData() {
   return _loadBackendData.apply(this, arguments);
 }
 function _loadBackendData() {
-  _loadBackendData = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+  _loadBackendData = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
     var options,
       retries,
       silentFailure,
@@ -618,57 +674,57 @@ function _loadBackendData() {
       backendPriceLibrary,
       health,
       schemaOk,
-      _args3 = arguments,
-      _t4,
-      _t5;
-    return _regenerator().w(function (_context4) {
-      while (1) switch (_context4.p = _context4.n) {
+      _args5 = arguments,
+      _t5,
+      _t6;
+    return _regenerator().w(function (_context6) {
+      while (1) switch (_context6.p = _context6.n) {
         case 0:
-          options = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : {};
+          options = _args5.length > 0 && _args5[0] !== undefined ? _args5[0] : {};
           if (!backendDataLoading) {
-            _context4.n = 1;
+            _context6.n = 1;
             break;
           }
-          return _context4.a(2);
+          return _context6.a(2);
         case 1:
           retries = Number.isFinite(options.retries) ? Number(options.retries) : 6;
           silentFailure = !!options.silentFailure;
           backendDataLoading = true;
-          _context4.p = 2;
+          _context6.p = 2;
           data = null;
           lastError = null;
           attempt = 0;
         case 3:
           if (!(attempt <= retries)) {
-            _context4.n = 8;
+            _context6.n = 8;
             break;
           }
-          _context4.p = 4;
-          _context4.n = 5;
+          _context6.p = 4;
+          _context6.n = 5;
           return backendRequest('/bootstrap', {
             cache: 'no-store'
           });
         case 5:
-          data = _context4.v;
+          data = _context6.v;
           lastError = null;
-          return _context4.a(3, 8);
+          return _context6.a(3, 8);
         case 6:
-          _context4.p = 6;
-          _t4 = _context4.v;
-          lastError = _t4;
+          _context6.p = 6;
+          _t5 = _context6.v;
+          lastError = _t5;
           if (!(attempt < retries)) {
-            _context4.n = 7;
+            _context6.n = 7;
             break;
           }
-          _context4.n = 7;
+          _context6.n = 7;
           return wait(800);
         case 7:
           attempt += 1;
-          _context4.n = 3;
+          _context6.n = 3;
           break;
         case 8:
           if (data) {
-            _context4.n = 9;
+            _context6.n = 9;
             break;
           }
           throw lastError || new Error('تعذر تحميل بيانات قاعدة البيانات');
@@ -710,41 +766,41 @@ function _loadBackendData() {
             applyPricingDyehouseOptions();
             updateSuggestedDyeCost();
           }
-          _context4.n = 10;
+          _context6.n = 10;
           return backendRequest('/health', {
             cache: 'no-store'
           });
         case 10:
-          health = _context4.v;
+          health = _context6.v;
           schemaOk = (health === null || health === void 0 || (_health$schema2 = health.schema) === null || _health$schema2 === void 0 ? void 0 : _health$schema2.ok) !== false;
           backendAvailable = schemaOk;
           updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
           if (schemaOk) {
-            _context4.n = 11;
+            _context6.n = 11;
             break;
           }
           renderBackendUnavailable();
-          return _context4.a(2);
+          return _context6.a(2);
         case 11:
           save();
           renderAll();
-          _context4.n = 13;
+          _context6.n = 13;
           break;
         case 12:
-          _context4.p = 12;
-          _t5 = _context4.v;
+          _context6.p = 12;
+          _t6 = _context6.v;
           backendAvailable = false;
           updateBackendStatusBadge('قاعدة البيانات غير متاحة');
-          console.warn('Backend unavailable; operational LocalStorage fallback is disabled', _t5);
+          console.warn('Backend unavailable; operational LocalStorage fallback is disabled', _t6);
           if (!silentFailure) renderBackendUnavailable();
         case 13:
-          _context4.p = 13;
+          _context6.p = 13;
           backendDataLoading = false;
-          return _context4.f(13);
+          return _context6.f(13);
         case 14:
-          return _context4.a(2);
+          return _context6.a(2);
       }
-    }, _callee4, null, [[4, 6], [2, 12, 13, 14]]);
+    }, _callee6, null, [[4, 6], [2, 12, 13, 14]]);
   }));
   return _loadBackendData.apply(this, arguments);
 }
@@ -752,20 +808,20 @@ function syncLocalStorageToBackend() {
   return _syncLocalStorageToBackend.apply(this, arguments);
 }
 function _syncLocalStorageToBackend() {
-  _syncLocalStorageToBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5() {
-    var snapshot, result, _t6;
-    return _regenerator().w(function (_context5) {
-      while (1) switch (_context5.p = _context5.n) {
+  _syncLocalStorageToBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
+    var snapshot, result, _t7;
+    return _regenerator().w(function (_context7) {
+      while (1) switch (_context7.p = _context7.n) {
         case 0:
           if (confirm('سيتم ترحيل بيانات المتصفح الحالية إلى قاعدة البيانات بدون حذف LocalStorage. هل تريد المتابعة؟')) {
-            _context5.n = 1;
+            _context7.n = 1;
             break;
           }
-          return _context5.a(2);
+          return _context7.a(2);
         case 1:
           snapshot = initialLocalStorageSnapshot || captureLocalStorageSnapshot();
-          _context5.p = 2;
-          _context5.n = 3;
+          _context7.p = 2;
+          _context7.n = 3;
           return backendRequest('/import-local', {
             method: 'POST',
             body: JSON.stringify(_objectSpread({
@@ -778,22 +834,22 @@ function _syncLocalStorageToBackend() {
             }, snapshot))
           });
         case 3:
-          result = _context5.v;
+          result = _context7.v;
           alert("\u062A\u0645\u062A \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629.\n\u062A\u0645\u062A \u0625\u0636\u0627\u0641\u0629: ".concat(result.inserted || 0, "\n\u062A\u0645 \u062A\u062D\u062F\u064A\u062B: ").concat(result.updated || 0, "\n\u062A\u0645 \u062A\u062C\u0627\u0647\u0644: ").concat(result.skipped || 0));
-          _context5.n = 4;
+          _context7.n = 4;
           return loadBackendData();
         case 4:
-          _context5.n = 6;
+          _context7.n = 6;
           break;
         case 5:
-          _context5.p = 5;
-          _t6 = _context5.v;
-          console.error(_t6);
+          _context7.p = 5;
+          _t7 = _context7.v;
+          console.error(_t7);
           alert('تعذر تنفيذ المزامنة. تأكد أن خدمة قاعدة البيانات تعمل ثم حاول مرة أخرى.');
         case 6:
-          return _context5.a(2);
+          return _context7.a(2);
       }
-    }, _callee5, null, [[2, 5]]);
+    }, _callee7, null, [[2, 5]]);
   }));
   return _syncLocalStorageToBackend.apply(this, arguments);
 }
@@ -927,29 +983,29 @@ function ensureBackendCustomer(_x2) {
   return _ensureBackendCustomer.apply(this, arguments);
 }
 function _ensureBackendCustomer() {
-  _ensureBackendCustomer = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(name) {
+  _ensureBackendCustomer = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(name) {
     var cleanName, id;
-    return _regenerator().w(function (_context6) {
-      while (1) switch (_context6.n) {
+    return _regenerator().w(function (_context8) {
+      while (1) switch (_context8.n) {
         case 0:
           cleanName = String(name || '').trim();
           if (!(!backendAvailable || !cleanName)) {
-            _context6.n = 1;
+            _context8.n = 1;
             break;
           }
-          return _context6.a(2, null);
+          return _context8.a(2, null);
         case 1:
           id = backendCustomerId(cleanName);
-          _context6.n = 2;
+          _context8.n = 2;
           return postBackend('/customers', {
             id: id,
             name: cleanName,
             notes: 'مضاف من الواجهة'
           });
         case 2:
-          return _context6.a(2, id);
+          return _context8.a(2, id);
       }
-    }, _callee6);
+    }, _callee8);
   }));
   return _ensureBackendCustomer.apply(this, arguments);
 }
@@ -957,76 +1013,8 @@ function postBackend(_x3, _x4) {
   return _postBackend.apply(this, arguments);
 }
 function _postBackend() {
-  _postBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7(path, payload) {
-    var _t7;
-    return _regenerator().w(function (_context7) {
-      while (1) switch (_context7.p = _context7.n) {
-        case 0:
-          if (backendAvailable) {
-            _context7.n = 1;
-            break;
-          }
-          return _context7.a(2, null);
-        case 1:
-          _context7.p = 1;
-          _context7.n = 2;
-          return backendRequest(path, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          });
-        case 2:
-          return _context7.a(2, _context7.v);
-        case 3:
-          _context7.p = 3;
-          _t7 = _context7.v;
-          backendAvailable = false;
-          console.warn('Backend write failed, kept LocalStorage copy', _t7);
-          return _context7.a(2, null);
-      }
-    }, _callee7, null, [[1, 3]]);
-  }));
-  return _postBackend.apply(this, arguments);
-}
-function putBackend(_x5, _x6) {
-  return _putBackend.apply(this, arguments);
-}
-function _putBackend() {
-  _putBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(path, payload) {
+  _postBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(path, payload) {
     var _t8;
-    return _regenerator().w(function (_context8) {
-      while (1) switch (_context8.p = _context8.n) {
-        case 0:
-          if (backendAvailable) {
-            _context8.n = 1;
-            break;
-          }
-          return _context8.a(2, null);
-        case 1:
-          _context8.p = 1;
-          _context8.n = 2;
-          return backendRequest(path, {
-            method: 'PUT',
-            body: JSON.stringify(payload)
-          });
-        case 2:
-          return _context8.a(2, _context8.v);
-        case 3:
-          _context8.p = 3;
-          _t8 = _context8.v;
-          backendAvailable = false;
-          console.warn('Backend update failed, kept LocalStorage copy', _t8);
-          return _context8.a(2, null);
-      }
-    }, _callee8, null, [[1, 3]]);
-  }));
-  return _putBackend.apply(this, arguments);
-}
-function deleteBackend(_x7) {
-  return _deleteBackend.apply(this, arguments);
-}
-function _deleteBackend() {
-  _deleteBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(path) {
-    var _t9;
     return _regenerator().w(function (_context9) {
       while (1) switch (_context9.p = _context9.n) {
         case 0:
@@ -1039,27 +1027,28 @@ function _deleteBackend() {
           _context9.p = 1;
           _context9.n = 2;
           return backendRequest(path, {
-            method: 'DELETE'
+            method: 'POST',
+            body: JSON.stringify(payload)
           });
         case 2:
           return _context9.a(2, _context9.v);
         case 3:
           _context9.p = 3;
-          _t9 = _context9.v;
+          _t8 = _context9.v;
           backendAvailable = false;
-          console.warn('Backend delete failed, kept LocalStorage copy', _t9);
+          console.warn('Backend write failed, kept LocalStorage copy', _t8);
           return _context9.a(2, null);
       }
     }, _callee9, null, [[1, 3]]);
   }));
-  return _deleteBackend.apply(this, arguments);
+  return _postBackend.apply(this, arguments);
 }
-function saveBackendSetting(_x8, _x9) {
-  return _saveBackendSetting.apply(this, arguments);
+function putBackend(_x5, _x6) {
+  return _putBackend.apply(this, arguments);
 }
-function _saveBackendSetting() {
-  _saveBackendSetting = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(key, value) {
-    var _t0;
+function _putBackend() {
+  _putBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(path, payload) {
+    var _t9;
     return _regenerator().w(function (_context0) {
       while (1) switch (_context0.p = _context0.n) {
         case 0:
@@ -1071,6 +1060,73 @@ function _saveBackendSetting() {
         case 1:
           _context0.p = 1;
           _context0.n = 2;
+          return backendRequest(path, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+          });
+        case 2:
+          return _context0.a(2, _context0.v);
+        case 3:
+          _context0.p = 3;
+          _t9 = _context0.v;
+          backendAvailable = false;
+          console.warn('Backend update failed, kept LocalStorage copy', _t9);
+          return _context0.a(2, null);
+      }
+    }, _callee0, null, [[1, 3]]);
+  }));
+  return _putBackend.apply(this, arguments);
+}
+function deleteBackend(_x7) {
+  return _deleteBackend.apply(this, arguments);
+}
+function _deleteBackend() {
+  _deleteBackend = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1(path) {
+    var _t0;
+    return _regenerator().w(function (_context1) {
+      while (1) switch (_context1.p = _context1.n) {
+        case 0:
+          if (backendAvailable) {
+            _context1.n = 1;
+            break;
+          }
+          return _context1.a(2, null);
+        case 1:
+          _context1.p = 1;
+          _context1.n = 2;
+          return backendRequest(path, {
+            method: 'DELETE'
+          });
+        case 2:
+          return _context1.a(2, _context1.v);
+        case 3:
+          _context1.p = 3;
+          _t0 = _context1.v;
+          backendAvailable = false;
+          console.warn('Backend delete failed, kept LocalStorage copy', _t0);
+          return _context1.a(2, null);
+      }
+    }, _callee1, null, [[1, 3]]);
+  }));
+  return _deleteBackend.apply(this, arguments);
+}
+function saveBackendSetting(_x8, _x9) {
+  return _saveBackendSetting.apply(this, arguments);
+}
+function _saveBackendSetting() {
+  _saveBackendSetting = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10(key, value) {
+    var _t1;
+    return _regenerator().w(function (_context10) {
+      while (1) switch (_context10.p = _context10.n) {
+        case 0:
+          if (backendAvailable) {
+            _context10.n = 1;
+            break;
+          }
+          return _context10.a(2, null);
+        case 1:
+          _context10.p = 1;
+          _context10.n = 2;
           return backendRequest("/settings/".concat(key), {
             method: 'PUT',
             body: JSON.stringify({
@@ -1078,15 +1134,15 @@ function _saveBackendSetting() {
             })
           });
         case 2:
-          return _context0.a(2, _context0.v);
+          return _context10.a(2, _context10.v);
         case 3:
-          _context0.p = 3;
-          _t0 = _context0.v;
+          _context10.p = 3;
+          _t1 = _context10.v;
           backendAvailable = false;
-          console.warn('Backend setting save failed', key, _t0);
-          return _context0.a(2, null);
+          console.warn('Backend setting save failed', key, _t1);
+          return _context10.a(2, null);
       }
-    }, _callee0, null, [[1, 3]]);
+    }, _callee10, null, [[1, 3]]);
   }));
   return _saveBackendSetting.apply(this, arguments);
 }
@@ -1094,44 +1150,44 @@ function ensureBackendForWrite() {
   return _ensureBackendForWrite.apply(this, arguments);
 }
 function _ensureBackendForWrite() {
-  _ensureBackendForWrite = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+  _ensureBackendForWrite = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11() {
     var message,
       _health$schema3,
       health,
       schemaOk,
-      _args0 = arguments,
-      _t1;
-    return _regenerator().w(function (_context1) {
-      while (1) switch (_context1.p = _context1.n) {
+      _args10 = arguments,
+      _t10;
+    return _regenerator().w(function (_context11) {
+      while (1) switch (_context11.p = _context11.n) {
         case 0:
-          message = _args0.length > 0 && _args0[0] !== undefined ? _args0[0] : 'تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد التعديل.';
-          _context1.p = 1;
-          _context1.n = 2;
+          message = _args10.length > 0 && _args10[0] !== undefined ? _args10[0] : 'تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد التعديل.';
+          _context11.p = 1;
+          _context11.n = 2;
           return backendRequest('/health', {
             cache: 'no-store'
           });
         case 2:
-          health = _context1.v;
+          health = _context11.v;
           schemaOk = (health === null || health === void 0 || (_health$schema3 = health.schema) === null || _health$schema3 === void 0 ? void 0 : _health$schema3.ok) !== false;
           backendAvailable = schemaOk;
           updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
           if (schemaOk) {
-            _context1.n = 3;
+            _context11.n = 3;
             break;
           }
           alert('قاعدة البيانات متصلة لكن هيكلها غير مكتمل. لم يتم اعتماد التعديل حتى تتم الترقية.');
-          return _context1.a(2, false);
+          return _context11.a(2, false);
         case 3:
-          return _context1.a(2, true);
+          return _context11.a(2, true);
         case 4:
-          _context1.p = 4;
-          _t1 = _context1.v;
+          _context11.p = 4;
+          _t10 = _context11.v;
           backendAvailable = false;
-          console.warn('Backend unavailable before write', _t1);
+          console.warn('Backend unavailable before write', _t10);
           alert(message);
-          return _context1.a(2, false);
+          return _context11.a(2, false);
       }
-    }, _callee1, null, [[1, 4]]);
+    }, _callee11, null, [[1, 4]]);
   }));
   return _ensureBackendForWrite.apply(this, arguments);
 }
@@ -1155,15 +1211,15 @@ function backendSnapshot() {
   return _backendSnapshot.apply(this, arguments);
 }
 function _backendSnapshot() {
-  _backendSnapshot = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
-    return _regenerator().w(function (_context10) {
-      while (1) switch (_context10.n) {
+  _backendSnapshot = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12() {
+    return _regenerator().w(function (_context12) {
+      while (1) switch (_context12.n) {
         case 0:
-          return _context10.a(2, backendRequest('/bootstrap', {
+          return _context12.a(2, backendRequest('/bootstrap', {
             cache: 'no-store'
           }));
       }
-    }, _callee10);
+    }, _callee12);
   }));
   return _backendSnapshot.apply(this, arguments);
 }
@@ -1171,17 +1227,17 @@ function rollbackAfterBackendWriteFailure(_x0) {
   return _rollbackAfterBackendWriteFailure.apply(this, arguments);
 }
 function _rollbackAfterBackendWriteFailure() {
-  _rollbackAfterBackendWriteFailure = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11(message) {
-    return _regenerator().w(function (_context11) {
-      while (1) switch (_context11.n) {
+  _rollbackAfterBackendWriteFailure = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(message) {
+    return _regenerator().w(function (_context13) {
+      while (1) switch (_context13.n) {
         case 0:
           alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
-          _context11.n = 1;
+          _context13.n = 1;
           return loadBackendData();
         case 1:
-          return _context11.a(2);
+          return _context13.a(2);
       }
-    }, _callee11);
+    }, _callee13);
   }));
   return _rollbackAfterBackendWriteFailure.apply(this, arguments);
 }
@@ -1189,37 +1245,37 @@ function verifyRecordPersisted(_x1, _x10) {
   return _verifyRecordPersisted.apply(this, arguments);
 }
 function _verifyRecordPersisted() {
-  _verifyRecordPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12(type, id) {
+  _verifyRecordPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14(type, id) {
     var predicate,
       snapshot,
       row,
-      _args11 = arguments;
-    return _regenerator().w(function (_context12) {
-      while (1) switch (_context12.n) {
+      _args13 = arguments;
+    return _regenerator().w(function (_context14) {
+      while (1) switch (_context14.n) {
         case 0:
-          predicate = _args11.length > 2 && _args11[2] !== undefined ? _args11[2] : null;
+          predicate = _args13.length > 2 && _args13[2] !== undefined ? _args13[2] : null;
           if (id) {
-            _context12.n = 1;
+            _context14.n = 1;
             break;
           }
-          return _context12.a(2, false);
+          return _context14.a(2, false);
         case 1:
-          _context12.n = 2;
+          _context14.n = 2;
           return backendSnapshot();
         case 2:
-          snapshot = _context12.v;
+          snapshot = _context14.v;
           row = backendSnapshotCollection(snapshot, type).find(function (item) {
             return item.id === id;
           });
           if (row) {
-            _context12.n = 3;
+            _context14.n = 3;
             break;
           }
-          return _context12.a(2, false);
+          return _context14.a(2, false);
         case 3:
-          return _context12.a(2, typeof predicate === 'function' ? !!predicate(row, snapshot) : true);
+          return _context14.a(2, typeof predicate === 'function' ? !!predicate(row, snapshot) : true);
       }
-    }, _callee12);
+    }, _callee14);
   }));
   return _verifyRecordPersisted.apply(this, arguments);
 }
@@ -1227,26 +1283,26 @@ function verifyRecordDeleted(_x11, _x12) {
   return _verifyRecordDeleted.apply(this, arguments);
 }
 function _verifyRecordDeleted() {
-  _verifyRecordDeleted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13(type, id) {
+  _verifyRecordDeleted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15(type, id) {
     var snapshot;
-    return _regenerator().w(function (_context13) {
-      while (1) switch (_context13.n) {
+    return _regenerator().w(function (_context15) {
+      while (1) switch (_context15.n) {
         case 0:
           if (id) {
-            _context13.n = 1;
+            _context15.n = 1;
             break;
           }
-          return _context13.a(2, false);
+          return _context15.a(2, false);
         case 1:
-          _context13.n = 2;
+          _context15.n = 2;
           return backendSnapshot();
         case 2:
-          snapshot = _context13.v;
-          return _context13.a(2, !backendSnapshotCollection(snapshot, type).some(function (item) {
+          snapshot = _context15.v;
+          return _context15.a(2, !backendSnapshotCollection(snapshot, type).some(function (item) {
             return item.id === id;
           }));
       }
-    }, _callee13);
+    }, _callee15);
   }));
   return _verifyRecordDeleted.apply(this, arguments);
 }
@@ -1254,18 +1310,18 @@ function verifyPricingPersisted(_x13) {
   return _verifyPricingPersisted.apply(this, arguments);
 }
 function _verifyPricingPersisted() {
-  _verifyPricingPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee14(pricingId) {
+  _verifyPricingPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16(pricingId) {
     var expected,
-      _args13 = arguments;
-    return _regenerator().w(function (_context14) {
-      while (1) switch (_context14.n) {
+      _args15 = arguments;
+    return _regenerator().w(function (_context16) {
+      while (1) switch (_context16.n) {
         case 0:
-          expected = _args13.length > 1 && _args13[1] !== undefined ? _args13[1] : {};
-          return _context14.a(2, verifyRecordPersisted('pricing', pricingId, function (row) {
+          expected = _args15.length > 1 && _args15[1] !== undefined ? _args15[1] : {};
+          return _context16.a(2, verifyRecordPersisted('pricing', pricingId, function (row) {
             return String(row.pricing_number || '') === String(expected.pricingNumber || row.pricing_number || '') && String(row.fabric_type || '') === String(expected.fabricType || row.fabric_type || '');
           }));
       }
-    }, _callee14);
+    }, _callee16);
   }));
   return _verifyPricingPersisted.apply(this, arguments);
 }
@@ -1273,40 +1329,40 @@ function verifyOrderPersisted(_x14) {
   return _verifyOrderPersisted.apply(this, arguments);
 }
 function _verifyOrderPersisted() {
-  _verifyOrderPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee15(orderId) {
+  _verifyOrderPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(orderId) {
     var expected,
       row,
       savedLines,
       expectedLines,
       expectedSignature,
       savedSignature,
-      _args14 = arguments;
-    return _regenerator().w(function (_context15) {
-      while (1) switch (_context15.n) {
+      _args16 = arguments;
+    return _regenerator().w(function (_context17) {
+      while (1) switch (_context17.n) {
         case 0:
-          expected = _args14.length > 1 && _args14[1] !== undefined ? _args14[1] : {};
+          expected = _args16.length > 1 && _args16[1] !== undefined ? _args16[1] : {};
           if (orderId) {
-            _context15.n = 1;
+            _context17.n = 1;
             break;
           }
-          return _context15.a(2, false);
+          return _context17.a(2, false);
         case 1:
-          _context15.n = 2;
+          _context17.n = 2;
           return backendRequest("/orders/".concat(orderId), {
             cache: 'no-store'
           });
         case 2:
-          row = _context15.v;
+          row = _context17.v;
           savedLines = parseDbJsonArray(row.accessory_lines_json);
           expectedLines = Array.isArray(expected.accessoryLines) ? expected.accessoryLines : [];
           if (!(expectedLines.length && !savedLines.length)) {
-            _context15.n = 3;
+            _context17.n = 3;
             break;
           }
-          return _context15.a(2, false);
+          return _context17.a(2, false);
         case 3:
           if (!expectedLines.length) {
-            _context15.n = 4;
+            _context17.n = 4;
             break;
           }
           expectedSignature = JSON.stringify(expectedLines.map(function (line) {
@@ -1324,26 +1380,26 @@ function _verifyOrderPersisted() {
             };
           }));
           if (!(expectedSignature !== savedSignature)) {
-            _context15.n = 4;
+            _context17.n = 4;
             break;
           }
-          return _context15.a(2, false);
+          return _context17.a(2, false);
         case 4:
           if (!(Number(expected.accessoryPercent || 0) !== Number(row.accessory_percent || 0))) {
-            _context15.n = 5;
+            _context17.n = 5;
             break;
           }
-          return _context15.a(2, false);
+          return _context17.a(2, false);
         case 5:
           if (!(String(expected.accessoryType || '') !== String(row.accessory_type || ''))) {
-            _context15.n = 6;
+            _context17.n = 6;
             break;
           }
-          return _context15.a(2, false);
+          return _context17.a(2, false);
         case 6:
-          return _context15.a(2, true);
+          return _context17.a(2, true);
       }
-    }, _callee15);
+    }, _callee17);
   }));
   return _verifyOrderPersisted.apply(this, arguments);
 }
@@ -1351,18 +1407,18 @@ function verifyAllocationPersisted(_x15) {
   return _verifyAllocationPersisted.apply(this, arguments);
 }
 function _verifyAllocationPersisted() {
-  _verifyAllocationPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16(allocationId) {
+  _verifyAllocationPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18(allocationId) {
     var expected,
-      _args15 = arguments;
-    return _regenerator().w(function (_context16) {
-      while (1) switch (_context16.n) {
+      _args17 = arguments;
+    return _regenerator().w(function (_context18) {
+      while (1) switch (_context18.n) {
         case 0:
-          expected = _args15.length > 1 && _args15[1] !== undefined ? _args15[1] : {};
-          return _context16.a(2, verifyRecordPersisted('allocation', allocationId, function (row) {
+          expected = _args17.length > 1 && _args17[1] !== undefined ? _args17[1] : {};
+          return _context18.a(2, verifyRecordPersisted('allocation', allocationId, function (row) {
             return String(row.color || row.pantone_code || '') === String(expected.color || expected.pantoneCode || row.color || row.pantone_code || '');
           }));
       }
-    }, _callee16);
+    }, _callee18);
   }));
   return _verifyAllocationPersisted.apply(this, arguments);
 }
@@ -1370,18 +1426,18 @@ function verifyBatchPersisted(_x16, _x17) {
   return _verifyBatchPersisted.apply(this, arguments);
 }
 function _verifyBatchPersisted() {
-  _verifyBatchPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(type, batchId) {
+  _verifyBatchPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19(type, batchId) {
     var expected,
-      _args16 = arguments;
-    return _regenerator().w(function (_context17) {
-      while (1) switch (_context17.n) {
+      _args18 = arguments;
+    return _regenerator().w(function (_context19) {
+      while (1) switch (_context19.n) {
         case 0:
-          expected = _args16.length > 2 && _args16[2] !== undefined ? _args16[2] : {};
-          return _context17.a(2, verifyRecordPersisted(type, batchId, function (row) {
+          expected = _args18.length > 2 && _args18[2] !== undefined ? _args18[2] : {};
+          return _context19.a(2, verifyRecordPersisted(type, batchId, function (row) {
             return Number(row.quantity || 0) === Number(expected.quantity || row.quantity || 0);
           }));
       }
-    }, _callee17);
+    }, _callee19);
   }));
   return _verifyBatchPersisted.apply(this, arguments);
 }
@@ -1389,18 +1445,18 @@ function verifyTransferPersisted(_x18) {
   return _verifyTransferPersisted.apply(this, arguments);
 }
 function _verifyTransferPersisted() {
-  _verifyTransferPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18(transferId) {
+  _verifyTransferPersisted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20(transferId) {
     var expected,
-      _args17 = arguments;
-    return _regenerator().w(function (_context18) {
-      while (1) switch (_context18.n) {
+      _args19 = arguments;
+    return _regenerator().w(function (_context20) {
+      while (1) switch (_context20.n) {
         case 0:
-          expected = _args17.length > 1 && _args17[1] !== undefined ? _args17[1] : {};
-          return _context18.a(2, verifyRecordPersisted('transfer', transferId, function (row) {
+          expected = _args19.length > 1 && _args19[1] !== undefined ? _args19[1] : {};
+          return _context20.a(2, verifyRecordPersisted('transfer', transferId, function (row) {
             return String(row.to_dyehouse || '') === String(expected.toDyehouse || expected.to_dyehouse || row.to_dyehouse || '');
           }));
       }
-    }, _callee18);
+    }, _callee20);
   }));
   return _verifyTransferPersisted.apply(this, arguments);
 }
@@ -1479,16 +1535,16 @@ function persistAuditLog() {
   return _persistAuditLog.apply(this, arguments);
 }
 function _persistAuditLog() {
-  _persistAuditLog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19() {
-    return _regenerator().w(function (_context19) {
-      while (1) switch (_context19.n) {
+  _persistAuditLog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21() {
+    return _regenerator().w(function (_context21) {
+      while (1) switch (_context21.n) {
         case 0:
-          _context19.n = 1;
+          _context21.n = 1;
           return saveBackendSetting('auditLog', auditLog);
         case 1:
-          return _context19.a(2);
+          return _context21.a(2);
       }
-    }, _callee19);
+    }, _callee21);
   }));
   return _persistAuditLog.apply(this, arguments);
 }
@@ -1698,13 +1754,13 @@ function syncOutboxToWhatsappService() {
   return _syncOutboxToWhatsappService.apply(this, arguments);
 }
 function _syncOutboxToWhatsappService() {
-  _syncOutboxToWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20() {
-    var _t10;
-    return _regenerator().w(function (_context20) {
-      while (1) switch (_context20.p = _context20.n) {
+  _syncOutboxToWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22() {
+    var _t11;
+    return _regenerator().w(function (_context22) {
+      while (1) switch (_context22.p = _context22.n) {
         case 0:
-          _context20.p = 0;
-          _context20.n = 1;
+          _context22.p = 0;
+          _context22.n = 1;
           return fetch("".concat(WHATSAPP_SERVICE_URL, "/api/outbox/sync"), {
             method: 'POST',
             headers: {
@@ -1716,15 +1772,15 @@ function _syncOutboxToWhatsappService() {
             })
           });
         case 1:
-          _context20.n = 3;
+          _context22.n = 3;
           break;
         case 2:
-          _context20.p = 2;
-          _t10 = _context20.v;
+          _context22.p = 2;
+          _t11 = _context22.v;
         case 3:
-          return _context20.a(2);
+          return _context22.a(2);
       }
-    }, _callee20, null, [[0, 2]]);
+    }, _callee22, null, [[0, 2]]);
   }));
   return _syncOutboxToWhatsappService.apply(this, arguments);
 }
@@ -1732,27 +1788,27 @@ function pollWhatsappService() {
   return _pollWhatsappService.apply(this, arguments);
 }
 function _pollWhatsappService() {
-  _pollWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21() {
-    var _refs$orderDetailsPan3, response, data, localById, _t11;
-    return _regenerator().w(function (_context21) {
-      while (1) switch (_context21.p = _context21.n) {
+  _pollWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee23() {
+    var _refs$orderDetailsPan3, response, data, localById, _t12;
+    return _regenerator().w(function (_context23) {
+      while (1) switch (_context23.p = _context23.n) {
         case 0:
           ensureRuntimeCollections();
-          _context21.p = 1;
-          _context21.n = 2;
+          _context23.p = 1;
+          _context23.n = 2;
           return fetch("".concat(WHATSAPP_SERVICE_URL, "/api/status"));
         case 2:
-          response = _context21.v;
+          response = _context23.v;
           if (response.ok) {
-            _context21.n = 3;
+            _context23.n = 3;
             break;
           }
           throw new Error('service-offline');
         case 3:
-          _context21.n = 4;
+          _context23.n = 4;
           return response.json();
         case 4:
-          data = _context21.v;
+          data = _context23.v;
           whatsappStatus = data.whatsapp || {
             status: 'disconnected',
             updatedAt: nowIso(),
@@ -1772,11 +1828,11 @@ function _pollWhatsappService() {
           save();
           updateWhatsappStatusBadge();
           if (selectedOrderId && (_refs$orderDetailsPan3 = refs.orderDetailsPanel) !== null && _refs$orderDetailsPan3 !== void 0 && _refs$orderDetailsPan3.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
-          _context21.n = 6;
+          _context23.n = 6;
           break;
         case 5:
-          _context21.p = 5;
-          _t11 = _context21.v;
+          _context23.p = 5;
+          _t12 = _context23.v;
           whatsappStatus = {
             status: 'disconnected',
             updatedAt: nowIso(),
@@ -1784,9 +1840,9 @@ function _pollWhatsappService() {
           };
           updateWhatsappStatusBadge();
         case 6:
-          return _context21.a(2);
+          return _context23.a(2);
       }
-    }, _callee21, null, [[1, 5]]);
+    }, _callee23, null, [[1, 5]]);
   }));
   return _pollWhatsappService.apply(this, arguments);
 }
@@ -1822,36 +1878,36 @@ function whatsappGroupsPromptHint() {
   return _whatsappGroupsPromptHint.apply(this, arguments);
 }
 function _whatsappGroupsPromptHint() {
-  _whatsappGroupsPromptHint = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22() {
-    var response, data, names, _t12;
-    return _regenerator().w(function (_context22) {
-      while (1) switch (_context22.p = _context22.n) {
+  _whatsappGroupsPromptHint = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee24() {
+    var response, data, names, _t13;
+    return _regenerator().w(function (_context24) {
+      while (1) switch (_context24.p = _context24.n) {
         case 0:
-          _context22.p = 0;
-          _context22.n = 1;
+          _context24.p = 0;
+          _context24.n = 1;
           return fetch("".concat(WHATSAPP_SERVICE_URL, "/api/groups"));
         case 1:
-          response = _context22.v;
+          response = _context24.v;
           if (response.ok) {
-            _context22.n = 2;
+            _context24.n = 2;
             break;
           }
-          return _context22.a(2, '');
+          return _context24.a(2, '');
         case 2:
-          _context22.n = 3;
+          _context24.n = 3;
           return response.json();
         case 3:
-          data = _context22.v;
+          data = _context24.v;
           names = (data.groups || []).map(function (group) {
             return group.name;
           }).filter(Boolean).slice(0, 20);
-          return _context22.a(2, names.length ? "\n\n\u0627\u0644\u062C\u0631\u0648\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u064B\u0627:\n".concat(names.join('\n'), "\n\n\u0627\u0643\u062A\u0628 \u0627\u0633\u0645 \u0627\u0644\u062C\u0631\u0648\u0628 \u0643\u0645\u0627 \u064A\u0638\u0647\u0631 \u0647\u0646\u0627.") : '');
+          return _context24.a(2, names.length ? "\n\n\u0627\u0644\u062C\u0631\u0648\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u064B\u0627:\n".concat(names.join('\n'), "\n\n\u0627\u0643\u062A\u0628 \u0627\u0633\u0645 \u0627\u0644\u062C\u0631\u0648\u0628 \u0643\u0645\u0627 \u064A\u0638\u0647\u0631 \u0647\u0646\u0627.") : '');
         case 4:
-          _context22.p = 4;
-          _t12 = _context22.v;
-          return _context22.a(2, '');
+          _context24.p = 4;
+          _t13 = _context24.v;
+          return _context24.a(2, '');
       }
-    }, _callee22, null, [[0, 4]]);
+    }, _callee24, null, [[0, 4]]);
   }));
   return _whatsappGroupsPromptHint.apply(this, arguments);
 }
@@ -1888,20 +1944,20 @@ function saveWhatsappSettingsFromDialog() {
   return _saveWhatsappSettingsFromDialog.apply(this, arguments);
 }
 function _saveWhatsappSettingsFromDialog() {
-  _saveWhatsappSettingsFromDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee23() {
+  _saveWhatsappSettingsFromDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee25() {
     var _refs$documentBody$qu2, _refs$documentBody$qu3;
     var before, nextMaps, nextSettings, saved;
-    return _regenerator().w(function (_context23) {
-      while (1) switch (_context23.n) {
+    return _regenerator().w(function (_context25) {
+      while (1) switch (_context25.n) {
         case 0:
-          _context23.n = 1;
+          _context25.n = 1;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ إعدادات واتساب.');
         case 1:
-          if (_context23.v) {
-            _context23.n = 2;
+          if (_context25.v) {
+            _context25.n = 2;
             break;
           }
-          return _context23.a(2);
+          return _context25.a(2);
         case 2:
           before = clone(whatsappSettings);
           nextMaps = {
@@ -1923,36 +1979,36 @@ function _saveWhatsappSettingsFromDialog() {
             customerGroups: nextMaps.customer,
             sendingEnabled: !!((_refs$documentBody$qu3 = refs.documentBody.querySelector('[data-sending-enabled]')) !== null && _refs$documentBody$qu3 !== void 0 && _refs$documentBody$qu3.checked)
           });
-          _context23.n = 3;
+          _context25.n = 3;
           return saveBackendSetting('whatsappSettings', nextSettings);
         case 3:
-          saved = _context23.v;
+          saved = _context25.v;
           if (saved) {
-            _context23.n = 5;
+            _context25.n = 5;
             break;
           }
-          _context23.n = 4;
+          _context25.n = 4;
           return rollbackAfterBackendWriteFailure('تعذر حفظ إعدادات واتساب في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 4:
-          return _context23.a(2);
+          return _context25.a(2);
         case 5:
           whatsappSettings = nextSettings;
           recordAudit('update', 'whatsappSettings', 'groups', before, whatsappSettings, 'تحديث إعدادات مجموعات واتساب');
           refreshOutboxTargetsAfterSettings();
-          _context23.n = 6;
+          _context25.n = 6;
           return saveBackendSetting('auditLog', auditLog);
         case 6:
           save();
           syncOutboxToWhatsappService();
-          _context23.n = 7;
+          _context25.n = 7;
           return loadBackendData();
         case 7:
           renderWhatsappSettingsDialog();
           alert(whatsappSettings.sendingEnabled ? 'تم حفظ إعدادات واتساب وتفعيل الإرسال.' : 'تم حفظ إعدادات واتساب مع بقاء الإرسال التلقائي متوقفًا.');
         case 8:
-          return _context23.a(2);
+          return _context25.a(2);
       }
-    }, _callee23);
+    }, _callee25);
   }));
   return _saveWhatsappSettingsFromDialog.apply(this, arguments);
 }
@@ -2079,19 +2135,19 @@ function saveDyehousePricesFromDialog() {
   return _saveDyehousePricesFromDialog.apply(this, arguments);
 }
 function _saveDyehousePricesFromDialog() {
-  _saveDyehousePricesFromDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee24() {
+  _saveDyehousePricesFromDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee26() {
     var before, next, saved;
-    return _regenerator().w(function (_context24) {
-      while (1) switch (_context24.n) {
+    return _regenerator().w(function (_context26) {
+      while (1) switch (_context26.n) {
         case 0:
-          _context24.n = 1;
+          _context26.n = 1;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ أسعار المصابغ.');
         case 1:
-          if (_context24.v) {
-            _context24.n = 2;
+          if (_context26.v) {
+            _context26.n = 2;
             break;
           }
-          return _context24.a(2);
+          return _context26.a(2);
         case 2:
           before = clone(customDyehousePriceLibrary || {});
           next = {};
@@ -2121,26 +2177,26 @@ function _saveDyehousePricesFromDialog() {
             next[dyehouse].dyeing[material][color] = price;
           });
           customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(next);
-          _context24.n = 3;
+          _context26.n = 3;
           return saveDyehousePriceLibrary();
         case 3:
-          saved = _context24.v;
+          saved = _context26.v;
           if (saved) {
-            _context24.n = 5;
+            _context26.n = 5;
             break;
           }
           customDyehousePriceLibrary = before;
           saveDyehousePriceLibraryLocal();
-          _context24.n = 4;
+          _context26.n = 4;
           return rollbackAfterBackendWriteFailure('تعذر حفظ أسعار المصابغ في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 4:
-          return _context24.a(2);
+          return _context26.a(2);
         case 5:
           recordAudit('update', 'dyehousePriceLibrary', 'pricing', before, customDyehousePriceLibrary, 'تحديث أسعار المصابغ');
-          _context24.n = 6;
+          _context26.n = 6;
           return saveBackendSetting('auditLog', auditLog);
         case 6:
-          _context24.n = 7;
+          _context26.n = 7;
           return loadBackendData();
         case 7:
           applyPricingDyehouseOptions();
@@ -2148,9 +2204,9 @@ function _saveDyehousePricesFromDialog() {
           renderDyehousePricesDialog();
           alert('تم حفظ أسعار المصابغ بنجاح.');
         case 8:
-          return _context24.a(2);
+          return _context26.a(2);
       }
-    }, _callee24);
+    }, _callee26);
   }));
   return _saveDyehousePricesFromDialog.apply(this, arguments);
 }
@@ -2329,27 +2385,27 @@ function saveCustomerOpeningBalance(_x19) {
   return _saveCustomerOpeningBalance.apply(this, arguments);
 }
 function _saveCustomerOpeningBalance() {
-  _saveCustomerOpeningBalance = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee25(customerName) {
+  _saveCustomerOpeningBalance = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee27(customerName) {
     var _refs$documentBody$qu4;
     var account, before, nextAccounts, saved;
-    return _regenerator().w(function (_context25) {
-      while (1) switch (_context25.n) {
+    return _regenerator().w(function (_context27) {
+      while (1) switch (_context27.n) {
         case 0:
           account = ensureCustomerAccount(customerName);
           if (account) {
-            _context25.n = 1;
+            _context27.n = 1;
             break;
           }
-          return _context25.a(2);
+          return _context27.a(2);
         case 1:
-          _context25.n = 2;
+          _context27.n = 2;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ حساب العميل.');
         case 2:
-          if (_context25.v) {
-            _context25.n = 3;
+          if (_context27.v) {
+            _context27.n = 3;
             break;
           }
-          return _context25.a(2);
+          return _context27.a(2);
         case 3:
           before = clone(account);
           nextAccounts = clone(customerAccounts);
@@ -2358,32 +2414,32 @@ function _saveCustomerOpeningBalance() {
           }), {}, {
             openingBalance: Number(((_refs$documentBody$qu4 = refs.documentBody.querySelector('[data-opening-balance]')) === null || _refs$documentBody$qu4 === void 0 ? void 0 : _refs$documentBody$qu4.value) || 0)
           });
-          _context25.n = 4;
+          _context27.n = 4;
           return saveBackendSetting('customerAccounts', nextAccounts);
         case 4:
-          saved = _context25.v;
+          saved = _context27.v;
           if (saved) {
-            _context25.n = 6;
+            _context27.n = 6;
             break;
           }
-          _context25.n = 5;
+          _context27.n = 5;
           return rollbackAfterBackendWriteFailure('تعذر حفظ حساب العميل في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 5:
-          return _context25.a(2);
+          return _context27.a(2);
         case 6:
           customerAccounts = nextAccounts;
           recordAudit('update', 'customerAccount', customerName, before, customerAccounts[customerName], "\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0627\u0641\u062A\u062A\u0627\u062D\u064A \u0644\u0644\u0639\u0645\u064A\u0644 ".concat(customerName));
-          _context25.n = 7;
+          _context27.n = 7;
           return saveBackendSetting('auditLog', auditLog);
         case 7:
-          _context25.n = 8;
+          _context27.n = 8;
           return loadBackendData();
         case 8:
           renderCustomerLedgerDialog(customerName);
         case 9:
-          return _context25.a(2);
+          return _context27.a(2);
       }
-    }, _callee25);
+    }, _callee27);
   }));
   return _saveCustomerOpeningBalance.apply(this, arguments);
 }
@@ -2391,35 +2447,35 @@ function addCustomerPayment(_x20) {
   return _addCustomerPayment.apply(this, arguments);
 }
 function _addCustomerPayment() {
-  _addCustomerPayment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee26(customerName) {
+  _addCustomerPayment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee28(customerName) {
     var _refs$documentBody$qu5, _refs$documentBody$qu6, _refs$documentBody$qu7, _refs$documentBody$qu8;
     var account, amount, payment, before, nextAccounts, nextAccount, saved;
-    return _regenerator().w(function (_context26) {
-      while (1) switch (_context26.n) {
+    return _regenerator().w(function (_context28) {
+      while (1) switch (_context28.n) {
         case 0:
           account = ensureCustomerAccount(customerName);
           if (account) {
-            _context26.n = 1;
+            _context28.n = 1;
             break;
           }
-          return _context26.a(2);
+          return _context28.a(2);
         case 1:
           amount = Number(((_refs$documentBody$qu5 = refs.documentBody.querySelector('[data-payment-amount]')) === null || _refs$documentBody$qu5 === void 0 ? void 0 : _refs$documentBody$qu5.value) || 0);
           if (amount) {
-            _context26.n = 2;
+            _context28.n = 2;
             break;
           }
           alert('أدخل مبلغ الدفعة قبل الحفظ.');
-          return _context26.a(2);
+          return _context28.a(2);
         case 2:
-          _context26.n = 3;
+          _context28.n = 3;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ الدفعة.');
         case 3:
-          if (_context26.v) {
-            _context26.n = 4;
+          if (_context28.v) {
+            _context28.n = 4;
             break;
           }
-          return _context26.a(2);
+          return _context28.a(2);
         case 4:
           payment = {
             id: uid(),
@@ -2436,32 +2492,32 @@ function _addCustomerPayment() {
           });
           nextAccount.payments = [payment].concat(_toConsumableArray(nextAccount.payments || []));
           nextAccounts[customerName] = nextAccount;
-          _context26.n = 5;
+          _context28.n = 5;
           return saveBackendSetting('customerAccounts', nextAccounts);
         case 5:
-          saved = _context26.v;
+          saved = _context28.v;
           if (saved) {
-            _context26.n = 7;
+            _context28.n = 7;
             break;
           }
-          _context26.n = 6;
+          _context28.n = 6;
           return rollbackAfterBackendWriteFailure('تعذر حفظ دفعة العميل في قاعدة البيانات. لم يتم اعتماد الدفعة.');
         case 6:
-          return _context26.a(2);
+          return _context28.a(2);
         case 7:
           customerAccounts = nextAccounts;
           recordAudit('create', 'customerPayment', payment.id, before, nextAccount, "\u0625\u0636\u0627\u0641\u0629 \u062F\u0641\u0639\u0629 \u0644\u0644\u0639\u0645\u064A\u0644 ".concat(customerName));
-          _context26.n = 8;
+          _context28.n = 8;
           return saveBackendSetting('auditLog', auditLog);
         case 8:
-          _context26.n = 9;
+          _context28.n = 9;
           return loadBackendData();
         case 9:
           renderCustomerLedgerDialog(customerName);
         case 10:
-          return _context26.a(2);
+          return _context28.a(2);
       }
-    }, _callee26);
+    }, _callee28);
   }));
   return _addCustomerPayment.apply(this, arguments);
 }
@@ -2469,26 +2525,26 @@ function deleteCustomerPayment(_x21, _x22) {
   return _deleteCustomerPayment.apply(this, arguments);
 }
 function _deleteCustomerPayment() {
-  _deleteCustomerPayment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee27(customerName, paymentId) {
+  _deleteCustomerPayment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee29(customerName, paymentId) {
     var account, before, nextAccounts, nextAccount, saved;
-    return _regenerator().w(function (_context27) {
-      while (1) switch (_context27.n) {
+    return _regenerator().w(function (_context29) {
+      while (1) switch (_context29.n) {
         case 0:
           account = ensureCustomerAccount(customerName);
           if (account) {
-            _context27.n = 1;
+            _context29.n = 1;
             break;
           }
-          return _context27.a(2);
+          return _context29.a(2);
         case 1:
-          _context27.n = 2;
+          _context29.n = 2;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حذف الدفعة.');
         case 2:
-          if (_context27.v) {
-            _context27.n = 3;
+          if (_context29.v) {
+            _context29.n = 3;
             break;
           }
-          return _context27.a(2);
+          return _context29.a(2);
         case 3:
           before = clone(account);
           nextAccounts = clone(customerAccounts);
@@ -2500,32 +2556,32 @@ function _deleteCustomerPayment() {
             return payment.id !== paymentId;
           });
           nextAccounts[customerName] = nextAccount;
-          _context27.n = 4;
+          _context29.n = 4;
           return saveBackendSetting('customerAccounts', nextAccounts);
         case 4:
-          saved = _context27.v;
+          saved = _context29.v;
           if (saved) {
-            _context27.n = 6;
+            _context29.n = 6;
             break;
           }
-          _context27.n = 5;
+          _context29.n = 5;
           return rollbackAfterBackendWriteFailure('تعذر حذف دفعة العميل من قاعدة البيانات. لم يتم اعتماد الحذف.');
         case 5:
-          return _context27.a(2);
+          return _context29.a(2);
         case 6:
           customerAccounts = nextAccounts;
           recordAudit('delete', 'customerPayment', paymentId, before, nextAccount, "\u062D\u0630\u0641 \u062F\u0641\u0639\u0629 \u0644\u0644\u0639\u0645\u064A\u0644 ".concat(customerName));
-          _context27.n = 7;
+          _context29.n = 7;
           return saveBackendSetting('auditLog', auditLog);
         case 7:
-          _context27.n = 8;
+          _context29.n = 8;
           return loadBackendData();
         case 8:
           renderCustomerLedgerDialog(customerName);
         case 9:
-          return _context27.a(2);
+          return _context29.a(2);
       }
-    }, _callee27);
+    }, _callee29);
   }));
   return _deleteCustomerPayment.apply(this, arguments);
 }
@@ -2564,20 +2620,20 @@ function openWhatsappSettingsDialog() {
   return _openWhatsappSettingsDialog.apply(this, arguments);
 }
 function _openWhatsappSettingsDialog() {
-  _openWhatsappSettingsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee28() {
-    var _t13;
-    return _regenerator().w(function (_context28) {
-      while (1) switch (_context28.n) {
+  _openWhatsappSettingsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee30() {
+    var _t14;
+    return _regenerator().w(function (_context30) {
+      while (1) switch (_context30.n) {
         case 0:
-          _t13 = renderWhatsappSettingsDialog;
-          _context28.n = 1;
+          _t14 = renderWhatsappSettingsDialog;
+          _context30.n = 1;
           return fetchWhatsappGroupNames();
         case 1:
-          _t13(_context28.v);
+          _t14(_context30.v);
         case 2:
-          return _context28.a(2);
+          return _context30.a(2);
       }
-    }, _callee28);
+    }, _callee30);
   }));
   return _openWhatsappSettingsDialog.apply(this, arguments);
 }
@@ -2611,36 +2667,36 @@ function fetchA5Customers() {
   return _fetchA5Customers.apply(this, arguments);
 }
 function _fetchA5Customers() {
-  _fetchA5Customers = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee29() {
+  _fetchA5Customers = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee31() {
     var response, data;
-    return _regenerator().w(function (_context29) {
-      while (1) switch (_context29.n) {
+    return _regenerator().w(function (_context31) {
+      while (1) switch (_context31.n) {
         case 0:
-          _context29.n = 1;
+          _context31.n = 1;
           return fetch("".concat(A5_SERVICE_URL, "/api/a5/customers"), {
             cache: 'no-store'
           });
         case 1:
-          response = _context29.v;
+          response = _context31.v;
           if (response.ok) {
-            _context29.n = 2;
+            _context31.n = 2;
             break;
           }
           throw new Error('a5-offline');
         case 2:
-          _context29.n = 3;
+          _context31.n = 3;
           return response.json();
         case 3:
-          data = _context29.v;
+          data = _context31.v;
           if (!(!data.ok || !Array.isArray(data.customers))) {
-            _context29.n = 4;
+            _context31.n = 4;
             break;
           }
           throw new Error(data.message || 'a5-invalid');
         case 4:
-          return _context29.a(2, data.customers);
+          return _context31.a(2, data.customers);
       }
-    }, _callee29);
+    }, _callee31);
   }));
   return _fetchA5Customers.apply(this, arguments);
 }
@@ -2648,36 +2704,36 @@ function fetchA5CustomerLedger(_x23) {
   return _fetchA5CustomerLedger.apply(this, arguments);
 }
 function _fetchA5CustomerLedger() {
-  _fetchA5CustomerLedger = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee30(customerName) {
+  _fetchA5CustomerLedger = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee32(customerName) {
     var response, data;
-    return _regenerator().w(function (_context30) {
-      while (1) switch (_context30.n) {
+    return _regenerator().w(function (_context32) {
+      while (1) switch (_context32.n) {
         case 0:
-          _context30.n = 1;
+          _context32.n = 1;
           return fetch("".concat(A5_SERVICE_URL, "/api/a5/customer-ledger?customerName=").concat(encodeURIComponent(customerName)), {
             cache: 'no-store'
           });
         case 1:
-          response = _context30.v;
+          response = _context32.v;
           if (response.ok) {
-            _context30.n = 2;
+            _context32.n = 2;
             break;
           }
           throw new Error('a5-offline');
         case 2:
-          _context30.n = 3;
+          _context32.n = 3;
           return response.json();
         case 3:
-          data = _context30.v;
+          data = _context32.v;
           if (!(!data.ok || !Array.isArray(data.movements))) {
-            _context30.n = 4;
+            _context32.n = 4;
             break;
           }
           throw new Error(data.message || 'a5-invalid');
         case 4:
-          return _context30.a(2, data.movements);
+          return _context32.a(2, data.movements);
       }
-    }, _callee30);
+    }, _callee32);
   }));
   return _fetchA5CustomerLedger.apply(this, arguments);
 }
@@ -2691,21 +2747,21 @@ function renderA5AccountsDialog() {
   return _renderA5AccountsDialog.apply(this, arguments);
 }
 function _renderA5AccountsDialog() {
-  _renderA5AccountsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee31() {
-    var a5Customers, systemCustomers, matchedRows, unmatchedA5, unmatchedNote, _t14;
-    return _regenerator().w(function (_context31) {
-      while (1) switch (_context31.p = _context31.n) {
+  _renderA5AccountsDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee33() {
+    var a5Customers, systemCustomers, matchedRows, unmatchedA5, unmatchedNote, _t15;
+    return _regenerator().w(function (_context33) {
+      while (1) switch (_context33.p = _context33.n) {
         case 0:
           refs.documentTitle.textContent = "\u062D\u0633\u0627\u0628\u0627\u062A A5";
           refs.documentBody.dataset.documentType = 'a5-accounts';
           refs.documentBody.innerHTML = "<div class=\"document-sheet\"><div class=\"subsection-head\"><div><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><p class=\"muted\">\u0631\u0628\u0637 \u0639\u0645\u0644\u0627\u0621 \u0627\u0644\u0646\u0638\u0627\u0645 \u0628\u0643\u0634\u0648\u0641\u0627\u062A \u062D\u0633\u0627\u0628\u0627\u062A\u0647\u0645 \u0641\u064A A5.</p></div></div><p class=\"muted\">\u062C\u0627\u0631\u064A \u062A\u062D\u0645\u064A\u0644 \u0628\u064A\u0627\u0646\u0627\u062A A5...</p></div>";
           if (refs.documentDialog.open) refs.documentDialog.close();
           refs.documentDialog.showModal();
-          _context31.p = 1;
-          _context31.n = 2;
+          _context33.p = 1;
+          _context33.n = 2;
           return fetchA5Customers();
         case 2:
-          a5Customers = _context31.v;
+          a5Customers = _context33.v;
           systemCustomers = knownCustomerNames();
           matchedRows = systemCustomers.map(function (systemName) {
             var a5Customer = findA5CustomerForSystemName(systemName, a5Customers);
@@ -2723,16 +2779,16 @@ function _renderA5AccountsDialog() {
           });
           unmatchedNote = unmatchedA5.length ? "<p class=\"eyebrow\">\u064A\u0648\u062C\u062F " + unmatchedA5.length + " \u0639\u0645\u064A\u0644 \u0641\u064A A5 \u0644\u064A\u0633 \u0644\u0647\u0645 \u0637\u0644\u0628\u0627\u062A \u062D\u0627\u0644\u064A\u0629 \u0641\u064A \u0627\u0644\u0646\u0638\u0627\u0645.</p>" : '';
           refs.documentBody.innerHTML = '<div class="document-sheet">' + "<div class=\"subsection-head\"><div><h2>\u0643\u0634\u0648\u0641\u0627\u062A \u062D\u0633\u0627\u0628\u0627\u062A A5</h2><p class=\"muted\">\u0627\u0644\u0639\u0631\u0636 \u0645\u0628\u0646\u064A \u0639\u0644\u0649 \u0639\u0645\u0644\u0627\u0621 \u0627\u0644\u0646\u0638\u0627\u0645\u060C \u0648\u064A\u0633\u062D\u0628 \u0627\u0644\u0631\u0635\u064A\u062F \u0648\u0627\u0644\u0643\u0634\u0641 \u0645\u0646 A5 \u0644\u0644\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637.</p></div><button class=\"mini-btn no-print\" type=\"button\" data-refresh-a5-accounts>\u062A\u062D\u062F\u064A\u062B</button></div>" + unmatchedNote + "<table><thead><tr><th>\u0639\u0645\u064A\u0644 \u0627\u0644\u0646\u0638\u0627\u0645</th><th>\u0627\u0633\u0645\u0647 \u0641\u064A A5</th><th>\u0627\u0644\u0645\u0646\u0637\u0642\u0629</th><th>\u0631\u0635\u064A\u062F A5</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u0645\u062F\u064A\u0646</th><th>\u0625\u062C\u0645\u0627\u0644\u064A \u062F\u0627\u0626\u0646</th><th>\u0639\u062F\u062F \u0627\u0644\u062D\u0631\u0643\u0627\u062A</th><th>\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0646\u0638\u0627\u0645</th><th>\u062A\u062D\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</th><th>\u0643\u0645\u064A\u0629 \u0645\u0633\u0644\u0645\u0629</th><th>\u0622\u062E\u0631 \u0637\u0644\u0628</th><th>\u0627\u0644\u0643\u0634\u0641</th></tr></thead><tbody>" + (matchedRows || "<tr><td colspan=\"12\">\u0644\u0627 \u064A\u0648\u062C\u062F \u0639\u0645\u0644\u0627\u0621 \u0645\u0633\u062C\u0644\u0648\u0646 \u0641\u064A \u0627\u0644\u0646\u0638\u0627\u0645.</td></tr>") + '</tbody></table></div>';
-          _context31.n = 4;
+          _context33.n = 4;
           break;
         case 3:
-          _context31.p = 3;
-          _t14 = _context31.v;
+          _context33.p = 3;
+          _t15 = _context33.v;
           refs.documentBody.innerHTML = "<div class=\"document-sheet\"><h2>\u062D\u0633\u0627\u0628\u0627\u062A A5</h2><div class=\"notice warning\">\u062E\u062F\u0645\u0629 A5 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627. \u0634\u063A\u0644 \u0645\u0644\u0641 \"\u062A\u0634\u063A\u064A\u0644 \u062E\u062F\u0645\u0629 A5.bat\" \u062B\u0645 \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.</div><div class=\"document-actions no-print\"><button class=\"primary-btn\" type=\"button\" data-refresh-a5-accounts>\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629</button></div></div>";
         case 4:
-          return _context31.a(2);
+          return _context33.a(2);
       }
-    }, _callee31, null, [[1, 3]]);
+    }, _callee33, null, [[1, 3]]);
   }));
   return _renderA5AccountsDialog.apply(this, arguments);
 }
@@ -2740,20 +2796,20 @@ function renderA5LedgerDialog(_x24) {
   return _renderA5LedgerDialog.apply(this, arguments);
 }
 function _renderA5LedgerDialog() {
-  _renderA5LedgerDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee32(customerName) {
-    var name, movements, tracking, totals, currentBalance, rows, _t15;
-    return _regenerator().w(function (_context32) {
-      while (1) switch (_context32.p = _context32.n) {
+  _renderA5LedgerDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee34(customerName) {
+    var name, movements, tracking, totals, currentBalance, rows, _t16;
+    return _regenerator().w(function (_context34) {
+      while (1) switch (_context34.p = _context34.n) {
         case 0:
           name = String(customerName || '').trim();
           refs.documentTitle.textContent = "\u0643\u0634\u0641 \u062D\u0633\u0627\u0628 A5 - ".concat(name);
           refs.documentBody.dataset.documentType = 'a5-ledger';
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n    <div class=\"subsection-head\"><div><h2>\u0643\u0634\u0641 \u062D\u0633\u0627\u0628 A5</h2><p class=\"muted\">".concat(escapeHtml(name), " - \u0628\u064A\u0627\u0646\u0627\u062A \u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637 \u0645\u0646 A5.</p></div><button class=\"mini-btn no-print\" type=\"button\" data-back-a5-accounts>\u0631\u062C\u0648\u0639</button></div>\n    <p class=\"muted\">\u062C\u0627\u0631\u064A \u062A\u062D\u0645\u064A\u0644 \u062D\u0631\u0643\u0627\u062A \u0627\u0644\u062D\u0633\u0627\u0628...</p>\n  </div>");
-          _context32.p = 1;
-          _context32.n = 2;
+          _context34.p = 1;
+          _context34.n = 2;
           return fetchA5CustomerLedger(name);
         case 2:
-          movements = _context32.v;
+          movements = _context34.v;
           tracking = trackingCustomerSummary(name);
           totals = movements.reduce(function (acc, item) {
             acc.debit += Number(item.debit || 0);
@@ -2768,16 +2824,16 @@ function _renderA5LedgerDialog() {
             return "<tr>\n      <td>".concat(formatA5Date(item.movementDate), "</td>\n      <td>").concat(escapeHtml(item.movementType || '-'), "</td>\n      <td>").concat(escapeHtml(item.description || '-'), "</td>\n      <td>").concat(formatNumber(item.beforeBalance || 0), "</td>\n      <td>").concat(formatNumber(item.debit || 0), "</td>\n      <td>").concat(formatNumber(item.credit || 0), "</td>\n      <td><strong>").concat(formatNumber(item.afterBalance || 0), "</strong></td>\n      <td>").concat(item.orderRef || item.orderBookRef || '-', "</td>\n    </tr>");
           }).join('');
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <div class=\"subsection-head\"><div><h2>\u0643\u0634\u0641 \u062D\u0633\u0627\u0628 A5 - ".concat(escapeHtml(name), "</h2><p class=\"muted\">\u062D\u0631\u0643\u0627\u062A \u0627\u0644\u0639\u0645\u064A\u0644 \u0641\u064A A5 \u0645\u0639 \u0645\u0644\u062E\u0635 \u0637\u0644\u0628\u0627\u062A\u0647 \u062F\u0627\u062E\u0644 \u0646\u0638\u0627\u0645 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629.</p></div><button class=\"mini-btn no-print\" type=\"button\" data-back-a5-accounts>\u0631\u062C\u0648\u0639</button></div>\n      <div class=\"summary-grid\">\n        <div class=\"metric\"><span>\u0631\u0635\u064A\u062F \u0627\u0644\u0639\u0645\u064A\u0644</span><strong>").concat(formatNumber(currentBalance), "</strong></div>\n        <div class=\"metric\"><span>\u0625\u062C\u0645\u0627\u0644\u064A \u0645\u062F\u064A\u0646</span><strong>").concat(formatNumber(totals.debit), "</strong></div>\n        <div class=\"metric\"><span>\u0625\u062C\u0645\u0627\u0644\u064A \u062F\u0627\u0626\u0646</span><strong>").concat(formatNumber(totals.credit), "</strong></div>\n        <div class=\"metric\"><span>\u0639\u062F\u062F \u0627\u0644\u062D\u0631\u0643\u0627\u062A</span><strong>").concat(movements.length, "</strong></div>\n        <div class=\"metric\"><span>\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0629</span><strong>").concat(tracking.ordersCount, "</strong></div>\n        <div class=\"metric\"><span>\u062A\u062D\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</span><strong>").concat(tracking.activeOrdersCount, "</strong></div>\n      </div>\n      <table><thead><tr><th>\u0627\u0644\u062A\u0627\u0631\u064A\u062E</th><th>\u0646\u0648\u0639 \u0627\u0644\u062D\u0631\u0643\u0629</th><th>\u0627\u0644\u0628\u064A\u0627\u0646</th><th>\u0631\u0635\u064A\u062F \u0642\u0628\u0644</th><th>\u0645\u062F\u064A\u0646</th><th>\u062F\u0627\u0626\u0646</th><th>\u0631\u0635\u064A\u062F \u0628\u0639\u062F</th><th>\u0645\u0631\u062C\u0639 \u0627\u0644\u0637\u0644\u0628</th></tr></thead><tbody>").concat(rows || '<tr><td colspan="8">لا توجد حركات متاحة لهذا العميل في A5.</td></tr>', "</tbody></table>\n    </div>");
-          _context32.n = 4;
+          _context34.n = 4;
           break;
         case 3:
-          _context32.p = 3;
-          _t15 = _context32.v;
+          _context34.p = 3;
+          _t16 = _context34.v;
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <div class=\"subsection-head\"><h2>\u0643\u0634\u0641 \u062D\u0633\u0627\u0628 A5</h2><button class=\"mini-btn no-print\" type=\"button\" data-back-a5-accounts>\u0631\u062C\u0648\u0639</button></div>\n      <div class=\"notice warning\">\u062A\u0639\u0630\u0631 \u062A\u062D\u0645\u064A\u0644 \u0643\u0634\u0641 \u0627\u0644\u062D\u0633\u0627\u0628 \u0645\u0646 A5. \u062A\u0623\u0643\u062F \u0623\u0646 \u062E\u062F\u0645\u0629 A5 \u062A\u0639\u0645\u0644 \u062B\u0645 \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.</div>\n    </div>";
         case 4:
-          return _context32.a(2);
+          return _context34.a(2);
       }
-    }, _callee32, null, [[1, 3]]);
+    }, _callee34, null, [[1, 3]]);
   }));
   return _renderA5LedgerDialog.apply(this, arguments);
 }
@@ -2824,18 +2880,18 @@ function fetchSystemUsers() {
   return _fetchSystemUsers.apply(this, arguments);
 }
 function _fetchSystemUsers() {
-  _fetchSystemUsers = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee33() {
-    return _regenerator().w(function (_context33) {
-      while (1) switch (_context33.n) {
+  _fetchSystemUsers = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee35() {
+    return _regenerator().w(function (_context35) {
+      while (1) switch (_context35.n) {
         case 0:
-          _context33.n = 1;
+          _context35.n = 1;
           return backendRequest('/users', {
             cache: 'no-store'
           });
         case 1:
-          return _context33.a(2, _context33.v);
+          return _context35.a(2, _context35.v);
       }
-    }, _callee33);
+    }, _callee35);
   }));
   return _fetchSystemUsers.apply(this, arguments);
 }
@@ -2850,36 +2906,36 @@ function openUsersDialog() {
   return _openUsersDialog.apply(this, arguments);
 }
 function _openUsersDialog() {
-  _openUsersDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee34() {
-    var users, rows, _t16;
-    return _regenerator().w(function (_context34) {
-      while (1) switch (_context34.p = _context34.n) {
+  _openUsersDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee36() {
+    var users, rows, _t17;
+    return _regenerator().w(function (_context36) {
+      while (1) switch (_context36.p = _context36.n) {
         case 0:
           refs.documentTitle.textContent = 'المستخدمين';
           refs.documentBody.dataset.documentType = 'system-users';
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><p class="muted">جاري تحميل المستخدمين...</p></div>';
           if (refs.documentDialog.open) refs.documentDialog.close();
           refs.documentDialog.showModal();
-          _context34.p = 1;
-          _context34.n = 2;
+          _context36.p = 1;
+          _context36.n = 2;
           return fetchSystemUsers();
         case 2:
-          users = _context34.v;
+          users = _context36.v;
           rows = users.map(function (user) {
             return "<tr>\n      <td><strong>".concat(escapeHtml(user.name || '-'), "</strong></td>\n      <td>").concat(escapeHtml(user.username || '-'), "</td>\n      <td>").concat(escapeHtml(systemUserRoleLabel(user.role)), "</td>\n      <td><span class=\"status ").concat(Number(user.is_active) === 1 ? 'completed' : 'failed', "\">").concat(Number(user.is_active) === 1 ? 'نشط' : 'موقوف', "</span></td>\n      <td>").concat(escapeHtml(arDateTime(user.updated_at || user.created_at)), "</td>\n      <td><div class=\"batch-actions\"><button class=\"mini-btn\" type=\"button\" data-edit-system-user=\"").concat(escapeHtml(user.id), "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" type=\"button\" data-delete-system-user=\"").concat(escapeHtml(user.id), "\">\u062D\u0630\u0641</button></div></td>\n    </tr>");
           }).join('');
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <div class=\"subsection-head\"><div><h2>\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646</h2><p class=\"muted\">\u0625\u062F\u0627\u0631\u0629 \u0645\u0633\u062A\u062E\u062F\u0645\u064A \u0627\u0644\u0646\u0638\u0627\u0645. \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u062D\u0627\u0644\u064A \u064A\u0638\u0644 \u0645\u0624\u0645\u0646\u064B\u0627 \u0628\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u062D\u062A\u0649 \u0646\u0642\u0644 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0627\u0644\u0643\u0627\u0645\u0644 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646.</p></div><button class=\"mini-btn gold\" type=\"button\" data-new-system-user>\u0625\u0636\u0627\u0641\u0629 \u0645\u0633\u062A\u062E\u062F\u0645</button></div>\n      <table><thead><tr><th>\u0627\u0644\u0627\u0633\u0645</th><th>\u0627\u0633\u0645 \u0627\u0644\u062F\u062E\u0648\u0644</th><th>\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0629</th><th>\u0627\u0644\u062D\u0627\u0644\u0629</th><th>\u0622\u062E\u0631 \u062A\u0639\u062F\u064A\u0644</th><th>\u0625\u062C\u0631\u0627\u0621\u0627\u062A</th></tr></thead><tbody>".concat(rows || '<tr><td colspan="6">لا يوجد مستخدمين حتى الآن.</td></tr>', "</tbody></table>\n    </div>");
           refs.documentBody.dataset.usersJson = JSON.stringify(users);
-          _context34.n = 4;
+          _context36.n = 4;
           break;
         case 3:
-          _context34.p = 3;
-          _t16 = _context34.v;
+          _context36.p = 3;
+          _t17 = _context36.v;
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><div class="notice warning">تعذر تحميل المستخدمين حاليًا.</div></div>';
         case 4:
-          return _context34.a(2);
+          return _context36.a(2);
       }
-    }, _callee34, null, [[1, 3]]);
+    }, _callee36, null, [[1, 3]]);
   }));
   return _openUsersDialog.apply(this, arguments);
 }
@@ -2909,49 +2965,49 @@ function saveSystemUser() {
   return _saveSystemUser.apply(this, arguments);
 }
 function _saveSystemUser() {
-  _saveSystemUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee35() {
+  _saveSystemUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee37() {
     var userId,
       isNew,
       payload,
-      _args34 = arguments;
-    return _regenerator().w(function (_context35) {
-      while (1) switch (_context35.n) {
+      _args36 = arguments;
+    return _regenerator().w(function (_context37) {
+      while (1) switch (_context37.n) {
         case 0:
-          userId = _args34.length > 0 && _args34[0] !== undefined ? _args34[0] : '';
+          userId = _args36.length > 0 && _args36[0] !== undefined ? _args36[0] : '';
           isNew = !userId;
           payload = systemUserFormPayload(isNew);
           if (!(!payload.username || isNew && !payload.password)) {
-            _context35.n = 1;
+            _context37.n = 1;
             break;
           }
           alert('اسم الدخول وكلمة المرور مطلوبين.');
-          return _context35.a(2);
+          return _context37.a(2);
         case 1:
           if (!isNew) {
-            _context35.n = 3;
+            _context37.n = 3;
             break;
           }
-          _context35.n = 2;
+          _context37.n = 2;
           return backendRequest('/users', {
             method: 'POST',
             body: JSON.stringify(payload)
           });
         case 2:
-          _context35.n = 4;
+          _context37.n = 4;
           break;
         case 3:
-          _context35.n = 4;
+          _context37.n = 4;
           return backendRequest("/users/".concat(userId), {
             method: 'PUT',
             body: JSON.stringify(payload)
           });
         case 4:
-          _context35.n = 5;
+          _context37.n = 5;
           return openUsersDialog();
         case 5:
-          return _context35.a(2);
+          return _context37.a(2);
       }
-    }, _callee35);
+    }, _callee37);
   }));
   return _saveSystemUser.apply(this, arguments);
 }
@@ -2959,27 +3015,27 @@ function deleteSystemUser(_x25) {
   return _deleteSystemUser.apply(this, arguments);
 }
 function _deleteSystemUser() {
-  _deleteSystemUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee36(userId) {
-    return _regenerator().w(function (_context36) {
-      while (1) switch (_context36.n) {
+  _deleteSystemUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee38(userId) {
+    return _regenerator().w(function (_context38) {
+      while (1) switch (_context38.n) {
         case 0:
           if (!(!userId || !confirm('حذف المستخدم؟'))) {
-            _context36.n = 1;
+            _context38.n = 1;
             break;
           }
-          return _context36.a(2);
+          return _context38.a(2);
         case 1:
-          _context36.n = 2;
+          _context38.n = 2;
           return backendRequest("/users/".concat(userId), {
             method: 'DELETE'
           });
         case 2:
-          _context36.n = 3;
+          _context38.n = 3;
           return openUsersDialog();
         case 3:
-          return _context36.a(2);
+          return _context38.a(2);
       }
-    }, _callee36);
+    }, _callee38);
   }));
   return _deleteSystemUser.apply(this, arguments);
 }
@@ -3008,57 +3064,60 @@ function openSystemStatusDialog() {
   return _openSystemStatusDialog.apply(this, arguments);
 }
 function _openSystemStatusDialog() {
-  _openSystemStatusDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee37() {
-    var _status$cloudflare, _status$frontend, _status$frontend2, _status$backend, _status$backend2, _status$cloudflare2, _status$backup, _status$backup2, status, cloudflareUrl, row, _t17;
-    return _regenerator().w(function (_context37) {
-      while (1) switch (_context37.p = _context37.n) {
+  _openSystemStatusDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee39() {
+    var _status$cloudflare, _status$frontend, _status$frontend2, _status$backend, _status$backend2, _status$cloudflare2, _status$backup, _status$backup2, status, cloudflareUrl, row, _t18;
+    return _regenerator().w(function (_context39) {
+      while (1) switch (_context39.p = _context39.n) {
         case 0:
           refs.documentTitle.textContent = 'حالة تشغيل النظام';
           refs.documentBody.dataset.documentType = 'system-status';
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>جاري فحص الخدمات...</p></div>';
           refs.documentDialog.showModal();
-          _context37.p = 1;
-          _context37.n = 2;
+          _context39.p = 1;
+          _context39.n = 2;
           return fetch('/system/status', {
             cache: 'no-store'
           }).then(function (response) {
             return response.json();
           });
         case 2:
-          status = _context37.v;
+          status = _context39.v;
           cloudflareUrl = ((_status$cloudflare = status.cloudflare) === null || _status$cloudflare === void 0 ? void 0 : _status$cloudflare.url) || 'لا يوجد رابط مسجل حاليًا';
           row = function row(label, value, ok) {
             return "<tr><td>".concat(label, "</td><td><span class=\"status ").concat(ok ? 'completed' : 'failed', "\">").concat(ok ? 'يعمل' : 'متوقف', "</span></td><td>").concat(escapeHtml(value || '-'), "</td></tr>");
           };
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <h2>\u062D\u0627\u0644\u0629 \u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0646\u0638\u0627\u0645</h2>\n      <table>\n        <thead><tr><th>\u0627\u0644\u0628\u0646\u062F</th><th>\u0627\u0644\u062D\u0627\u0644\u0629</th><th>\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644</th></tr></thead>\n        <tbody>\n          ".concat(row('Frontend', "Port ".concat(((_status$frontend = status.frontend) === null || _status$frontend === void 0 ? void 0 : _status$frontend.port) || 3000), (_status$frontend2 = status.frontend) === null || _status$frontend2 === void 0 ? void 0 : _status$frontend2.ok), "\n          ").concat(row('Backend', "Port ".concat(((_status$backend = status.backend) === null || _status$backend === void 0 ? void 0 : _status$backend.port) || 3050), (_status$backend2 = status.backend) === null || _status$backend2 === void 0 ? void 0 : _status$backend2.ok), "\n          ").concat(row('Cloudflare', cloudflareUrl, (_status$cloudflare2 = status.cloudflare) === null || _status$cloudflare2 === void 0 ? void 0 : _status$cloudflare2.ok), "\n          ").concat(row('Backup', ((_status$backup = status.backup) === null || _status$backup === void 0 || (_status$backup = _status$backup.latest) === null || _status$backup === void 0 ? void 0 : _status$backup.path) || 'لا يوجد Backup معروف', (_status$backup2 = status.backup) === null || _status$backup2 === void 0 ? void 0 : _status$backup2.ok), "\n        </tbody>\n      </table>\n      <p><strong>\u0631\u0627\u0628\u0637 Cloudflare \u0627\u0644\u062D\u0627\u0644\u064A:</strong> ").concat(cloudflareUrl.startsWith('https://') ? "<a href=\"".concat(escapeHtml(cloudflareUrl), "\" target=\"_blank\" rel=\"noopener\">").concat(escapeHtml(cloudflareUrl), "</a>") : escapeHtml(cloudflareUrl), "</p>\n    </div>");
-          _context37.n = 4;
+          _context39.n = 4;
           break;
         case 3:
-          _context37.p = 3;
-          _t17 = _context37.v;
+          _context39.p = 3;
+          _t18 = _context39.v;
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
         case 4:
-          return _context37.a(2);
+          return _context39.a(2);
       }
-    }, _callee37, null, [[1, 3]]);
+    }, _callee39, null, [[1, 3]]);
   }));
   return _openSystemStatusDialog.apply(this, arguments);
 }
 function installAutomationUi() {
-  var _document$getElementB, _document$getElementB2, _document$getElementB3, _document$getElementB4, _document$getElementB5, _document$getElementB6, _document$getElementB7, _document$getElementB8, _document$getElementB9;
+  var _document$getElementB, _document$getElementB2, _document$getElementB3, _document$getElementB4, _document$getElementB5, _document$getElementB6, _document$getElementB7, _document$getElementB8, _document$getElementB9, _document$getElementB0;
   var actionBar = document.querySelector('.hero-actions') || document.querySelector('header') || document.body;
   if (!document.getElementById('whatsappStatusBadge')) {
-    actionBar.insertAdjacentHTML('beforeend', "<span class=\"mini-btn version-badge\" id=\"appVersionBadge\" title=\"\u0648\u0642\u062A \u0625\u0635\u062F\u0627\u0631 \u0647\u0630\u0647 \u0627\u0644\u0646\u0633\u062E\u0629\">\u0627\u0644\u0646\u0633\u062E\u0629 ".concat(APP_VERSION, " | ").concat(APP_BUILD_TIME, "</span><button class=\"mini-btn connection-badge is-down\" id=\"backendStatusBadge\" type=\"button\"><span class=\"connection-dot\"></span><span data-connection-text>\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A: \u063A\u064A\u0631 \u0645\u062A\u0635\u0644</span></button><button class=\"mini-btn connection-badge is-down\" id=\"whatsappStatusBadge\" type=\"button\"><span class=\"connection-dot\"></span><span data-connection-text>\u0648\u0627\u062A\u0633\u0627\u0628: \u063A\u064A\u0631 \u0645\u062A\u0635\u0644</span></button><button class=\"mini-btn\" id=\"systemStatusBtn\" type=\"button\">\u062D\u0627\u0644\u0629 \u0627\u0644\u0646\u0638\u0627\u0645</button><button class=\"mini-btn\" id=\"usersBtn\" type=\"button\">\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646</button><button class=\"mini-btn\" id=\"whatsappSettingsBtn\" type=\"button\">\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0648\u0627\u062A\u0633\u0627\u0628</button><button class=\"mini-btn\" id=\"dyehousePricesBtn\" type=\"button\">\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u0645\u0635\u0627\u0628\u063A</button><button class=\"mini-btn\" id=\"a5AccountsBtn\" type=\"button\">\u062D\u0633\u0627\u0628\u0627\u062A A5</button><button class=\"mini-btn\" id=\"outboxBtn\" type=\"button\">\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0625\u0631\u0633\u0627\u0644</button><button class=\"mini-btn\" id=\"auditLogBtn\" type=\"button\">\u0633\u062C\u0644 \u0627\u0644\u062A\u0639\u062F\u064A\u0644\u0627\u062A</button>"));
+    var _currentUser, _currentUser2;
+    var userName = ((_currentUser = currentUser) === null || _currentUser === void 0 ? void 0 : _currentUser.name) || ((_currentUser2 = currentUser) === null || _currentUser2 === void 0 ? void 0 : _currentUser2.username) || 'مستخدم';
+    actionBar.insertAdjacentHTML('beforeend', "<span class=\"mini-btn version-badge\" id=\"appVersionBadge\" title=\"\u0648\u0642\u062A \u0625\u0635\u062F\u0627\u0631 \u0647\u0630\u0647 \u0627\u0644\u0646\u0633\u062E\u0629\">\u0627\u0644\u0646\u0633\u062E\u0629 ".concat(APP_VERSION, " | ").concat(APP_BUILD_TIME, "</span><span class=\"mini-btn version-badge\" id=\"currentUserBadge\">\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ").concat(escapeHtml(userName), "</span><button class=\"mini-btn\" id=\"logoutBtn\" type=\"button\">\u062E\u0631\u0648\u062C</button><button class=\"mini-btn connection-badge is-down\" id=\"backendStatusBadge\" type=\"button\"><span class=\"connection-dot\"></span><span data-connection-text>\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A: \u063A\u064A\u0631 \u0645\u062A\u0635\u0644</span></button><button class=\"mini-btn connection-badge is-down\" id=\"whatsappStatusBadge\" type=\"button\"><span class=\"connection-dot\"></span><span data-connection-text>\u0648\u0627\u062A\u0633\u0627\u0628: \u063A\u064A\u0631 \u0645\u062A\u0635\u0644</span></button><button class=\"mini-btn\" id=\"systemStatusBtn\" type=\"button\">\u062D\u0627\u0644\u0629 \u0627\u0644\u0646\u0638\u0627\u0645</button><button class=\"mini-btn\" id=\"usersBtn\" type=\"button\">\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646</button><button class=\"mini-btn\" id=\"whatsappSettingsBtn\" type=\"button\">\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0648\u0627\u062A\u0633\u0627\u0628</button><button class=\"mini-btn\" id=\"dyehousePricesBtn\" type=\"button\">\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u0645\u0635\u0627\u0628\u063A</button><button class=\"mini-btn\" id=\"a5AccountsBtn\" type=\"button\">\u062D\u0633\u0627\u0628\u0627\u062A A5</button><button class=\"mini-btn\" id=\"outboxBtn\" type=\"button\">\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0625\u0631\u0633\u0627\u0644</button><button class=\"mini-btn\" id=\"auditLogBtn\" type=\"button\">\u0633\u062C\u0644 \u0627\u0644\u062A\u0639\u062F\u064A\u0644\u0627\u062A</button>"));
   }
   (_document$getElementB = document.getElementById('backendStatusBadge')) === null || _document$getElementB === void 0 || _document$getElementB.addEventListener('click', pollBackendStatus);
   (_document$getElementB2 = document.getElementById('whatsappStatusBadge')) === null || _document$getElementB2 === void 0 || _document$getElementB2.addEventListener('click', pollWhatsappService);
-  (_document$getElementB3 = document.getElementById('systemStatusBtn')) === null || _document$getElementB3 === void 0 || _document$getElementB3.addEventListener('click', openSystemStatusDialog);
-  (_document$getElementB4 = document.getElementById('usersBtn')) === null || _document$getElementB4 === void 0 || _document$getElementB4.addEventListener('click', openUsersDialog);
-  (_document$getElementB5 = document.getElementById('whatsappSettingsBtn')) === null || _document$getElementB5 === void 0 || _document$getElementB5.addEventListener('click', openWhatsappSettingsDialog);
-  (_document$getElementB6 = document.getElementById('dyehousePricesBtn')) === null || _document$getElementB6 === void 0 || _document$getElementB6.addEventListener('click', renderDyehousePricesDialog);
-  (_document$getElementB7 = document.getElementById('a5AccountsBtn')) === null || _document$getElementB7 === void 0 || _document$getElementB7.addEventListener('click', renderA5AccountsDialog);
-  (_document$getElementB8 = document.getElementById('outboxBtn')) === null || _document$getElementB8 === void 0 || _document$getElementB8.addEventListener('click', openOutboxDialog);
-  (_document$getElementB9 = document.getElementById('auditLogBtn')) === null || _document$getElementB9 === void 0 || _document$getElementB9.addEventListener('click', openAuditLogDialog);
+  (_document$getElementB3 = document.getElementById('logoutBtn')) === null || _document$getElementB3 === void 0 || _document$getElementB3.addEventListener('click', logoutCurrentUser);
+  (_document$getElementB4 = document.getElementById('systemStatusBtn')) === null || _document$getElementB4 === void 0 || _document$getElementB4.addEventListener('click', openSystemStatusDialog);
+  (_document$getElementB5 = document.getElementById('usersBtn')) === null || _document$getElementB5 === void 0 || _document$getElementB5.addEventListener('click', openUsersDialog);
+  (_document$getElementB6 = document.getElementById('whatsappSettingsBtn')) === null || _document$getElementB6 === void 0 || _document$getElementB6.addEventListener('click', openWhatsappSettingsDialog);
+  (_document$getElementB7 = document.getElementById('dyehousePricesBtn')) === null || _document$getElementB7 === void 0 || _document$getElementB7.addEventListener('click', renderDyehousePricesDialog);
+  (_document$getElementB8 = document.getElementById('a5AccountsBtn')) === null || _document$getElementB8 === void 0 || _document$getElementB8.addEventListener('click', renderA5AccountsDialog);
+  (_document$getElementB9 = document.getElementById('outboxBtn')) === null || _document$getElementB9 === void 0 || _document$getElementB9.addEventListener('click', openOutboxDialog);
+  (_document$getElementB0 = document.getElementById('auditLogBtn')) === null || _document$getElementB0 === void 0 || _document$getElementB0.addEventListener('click', openAuditLogDialog);
   updateBackendStatusBadge();
   updateWhatsappStatusBadge();
 }
@@ -3066,33 +3125,33 @@ function reportToCanvas() {
   return _reportToCanvas.apply(this, arguments);
 }
 function _reportToCanvas() {
-  _reportToCanvas = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee39() {
+  _reportToCanvas = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee41() {
     var options,
       sheet,
       renderTarget,
       cloneWrap,
-      _args38 = arguments,
-      _t18;
-    return _regenerator().w(function (_context39) {
-      while (1) switch (_context39.p = _context39.n) {
+      _args40 = arguments,
+      _t19;
+    return _regenerator().w(function (_context41) {
+      while (1) switch (_context41.p = _context41.n) {
         case 0:
-          options = _args38.length > 0 && _args38[0] !== undefined ? _args38[0] : {};
+          options = _args40.length > 0 && _args40[0] !== undefined ? _args40[0] : {};
           sheet = refs.documentBody.querySelector('.document-sheet');
           if (!(!sheet || !window.html2canvas)) {
-            _context39.n = 1;
+            _context41.n = 1;
             break;
           }
           throw new Error('no-sheet');
         case 1:
           renderTarget = /*#__PURE__*/function () {
-            var _ref19 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee38(target) {
+            var _ref19 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee40(target) {
               var targetHeight, scale;
-              return _regenerator().w(function (_context38) {
-                while (1) switch (_context38.n) {
+              return _regenerator().w(function (_context40) {
+                while (1) switch (_context40.n) {
                   case 0:
                     targetHeight = Math.max(target.scrollHeight || target.offsetHeight || 1, 1);
                     scale = options.scale || Math.max(0.8, Math.min(2, 14000 / targetHeight));
-                    _context38.n = 1;
+                    _context40.n = 1;
                     return html2canvas(target, {
                       backgroundColor: '#ffffff',
                       scale: scale,
@@ -3114,39 +3173,39 @@ function _reportToCanvas() {
                       }
                     });
                   case 1:
-                    return _context38.a(2, _context38.v);
+                    return _context40.a(2, _context40.v);
                 }
-              }, _callee38);
+              }, _callee40);
             }));
             return function renderTarget(_x50) {
               return _ref19.apply(this, arguments);
             };
           }();
-          _context39.p = 2;
-          _context39.n = 3;
+          _context41.p = 2;
+          _context41.n = 3;
           return renderTarget(sheet);
         case 3:
-          return _context39.a(2, _context39.v);
+          return _context41.a(2, _context41.v);
         case 4:
-          _context39.p = 4;
-          _t18 = _context39.v;
+          _context41.p = 4;
+          _t19 = _context41.v;
           cloneWrap = document.createElement('div');
           cloneWrap.style.cssText = 'position:absolute;left:-20000px;top:0;width:1100px;background:#fff;pointer-events:none;';
           cloneWrap.appendChild(sheet.cloneNode(true));
           document.body.appendChild(cloneWrap);
-          _context39.p = 5;
-          _context39.n = 6;
+          _context41.p = 5;
+          _context41.n = 6;
           return renderTarget(cloneWrap.firstElementChild);
         case 6:
-          return _context39.a(2, _context39.v);
+          return _context41.a(2, _context41.v);
         case 7:
-          _context39.p = 7;
+          _context41.p = 7;
           cloneWrap.remove();
-          return _context39.f(7);
+          return _context41.f(7);
         case 8:
-          return _context39.a(2);
+          return _context41.a(2);
       }
-    }, _callee39, null, [[5,, 7, 8], [2, 4]]);
+    }, _callee41, null, [[5,, 7, 8], [2, 4]]);
   }));
   return _reportToCanvas.apply(this, arguments);
 }
@@ -3224,15 +3283,15 @@ function reportToPdfBlob() {
   return _reportToPdfBlob.apply(this, arguments);
 }
 function _reportToPdfBlob() {
-  _reportToPdfBlob = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee40() {
+  _reportToPdfBlob = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee42() {
     var canvas, pageHeight, pageCanvases, top, sliceHeight, pageCanvas, ctx;
-    return _regenerator().w(function (_context40) {
-      while (1) switch (_context40.n) {
+    return _regenerator().w(function (_context42) {
+      while (1) switch (_context42.n) {
         case 0:
-          _context40.n = 1;
+          _context42.n = 1;
           return reportToCanvas();
         case 1:
-          canvas = _context40.v;
+          canvas = _context42.v;
           pageHeight = Math.max(1200, Math.round(canvas.width * 1.414));
           pageCanvases = [];
           for (top = 0; top < canvas.height; top += pageHeight) {
@@ -3246,9 +3305,9 @@ function _reportToPdfBlob() {
             ctx.drawImage(canvas, 0, top, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
             pageCanvases.push(pageCanvas);
           }
-          return _context40.a(2, buildPdfFromPages(pageCanvases));
+          return _context42.a(2, buildPdfFromPages(pageCanvases));
       }
-    }, _callee40);
+    }, _callee42);
   }));
   return _reportToPdfBlob.apply(this, arguments);
 }
@@ -3256,16 +3315,16 @@ function uploadCurrentDocumentPdf(_x26, _x27) {
   return _uploadCurrentDocumentPdf.apply(this, arguments);
 }
 function _uploadCurrentDocumentPdf() {
-  _uploadCurrentDocumentPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee41(reportType, order) {
+  _uploadCurrentDocumentPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee43(reportType, order) {
     var blob, dataUrl, customerName, response, data;
-    return _regenerator().w(function (_context41) {
-      while (1) switch (_context41.n) {
+    return _regenerator().w(function (_context43) {
+      while (1) switch (_context43.n) {
         case 0:
-          _context41.n = 1;
+          _context43.n = 1;
           return reportToPdfBlob();
         case 1:
-          blob = _context41.v;
-          _context41.n = 2;
+          blob = _context43.v;
+          _context43.n = 2;
           return new Promise(function (resolve, reject) {
             var reader = new FileReader();
             reader.onload = function () {
@@ -3277,9 +3336,9 @@ function _uploadCurrentDocumentPdf() {
             reader.readAsDataURL(blob);
           });
         case 2:
-          dataUrl = _context41.v;
+          dataUrl = _context43.v;
           customerName = reportType === 'dyeing_production_order' && order.whatsappDyehouseName ? "".concat(order.customer || '', "_").concat(order.whatsappDyehouseName) : order.customer;
-          _context41.n = 3;
+          _context43.n = 3;
           return fetch("".concat(WHATSAPP_SERVICE_URL, "/api/reports/upload"), {
             method: 'POST',
             headers: {
@@ -3293,26 +3352,26 @@ function _uploadCurrentDocumentPdf() {
             })
           });
         case 3:
-          response = _context41.v;
+          response = _context43.v;
           if (response.ok) {
-            _context41.n = 5;
+            _context43.n = 5;
             break;
           }
           if (!(response.status === 413)) {
-            _context41.n = 4;
+            _context43.n = 4;
             break;
           }
           throw new Error('pdf-too-large');
         case 4:
           throw new Error('upload-failed');
         case 5:
-          _context41.n = 6;
+          _context43.n = 6;
           return response.json();
         case 6:
-          data = _context41.v;
-          return _context41.a(2, data.attachmentPath || data.path || '');
+          data = _context43.v;
+          return _context43.a(2, data.attachmentPath || data.path || '');
       }
-    }, _callee41);
+    }, _callee43);
   }));
   return _uploadCurrentDocumentPdf.apply(this, arguments);
 }
@@ -3320,27 +3379,27 @@ function getWhatsappServiceStatus() {
   return _getWhatsappServiceStatus.apply(this, arguments);
 }
 function _getWhatsappServiceStatus() {
-  _getWhatsappServiceStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee42() {
+  _getWhatsappServiceStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee44() {
     var response;
-    return _regenerator().w(function (_context42) {
-      while (1) switch (_context42.n) {
+    return _regenerator().w(function (_context44) {
+      while (1) switch (_context44.n) {
         case 0:
-          _context42.n = 1;
+          _context44.n = 1;
           return fetch("".concat(WHATSAPP_SERVICE_URL, "/api/status"));
         case 1:
-          response = _context42.v;
+          response = _context44.v;
           if (response.ok) {
-            _context42.n = 2;
+            _context44.n = 2;
             break;
           }
           throw new Error('whatsapp-service-offline');
         case 2:
-          _context42.n = 3;
+          _context44.n = 3;
           return response.json();
         case 3:
-          return _context42.a(2, _context42.v);
+          return _context44.a(2, _context44.v);
       }
-    }, _callee42);
+    }, _callee44);
   }));
   return _getWhatsappServiceStatus.apply(this, arguments);
 }
@@ -3351,25 +3410,25 @@ function ensureWhatsappGroupExists(_x28) {
   return _ensureWhatsappGroupExists.apply(this, arguments);
 }
 function _ensureWhatsappGroupExists() {
-  _ensureWhatsappGroupExists = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee43(groupName) {
+  _ensureWhatsappGroupExists = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee45(groupName) {
     var response, data, wanted, groups, found, preview, error;
-    return _regenerator().w(function (_context43) {
-      while (1) switch (_context43.n) {
+    return _regenerator().w(function (_context45) {
+      while (1) switch (_context45.n) {
         case 0:
-          _context43.n = 1;
+          _context45.n = 1;
           return fetch("".concat(WHATSAPP_SERVICE_URL, "/api/groups"));
         case 1:
-          response = _context43.v;
+          response = _context45.v;
           if (response.ok) {
-            _context43.n = 2;
+            _context45.n = 2;
             break;
           }
-          return _context43.a(2);
+          return _context45.a(2);
         case 2:
-          _context43.n = 3;
+          _context45.n = 3;
           return response.json();
         case 3:
-          data = _context43.v;
+          data = _context45.v;
           wanted = normalizeWhatsappGroupName(groupName);
           groups = data.groups || [];
           found = groups.some(function (group) {
@@ -3377,7 +3436,7 @@ function _ensureWhatsappGroupExists() {
             return normalizedGroup === wanted;
           });
           if (found) {
-            _context43.n = 4;
+            _context45.n = 4;
             break;
           }
           preview = groups.map(function (group) {
@@ -3388,9 +3447,9 @@ function _ensureWhatsappGroupExists() {
           error.groupPreview = preview;
           throw error;
         case 4:
-          return _context43.a(2);
+          return _context45.a(2);
       }
-    }, _callee43);
+    }, _callee45);
   }));
   return _ensureWhatsappGroupExists.apply(this, arguments);
 }
@@ -3433,37 +3492,37 @@ function retryOutbox(_x29) {
   return _retryOutbox.apply(this, arguments);
 }
 function _retryOutbox() {
-  _retryOutbox = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee44(id) {
+  _retryOutbox = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee46(id) {
     var item;
-    return _regenerator().w(function (_context44) {
-      while (1) switch (_context44.n) {
+    return _regenerator().w(function (_context46) {
+      while (1) switch (_context46.n) {
         case 0:
           item = reportOutbox.find(function (row) {
             return row.id === id;
           });
           if (item) {
-            _context44.n = 1;
+            _context46.n = 1;
             break;
           }
-          return _context44.a(2);
+          return _context46.a(2);
         case 1:
           item.status = 'pending';
           item.errorMessage = '';
           item.retryCount = Number(item.retryCount || 0) + 1;
           recordAudit('retry', 'reportOutbox', id, null, item, 'إعادة إرسال التقرير');
-          _context44.n = 2;
+          _context46.n = 2;
           return persistAuditLog();
         case 2:
           save();
-          _context44.n = 3;
+          _context46.n = 3;
           return syncOutboxToWhatsappService();
         case 3:
           openOutboxDialog();
           pollWhatsappService();
         case 4:
-          return _context44.a(2);
+          return _context46.a(2);
       }
-    }, _callee44);
+    }, _callee46);
   }));
   return _retryOutbox.apply(this, arguments);
 }
@@ -3529,21 +3588,21 @@ function saveDyehousePriceLibrary() {
   return _saveDyehousePriceLibrary.apply(this, arguments);
 }
 function _saveDyehousePriceLibrary() {
-  _saveDyehousePriceLibrary = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee45() {
-    var _t19;
-    return _regenerator().w(function (_context45) {
-      while (1) switch (_context45.p = _context45.n) {
+  _saveDyehousePriceLibrary = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee47() {
+    var _t20;
+    return _regenerator().w(function (_context47) {
+      while (1) switch (_context47.p = _context47.n) {
         case 0:
           customDyehousePriceLibrary = sanitizeDyehousePriceLibrary(customDyehousePriceLibrary || {});
           saveDyehousePriceLibraryLocal();
           if (backendAvailable) {
-            _context45.n = 1;
+            _context47.n = 1;
             break;
           }
-          return _context45.a(2, false);
+          return _context47.a(2, false);
         case 1:
-          _context45.p = 1;
-          _context45.n = 2;
+          _context47.p = 1;
+          _context47.n = 2;
           return backendRequest('/settings/dyehousePriceLibrary', {
             method: 'PUT',
             body: JSON.stringify({
@@ -3551,15 +3610,15 @@ function _saveDyehousePriceLibrary() {
             })
           });
         case 2:
-          return _context45.a(2, true);
+          return _context47.a(2, true);
         case 3:
-          _context45.p = 3;
-          _t19 = _context45.v;
+          _context47.p = 3;
+          _t20 = _context47.v;
           backendAvailable = false;
-          console.warn('Dyehouse price library backend save failed', _t19);
-          return _context45.a(2, false);
+          console.warn('Dyehouse price library backend save failed', _t20);
+          return _context47.a(2, false);
       }
-    }, _callee45, null, [[1, 3]]);
+    }, _callee47, null, [[1, 3]]);
   }));
   return _saveDyehousePriceLibrary.apply(this, arguments);
 }
@@ -3912,62 +3971,62 @@ function deletePricing(_x30) {
   return _deletePricing.apply(this, arguments);
 }
 function _deletePricing() {
-  _deletePricing = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee46(id) {
+  _deletePricing = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee48(id) {
     var pricing, backendSaveRequired, deleted;
-    return _regenerator().w(function (_context46) {
-      while (1) switch (_context46.n) {
+    return _regenerator().w(function (_context48) {
+      while (1) switch (_context48.n) {
         case 0:
           pricing = pricings.find(function (item) {
             return item.id === id;
           });
           if (pricing) {
-            _context46.n = 1;
+            _context48.n = 1;
             break;
           }
-          return _context46.a(2);
+          return _context48.a(2);
         case 1:
           if (confirm("\u0647\u0644 \u062A\u0631\u064A\u062F \u062D\u0630\u0641 \u0627\u0644\u062A\u0633\u0639\u064A\u0631\u0629 \u0631\u0642\u0645 ".concat(pricing.pricingNumber, "\u061F"))) {
-            _context46.n = 2;
+            _context48.n = 2;
             break;
           }
-          return _context46.a(2);
+          return _context48.a(2);
         case 2:
-          _context46.n = 3;
+          _context48.n = 3;
           return ensureBackendForWrite();
         case 3:
-          if (_context46.v) {
-            _context46.n = 4;
+          if (_context48.v) {
+            _context48.n = 4;
             break;
           }
-          return _context46.a(2);
+          return _context48.a(2);
         case 4:
           backendSaveRequired = true;
-          _context46.n = 5;
+          _context48.n = 5;
           return deleteBackend("/pricings/".concat(id));
         case 5:
-          deleted = _context46.v;
+          deleted = _context48.v;
           if (!(backendSaveRequired && !deleted)) {
-            _context46.n = 7;
+            _context48.n = 7;
             break;
           }
-          _context46.n = 6;
+          _context48.n = 6;
           return rollbackAfterBackendWriteFailure('تعذر حذف التسعيرة من قاعدة البيانات. لم يتم اعتماد الحذف.');
         case 6:
-          return _context46.a(2);
+          return _context48.a(2);
         case 7:
           recordAudit('delete', 'pricing', id, pricing, null, "\u062D\u0630\u0641 \u0627\u0644\u062A\u0633\u0639\u064A\u0631\u0629 \u0631\u0642\u0645 ".concat(pricing.pricingNumber || ''));
-          _context46.n = 8;
+          _context48.n = 8;
           return persistAuditLog();
         case 8:
           if (editingPricingId === id) editingPricingId = null;
-          _context46.n = 9;
+          _context48.n = 9;
           return loadBackendData();
         case 9:
           if (refs.documentDialog.open) refs.documentDialog.close();
         case 10:
-          return _context46.a(2);
+          return _context48.a(2);
       }
-    }, _callee46);
+    }, _callee48);
   }));
   return _deletePricing.apply(this, arguments);
 }
@@ -3975,114 +4034,114 @@ function addPricing(_x31) {
   return _addPricing.apply(this, arguments);
 }
 function _addPricing() {
-  _addPricing = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee47(event) {
+  _addPricing = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee49(event) {
     var backendSaveRequired, index, before, updatedPricing, backendCustomer, savedPricing, createdPricing, _backendCustomer, _savedPricing;
-    return _regenerator().w(function (_context47) {
-      while (1) switch (_context47.n) {
+    return _regenerator().w(function (_context49) {
+      while (1) switch (_context49.n) {
         case 0:
           event.preventDefault();
-          _context47.n = 1;
+          _context49.n = 1;
           return ensureBackendForWrite();
         case 1:
-          if (_context47.v) {
-            _context47.n = 2;
+          if (_context49.v) {
+            _context49.n = 2;
             break;
           }
-          return _context47.a(2);
+          return _context49.a(2);
         case 2:
           backendSaveRequired = true;
           if (!editingPricingId) {
-            _context47.n = 11;
+            _context49.n = 11;
             break;
           }
           index = pricings.findIndex(function (item) {
             return item.id === editingPricingId;
           });
           if (!(index !== -1)) {
-            _context47.n = 10;
+            _context49.n = 10;
             break;
           }
           before = clone(pricings[index]);
           updatedPricing = pricingPayload(editingPricingId);
-          _context47.n = 3;
+          _context49.n = 3;
           return ensureBackendCustomer(updatedPricing.customer);
         case 3:
-          backendCustomer = _context47.v;
-          _context47.n = 4;
+          backendCustomer = _context49.v;
+          _context49.n = 4;
           return putBackend("/pricings/".concat(editingPricingId), pricingToApi(updatedPricing, backendCustomer));
         case 4:
-          savedPricing = _context47.v;
+          savedPricing = _context49.v;
           if (!(backendSaveRequired && !savedPricing)) {
-            _context47.n = 6;
+            _context49.n = 6;
             break;
           }
-          _context47.n = 5;
+          _context49.n = 5;
           return rollbackAfterBackendWriteFailure('تعذر حفظ تعديل التسعيرة في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 5:
-          return _context47.a(2);
+          return _context49.a(2);
         case 6:
-          _context47.n = 7;
+          _context49.n = 7;
           return verifyPricingPersisted(editingPricingId, updatedPricing);
         case 7:
-          if (_context47.v) {
-            _context47.n = 9;
+          if (_context49.v) {
+            _context49.n = 9;
             break;
           }
-          _context47.n = 8;
+          _context49.n = 8;
           return rollbackAfterBackendWriteFailure('تم إرسال تعديل التسعيرة لكن لم يرجع من قاعدة Railway. لم يتم اعتماد التعديل.');
         case 8:
-          return _context47.a(2);
+          return _context49.a(2);
         case 9:
           recordAudit('update', 'pricing', editingPricingId, before, updatedPricing, "\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062A\u0633\u0639\u064A\u0631\u0629 \u0631\u0642\u0645 ".concat(updatedPricing.pricingNumber || ''));
-          _context47.n = 10;
+          _context49.n = 10;
           return persistAuditLog();
         case 10:
           editingPricingId = null;
-          _context47.n = 19;
+          _context49.n = 19;
           break;
         case 11:
           createdPricing = pricingPayload();
-          _context47.n = 12;
+          _context49.n = 12;
           return ensureBackendCustomer(createdPricing.customer);
         case 12:
-          _backendCustomer = _context47.v;
-          _context47.n = 13;
+          _backendCustomer = _context49.v;
+          _context49.n = 13;
           return postBackend('/pricings', pricingToApi(createdPricing, _backendCustomer));
         case 13:
-          _savedPricing = _context47.v;
+          _savedPricing = _context49.v;
           if (!(backendSaveRequired && !_savedPricing)) {
-            _context47.n = 15;
+            _context49.n = 15;
             break;
           }
-          _context47.n = 14;
+          _context49.n = 14;
           return rollbackAfterBackendWriteFailure('تعذر حفظ التسعيرة الجديدة في قاعدة البيانات. لم يتم اعتماد التسعيرة.');
         case 14:
-          return _context47.a(2);
+          return _context49.a(2);
         case 15:
-          _context47.n = 16;
+          _context49.n = 16;
           return verifyPricingPersisted(_savedPricing.id || createdPricing.id, createdPricing);
         case 16:
-          if (_context47.v) {
-            _context47.n = 18;
+          if (_context49.v) {
+            _context49.n = 18;
             break;
           }
-          _context47.n = 17;
+          _context49.n = 17;
           return rollbackAfterBackendWriteFailure('تم إرسال التسعيرة لكن لم ترجع من قاعدة Railway. لم يتم اعتماد التسعيرة.');
         case 17:
-          return _context47.a(2);
+          return _context49.a(2);
         case 18:
           recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, "\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062A\u0633\u0639\u064A\u0631\u0629 \u0631\u0642\u0645 ".concat(createdPricing.pricingNumber || ''));
-          _context47.n = 19;
+          _context49.n = 19;
           return persistAuditLog();
         case 19:
-          _context47.n = 20;
+          _context49.n = 20;
           return loadBackendData();
         case 20:
           refs.pricingDialog.close();
         case 21:
-          return _context47.a(2);
+          return _context49.a(2);
       }
-    }, _callee47);
+    }, _callee49);
   }));
   return _addPricing.apply(this, arguments);
 }
@@ -4121,7 +4180,7 @@ function markPricingConverted(_x32, _x33) {
   return _markPricingConverted.apply(this, arguments);
 }
 function _markPricingConverted() {
-  _markPricingConverted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee48(pricingNumber, orderId) {
+  _markPricingConverted = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee50(pricingNumber, orderId) {
     var pricingId,
       convertedAt,
       converted,
@@ -4131,11 +4190,11 @@ function _markPricingConverted() {
       pricing,
       saved,
       convertedById,
-      _args47 = arguments;
-    return _regenerator().w(function (_context48) {
-      while (1) switch (_context48.n) {
+      _args49 = arguments;
+    return _regenerator().w(function (_context50) {
+      while (1) switch (_context50.n) {
         case 0:
-          pricingId = _args47.length > 2 && _args47[2] !== undefined ? _args47[2] : null;
+          pricingId = _args49.length > 2 && _args49[2] !== undefined ? _args49[2] : null;
           convertedAt = new Date().toISOString();
           converted = [];
           pricings.forEach(function (pricing) {
@@ -4150,21 +4209,21 @@ function _markPricingConverted() {
           _i = 0, _converted = converted;
         case 1:
           if (!(_i < _converted.length)) {
-            _context48.n = 4;
+            _context50.n = 4;
             break;
           }
           pricing = _converted[_i];
-          _context48.n = 2;
+          _context50.n = 2;
           return putBackend("/pricings/".concat(pricing.id), {
             status: 'converted',
             notes: pricing.notes || ''
           });
         case 2:
-          saved = _context48.v;
+          saved = _context50.v;
           if (!saved) ok = false;
         case 3:
           _i++;
-          _context48.n = 1;
+          _context50.n = 1;
           break;
         case 4:
           if (ok && converted.length) {
@@ -4175,9 +4234,9 @@ function _markPricingConverted() {
               return convertedById.get(pricing.id) || pricing;
             });
           }
-          return _context48.a(2, ok);
+          return _context50.a(2, ok);
       }
-    }, _callee48);
+    }, _callee50);
   }));
   return _markPricingConverted.apply(this, arguments);
 }
@@ -4383,23 +4442,23 @@ function analyzeReportWithAi() {
   return _analyzeReportWithAi.apply(this, arguments);
 }
 function _analyzeReportWithAi() {
-  _analyzeReportWithAi = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee49() {
-    var oldText, response, data, message, _t20;
-    return _regenerator().w(function (_context49) {
-      while (1) switch (_context49.p = _context49.n) {
+  _analyzeReportWithAi = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee51() {
+    var oldText, response, data, message, _t21;
+    return _regenerator().w(function (_context51) {
+      while (1) switch (_context51.p = _context51.n) {
         case 0:
           if (refs.analyzeReportBtn) {
-            _context49.n = 1;
+            _context51.n = 1;
             break;
           }
-          return _context49.a(2);
+          return _context51.a(2);
         case 1:
           oldText = refs.analyzeReportBtn.textContent;
           refs.analyzeReportBtn.disabled = true;
           refs.analyzeReportBtn.textContent = 'جاري التحليل...';
           if (refs.aiStatusText) refs.aiStatusText.textContent = 'جاري إرسال بيانات التشغيل إلى مساعد 2B الذكي.';
-          _context49.p = 2;
-          _context49.n = 3;
+          _context51.p = 2;
+          _context51.n = 3;
           return fetch("".concat(AI_SERVICE_URL, "/api/ai/analyze-report"), {
             method: 'POST',
             headers: {
@@ -4408,19 +4467,19 @@ function _analyzeReportWithAi() {
             body: JSON.stringify(collectAiReportPayload())
           });
         case 3:
-          response = _context49.v;
-          _context49.n = 4;
+          response = _context51.v;
+          _context51.n = 4;
           return response.json()["catch"](function () {
             return {};
           });
         case 4:
-          data = _context49.v;
+          data = _context51.v;
           if (response.ok) {
-            _context49.n = 6;
+            _context51.n = 6;
             break;
           }
           if (!(data.error === 'MISSING_OPENAI_API_KEY')) {
-            _context49.n = 5;
+            _context51.n = 5;
             break;
           }
           throw new Error('لم يتم ضبط مفتاح OpenAI API داخل السيرفر');
@@ -4429,24 +4488,24 @@ function _analyzeReportWithAi() {
         case 6:
           renderAiAnalysis(data);
           if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم تحليل التقرير بواسطة خدمة OpenAI.';
-          _context49.n = 8;
+          _context51.n = 8;
           break;
         case 7:
-          _context49.p = 7;
-          _t20 = _context49.v;
-          message = _t20.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? _t20.message : _t20.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا';
+          _context51.p = 7;
+          _t21 = _context51.v;
+          message = _t21.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? _t21.message : _t21.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا';
           if (refs.aiStatusText) refs.aiStatusText.textContent = message;
           refs.aiAnalysisBody.innerHTML = "<div class=\"empty-state\">".concat(message, "</div>");
           refs.aiAnalysisDialog.showModal();
         case 8:
-          _context49.p = 8;
+          _context51.p = 8;
           refs.analyzeReportBtn.disabled = false;
           refs.analyzeReportBtn.textContent = oldText;
-          return _context49.f(8);
+          return _context51.f(8);
         case 9:
-          return _context49.a(2);
+          return _context51.a(2);
       }
-    }, _callee49, null, [[2, 7, 8, 9]]);
+    }, _callee51, null, [[2, 7, 8, 9]]);
   }));
   return _analyzeReportWithAi.apply(this, arguments);
 }
@@ -4454,30 +4513,30 @@ function copyAiWhatsappMessage() {
   return _copyAiWhatsappMessage.apply(this, arguments);
 }
 function _copyAiWhatsappMessage() {
-  _copyAiWhatsappMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee50() {
-    var _document$getElementB10;
-    var text, area, _t21;
-    return _regenerator().w(function (_context50) {
-      while (1) switch (_context50.p = _context50.n) {
+  _copyAiWhatsappMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee52() {
+    var _document$getElementB11;
+    var text, area, _t22;
+    return _regenerator().w(function (_context52) {
+      while (1) switch (_context52.p = _context52.n) {
         case 0:
-          text = ((_document$getElementB10 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB10 === void 0 || (_document$getElementB10 = _document$getElementB10.textContent) === null || _document$getElementB10 === void 0 ? void 0 : _document$getElementB10.trim()) || '';
+          text = ((_document$getElementB11 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB11 === void 0 || (_document$getElementB11 = _document$getElementB11.textContent) === null || _document$getElementB11 === void 0 ? void 0 : _document$getElementB11.trim()) || '';
           if (!(!text || text === '-')) {
-            _context50.n = 1;
+            _context52.n = 1;
             break;
           }
           alert('لا توجد رسالة جاهزة للنسخ.');
-          return _context50.a(2);
+          return _context52.a(2);
         case 1:
-          _context50.p = 1;
-          _context50.n = 2;
+          _context52.p = 1;
+          _context52.n = 2;
           return navigator.clipboard.writeText(text);
         case 2:
           alert('تم نسخ الرسالة.');
-          _context50.n = 4;
+          _context52.n = 4;
           break;
         case 3:
-          _context50.p = 3;
-          _t21 = _context50.v;
+          _context52.p = 3;
+          _t22 = _context52.v;
           area = document.createElement('textarea');
           area.value = text;
           document.body.appendChild(area);
@@ -4486,9 +4545,9 @@ function _copyAiWhatsappMessage() {
           area.remove();
           alert('  .');
         case 4:
-          return _context50.a(2);
+          return _context52.a(2);
       }
-    }, _callee50, null, [[1, 3]]);
+    }, _callee52, null, [[1, 3]]);
   }));
   return _copyAiWhatsappMessage.apply(this, arguments);
 }
@@ -4676,23 +4735,23 @@ function reportToPngBlob() {
   return _reportToPngBlob.apply(this, arguments);
 }
 function _reportToPngBlob() {
-  _reportToPngBlob = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee51() {
+  _reportToPngBlob = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee53() {
     var canvas;
-    return _regenerator().w(function (_context51) {
-      while (1) switch (_context51.n) {
+    return _regenerator().w(function (_context53) {
+      while (1) switch (_context53.n) {
         case 0:
-          _context51.n = 1;
+          _context53.n = 1;
           return reportToCanvas({
             scale: 3
           });
         case 1:
-          canvas = _context51.v;
-          _context51.n = 2;
+          canvas = _context53.v;
+          _context53.n = 2;
           return canvasToPngBlob(canvas);
         case 2:
-          return _context51.a(2, _context51.v);
+          return _context53.a(2, _context53.v);
       }
-    }, _callee51);
+    }, _callee53);
   }));
   return _reportToPngBlob.apply(this, arguments);
 }
@@ -4916,61 +4975,61 @@ function toggleOperationClosed() {
   return _toggleOperationClosed.apply(this, arguments);
 }
 function _toggleOperationClosed() {
-  _toggleOperationClosed = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee52() {
+  _toggleOperationClosed = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee54() {
     var order, backendSaveRequired, updatedOrder, backendCustomer, savedOrder;
-    return _regenerator().w(function (_context52) {
-      while (1) switch (_context52.n) {
+    return _regenerator().w(function (_context54) {
+      while (1) switch (_context54.n) {
         case 0:
           order = orders.find(function (item) {
             return item.id === selectedOrderId;
           });
           if (order) {
-            _context52.n = 1;
+            _context54.n = 1;
             break;
           }
-          return _context52.a(2);
+          return _context54.a(2);
         case 1:
-          _context52.n = 2;
+          _context54.n = 2;
           return ensureBackendForWrite();
         case 2:
-          if (_context52.v) {
-            _context52.n = 3;
+          if (_context54.v) {
+            _context54.n = 3;
             break;
           }
-          return _context52.a(2);
+          return _context54.a(2);
         case 3:
           backendSaveRequired = true;
           updatedOrder = _objectSpread(_objectSpread({}, order), {}, {
             operationClosed: !order.operationClosed
           });
           if (!backendSaveRequired) {
-            _context52.n = 7;
+            _context54.n = 7;
             break;
           }
-          _context52.n = 4;
+          _context54.n = 4;
           return ensureBackendCustomer(updatedOrder.customer);
         case 4:
-          backendCustomer = _context52.v;
-          _context52.n = 5;
+          backendCustomer = _context54.v;
+          _context54.n = 5;
           return putBackend("/orders/".concat(updatedOrder.id), orderToApi(updatedOrder, backendCustomer));
         case 5:
-          savedOrder = _context52.v;
+          savedOrder = _context54.v;
           if (savedOrder) {
-            _context52.n = 7;
+            _context54.n = 7;
             break;
           }
-          _context52.n = 6;
+          _context54.n = 6;
           return rollbackAfterBackendWriteFailure('تعذر حفظ حالة دورة التشغيل في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 6:
-          return _context52.a(2);
+          return _context54.a(2);
         case 7:
           selectedOrderId = updatedOrder.id;
-          _context52.n = 8;
+          _context54.n = 8;
           return loadBackendData();
         case 8:
-          return _context52.a(2);
+          return _context54.a(2);
       }
-    }, _callee52);
+    }, _callee54);
   }));
   return _toggleOperationClosed.apply(this, arguments);
 }
@@ -4999,20 +5058,20 @@ function addOrder(_x34) {
   return _addOrder.apply(this, arguments);
 }
 function _addOrder() {
-  _addOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee53(event) {
+  _addOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee55(event) {
     var _refs$paymentMode, _refs$paymentDetails, _firstAccessory$perce;
-    var widthLines, currentOrder, accessoryLines, firstAccessory, paymentTerms, payload, backendSaveRequired, backendCustomer, previousDyehouse, transferredAllocationIds, updatedOrder, updatedAllocations, savedOrder, changedAllocations, _iterator, _step, allocation, savedAllocation, newOrder, _savedOrder, pricingMarked, _t22;
-    return _regenerator().w(function (_context53) {
-      while (1) switch (_context53.p = _context53.n) {
+    var widthLines, currentOrder, accessoryLines, firstAccessory, paymentTerms, payload, backendSaveRequired, backendCustomer, previousDyehouse, transferredAllocationIds, updatedOrder, updatedAllocations, savedOrder, changedAllocations, _iterator, _step, allocation, savedAllocation, newOrder, _savedOrder, pricingMarked, _t23;
+    return _regenerator().w(function (_context55) {
+      while (1) switch (_context55.p = _context55.n) {
         case 0:
           event.preventDefault();
           widthLines = refs.widthMode.value === 'multiple' ? readWidthLinesFromEditor() : [];
           if (!(refs.widthMode.value === 'multiple' && widthLines.length === 0)) {
-            _context53.n = 1;
+            _context55.n = 1;
             break;
           }
           alert('أضف عرضًا واحدًا على الأقل عند اختيار أكثر من عرض.');
-          return _context53.a(2);
+          return _context55.a(2);
         case 1:
           currentOrder = editingOrderId ? orders.find(function (order) {
             return order.id === editingOrderId;
@@ -5045,22 +5104,22 @@ function _addOrder() {
             weavingSource: refs.weavingSource.value,
             notes: refs.orderNotes.value
           };
-          _context53.n = 2;
+          _context55.n = 2;
           return ensureBackendForWrite();
         case 2:
-          if (_context53.v) {
-            _context53.n = 3;
+          if (_context55.v) {
+            _context55.n = 3;
             break;
           }
-          return _context53.a(2);
+          return _context55.a(2);
         case 3:
           backendSaveRequired = true;
-          _context53.n = 4;
+          _context55.n = 4;
           return ensureBackendCustomer(payload.customer);
         case 4:
-          backendCustomer = _context53.v;
+          backendCustomer = _context55.v;
           if (!editingOrderId) {
-            _context53.n = 20;
+            _context55.n = 20;
             break;
           }
           previousDyehouse = String((currentOrder === null || currentOrder === void 0 ? void 0 : currentOrder.dyehouse) || '').trim();
@@ -5078,30 +5137,30 @@ function _addOrder() {
               dyehouse: payload.dyehouse
             });
           });
-          _context53.n = 5;
+          _context55.n = 5;
           return putBackend("/orders/".concat(editingOrderId), orderToApi(updatedOrder, backendCustomer));
         case 5:
-          savedOrder = _context53.v;
+          savedOrder = _context55.v;
           if (!(backendSaveRequired && !savedOrder)) {
-            _context53.n = 7;
+            _context55.n = 7;
             break;
           }
-          _context53.n = 6;
+          _context55.n = 6;
           return rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الطلب في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 6:
-          return _context53.a(2);
+          return _context55.a(2);
         case 7:
-          _context53.n = 8;
+          _context55.n = 8;
           return verifyOrderPersisted(editingOrderId, payload);
         case 8:
-          if (_context53.v) {
-            _context53.n = 10;
+          if (_context55.v) {
+            _context55.n = 10;
             break;
           }
-          _context53.n = 9;
+          _context55.n = 9;
           return rollbackAfterBackendWriteFailure('تم إرسال تعديل الطلب لكن بيانات الإكسسوارات لم ترجع من قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 9:
-          return _context53.a(2);
+          return _context55.a(2);
         case 10:
           changedAllocations = updatedAllocations.filter(function (allocation) {
             var original = allocations.find(function (item) {
@@ -5110,98 +5169,98 @@ function _addOrder() {
             return original && original.dyehouse !== allocation.dyehouse;
           });
           _iterator = _createForOfIteratorHelper(changedAllocations);
-          _context53.p = 11;
+          _context55.p = 11;
           _iterator.s();
         case 12:
           if ((_step = _iterator.n()).done) {
-            _context53.n = 16;
+            _context55.n = 16;
             break;
           }
           allocation = _step.value;
-          _context53.n = 13;
+          _context55.n = 13;
           return putBackend("/allocations/".concat(allocation.id), allocationToApi(allocation));
         case 13:
-          savedAllocation = _context53.v;
+          savedAllocation = _context55.v;
           if (!(backendSaveRequired && !savedAllocation)) {
-            _context53.n = 15;
+            _context55.n = 15;
             break;
           }
-          _context53.n = 14;
+          _context55.n = 14;
           return rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث مصبغة الألوان المرتبطة في قاعدة البيانات. لم يتم اعتماد التعديل كاملًا.');
         case 14:
-          return _context53.a(2);
+          return _context55.a(2);
         case 15:
-          _context53.n = 12;
+          _context55.n = 12;
           break;
         case 16:
-          _context53.n = 18;
+          _context55.n = 18;
           break;
         case 17:
-          _context53.p = 17;
-          _t22 = _context53.v;
-          _iterator.e(_t22);
+          _context55.p = 17;
+          _t23 = _context55.v;
+          _iterator.e(_t23);
         case 18:
-          _context53.p = 18;
+          _context55.p = 18;
           _iterator.f();
-          return _context53.f(18);
+          return _context55.f(18);
         case 19:
           selectedOrderId = editingOrderId;
-          _context53.n = 29;
+          _context55.n = 29;
           break;
         case 20:
           newOrder = _objectSpread({
             id: uid(),
             status: 'pending'
           }, payload);
-          _context53.n = 21;
+          _context55.n = 21;
           return postBackend('/orders', orderToApi(newOrder, backendCustomer));
         case 21:
-          _savedOrder = _context53.v;
+          _savedOrder = _context55.v;
           if (!(backendSaveRequired && !_savedOrder)) {
-            _context53.n = 23;
+            _context55.n = 23;
             break;
           }
-          _context53.n = 22;
+          _context55.n = 22;
           return rollbackAfterBackendWriteFailure('تعذر حفظ الطلب الجديد في قاعدة البيانات. لم يتم اعتماد الطلب.');
         case 22:
-          return _context53.a(2);
+          return _context55.a(2);
         case 23:
-          _context53.n = 24;
+          _context55.n = 24;
           return verifyOrderPersisted(_savedOrder.id || newOrder.id, payload);
         case 24:
-          if (_context53.v) {
-            _context53.n = 26;
+          if (_context55.v) {
+            _context55.n = 26;
             break;
           }
-          _context53.n = 25;
+          _context55.n = 25;
           return rollbackAfterBackendWriteFailure('تم إرسال الطلب لكن بيانات الإكسسوارات لم ترجع من قاعدة البيانات. لم يتم اعتماد الطلب.');
         case 25:
-          return _context53.a(2);
+          return _context55.a(2);
         case 26:
           selectedOrderId = _savedOrder.id || newOrder.id;
-          _context53.n = 27;
+          _context55.n = 27;
           return markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
         case 27:
-          pricingMarked = _context53.v;
+          pricingMarked = _context55.v;
           if (!(backendSaveRequired && !pricingMarked)) {
-            _context53.n = 29;
+            _context55.n = 29;
             break;
           }
-          _context53.n = 28;
+          _context55.n = 28;
           return rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث حالة التسعيرة في قاعدة البيانات. راجع الطلب والتسعيرة قبل المتابعة.');
         case 28:
-          return _context53.a(2);
+          return _context55.a(2);
         case 29:
           editingOrderId = null;
           pendingConvertedPricingId = null;
-          _context53.n = 30;
+          _context55.n = 30;
           return loadBackendData();
         case 30:
           refs.orderDialog.close();
         case 31:
-          return _context53.a(2);
+          return _context55.a(2);
       }
-    }, _callee53, null, [[11, 17, 18, 19]]);
+    }, _callee55, null, [[11, 17, 18, 19]]);
   }));
   return _addOrder.apply(this, arguments);
 }
@@ -5209,11 +5268,11 @@ function addBatch(_x35) {
   return _addBatch.apply(this, arguments);
 }
 function _addBatch() {
-  _addBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee54(event) {
+  _addBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee56(event) {
     var _event$target$element;
-    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, _allocation, alreadyDelivered, warehouseAvailable, _t23;
-    return _regenerator().w(function (_context54) {
-      while (1) switch (_context54.n) {
+    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, _allocation, alreadyDelivered, warehouseAvailable, _t24;
+    return _regenerator().w(function (_context56) {
+      while (1) switch (_context56.n) {
         case 0:
           event.preventDefault();
           type = event.target.dataset.form;
@@ -5223,147 +5282,147 @@ function _addBatch() {
           data.id = uid();
           data.quantity = +data.quantity;
           data.orderId = selectedOrderId;
-          _context54.n = 1;
+          _context56.n = 1;
           return ensureBackendForWrite();
         case 1:
-          if (_context54.v) {
-            _context54.n = 2;
+          if (_context56.v) {
+            _context56.n = 2;
             break;
           }
-          return _context54.a(2);
+          return _context56.a(2);
         case 2:
           backendSaveRequired = true;
           backendResult = true;
           if (!(type === 'raw')) {
-            _context54.n = 10;
+            _context56.n = 10;
             break;
           }
           currentOrder = calculateOrder(orders.find(function (item) {
             return item.id === selectedOrderId;
           }));
           if (!(data.movementKind === 'return')) {
-            _context54.n = 5;
+            _context56.n = 5;
             break;
           }
           if (data.allocationId) {
-            _context54.n = 3;
+            _context56.n = 3;
             break;
           }
           alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 3:
-          _context54.n = 4;
+          _context56.n = 4;
           return postBackend('/batches/raw-return', _objectSpread(_objectSpread({}, batchToApi(data)), {}, {
             reason: data.reason || data.notes || ''
           }));
         case 4:
-          backendResult = _context54.v;
-          _context54.n = 10;
+          backendResult = _context56.v;
+          _context56.n = 10;
           break;
         case 5:
           if (!(currentOrder.widthMode === 'multiple' && !data.widthLineId)) {
-            _context54.n = 6;
+            _context56.n = 6;
             break;
           }
           alert('اختر العرض المرتبط قبل تسجيل خروج الخام.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 6:
           if (!rawDocumentFile) {
-            _context54.n = 8;
+            _context56.n = 8;
             break;
           }
-          _context54.n = 7;
+          _context56.n = 7;
           return resizeSlipImage(rawDocumentFile);
         case 7:
-          _t23 = _context54.v;
+          _t24 = _context56.v;
           data.sourceDocument = {
             type: 'raw-batch-image',
-            image: _t23
+            image: _t24
           };
         case 8:
-          _context54.n = 9;
+          _context56.n = 9;
           return postBackend('/batches/dyehouse', batchToApi(data));
         case 9:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 10:
           if (!(type === 'rawReturn')) {
-            _context54.n = 13;
+            _context56.n = 13;
             break;
           }
           if (data.allocationId) {
-            _context54.n = 11;
+            _context56.n = 11;
             break;
           }
           alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 11:
-          _context54.n = 12;
+          _context56.n = 12;
           return postBackend('/batches/raw-return', _objectSpread(_objectSpread({}, batchToApi(data)), {}, {
             reason: data.reason || data.notes || ''
           }));
         case 12:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 13:
           if (!(type === 'accessory')) {
-            _context54.n = 16;
+            _context56.n = 16;
             break;
           }
           if (data.accessoryType) {
-            _context54.n = 14;
+            _context56.n = 14;
             break;
           }
           alert('اختر نوع الإكسسوار أولًا.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 14:
           data.movement = 'sent';
           delete data.allocationId;
-          _context54.n = 15;
+          _context56.n = 15;
           return postBackend('/batches/accessory', batchToApi(data));
         case 15:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 16:
           if (!(type === 'accessoryReceived')) {
-            _context54.n = 20;
+            _context56.n = 20;
             break;
           }
           if (data.accessoryType) {
-            _context54.n = 17;
+            _context56.n = 17;
             break;
           }
           alert('اختر نوع الإكسسوار أولًا.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 17:
           if (data.allocationId) {
-            _context54.n = 18;
+            _context56.n = 18;
             break;
           }
           alert('اختر اللون المرتبط باستلام الإكسسوار.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 18:
           data.movement = 'received';
-          _context54.n = 19;
+          _context56.n = 19;
           return postBackend('/batches/accessory', batchToApi(data));
         case 19:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 20:
           if (!(type === 'production')) {
-            _context54.n = 23;
+            _context56.n = 23;
             break;
           }
           if (!(!data.allocationId || data.allocationId === 'raw')) {
-            _context54.n = 21;
+            _context56.n = 21;
             break;
           }
           alert('اختر اللون / المصبغة قبل تسجيل استلام المجهز.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 21:
-          _context54.n = 22;
+          _context56.n = 22;
           return postBackend('/batches/finished', batchToApi(data));
         case 22:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 23:
           if (!(type === 'finished')) {
-            _context54.n = 25;
+            _context56.n = 25;
             break;
           }
           allocation = calculateAllocation(allocations.find(function (item) {
@@ -5374,32 +5433,32 @@ function _addBatch() {
           }
           data.finishedWidth = +data.finishedWidth;
           data.finishedWeight = +data.finishedWeight;
-          _context54.n = 24;
+          _context56.n = 24;
           return postBackend('/batches/finished', batchToApi(data));
         case 24:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 25:
           if (!(type === 'customer')) {
-            _context54.n = 31;
+            _context56.n = 31;
             break;
           }
           if (!(data.movementKind === 'accessory')) {
-            _context54.n = 29;
+            _context56.n = 29;
             break;
           }
           if (data.accessoryType) {
-            _context54.n = 26;
+            _context56.n = 26;
             break;
           }
           alert('اختر نوع الإكسسوار أولًا.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 26:
           if (data.allocationId) {
-            _context54.n = 27;
+            _context56.n = 27;
             break;
           }
           alert('اختر اللون المرتبط بتسليم الإكسسوار.');
-          return _context54.a(2);
+          return _context56.a(2);
         case 27:
           data.movement = 'customer';
           receivedAccessory = sum(accessoryBatches.filter(function (batch) {
@@ -5412,11 +5471,11 @@ function _addBatch() {
           if (data.quantity > availableAccessory) {
             data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - ');
           }
-          _context54.n = 28;
+          _context56.n = 28;
           return postBackend('/batches/accessory', batchToApi(data));
         case 28:
-          backendResult = _context54.v;
-          _context54.n = 31;
+          backendResult = _context56.v;
+          _context56.n = 31;
           break;
         case 29:
           _allocation = calculateAllocation(allocations.find(function (item) {
@@ -5429,27 +5488,27 @@ function _addBatch() {
           if (data.quantity > warehouseAvailable) {
             data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - ');
           }
-          _context54.n = 30;
+          _context56.n = 30;
           return postBackend('/batches/customer', batchToApi(data));
         case 30:
-          backendResult = _context54.v;
+          backendResult = _context56.v;
         case 31:
           if (!(backendSaveRequired && !backendResult)) {
-            _context54.n = 33;
+            _context56.n = 33;
             break;
           }
-          _context54.n = 32;
+          _context56.n = 32;
           return rollbackAfterBackendWriteFailure('تعذر حفظ الحركة في قاعدة البيانات. لم يتم اعتماد الحركة.');
         case 32:
-          return _context54.a(2);
+          return _context56.a(2);
         case 33:
           event.target.reset();
-          _context54.n = 34;
+          _context56.n = 34;
           return loadBackendData();
         case 34:
-          return _context54.a(2);
+          return _context56.a(2);
       }
-    }, _callee54);
+    }, _callee56);
   }));
   return _addBatch.apply(this, arguments);
 }
@@ -5457,42 +5516,42 @@ function addAllocation() {
   return _addAllocation.apply(this, arguments);
 }
 function _addAllocation() {
-  _addAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee55() {
-    var order, color, createdAllocations, backendSaveRequired, targetFinishedWeight, plannedQuantity, existing, targetFinishedWidth, _targetFinishedWeight, allocation, savedAllocations, _i2, _createdAllocations, _allocation2, _t24;
-    return _regenerator().w(function (_context55) {
-      while (1) switch (_context55.n) {
+  _addAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee57() {
+    var order, color, createdAllocations, backendSaveRequired, targetFinishedWeight, plannedQuantity, existing, targetFinishedWidth, _targetFinishedWeight, allocation, savedAllocations, _i2, _createdAllocations, _allocation2, _t25;
+    return _regenerator().w(function (_context57) {
+      while (1) switch (_context57.n) {
         case 0:
           order = calculateOrder(orders.find(function (item) {
             return item.id === selectedOrderId;
           }));
           color = prompt('اكتب اللون المطلوب');
           if (color) {
-            _context55.n = 1;
+            _context57.n = 1;
             break;
           }
-          return _context55.a(2);
+          return _context57.a(2);
         case 1:
           createdAllocations = [];
-          _context55.n = 2;
+          _context57.n = 2;
           return ensureBackendForWrite();
         case 2:
-          if (_context55.v) {
-            _context55.n = 3;
+          if (_context57.v) {
+            _context57.n = 3;
             break;
           }
-          return _context55.a(2);
+          return _context57.a(2);
         case 3:
           backendSaveRequired = true;
           if (!(order.widthMode === 'multiple')) {
-            _context55.n = 5;
+            _context57.n = 5;
             break;
           }
           targetFinishedWeight = Number(prompt('اكتب الوزن المجهز المطلوب'));
           if (targetFinishedWeight) {
-            _context55.n = 4;
+            _context57.n = 4;
             break;
           }
-          return _context55.a(2);
+          return _context57.a(2);
         case 4:
           order.widthLines.forEach(function (widthLine) {
             var allocation = {
@@ -5509,30 +5568,30 @@ function _addAllocation() {
             };
             createdAllocations.push(allocation);
           });
-          _context55.n = 9;
+          _context57.n = 9;
           break;
         case 5:
           plannedQuantity = Number(prompt('اكتب كمية اللون'));
           if (plannedQuantity) {
-            _context55.n = 6;
+            _context57.n = 6;
             break;
           }
-          return _context55.a(2);
+          return _context57.a(2);
         case 6:
           existing = order.allocations[0];
           targetFinishedWidth = (existing === null || existing === void 0 ? void 0 : existing.targetFinishedWidth) || Number(prompt('اكتب العرض'));
           if (targetFinishedWidth) {
-            _context55.n = 7;
+            _context57.n = 7;
             break;
           }
-          return _context55.a(2);
+          return _context57.a(2);
         case 7:
           _targetFinishedWeight = (existing === null || existing === void 0 ? void 0 : existing.targetFinishedWeight) || Number(prompt('اكتب الوزن المجهز'));
           if (_targetFinishedWeight) {
-            _context55.n = 8;
+            _context57.n = 8;
             break;
           }
-          return _context55.a(2);
+          return _context57.a(2);
         case 8:
           allocation = {
             id: uid(),
@@ -5549,37 +5608,37 @@ function _addAllocation() {
           _i2 = 0, _createdAllocations = createdAllocations;
         case 10:
           if (!(_i2 < _createdAllocations.length)) {
-            _context55.n = 13;
+            _context57.n = 13;
             break;
           }
           _allocation2 = _createdAllocations[_i2];
-          _t24 = savedAllocations;
-          _context55.n = 11;
+          _t25 = savedAllocations;
+          _context57.n = 11;
           return postBackend("/orders/".concat(order.id, "/allocations"), allocationToApi(_allocation2));
         case 11:
-          _t24.push.call(_t24, _context55.v);
+          _t25.push.call(_t25, _context57.v);
         case 12:
           _i2++;
-          _context55.n = 10;
+          _context57.n = 10;
           break;
         case 13:
           if (!(backendSaveRequired && savedAllocations.some(function (item) {
             return !item;
           }))) {
-            _context55.n = 15;
+            _context57.n = 15;
             break;
           }
-          _context55.n = 14;
+          _context57.n = 14;
           return rollbackAfterBackendWriteFailure('تعذر حفظ اللون في قاعدة البيانات. لم يتم اعتماد الإضافة.');
         case 14:
-          return _context55.a(2);
+          return _context57.a(2);
         case 15:
-          _context55.n = 16;
+          _context57.n = 16;
           return loadBackendData();
         case 16:
-          return _context55.a(2);
+          return _context57.a(2);
       }
-    }, _callee55);
+    }, _callee57);
   }));
   return _addAllocation.apply(this, arguments);
 }
@@ -5587,59 +5646,59 @@ function editAllocation(_x36) {
   return _editAllocation.apply(this, arguments);
 }
 function _editAllocation() {
-  _editAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee56(id) {
-    var allocation, order, colorValue, cleanedColor, targetFinishedWidth, targetFinishedWeight, backendSaveRequired, changedAllocations, primaryUpdate, savedAllocations, _iterator2, _step2, item, _t25, _t26;
-    return _regenerator().w(function (_context56) {
-      while (1) switch (_context56.p = _context56.n) {
+  _editAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee58(id) {
+    var allocation, order, colorValue, cleanedColor, targetFinishedWidth, targetFinishedWeight, backendSaveRequired, changedAllocations, primaryUpdate, savedAllocations, _iterator2, _step2, item, _t26, _t27;
+    return _regenerator().w(function (_context58) {
+      while (1) switch (_context58.p = _context58.n) {
         case 0:
           allocation = allocations.find(function (item) {
             return item.id === id;
           });
           if (allocation) {
-            _context56.n = 1;
+            _context58.n = 1;
             break;
           }
-          return _context56.a(2);
+          return _context58.a(2);
         case 1:
           order = orders.find(function (item) {
             return item.id === allocation.orderId;
           });
           colorValue = prompt('اكتب اللون / كود اللون', allocation.color || allocation.pantoneCode || '');
           if (!(colorValue === null)) {
-            _context56.n = 2;
+            _context58.n = 2;
             break;
           }
-          return _context56.a(2);
+          return _context58.a(2);
         case 2:
           cleanedColor = colorValue.trim();
           if (cleanedColor) {
-            _context56.n = 3;
+            _context58.n = 3;
             break;
           }
-          return _context56.a(2);
+          return _context58.a(2);
         case 3:
           targetFinishedWidth = Number(prompt('اكتب العرض', allocation.targetFinishedWidth));
           if (targetFinishedWidth) {
-            _context56.n = 4;
+            _context58.n = 4;
             break;
           }
-          return _context56.a(2);
+          return _context58.a(2);
         case 4:
           targetFinishedWeight = Number(prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
           if (targetFinishedWeight) {
-            _context56.n = 5;
+            _context58.n = 5;
             break;
           }
-          return _context56.a(2);
+          return _context58.a(2);
         case 5:
-          _context56.n = 6;
+          _context58.n = 6;
           return ensureBackendForWrite();
         case 6:
-          if (_context56.v) {
-            _context56.n = 7;
+          if (_context58.v) {
+            _context58.n = 7;
             break;
           }
-          return _context56.a(2);
+          return _context58.a(2);
         case 7:
           backendSaveRequired = true;
           changedAllocations = new Set();
@@ -5667,56 +5726,56 @@ function _editAllocation() {
             }));
           }
           if (!backendSaveRequired) {
-            _context56.n = 17;
+            _context58.n = 17;
             break;
           }
           savedAllocations = [];
           _iterator2 = _createForOfIteratorHelper(changedAllocations);
-          _context56.p = 8;
+          _context58.p = 8;
           _iterator2.s();
         case 9:
           if ((_step2 = _iterator2.n()).done) {
-            _context56.n = 12;
+            _context58.n = 12;
             break;
           }
           item = _step2.value;
-          _t25 = savedAllocations;
-          _context56.n = 10;
+          _t26 = savedAllocations;
+          _context58.n = 10;
           return putBackend("/allocations/".concat(item.id), allocationToApi(item));
         case 10:
-          _t25.push.call(_t25, _context56.v);
+          _t26.push.call(_t26, _context58.v);
         case 11:
-          _context56.n = 9;
+          _context58.n = 9;
           break;
         case 12:
-          _context56.n = 14;
+          _context58.n = 14;
           break;
         case 13:
-          _context56.p = 13;
-          _t26 = _context56.v;
-          _iterator2.e(_t26);
+          _context58.p = 13;
+          _t27 = _context58.v;
+          _iterator2.e(_t27);
         case 14:
-          _context56.p = 14;
+          _context58.p = 14;
           _iterator2.f();
-          return _context56.f(14);
+          return _context58.f(14);
         case 15:
           if (!savedAllocations.some(function (item) {
             return !item;
           })) {
-            _context56.n = 17;
+            _context58.n = 17;
             break;
           }
-          _context56.n = 16;
+          _context58.n = 16;
           return rollbackAfterBackendWriteFailure('تعذر حفظ تعديل اللون في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 16:
-          return _context56.a(2);
+          return _context58.a(2);
         case 17:
-          _context56.n = 18;
+          _context58.n = 18;
           return loadBackendData();
         case 18:
-          return _context56.a(2);
+          return _context58.a(2);
       }
-    }, _callee56, null, [[8, 13, 14, 15]]);
+    }, _callee58, null, [[8, 13, 14, 15]]);
   }));
   return _editAllocation.apply(this, arguments);
 }
@@ -5724,19 +5783,19 @@ function transferAllocationDyehouse(_x37) {
   return _transferAllocationDyehouse.apply(this, arguments);
 }
 function _transferAllocationDyehouse() {
-  _transferAllocationDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee57(id) {
-    var allocation, order, calculated, currentDyehouse, newDyehouseValue, newDyehouse, originalQuantity, suggestedQuantity, quantityValue, quantity, transferWarnings, dateValue, noteNumber, reason, newAllocationId, roundedQuantity, transferRecord, allocationUpdate, newAllocation, backendSaveRequired, ratio, originalAccessory, newAccessory, updatedAllocation, insertedAllocation, insertedTransfer, _t27, _t28, _t29;
-    return _regenerator().w(function (_context57) {
-      while (1) switch (_context57.n) {
+  _transferAllocationDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee59(id) {
+    var allocation, order, calculated, currentDyehouse, newDyehouseValue, newDyehouse, originalQuantity, suggestedQuantity, quantityValue, quantity, transferWarnings, dateValue, noteNumber, reason, newAllocationId, roundedQuantity, transferRecord, allocationUpdate, newAllocation, backendSaveRequired, ratio, originalAccessory, newAccessory, updatedAllocation, insertedAllocation, insertedTransfer, _t28, _t29, _t30;
+    return _regenerator().w(function (_context59) {
+      while (1) switch (_context59.n) {
         case 0:
           allocation = allocations.find(function (item) {
             return item.id === id;
           });
           if (allocation) {
-            _context57.n = 1;
+            _context59.n = 1;
             break;
           }
-          return _context57.a(2);
+          return _context59.a(2);
         case 1:
           order = calculateOrder(orders.find(function (item) {
             return item.id === allocation.orderId;
@@ -5747,51 +5806,51 @@ function _transferAllocationDyehouse() {
           currentDyehouse = allocation.dyehouse || order.dyehouse || '';
           newDyehouseValue = prompt("\u0627\u0644\u0645\u0635\u0628\u063A\u0629 \u0627\u0644\u062C\u062F\u064A\u062F\u0629", currentDyehouse);
           if (!(newDyehouseValue === null)) {
-            _context57.n = 2;
+            _context59.n = 2;
             break;
           }
-          return _context57.a(2);
+          return _context59.a(2);
         case 2:
           newDyehouse = newDyehouseValue.trim();
           if (newDyehouse) {
-            _context57.n = 3;
+            _context59.n = 3;
             break;
           }
-          return _context57.a(2);
+          return _context59.a(2);
         case 3:
           if (!(newDyehouse === currentDyehouse)) {
-            _context57.n = 4;
+            _context59.n = 4;
             break;
           }
           alert("\u0627\u0644\u0645\u0635\u0628\u063A\u0629 \u0644\u0645 \u062A\u062A\u063A\u064A\u0631.");
-          return _context57.a(2);
+          return _context59.a(2);
         case 4:
           originalQuantity = Number(allocation.plannedQuantity || 0);
           suggestedQuantity = Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0) || originalQuantity || '';
           quantityValue = prompt("\u0627\u0644\u0643\u0645\u064A\u0629 \u0627\u0644\u0645\u062D\u0648\u0644\u0629", suggestedQuantity);
           if (!(quantityValue === null)) {
-            _context57.n = 5;
+            _context59.n = 5;
             break;
           }
-          return _context57.a(2);
+          return _context59.a(2);
         case 5:
           quantity = Number(quantityValue);
           if (!(!quantity || quantity <= 0)) {
-            _context57.n = 6;
+            _context59.n = 6;
             break;
           }
           alert("\u0627\u062F\u062E\u0644 \u0643\u0645\u064A\u0629 \u0635\u062D\u064A\u062D\u0629 \u0644\u0644\u062A\u062D\u0648\u064A\u0644.");
-          return _context57.a(2);
+          return _context59.a(2);
         case 6:
           transferWarnings = [];
           if (quantity > originalQuantity) transferWarnings.push("\u062A\u0646\u0628\u064A\u0647: \u0643\u0645\u064A\u0629 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0643\u0645\u064A\u0629 \u0627\u0644\u0645\u062E\u0637\u0637\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.");
           if (quantity > Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0)) transferWarnings.push("\u062A\u0646\u0628\u064A\u0647: \u0643\u0645\u064A\u0629 \u0627\u0644\u062A\u062D\u0648\u064A\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u062E\u0627\u0645 \u0627\u0644\u0645\u062A\u0627\u062D \u063A\u064A\u0631 \u0627\u0644\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629.");
           dateValue = prompt("\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u062A\u062D\u0648\u064A\u0644", new Date().toISOString().slice(0, 10));
           if (!(dateValue === null)) {
-            _context57.n = 7;
+            _context59.n = 7;
             break;
           }
-          return _context57.a(2);
+          return _context59.a(2);
         case 7:
           noteNumber = prompt("\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062A\u062D\u0648\u064A\u0644", '') || '';
           reason = prompt("\u0633\u0628\u0628 \u0627\u0644\u062A\u062D\u0648\u064A\u0644", "\u062A\u062D\u0648\u064A\u0644 \u0645\u0635\u0628\u063A\u0629") || '';
@@ -5800,14 +5859,14 @@ function _transferAllocationDyehouse() {
           transferRecord = null;
           allocationUpdate = null;
           newAllocation = null;
-          _context57.n = 8;
+          _context59.n = 8;
           return ensureBackendForWrite();
         case 8:
-          if (_context57.v) {
-            _context57.n = 9;
+          if (_context59.v) {
+            _context59.n = 9;
             break;
           }
-          return _context57.a(2);
+          return _context59.a(2);
         case 9:
           backendSaveRequired = true;
           if (roundedQuantity >= originalQuantity) {
@@ -5858,66 +5917,66 @@ function _transferAllocationDyehouse() {
             };
           }
           if (!backendSaveRequired) {
-            _context57.n = 20;
+            _context59.n = 20;
             break;
           }
           if (!allocationUpdate) {
-            _context57.n = 11;
+            _context59.n = 11;
             break;
           }
-          _context57.n = 10;
+          _context59.n = 10;
           return putBackend("/allocations/".concat(id), allocationToApi(allocationUpdate));
         case 10:
-          _t27 = _context57.v;
-          _context57.n = 12;
+          _t28 = _context59.v;
+          _context59.n = 12;
           break;
         case 11:
-          _t27 = true;
+          _t28 = true;
         case 12:
-          updatedAllocation = _t27;
+          updatedAllocation = _t28;
           if (!newAllocation) {
-            _context57.n = 14;
+            _context59.n = 14;
             break;
           }
-          _context57.n = 13;
+          _context59.n = 13;
           return postBackend("/orders/".concat(allocation.orderId, "/allocations"), allocationToApi(newAllocation));
         case 13:
-          _t28 = _context57.v;
-          _context57.n = 15;
+          _t29 = _context59.v;
+          _context59.n = 15;
           break;
         case 14:
-          _t28 = true;
+          _t29 = true;
         case 15:
-          insertedAllocation = _t28;
+          insertedAllocation = _t29;
           if (!transferRecord) {
-            _context57.n = 17;
+            _context59.n = 17;
             break;
           }
-          _context57.n = 16;
+          _context59.n = 16;
           return postBackend('/transfers', transferToApi(transferRecord));
         case 16:
-          _t29 = _context57.v;
-          _context57.n = 18;
+          _t30 = _context59.v;
+          _context59.n = 18;
           break;
         case 17:
-          _t29 = true;
+          _t30 = true;
         case 18:
-          insertedTransfer = _t29;
+          insertedTransfer = _t30;
           if (!(!updatedAllocation || !insertedAllocation || !insertedTransfer)) {
-            _context57.n = 20;
+            _context59.n = 20;
             break;
           }
-          _context57.n = 19;
+          _context59.n = 19;
           return rollbackAfterBackendWriteFailure('تعذر حفظ تحويل المصبغة في قاعدة البيانات. لم يتم اعتماد التحويل.');
         case 19:
-          return _context57.a(2);
+          return _context59.a(2);
         case 20:
-          _context57.n = 21;
+          _context59.n = 21;
           return loadBackendData();
         case 21:
-          return _context57.a(2);
+          return _context59.a(2);
       }
-    }, _callee57);
+    }, _callee59);
   }));
   return _transferAllocationDyehouse.apply(this, arguments);
 }
@@ -5925,63 +5984,63 @@ function deleteAllocation(_x38) {
   return _deleteAllocation.apply(this, arguments);
 }
 function _deleteAllocation() {
-  _deleteAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee58(id) {
+  _deleteAllocation = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee60(id) {
     var allocation, backendSaveRequired, deleted;
-    return _regenerator().w(function (_context58) {
-      while (1) switch (_context58.n) {
+    return _regenerator().w(function (_context60) {
+      while (1) switch (_context60.n) {
         case 0:
           allocation = allocations.find(function (item) {
             return item.id === id;
           });
           if (allocation) {
-            _context58.n = 1;
+            _context60.n = 1;
             break;
           }
-          return _context58.a(2);
+          return _context60.a(2);
         case 1:
           if (confirm("\u0647\u0644 \u062A\u0631\u064A\u062F \u062D\u0630\u0641 \u0627\u0644\u0644\u0648\u0646 ".concat(allocation.color || allocation.pantoneCode || '-', "\u061F \u0633\u064A\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u062D\u0631\u0643\u0627\u062A \u0627\u0644\u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0647 \u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628."))) {
-            _context58.n = 2;
+            _context60.n = 2;
             break;
           }
-          return _context58.a(2);
+          return _context60.a(2);
         case 2:
-          _context58.n = 3;
+          _context60.n = 3;
           return ensureBackendForWrite();
         case 3:
-          if (_context58.v) {
-            _context58.n = 4;
+          if (_context60.v) {
+            _context60.n = 4;
             break;
           }
-          return _context58.a(2);
+          return _context60.a(2);
         case 4:
           backendSaveRequired = true;
           if (!backendSaveRequired) {
-            _context58.n = 7;
+            _context60.n = 7;
             break;
           }
-          _context58.n = 5;
+          _context60.n = 5;
           return deleteBackend("/allocations/".concat(id));
         case 5:
-          deleted = _context58.v;
+          deleted = _context60.v;
           if (deleted) {
-            _context58.n = 7;
+            _context60.n = 7;
             break;
           }
-          _context58.n = 6;
+          _context60.n = 6;
           return rollbackAfterBackendWriteFailure('تعذر حذف اللون من قاعدة البيانات. لم يتم اعتماد الحذف.');
         case 6:
-          return _context58.a(2);
+          return _context60.a(2);
         case 7:
           recordAudit('delete', 'allocation', id, allocation, null, "\u062D\u0630\u0641 \u0627\u0644\u0644\u0648\u0646 ".concat(allocation.color || allocation.pantoneCode || '-'));
-          _context58.n = 8;
+          _context60.n = 8;
           return persistAuditLog();
         case 8:
-          _context58.n = 9;
+          _context60.n = 9;
           return loadBackendData();
         case 9:
-          return _context58.a(2);
+          return _context60.a(2);
       }
-    }, _callee58);
+    }, _callee60);
   }));
   return _deleteAllocation.apply(this, arguments);
 }
@@ -5989,64 +6048,64 @@ function deleteOrder(_x39) {
   return _deleteOrder.apply(this, arguments);
 }
 function _deleteOrder() {
-  _deleteOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee59(id) {
+  _deleteOrder = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee61(id) {
     var order, backendSaveRequired, deleted;
-    return _regenerator().w(function (_context59) {
-      while (1) switch (_context59.n) {
+    return _regenerator().w(function (_context61) {
+      while (1) switch (_context61.n) {
         case 0:
           order = orders.find(function (item) {
             return item.id === id;
           });
           if (order) {
-            _context59.n = 1;
+            _context61.n = 1;
             break;
           }
-          return _context59.a(2);
+          return _context61.a(2);
         case 1:
           if (confirm("\u0647\u0644 \u062A\u0631\u064A\u062F \u062D\u0630\u0641 \u0627\u0644\u0637\u0644\u0628 \u0631\u0642\u0645 ".concat(order.orderNumber || '-', "\u061F \u0633\u064A\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0623\u0644\u0648\u0627\u0646 \u0648\u0627\u0644\u062D\u0631\u0643\u0627\u062A \u0627\u0644\u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0647."))) {
-            _context59.n = 2;
+            _context61.n = 2;
             break;
           }
-          return _context59.a(2);
+          return _context61.a(2);
         case 2:
-          _context59.n = 3;
+          _context61.n = 3;
           return ensureBackendForWrite();
         case 3:
-          if (_context59.v) {
-            _context59.n = 4;
+          if (_context61.v) {
+            _context61.n = 4;
             break;
           }
-          return _context59.a(2);
+          return _context61.a(2);
         case 4:
           backendSaveRequired = true;
           if (!backendSaveRequired) {
-            _context59.n = 7;
+            _context61.n = 7;
             break;
           }
-          _context59.n = 5;
+          _context61.n = 5;
           return deleteBackend("/orders/".concat(id));
         case 5:
-          deleted = _context59.v;
+          deleted = _context61.v;
           if (deleted) {
-            _context59.n = 7;
+            _context61.n = 7;
             break;
           }
-          _context59.n = 6;
+          _context61.n = 6;
           return rollbackAfterBackendWriteFailure('تعذر حذف الطلب من قاعدة البيانات. لم يتم اعتماد الحذف.');
         case 6:
-          return _context59.a(2);
+          return _context61.a(2);
         case 7:
           recordAudit('delete', 'order', id, order, null, "\u062D\u0630\u0641 \u0627\u0644\u0637\u0644\u0628 \u0631\u0642\u0645 ".concat(order.orderNumber || ''));
-          _context59.n = 8;
+          _context61.n = 8;
           return persistAuditLog();
         case 8:
           if (selectedOrderId === id) selectedOrderId = null;
-          _context59.n = 9;
+          _context61.n = 9;
           return loadBackendData();
         case 9:
-          return _context59.a(2);
+          return _context61.a(2);
       }
-    }, _callee59);
+    }, _callee61);
   }));
   return _deleteOrder.apply(this, arguments);
 }
@@ -6054,41 +6113,41 @@ function deleteBatch(_x40, _x41) {
   return _deleteBatch.apply(this, arguments);
 }
 function _deleteBatch() {
-  _deleteBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee60(type, id) {
+  _deleteBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee62(type, id) {
     var backendSaveRequired, transfer, newAllocation, originalAllocation, hasLinkedMovements, newQty, backendTasks, _transfer, _transfer2, _originalAllocation, results;
-    return _regenerator().w(function (_context60) {
-      while (1) switch (_context60.n) {
+    return _regenerator().w(function (_context62) {
+      while (1) switch (_context62.n) {
         case 0:
           if (confirm('هل تريد حذف هذه الحركة؟ سيتم حذفها من قاعدة البيانات أيضًا.')) {
-            _context60.n = 1;
+            _context62.n = 1;
             break;
           }
-          return _context60.a(2);
+          return _context62.a(2);
         case 1:
-          _context60.n = 2;
+          _context62.n = 2;
           return ensureBackendForWrite();
         case 2:
-          if (_context60.v) {
-            _context60.n = 3;
+          if (_context62.v) {
+            _context62.n = 3;
             break;
           }
-          return _context60.a(2);
+          return _context62.a(2);
         case 3:
           backendSaveRequired = true;
           transfer = null;
           if (!(type === 'transfer')) {
-            _context60.n = 7;
+            _context62.n = 7;
             break;
           }
           transfer = dyehouseTransfers.find(function (batch) {
             return String(batch.id) === String(id);
           });
           if (!transfer) {
-            _context60.n = 7;
+            _context62.n = 7;
             break;
           }
           if (!(transfer.mode === 'split' && transfer.newAllocationId)) {
-            _context60.n = 6;
+            _context62.n = 6;
             break;
           }
           newAllocation = allocations.find(function (allocation) {
@@ -6101,7 +6160,7 @@ function _deleteBatch() {
             return batch.allocationId === transfer.newAllocationId;
           });
           if (!(newAllocation && originalAllocation && !hasLinkedMovements)) {
-            _context60.n = 4;
+            _context62.n = 4;
             break;
           }
           newQty = Number(newAllocation.plannedQuantity || transfer.quantity || 0);
@@ -6112,17 +6171,17 @@ function _deleteBatch() {
           allocations = allocations.filter(function (allocation) {
             return allocation.id !== transfer.newAllocationId;
           });
-          _context60.n = 5;
+          _context62.n = 5;
           break;
         case 4:
           if (!hasLinkedMovements) {
-            _context60.n = 5;
+            _context62.n = 5;
             break;
           }
           alert('لا يمكن حذف التحويل لأن اللون المحول عليه توجد عليه حركات تشغيل. احذف الحركات المرتبطة أولًا أو اترك التحويل كما هو.');
-          return _context60.a(2);
+          return _context62.a(2);
         case 5:
-          _context60.n = 7;
+          _context62.n = 7;
           break;
         case 6:
           if (transfer.mode === 'full' && transfer.allocationId) {
@@ -6134,7 +6193,7 @@ function _deleteBatch() {
           }
         case 7:
           if (!backendSaveRequired) {
-            _context60.n = 10;
+            _context62.n = 10;
             break;
           }
           backendTasks = [];
@@ -6150,27 +6209,27 @@ function _deleteBatch() {
           } else {
             backendTasks.push(deleteBackend("/batches/".concat(backendBatchType(type), "/").concat(id)));
           }
-          _context60.n = 8;
+          _context62.n = 8;
           return Promise.all(backendTasks);
         case 8:
-          results = _context60.v;
+          results = _context62.v;
           if (!results.some(function (item) {
             return !item;
           })) {
-            _context60.n = 10;
+            _context62.n = 10;
             break;
           }
-          _context60.n = 9;
+          _context62.n = 9;
           return rollbackAfterBackendWriteFailure('تعذر حذف الحركة من قاعدة البيانات. لم يتم اعتماد الحذف.');
         case 9:
-          return _context60.a(2);
+          return _context62.a(2);
         case 10:
-          _context60.n = 11;
+          _context62.n = 11;
           return loadBackendData();
         case 11:
-          return _context60.a(2);
+          return _context62.a(2);
       }
-    }, _callee60);
+    }, _callee62);
   }));
   return _deleteBatch.apply(this, arguments);
 }
@@ -6178,38 +6237,38 @@ function editBatch(_x42, _x43) {
   return _editBatch.apply(this, arguments);
 }
 function _editBatch() {
-  _editBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee61(type, id) {
-    var collection, batch, backendSaveRequired, updatedBatch, quantity, saved, _t30;
-    return _regenerator().w(function (_context61) {
-      while (1) switch (_context61.n) {
+  _editBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee63(type, id) {
+    var collection, batch, backendSaveRequired, updatedBatch, quantity, saved, _t31;
+    return _regenerator().w(function (_context63) {
+      while (1) switch (_context63.n) {
         case 0:
           collection = type === 'raw' ? rawBatches : type === 'accessory' ? accessoryBatches : type === 'transfer' ? dyehouseTransfers : type === 'rawReturn' ? rawReturns : type === 'production' ? productionBatches : type === 'customer' ? customerBatches : finishedBatches;
           batch = collection.find(function (item) {
             return item.id === id;
           });
           if (batch) {
-            _context61.n = 1;
+            _context63.n = 1;
             break;
           }
-          return _context61.a(2);
+          return _context63.a(2);
         case 1:
-          _context61.n = 2;
+          _context63.n = 2;
           return ensureBackendForWrite();
         case 2:
-          if (_context61.v) {
-            _context61.n = 3;
+          if (_context63.v) {
+            _context63.n = 3;
             break;
           }
-          return _context61.a(2);
+          return _context63.a(2);
         case 3:
           backendSaveRequired = true;
           updatedBatch = _objectSpread({}, batch);
           quantity = Number(prompt('الكمية', updatedBatch.quantity));
           if (quantity) {
-            _context61.n = 4;
+            _context63.n = 4;
             break;
           }
-          return _context61.a(2);
+          return _context63.a(2);
         case 4:
           updatedBatch.quantity = quantity;
           updatedBatch.date = prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
@@ -6247,43 +6306,43 @@ function _editBatch() {
             updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || '';
           }
           if (!backendSaveRequired) {
-            _context61.n = 10;
+            _context63.n = 10;
             break;
           }
           if (!(type === 'transfer')) {
-            _context61.n = 6;
+            _context63.n = 6;
             break;
           }
-          _context61.n = 5;
+          _context63.n = 5;
           return putBackend("/transfers/".concat(id), transferToApi(updatedBatch));
         case 5:
-          _t30 = _context61.v;
-          _context61.n = 8;
+          _t31 = _context63.v;
+          _context63.n = 8;
           break;
         case 6:
-          _context61.n = 7;
+          _context63.n = 7;
           return putBackend("/batches/".concat(backendBatchType(type), "/").concat(id), type === 'rawReturn' ? _objectSpread(_objectSpread({}, batchToApi(updatedBatch)), {}, {
             reason: updatedBatch.reason || updatedBatch.notes || ''
           }) : batchToApi(updatedBatch));
         case 7:
-          _t30 = _context61.v;
+          _t31 = _context63.v;
         case 8:
-          saved = _t30;
+          saved = _t31;
           if (saved) {
-            _context61.n = 10;
+            _context63.n = 10;
             break;
           }
-          _context61.n = 9;
+          _context63.n = 9;
           return rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الحركة في قاعدة البيانات. لم يتم اعتماد التعديل.');
         case 9:
-          return _context61.a(2);
+          return _context63.a(2);
         case 10:
-          _context61.n = 11;
+          _context63.n = 11;
           return loadBackendData();
         case 11:
-          return _context61.a(2);
+          return _context63.a(2);
       }
-    }, _callee61);
+    }, _callee63);
   }));
   return _editBatch.apply(this, arguments);
 }
@@ -6730,37 +6789,37 @@ function openDyeingDocumentForDyehouse(_x44) {
   return _openDyeingDocumentForDyehouse.apply(this, arguments);
 }
 function _openDyeingDocumentForDyehouse() {
-  _openDyeingDocumentForDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee62(dyehouseName) {
+  _openDyeingDocumentForDyehouse = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee64(dyehouseName) {
     var sourceOrder, name, operationNoteText, refreshedSourceOrder, order, fmt, reportOrder;
-    return _regenerator().w(function (_context62) {
-      while (1) switch (_context62.n) {
+    return _regenerator().w(function (_context64) {
+      while (1) switch (_context64.n) {
         case 0:
           if (!backendAvailable) {
-            _context62.n = 1;
+            _context64.n = 1;
             break;
           }
-          _context62.n = 1;
+          _context64.n = 1;
           return loadBackendData();
         case 1:
           sourceOrder = orders.find(function (item) {
             return item.id === selectedOrderId;
           });
           if (sourceOrder) {
-            _context62.n = 2;
+            _context64.n = 2;
             break;
           }
-          return _context62.a(2);
+          return _context64.a(2);
         case 2:
           name = String(dyehouseName || '').trim();
-          _context62.n = 3;
+          _context64.n = 3;
           return promptOperationNotes(sourceOrder, 'dyeing', name);
         case 3:
-          operationNoteText = _context62.v;
+          operationNoteText = _context64.v;
           if (!(operationNoteText === null)) {
-            _context62.n = 4;
+            _context64.n = 4;
             break;
           }
-          return _context62.a(2);
+          return _context64.a(2);
         case 4:
           refreshedSourceOrder = orders.find(function (item) {
             return item.id === selectedOrderId;
@@ -6787,9 +6846,9 @@ function _openDyeingDocumentForDyehouse() {
           refs.documentDialog.showModal();
           queueDocumentReport('dyeing', reportOrder);
         case 5:
-          return _context62.a(2);
+          return _context64.a(2);
       }
-    }, _callee62);
+    }, _callee64);
   }));
   return _openDyeingDocumentForDyehouse.apply(this, arguments);
 }
@@ -6797,46 +6856,46 @@ function openDocument(_x45) {
   return _openDocument.apply(this, arguments);
 }
 function _openDocument() {
-  _openDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee63(type) {
+  _openDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee65(type) {
     var sourceOrder, order, names, fmt, safe, titleMap, title, body, alreadyWrapped, operationNoteText, refreshedSourceOrder;
-    return _regenerator().w(function (_context63) {
-      while (1) switch (_context63.n) {
+    return _regenerator().w(function (_context65) {
+      while (1) switch (_context65.n) {
         case 0:
           if (!backendAvailable) {
-            _context63.n = 1;
+            _context65.n = 1;
             break;
           }
-          _context63.n = 1;
+          _context65.n = 1;
           return loadBackendData();
         case 1:
           sourceOrder = orders.find(function (item) {
             return item.id === selectedOrderId;
           });
           if (sourceOrder) {
-            _context63.n = 2;
+            _context65.n = 2;
             break;
           }
           alert('اختر طلبًا أولًا.');
-          return _context63.a(2);
+          return _context65.a(2);
         case 2:
           order = calculateOrder(sourceOrder);
           if (!(type === 'dyeing')) {
-            _context63.n = 5;
+            _context65.n = 5;
             break;
           }
           names = dyehouseNamesForOrder(order);
           if (!(names.length > 1)) {
-            _context63.n = 3;
+            _context65.n = 3;
             break;
           }
           renderDyehouseDocumentPicker(order);
-          _context63.n = 4;
+          _context65.n = 4;
           break;
         case 3:
-          _context63.n = 4;
+          _context65.n = 4;
           return openDyeingDocumentForDyehouse(names[0] || order.dyehouse || '');
         case 4:
-          return _context63.a(2);
+          return _context65.a(2);
         case 5:
           fmt = function fmt(value) {
             return formatNumber(Number(value || 0));
@@ -6863,26 +6922,26 @@ function _openDocument() {
           body = '';
           alreadyWrapped = false;
           if (!(type === 'quotation')) {
-            _context63.n = 6;
+            _context65.n = 6;
             break;
           }
           body = buildQuotationDocument(order, fmt, safe);
-          _context63.n = 10;
+          _context65.n = 10;
           break;
         case 6:
           if (!(type === 'weaving')) {
-            _context63.n = 9;
+            _context65.n = 9;
             break;
           }
-          _context63.n = 7;
+          _context65.n = 7;
           return promptOperationNotes(sourceOrder, 'weaving');
         case 7:
-          operationNoteText = _context63.v;
+          operationNoteText = _context65.v;
           if (!(operationNoteText === null)) {
-            _context63.n = 8;
+            _context65.n = 8;
             break;
           }
-          return _context63.a(2);
+          return _context65.a(2);
         case 8:
           refreshedSourceOrder = orders.find(function (item) {
             return item.id === selectedOrderId;
@@ -6891,7 +6950,7 @@ function _openDocument() {
           body = buildWeavingOrderDocument(_objectSpread(_objectSpread({}, order), {}, {
             operationNoteText: operationNoteText
           }), fmt, safe);
-          _context63.n = 10;
+          _context65.n = 10;
           break;
         case 9:
           if (type === 'dyeing') {
@@ -6918,22 +6977,22 @@ function _openDocument() {
           if (refs.documentDialog.open) refs.documentDialog.close();
           refs.documentDialog.showModal();
         case 11:
-          return _context63.a(2);
+          return _context65.a(2);
       }
-    }, _callee63);
+    }, _callee65);
   }));
   return _openDocument.apply(this, arguments);
 }
 function installAmalReviewUi() {
-  var _document$getElementB0;
+  var _document$getElementB1;
   refs.weavingSlipType.innerHTML = '<option value="weaving">إذن خام رايح للمصبغة</option>';
-  (_document$getElementB0 = document.getElementById('amalReviewBox')) === null || _document$getElementB0 === void 0 || _document$getElementB0.remove();
+  (_document$getElementB1 = document.getElementById('amalReviewBox')) === null || _document$getElementB1 === void 0 || _document$getElementB1.remove();
 }
 function toggleAmalReviewMode() {
-  var _document$getElementB1;
+  var _document$getElementB10;
   var normalGrid = refs.weavingSlipOrderNumber.closest('.form-grid');
   if (normalGrid) normalGrid.style.display = '';
-  (_document$getElementB1 = document.getElementById('amalReviewBox')) === null || _document$getElementB1 === void 0 || _document$getElementB1.remove();
+  (_document$getElementB10 = document.getElementById('amalReviewBox')) === null || _document$getElementB10 === void 0 || _document$getElementB10.remove();
   refs.weavingSlipForm.querySelector('.dialog-actions .primary-btn').textContent = 'تسجيل المستند';
 }
 function renderAmalSuggestion() {
@@ -7037,66 +7096,66 @@ function confirmAmalOrderImport() {
   return _confirmAmalOrderImport.apply(this, arguments);
 }
 function _confirmAmalOrderImport() {
-  _confirmAmalOrderImport = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee64() {
+  _confirmAmalOrderImport = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee66() {
     var _accessoryRows$, _accessoryRows$find;
-    var suggestion, reviewType, clothRows, accessoryRows, existing, deleted, orderId, totalRawQuantity, firstCloth, accessoryType, accessoryPercent, backendCustomer, importedOrder, savedOrder, _iterator3, _step3, _loop, _ret, rawSaved, _iterator4, _step4, row, savedAccessory, _t31, _t32;
-    return _regenerator().w(function (_context65) {
-      while (1) switch (_context65.p = _context65.n) {
+    var suggestion, reviewType, clothRows, accessoryRows, existing, deleted, orderId, totalRawQuantity, firstCloth, accessoryType, accessoryPercent, backendCustomer, importedOrder, savedOrder, _iterator3, _step3, _loop, _ret, rawSaved, _iterator4, _step4, row, savedAccessory, _t32, _t33;
+    return _regenerator().w(function (_context67) {
+      while (1) switch (_context67.p = _context67.n) {
         case 0:
           suggestion = readAmalSuggestionFromUi();
           reviewType = refs.weavingSlipType.value;
           if (!(!suggestion.orderNumber || !suggestion.customer || !suggestion.orderDate || !suggestion.dyehouse)) {
-            _context65.n = 1;
+            _context67.n = 1;
             break;
           }
           alert('راجع رقم الطلب والعميل والتاريخ والمصبغة قبل الاعتماد.');
-          return _context65.a(2);
+          return _context67.a(2);
         case 1:
           clothRows = suggestion.rows.filter(function (row) {
             return !isAccessoryRow(row);
           });
           accessoryRows = suggestion.rows.filter(isAccessoryRow);
           if (clothRows.length) {
-            _context65.n = 2;
+            _context67.n = 2;
             break;
           }
           alert('يجب وجود بند قماش واحد على الأقل قبل الاعتماد.');
-          return _context65.a(2);
+          return _context67.a(2);
         case 2:
           existing = orders.find(function (order) {
             return String(order.orderNumber) === String(suggestion.orderNumber);
           });
           if (!(existing && !confirm("\u064A\u0648\u062C\u062F \u0637\u0644\u0628 \u0645\u0633\u062C\u0644 \u0628\u0646\u0641\u0633 \u0627\u0644\u0631\u0642\u0645 ".concat(suggestion.orderNumber, ". \u0647\u0644 \u062A\u0631\u064A\u062F \u0627\u0633\u062A\u0628\u062F\u0627\u0644\u0647 \u0628\u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062D\u0627\u0644\u064A\u0629\u061F")))) {
-            _context65.n = 3;
+            _context67.n = 3;
             break;
           }
-          return _context65.a(2);
+          return _context67.a(2);
         case 3:
-          _context65.n = 4;
+          _context67.n = 4;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد المستند.');
         case 4:
-          if (_context65.v) {
-            _context65.n = 5;
+          if (_context67.v) {
+            _context67.n = 5;
             break;
           }
-          return _context65.a(2);
+          return _context67.a(2);
         case 5:
           if (!existing) {
-            _context65.n = 8;
+            _context67.n = 8;
             break;
           }
-          _context65.n = 6;
+          _context67.n = 6;
           return deleteBackend("/orders/".concat(existing.id));
         case 6:
-          deleted = _context65.v;
+          deleted = _context67.v;
           if (deleted) {
-            _context65.n = 8;
+            _context67.n = 8;
             break;
           }
-          _context65.n = 7;
+          _context67.n = 7;
           return rollbackAfterBackendWriteFailure('تعذر استبدال الطلب القديم في قاعدة البيانات. لم يتم اعتماد المستند.');
         case 7:
-          return _context65.a(2);
+          return _context67.a(2);
         case 8:
           orderId = uid();
           totalRawQuantity = roundNumber(clothRows.reduce(function (t, row) {
@@ -7107,10 +7166,10 @@ function _confirmAmalOrderImport() {
           accessoryPercent = ((_accessoryRows$find = accessoryRows.find(function (row) {
             return row.accessoryPercent;
           })) === null || _accessoryRows$find === void 0 ? void 0 : _accessoryRows$find.accessoryPercent) || calcAccessoryPercentFromRows(suggestion.rows);
-          _context65.n = 9;
+          _context67.n = 9;
           return ensureBackendCustomer(suggestion.customer);
         case 9:
-          backendCustomer = _context65.v;
+          backendCustomer = _context67.v;
           importedOrder = {
             id: orderId,
             orderNumber: suggestion.orderNumber,
@@ -7130,25 +7189,25 @@ function _confirmAmalOrderImport() {
             notes: suggestion.specs || '',
             status: 'pending'
           };
-          _context65.n = 10;
+          _context67.n = 10;
           return postBackend('/orders', orderToApi(importedOrder, backendCustomer));
         case 10:
-          savedOrder = _context65.v;
+          savedOrder = _context67.v;
           if (savedOrder) {
-            _context65.n = 12;
+            _context67.n = 12;
             break;
           }
-          _context65.n = 11;
+          _context67.n = 11;
           return rollbackAfterBackendWriteFailure('تعذر حفظ الطلب المستورد في قاعدة البيانات. لم يتم اعتماد المستند.');
         case 11:
-          return _context65.a(2);
+          return _context67.a(2);
         case 12:
           _iterator3 = _createForOfIteratorHelper(clothRows);
-          _context65.p = 13;
+          _context67.p = 13;
           _loop = /*#__PURE__*/_regenerator().m(function _loop() {
             var row, relatedAccessory, allocation, savedAllocation;
-            return _regenerator().w(function (_context64) {
-              while (1) switch (_context64.n) {
+            return _regenerator().w(function (_context66) {
+              while (1) switch (_context66.n) {
                 case 0:
                   row = _step3.value;
                   relatedAccessory = accessoryRows.find(function (item) {
@@ -7166,59 +7225,59 @@ function _confirmAmalOrderImport() {
                     targetFinishedWeight: row.weight || '',
                     accessoryQuantityManual: relatedAccessory ? Number(relatedAccessory.quantity || 0) : null
                   };
-                  _context64.n = 1;
+                  _context66.n = 1;
                   return postBackend("/orders/".concat(orderId, "/allocations"), allocationToApi(allocation));
                 case 1:
-                  savedAllocation = _context64.v;
+                  savedAllocation = _context66.v;
                   if (savedAllocation) {
-                    _context64.n = 3;
+                    _context66.n = 3;
                     break;
                   }
-                  _context64.n = 2;
+                  _context66.n = 2;
                   return rollbackAfterBackendWriteFailure('تعذر حفظ ألوان الطلب المستورد في قاعدة البيانات. لم يتم اعتماد المستند كاملًا.');
                 case 2:
-                  return _context64.a(2, {
+                  return _context66.a(2, {
                     v: void 0
                   });
                 case 3:
-                  return _context64.a(2);
+                  return _context66.a(2);
               }
             }, _loop);
           });
           _iterator3.s();
         case 14:
           if ((_step3 = _iterator3.n()).done) {
-            _context65.n = 17;
+            _context67.n = 17;
             break;
           }
-          return _context65.d(_regeneratorValues(_loop()), 15);
+          return _context67.d(_regeneratorValues(_loop()), 15);
         case 15:
-          _ret = _context65.v;
+          _ret = _context67.v;
           if (!_ret) {
-            _context65.n = 16;
+            _context67.n = 16;
             break;
           }
-          return _context65.a(2, _ret.v);
+          return _context67.a(2, _ret.v);
         case 16:
-          _context65.n = 14;
+          _context67.n = 14;
           break;
         case 17:
-          _context65.n = 19;
+          _context67.n = 19;
           break;
         case 18:
-          _context65.p = 18;
-          _t31 = _context65.v;
-          _iterator3.e(_t31);
+          _context67.p = 18;
+          _t32 = _context67.v;
+          _iterator3.e(_t32);
         case 19:
-          _context65.p = 19;
+          _context67.p = 19;
           _iterator3.f();
-          return _context65.f(19);
+          return _context67.f(19);
         case 20:
           if (!suggestion.rawNoteNumber) {
-            _context65.n = 23;
+            _context67.n = 23;
             break;
           }
-          _context65.n = 21;
+          _context67.n = 21;
           return postBackend('/batches/dyehouse', batchToApi({
             id: uid(),
             orderId: orderId,
@@ -7233,26 +7292,26 @@ function _confirmAmalOrderImport() {
             } : null
           }));
         case 21:
-          rawSaved = _context65.v;
+          rawSaved = _context67.v;
           if (rawSaved) {
-            _context65.n = 23;
+            _context67.n = 23;
             break;
           }
-          _context65.n = 22;
+          _context67.n = 22;
           return rollbackAfterBackendWriteFailure('تعذر حفظ إذن الخام المستورد في قاعدة البيانات. لم يتم اعتماد المستند كاملًا.');
         case 22:
-          return _context65.a(2);
+          return _context67.a(2);
         case 23:
           _iterator4 = _createForOfIteratorHelper(accessoryRows);
-          _context65.p = 24;
+          _context67.p = 24;
           _iterator4.s();
         case 25:
           if ((_step4 = _iterator4.n()).done) {
-            _context65.n = 29;
+            _context67.n = 29;
             break;
           }
           row = _step4.value;
-          _context65.n = 26;
+          _context67.n = 26;
           return postBackend('/batches/accessory', batchToApi({
             id: uid(),
             orderId: orderId,
@@ -7264,39 +7323,39 @@ function _confirmAmalOrderImport() {
             movement: 'sent'
           }));
         case 26:
-          savedAccessory = _context65.v;
+          savedAccessory = _context67.v;
           if (savedAccessory) {
-            _context65.n = 28;
+            _context67.n = 28;
             break;
           }
-          _context65.n = 27;
+          _context67.n = 27;
           return rollbackAfterBackendWriteFailure('تعذر حفظ إكسسوار المستند في قاعدة البيانات. لم يتم اعتماد المستند كاملًا.');
         case 27:
-          return _context65.a(2);
+          return _context67.a(2);
         case 28:
-          _context65.n = 25;
+          _context67.n = 25;
           break;
         case 29:
-          _context65.n = 31;
+          _context67.n = 31;
           break;
         case 30:
-          _context65.p = 30;
-          _t32 = _context65.v;
-          _iterator4.e(_t32);
+          _context67.p = 30;
+          _t33 = _context67.v;
+          _iterator4.e(_t33);
         case 31:
-          _context65.p = 31;
+          _context67.p = 31;
           _iterator4.f();
-          return _context65.f(31);
+          return _context67.f(31);
         case 32:
           selectedOrderId = orderId;
-          _context65.n = 33;
+          _context67.n = 33;
           return loadBackendData();
         case 33:
           refs.weavingSlipDialog.close();
         case 34:
-          return _context65.a(2);
+          return _context67.a(2);
       }
-    }, _callee64, null, [[24, 30, 31, 32], [13, 18, 19, 20]]);
+    }, _callee66, null, [[24, 30, 31, 32], [13, 18, 19, 20]]);
   }));
   return _confirmAmalOrderImport.apply(this, arguments);
 }
@@ -7457,29 +7516,29 @@ function handleWeavingSlipFile() {
   return _handleWeavingSlipFile.apply(this, arguments);
 }
 function _handleWeavingSlipFile() {
-  _handleWeavingSlipFile = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee65() {
+  _handleWeavingSlipFile = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee67() {
     var _refs$weavingSlipFile2;
     var file;
-    return _regenerator().w(function (_context66) {
-      while (1) switch (_context66.n) {
+    return _regenerator().w(function (_context68) {
+      while (1) switch (_context68.n) {
         case 0:
           file = (_refs$weavingSlipFile2 = refs.weavingSlipFile.files) === null || _refs$weavingSlipFile2 === void 0 ? void 0 : _refs$weavingSlipFile2[0];
           if (file) {
-            _context66.n = 1;
+            _context68.n = 1;
             break;
           }
-          return _context66.a(2);
+          return _context68.a(2);
         case 1:
-          _context66.n = 2;
+          _context68.n = 2;
           return resizeSlipImage(file);
         case 2:
-          pendingWeavingSlipImage = _context66.v;
+          pendingWeavingSlipImage = _context68.v;
           refs.weavingSlipPreview.src = pendingWeavingSlipImage;
           if (refs.weavingSlipType.value === 'amalOrder' || refs.weavingSlipType.value === 'deltexIssue') applyAmalSuggestionFromFile(file);
         case 3:
-          return _context66.a(2);
+          return _context68.a(2);
       }
-    }, _callee65);
+    }, _callee67);
   }));
   return _handleWeavingSlipFile.apply(this, arguments);
 }
@@ -7487,52 +7546,52 @@ function confirmWeavingSlip(_x46) {
   return _confirmWeavingSlip.apply(this, arguments);
 }
 function _confirmWeavingSlip() {
-  _confirmWeavingSlip = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee66(event) {
-    var order, type, isRawIssue, quantity, common, saved, existingRawBatch, rawBatch, _t33;
-    return _regenerator().w(function (_context67) {
-      while (1) switch (_context67.n) {
+  _confirmWeavingSlip = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee68(event) {
+    var order, type, isRawIssue, quantity, common, saved, existingRawBatch, rawBatch, _t34;
+    return _regenerator().w(function (_context69) {
+      while (1) switch (_context69.n) {
         case 0:
           event.preventDefault();
           if (!(refs.weavingSlipType.value === 'amalOrder')) {
-            _context67.n = 2;
+            _context69.n = 2;
             break;
           }
-          _context67.n = 1;
+          _context69.n = 1;
           return confirmAmalOrderImport();
         case 1:
-          return _context67.a(2);
+          return _context69.a(2);
         case 2:
           order = getReviewedOrder();
           if (order) {
-            _context67.n = 3;
+            _context69.n = 3;
             break;
           }
           alert('اختر الطلب المرتبط بالمستند قبل التسجيل.');
-          return _context67.a(2);
+          return _context69.a(2);
         case 3:
           type = refs.weavingSlipType.value;
           isRawIssue = type === 'weaving' || type === 'deltexIssue';
           if (!(isRawIssue && order.widthMode === 'multiple' && !refs.weavingSlipWidthLine.value)) {
-            _context67.n = 4;
+            _context69.n = 4;
             break;
           }
           alert('اختر العرض / البوصة المرتبطة بإذن الخام.');
-          return _context67.a(2);
+          return _context69.a(2);
         case 4:
           if (!((type === 'production' || type === 'customer') && !refs.weavingSlipAllocation.value)) {
-            _context67.n = 5;
+            _context69.n = 5;
             break;
           }
           alert('اختر اللون / البند المرتبط بالحركة.');
-          return _context67.a(2);
+          return _context69.a(2);
         case 5:
           quantity = Number(refs.weavingSlipQuantity.value || 0);
           if (quantity) {
-            _context67.n = 6;
+            _context69.n = 6;
             break;
           }
           alert('أدخل الكمية قبل التسجيل.');
-          return _context67.a(2);
+          return _context69.a(2);
         case 6:
           common = {
             id: uid(),
@@ -7546,7 +7605,7 @@ function _confirmWeavingSlip() {
             } : null
           };
           if (!(type === 'pricing')) {
-            _context67.n = 7;
+            _context69.n = 7;
             break;
           }
           refs.pricingNumber.value = "Q-".concat(order.orderNumber || '');
@@ -7560,20 +7619,20 @@ function _confirmWeavingSlip() {
           updatePricingPreview();
           refs.weavingSlipDialog.close();
           refs.pricingDialog.showModal();
-          return _context67.a(2);
+          return _context69.a(2);
         case 7:
-          _context67.n = 8;
+          _context69.n = 8;
           return ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم تسجيل المستند.');
         case 8:
-          if (_context67.v) {
-            _context67.n = 9;
+          if (_context69.v) {
+            _context69.n = 9;
             break;
           }
-          return _context67.a(2);
+          return _context69.a(2);
         case 9:
           saved = null;
           if (!isRawIssue) {
-            _context67.n = 14;
+            _context69.n = 14;
             break;
           }
           existingRawBatch = rawBatches.find(function (batch) {
@@ -7592,64 +7651,64 @@ function _confirmWeavingSlip() {
             supplier: refs.weavingSlipSupplier.value || ''
           });
           if (!existingRawBatch) {
-            _context67.n = 11;
+            _context69.n = 11;
             break;
           }
-          _context67.n = 10;
+          _context69.n = 10;
           return putBackend("/batches/dyehouse/".concat(existingRawBatch.id), batchToApi(rawBatch));
         case 10:
-          _t33 = _context67.v;
-          _context67.n = 13;
+          _t34 = _context69.v;
+          _context69.n = 13;
           break;
         case 11:
-          _context67.n = 12;
+          _context69.n = 12;
           return postBackend('/batches/dyehouse', batchToApi(rawBatch));
         case 12:
-          _t33 = _context67.v;
+          _t34 = _context69.v;
         case 13:
-          saved = _t33;
+          saved = _t34;
         case 14:
           if (!(type === 'production')) {
-            _context67.n = 16;
+            _context69.n = 16;
             break;
           }
-          _context67.n = 15;
+          _context69.n = 15;
           return postBackend('/batches/finished', batchToApi(_objectSpread(_objectSpread({}, common), {}, {
             orderId: order.id,
             allocationId: refs.weavingSlipAllocation.value
           })));
         case 15:
-          saved = _context67.v;
+          saved = _context69.v;
         case 16:
           if (!(type === 'customer')) {
-            _context67.n = 18;
+            _context69.n = 18;
             break;
           }
-          _context67.n = 17;
+          _context69.n = 17;
           return postBackend('/batches/customer', batchToApi(_objectSpread(_objectSpread({}, common), {}, {
             orderId: order.id,
             allocationId: refs.weavingSlipAllocation.value
           })));
         case 17:
-          saved = _context67.v;
+          saved = _context69.v;
         case 18:
           if (saved) {
-            _context67.n = 20;
+            _context69.n = 20;
             break;
           }
-          _context67.n = 19;
+          _context69.n = 19;
           return rollbackAfterBackendWriteFailure('تعذر حفظ بيانات المستند في قاعدة البيانات. لم يتم اعتماد التسجيل.');
         case 19:
-          return _context67.a(2);
+          return _context69.a(2);
         case 20:
-          _context67.n = 21;
+          _context69.n = 21;
           return loadBackendData();
         case 21:
           refs.weavingSlipDialog.close();
         case 22:
-          return _context67.a(2);
+          return _context69.a(2);
       }
-    }, _callee66);
+    }, _callee68);
   }));
   return _confirmWeavingSlip.apply(this, arguments);
 }
@@ -7705,7 +7764,7 @@ function promptOperationNotes(_x47, _x48) {
   return _promptOperationNotes.apply(this, arguments);
 }
 function _promptOperationNotes() {
-  _promptOperationNotes = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee67(sourceOrder, type) {
+  _promptOperationNotes = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee69(sourceOrder, type) {
     var dyehouseName,
       key,
       savedNotes,
@@ -7715,16 +7774,16 @@ function _promptOperationNotes() {
       customerId,
       savedOrder,
       refreshedOrder,
-      _args67 = arguments;
-    return _regenerator().w(function (_context68) {
-      while (1) switch (_context68.n) {
+      _args69 = arguments;
+    return _regenerator().w(function (_context70) {
+      while (1) switch (_context70.n) {
         case 0:
-          dyehouseName = _args67.length > 2 && _args67[2] !== undefined ? _args67[2] : '';
+          dyehouseName = _args69.length > 2 && _args69[2] !== undefined ? _args69[2] : '';
           if (sourceOrder) {
-            _context68.n = 1;
+            _context70.n = 1;
             break;
           }
-          return _context68.a(2, null);
+          return _context70.a(2, null);
         case 1:
           key = operationNotesKey(type, dyehouseName);
           savedNotes = sourceOrder.operationNotes && _typeof(sourceOrder.operationNotes) === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
@@ -7732,35 +7791,35 @@ function _promptOperationNotes() {
           title = type === 'dyeing' ? "\u0645\u0644\u0627\u062D\u0638\u0627\u062A \u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0635\u0628\u0627\u063A\u0629".concat(dyehouseName ? " - ".concat(dyehouseName) : '') : 'ملاحظات أمر تشغيل النسيج';
           value = prompt(title, current);
           if (!(value === null)) {
-            _context68.n = 2;
+            _context70.n = 2;
             break;
           }
-          return _context68.a(2, null);
+          return _context70.a(2, null);
         case 2:
           sourceOrder.operationNotes = sourceOrder.operationNotes && _typeof(sourceOrder.operationNotes) === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
           sourceOrder.operationNotes[key] = value.trim();
           if (!backendAvailable) {
-            _context68.n = 8;
+            _context70.n = 8;
             break;
           }
-          _context68.n = 3;
+          _context70.n = 3;
           return ensureBackendCustomer(sourceOrder.customer);
         case 3:
-          customerId = _context68.v;
-          _context68.n = 4;
+          customerId = _context70.v;
+          _context70.n = 4;
           return putBackend("/orders/".concat(sourceOrder.id), orderToApi(sourceOrder, customerId));
         case 4:
-          savedOrder = _context68.v;
+          savedOrder = _context70.v;
           if (savedOrder) {
-            _context68.n = 6;
+            _context70.n = 6;
             break;
           }
-          _context68.n = 5;
+          _context70.n = 5;
           return rollbackAfterBackendWriteFailure('تعذر حفظ ملاحظات التقرير في قاعدة البيانات. لم يتم فتح التقرير.');
         case 5:
-          return _context68.a(2, null);
+          return _context70.a(2, null);
         case 6:
-          _context68.n = 7;
+          _context70.n = 7;
           return loadBackendData();
         case 7:
           refreshedOrder = orders.find(function (order) {
@@ -7771,9 +7830,9 @@ function _promptOperationNotes() {
           }
         case 8:
           save();
-          return _context68.a(2, sourceOrder.operationNotes[key]);
+          return _context70.a(2, sourceOrder.operationNotes[key]);
       }
-    }, _callee67);
+    }, _callee69);
   }));
   return _promptOperationNotes.apply(this, arguments);
 }
@@ -8068,26 +8127,26 @@ function safeOpenDocument(_x49) {
   return _safeOpenDocument.apply(this, arguments);
 }
 function _safeOpenDocument() {
-  _safeOpenDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee68(type) {
-    var _t34;
-    return _regenerator().w(function (_context69) {
-      while (1) switch (_context69.p = _context69.n) {
+  _safeOpenDocument = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee70(type) {
+    var _t35;
+    return _regenerator().w(function (_context71) {
+      while (1) switch (_context71.p = _context71.n) {
         case 0:
-          _context69.p = 0;
-          _context69.n = 1;
+          _context71.p = 0;
+          _context71.n = 1;
           return openDocument(type === 'labsamples' ? 'labSamples' : type);
         case 1:
-          _context69.n = 3;
+          _context71.n = 3;
           break;
         case 2:
-          _context69.p = 2;
-          _t34 = _context69.v;
-          console.error('document-open-error', _t34);
+          _context71.p = 2;
+          _t35 = _context71.v;
+          console.error('document-open-error', _t35);
           alert('تعذر فتح المستند حاليًا. راجع بيانات الطلب ثم حاول مرة أخرى.');
         case 3:
-          return _context69.a(2);
+          return _context71.a(2);
       }
-    }, _callee68, null, [[0, 2]]);
+    }, _callee70, null, [[0, 2]]);
   }));
   return _safeOpenDocument.apply(this, arguments);
 }
@@ -8232,28 +8291,28 @@ function shareCurrentReportPdf() {
   return _shareCurrentReportPdf.apply(this, arguments);
 }
 function _shareCurrentReportPdf() {
-  _shareCurrentReportPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee69() {
-    var reportType, order, oldText, _refs$documentTitle3, blob, fileName, file, _refs$documentTitle4, url, link, _t35, _t36;
-    return _regenerator().w(function (_context70) {
-      while (1) switch (_context70.p = _context70.n) {
+  _shareCurrentReportPdf = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee71() {
+    var reportType, order, oldText, _refs$documentTitle3, blob, fileName, file, _refs$documentTitle4, url, link, _t36, _t37;
+    return _regenerator().w(function (_context72) {
+      while (1) switch (_context72.p = _context72.n) {
         case 0:
           reportType = currentReportTypeFromDocument();
           order = reportType ? currentShareReportPayload(reportType) : null;
           if (!(!reportType || !order)) {
-            _context70.n = 1;
+            _context72.n = 1;
             break;
           }
           alert('لا يوجد تقرير مفتوح جاهز للمشاركة.');
-          return _context70.a(2);
+          return _context72.a(2);
         case 1:
           oldText = refs.shareWhatsAppBtn.textContent;
           refs.shareWhatsAppBtn.disabled = true;
           refs.shareWhatsAppBtn.textContent = 'جاري تجهيز PNG...';
-          _context70.p = 2;
-          _context70.n = 3;
+          _context72.p = 2;
+          _context72.n = 3;
           return reportToPngBlob();
         case 3:
-          blob = _context70.v;
+          blob = _context72.v;
           fileName = "".concat(cleanCodePart(reportTypeLabels[reportType] || ((_refs$documentTitle3 = refs.documentTitle) === null || _refs$documentTitle3 === void 0 ? void 0 : _refs$documentTitle3.textContent) || '2B-Tex'), "-").concat(cleanCodePart(order.orderNumber || 'report'), ".png");
           file = new File([blob], fileName, {
             type: 'image/png'
@@ -8261,34 +8320,34 @@ function _shareCurrentReportPdf() {
           if (!(navigator.canShare && navigator.canShare({
             files: [file]
           }) && navigator.share)) {
-            _context70.n = 5;
+            _context72.n = 5;
             break;
           }
-          _context70.n = 4;
+          _context72.n = 4;
           return navigator.share({
             title: reportTypeLabels[reportType] || ((_refs$documentTitle4 = refs.documentTitle) === null || _refs$documentTitle4 === void 0 ? void 0 : _refs$documentTitle4.textContent) || '2B Tex',
             files: [file]
           });
         case 4:
           alert('تم فتح المشاركة اليدوية بصورة PNG عالية الدقة.');
-          return _context70.a(2);
+          return _context72.a(2);
         case 5:
           if (!(navigator.clipboard && window.ClipboardItem)) {
-            _context70.n = 9;
+            _context72.n = 9;
             break;
           }
-          _context70.p = 6;
-          _context70.n = 7;
+          _context72.p = 6;
+          _context72.n = 7;
           return navigator.clipboard.write([new ClipboardItem({
             'image/png': blob
           })]);
         case 7:
           alert('تم نسخ صورة التقرير للحافظة. افتح واتساب والصق الصورة يدويًا.');
-          return _context70.a(2);
+          return _context72.a(2);
         case 8:
-          _context70.p = 8;
-          _t35 = _context70.v;
-          console.warn('share-png-clipboard-skipped', _t35);
+          _context72.p = 8;
+          _t36 = _context72.v;
+          console.warn('share-png-clipboard-skipped', _t36);
         case 9:
           url = URL.createObjectURL(blob);
           link = document.createElement('a');
@@ -8301,22 +8360,22 @@ function _shareCurrentReportPdf() {
             return URL.revokeObjectURL(url);
           }, 1500);
           alert('تم تجهيز صورة PNG عالية الدقة وتنزيلها. أرسلها يدويًا من واتساب.');
-          _context70.n = 11;
+          _context72.n = 11;
           break;
         case 10:
-          _context70.p = 10;
-          _t36 = _context70.v;
-          console.error('share-png-error', _t36);
+          _context72.p = 10;
+          _t37 = _context72.v;
+          console.error('share-png-error', _t37);
           alert('تعذر تجهيز صورة المشاركة. جرّب الطباعة PDF أو أعد فتح التقرير مرة أخرى.');
         case 11:
-          _context70.p = 11;
+          _context72.p = 11;
           refs.shareWhatsAppBtn.disabled = false;
           refs.shareWhatsAppBtn.textContent = oldText;
-          return _context70.f(11);
+          return _context72.f(11);
         case 12:
-          return _context70.a(2);
+          return _context72.a(2);
       }
-    }, _callee69, null, [[6, 8], [2, 10, 11, 12]]);
+    }, _callee71, null, [[6, 8], [2, 10, 11, 12]]);
   }));
   return _shareCurrentReportPdf.apply(this, arguments);
 }
@@ -8324,16 +8383,16 @@ function shareCurrentReportPngManual() {
   return _shareCurrentReportPngManual.apply(this, arguments);
 }
 function _shareCurrentReportPngManual() {
-  _shareCurrentReportPngManual = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee70() {
-    return _regenerator().w(function (_context71) {
-      while (1) switch (_context71.n) {
+  _shareCurrentReportPngManual = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee72() {
+    return _regenerator().w(function (_context73) {
+      while (1) switch (_context73.n) {
         case 0:
-          _context71.n = 1;
+          _context73.n = 1;
           return shareCurrentReportPdf();
         case 1:
-          return _context71.a(2, _context71.v);
+          return _context73.a(2, _context73.v);
       }
-    }, _callee70);
+    }, _callee72);
   }));
   return _shareCurrentReportPngManual.apply(this, arguments);
 }
@@ -8343,9 +8402,11 @@ if (refs.shareWhatsAppBtn) {
   refs.shareWhatsAppBtn.onclick = shareCurrentReportPngManual;
 }
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
+loadCurrentUser()["finally"](function () {
+  installAutomationUi();
+  pollBackendStatus();
+  pollWhatsappService();
+});
 loadBackendData();
-installAutomationUi();
-pollBackendStatus();
-pollWhatsappService();
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
