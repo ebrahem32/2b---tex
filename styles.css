@@ -238,6 +238,40 @@
 .lab-sample-col{width:5cm}.lab-color-col{width:auto}.lab-samples-table .sample-cell{width:5cm!important;height:3cm!important}.lab-samples-table .color-cell{height:3cm!important;font-size:22px}.lab-logo-wrap{height:150px}.lab-title{height:90px;font-size:25px}.lab-item-row td{height:70px}
 @media print{.lab-samples-table .sample-cell{width:5cm!important;height:3cm!important}.lab-samples-table .color-cell{height:3cm!important}}
 
+@media print{
+  .document-sheet,
+  .document-sheet *{
+    color:#000!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  .document-sheet{
+    font-family:"Arial","Segoe UI",Tahoma,sans-serif!important;
+    font-weight:700!important;
+  }
+  .document-sheet p,
+  .document-sheet td{font-weight:700!important}
+  .document-sheet th,
+  .document-sheet h2,
+  .document-sheet h3,
+  .document-sheet strong{font-weight:900!important}
+  .two-b-report .document-meta div{font-size:11.5px!important;font-weight:800!important}
+  .two-b-report .document-meta span{font-size:9.5px!important;font-weight:800!important;color:#111!important}
+  .two-b-report .report-title h2{font-size:26px!important;font-weight:900!important}
+  .two-b-report .report-title h2 small{font-size:17px!important;font-weight:900!important}
+  .two-b-report .report-section h3{font-size:16.5px!important;font-weight:900!important;border-bottom-color:#000!important}
+  .two-b-report th,
+  .two-b-report td{font-size:10.8px!important;font-weight:800!important;color:#000!important;border-color:#9ca3af!important}
+  .two-b-report thead th{background:#071527!important;color:#fff!important;font-weight:900!important}
+  .two-b-report .summary-table th,
+  .two-b-report .summary-table td{font-size:11.2px!important;font-weight:900!important}
+  .orders-follow-report{font-size:11.2px!important;font-weight:800!important}
+  .orders-follow-report table,
+  .orders-follow-report th,
+  .orders-follow-report td{font-size:10.2px!important;font-weight:800!important;color:#000!important;border-color:#9ca3af!important}
+  .orders-follow-report .report-section h3{font-size:15.5px!important;font-weight:900!important;color:#000!important}
+}
+
 .raw-permit-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .raw-permit-gallery figure{margin:0;border:1px solid #d1d5db;border-radius:10px;padding:10px;background:#fff}
 .raw-permit-gallery img{display:block;width:100%;max-height:360px;object-fit:contain;background:#f9fafb}
