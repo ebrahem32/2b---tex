@@ -2751,6 +2751,16 @@ function updateCustomerDeliveryFields(form) {
   if (!form) return;
   const isAccessory = form.elements.movementKind?.value === 'accessory';
   form.querySelectorAll('[data-accessory-only]').forEach((field) => field.classList.toggle('field-hidden', !isAccessory));
+  const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
+  const order = sourceOrder ? calculateOrder(sourceOrder) : null;
+  const allocationSelect = form.elements.allocationId;
+  if (order && allocationSelect) {
+    [...allocationSelect.options].forEach((option) => {
+      const allocation = order.allocations.find((item)=>item.id === option.value);
+      if (!allocation) return;
+      option.textContent = isAccessory ? allocationOptionLabel(order, allocation) : customerDeliveryAllocationLabel(order, allocation);
+    });
+  }
 }
 function repairOrderDetailsArabic(order) {
   const root = refs.orderDetailsPanel;
@@ -2861,19 +2871,24 @@ function batchItemHtml(type, batch, label) {
 }
 function listHtml(items, formatter) { const rows = Array.isArray(items) ? items : []; return rows.length ? rows.map(formatter).join('') : `<div class="empty-state">لا توجد دفعات بعد.</div>`; }
 function allocationWidthSuffix(order, allocation) {
-  if (!order || !allocation || order.widthMode !== 'multiple') return '';
+  if (!order || !allocation) return '';
   const widthLine = (order.widthLines || []).find((item) => item.id === allocation.widthLineId) || {};
-  const inch = allocation.rawInch || widthLine.inch || '-';
-  const width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '-';
+  const inch = allocation.rawInch || widthLine.inch || order.inchWidth || '';
+  const width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '';
   const finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
-  return ` / بوصة ${inch} - عرض ${width}${finishedWeight ? ` - وزن ${finishedWeight}` : ''}`;
+  const parts = [];
+  if (inch) parts.push(`بوصة ${inch}`);
+  if (width) parts.push(`عرض ${width}`);
+  if (finishedWeight) parts.push(`وزن ${finishedWeight}`);
+  return parts.length ? ` / ${parts.join(' - ')}` : '';
 }
 function allocationAvailableToCustomer(allocation) {
   return roundNumber(Math.max(Number(allocation?.finishedReceived || 0) - Number(allocation?.deliveredToCustomer || 0), 0));
 }
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
-  return `${allocation.color || '-'} / ${allocation.dyehouse || '-'}${allocationWidthSuffix(order, allocation)}`;
+  const planned = Number(allocation.plannedQuantity || 0) ? ` / مخطط ${formatNumber(allocation.plannedQuantity)}` : '';
+  return `${allocation.color || '-'} / ${allocation.dyehouse || '-'}${allocationWidthSuffix(order, allocation)}${planned}`;
 }
 function allocationColorLabel(order, allocation) {
   if (!allocation) return '-';

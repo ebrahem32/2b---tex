@@ -4840,6 +4840,20 @@ function updateCustomerDeliveryFields(form) {
   form.querySelectorAll('[data-accessory-only]').forEach(function (field) {
     return field.classList.toggle('field-hidden', !isAccessory);
   });
+  var sourceOrder = orders.find(function (item) {
+    return item.id === selectedOrderId;
+  });
+  var order = sourceOrder ? calculateOrder(sourceOrder) : null;
+  var allocationSelect = form.elements.allocationId;
+  if (order && allocationSelect) {
+    _toConsumableArray(allocationSelect.options).forEach(function (option) {
+      var allocation = order.allocations.find(function (item) {
+        return item.id === option.value;
+      });
+      if (!allocation) return;
+      option.textContent = isAccessory ? allocationOptionLabel(order, allocation) : customerDeliveryAllocationLabel(order, allocation);
+    });
+  }
 }
 function repairOrderDetailsArabic(order) {
   var root = refs.orderDetailsPanel;
@@ -5004,21 +5018,26 @@ function listHtml(items, formatter) {
   return rows.length ? rows.map(formatter).join('') : "<div class=\"empty-state\">\u0644\u0627 \u062A\u0648\u062C\u062F \u062F\u0641\u0639\u0627\u062A \u0628\u0639\u062F.</div>";
 }
 function allocationWidthSuffix(order, allocation) {
-  if (!order || !allocation || order.widthMode !== 'multiple') return '';
+  if (!order || !allocation) return '';
   var widthLine = (order.widthLines || []).find(function (item) {
     return item.id === allocation.widthLineId;
   }) || {};
-  var inch = allocation.rawInch || widthLine.inch || '-';
-  var width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '-';
+  var inch = allocation.rawInch || widthLine.inch || order.inchWidth || '';
+  var width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '';
   var finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
-  return " / \u0628\u0648\u0635\u0629 ".concat(inch, " - \u0639\u0631\u0636 ").concat(width).concat(finishedWeight ? " - \u0648\u0632\u0646 ".concat(finishedWeight) : '');
+  var parts = [];
+  if (inch) parts.push("\u0628\u0648\u0635\u0629 ".concat(inch));
+  if (width) parts.push("\u0639\u0631\u0636 ".concat(width));
+  if (finishedWeight) parts.push("\u0648\u0632\u0646 ".concat(finishedWeight));
+  return parts.length ? " / ".concat(parts.join(' - ')) : '';
 }
 function allocationAvailableToCustomer(allocation) {
   return roundNumber(Math.max(Number((allocation === null || allocation === void 0 ? void 0 : allocation.finishedReceived) || 0) - Number((allocation === null || allocation === void 0 ? void 0 : allocation.deliveredToCustomer) || 0), 0));
 }
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
-  return "".concat(allocation.color || '-', " / ").concat(allocation.dyehouse || '-').concat(allocationWidthSuffix(order, allocation));
+  var planned = Number(allocation.plannedQuantity || 0) ? " / \u0645\u062E\u0637\u0637 ".concat(formatNumber(allocation.plannedQuantity)) : '';
+  return "".concat(allocation.color || '-', " / ").concat(allocation.dyehouse || '-').concat(allocationWidthSuffix(order, allocation)).concat(planned);
 }
 function allocationColorLabel(order, allocation) {
   if (!allocation) return '-';
