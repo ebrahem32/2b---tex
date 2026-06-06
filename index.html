@@ -59,7 +59,7 @@
     <main>
       <section class="panel pricing-panel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">قبل التشغيل</p><h2>التسعيرات</h2></div></div><div class="table-wrap"><table class="mobile-card-table pricing-table"><thead><tr><th>رقم التسعيرة</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>إجمالي العقد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="pricingTableBody"></tbody></table></div></section><section class="stats-grid" id="statsGrid"></section>
       <section class="panel ai-panel" id="aiModelPanel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">نموذج الذكاء الاصطناعي لـ 2B</p><h2>تحليل التقارير وقراءة النظام برؤية التشغيل الخاصة بك</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><p id="aiStatusText" class="eyebrow">مرحلة تأسيس نموذج متخصص في قراءة بيانات 2B، تحليل التقارير، واستخراج ملاحظات تشغيلية قابلة للتنفيذ.</p></section>
-      <section class="panel">
+      <section class="panel orders-list-panel">
         <div class="section-head stacked-on-mobile"><div><p class="eyebrow">الطلبات الرئيسية</p><h2>الطلبات الرئيسية</h2></div><div class="filters-row"><input id="searchInput" type="search" placeholder="بحث بالعميل، رقم الطلب، رقم إذن النسيج، المصبغة..."><select id="customerFilter"><option value="all">كل العملاء</option></select><select id="dyehouseFilter"><option value="all">كل المصابغ</option></select><select id="fabricFilter"><option value="all">كل الأصناف</option></select><select id="orderStatusFilter"><option value="all">كل الحالات</option><option value="pending">بانتظار الاستلام</option><option value="in-progress">قيد التشغيل</option><option value="completed">مكتمل</option><option value="closed">مغلق تشغيليًا</option></select><button class="mini-btn gold" id="printFilteredOrdersBtn" type="button">طباعة الفلترة</button></div></div>
         <div class="table-wrap"><table class="mobile-card-table orders-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>خام مطلوب</th><th>خام مستلم</th><th>مرسل للمصبغة</th><th>مجهز مستلم</th><th>الهالك</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       </section>
@@ -77,6 +77,6 @@
   <script charset="UTF-8" src="./compat/documents.js?v=20260606-14"></script>
   <script charset="UTF-8" src="./compat/pricing.js?v=20260606-06"></script>
   <script charset="UTF-8" src="./compat/orders.js?v=20260606-08"></script>
-  <script charset="UTF-8" src="./compat/app.js?v=20260607-02"></script>
+  <script charset="UTF-8" src="./compat/app.js?v=20260607-03"></script>
 </body>
 </html>

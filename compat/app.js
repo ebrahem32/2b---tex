@@ -271,6 +271,7 @@ var editingPricingId = null;
 var currentDocumentType = null;
 var pendingConvertedPricingId = null;
 var initialLocalStorageSnapshot = null;
+var orderFocusMode = false;
 var refs = Object.fromEntries(['statsGrid', 'pricingTableBody', 'ordersTableBody', 'searchInput', 'customerFilter', 'dyehouseFilter', 'fabricFilter', 'orderStatusFilter', 'printFilteredOrdersBtn', 'orderDetailsPanel', 'documentsPanel', 'analyzeReportBtn', 'aiStatusText', 'aiAnalysisDialog', 'aiAnalysisBody', 'closeAiAnalysisBtn', 'copyAiWhatsappBtn', 'openPricingFormBtn', 'openDocumentReviewBtn', 'openOrderFormBtn', 'openOrdersReportBtn', 'openDyehouseBalancesReportBtn', 'openManagementReportsBtn', 'closePricingFormBtn', 'pricingDialog', 'pricingForm', 'pricingNumber', 'pricingProductCode', 'pricingCustomer', 'pricingDate', 'pricingFabricType', 'pricingMaterialType', 'pricingDyehouse', 'pricingColorClass', 'pricingQuantity', 'pricingInchWidth', 'pricingFinishedWeight', 'pricingRawCost', 'pricingDyeCost', 'pricingSuggestedDyeCost', 'pricingWastePercent', 'pricingExtraCost', 'pricingProfitPerKg', 'pricingPaymentMode', 'pricingPaymentDetails', 'pricingPaymentTerms', 'pricingNotes', 'pricingWasteCostPreview', 'pricingCostPreview', 'pricingSellPreview', 'pricingTotalPreview', 'closeOrderFormBtn', 'orderDialog', 'orderForm', 'orderNumber', 'productCode', 'customer', 'orderDate', 'fabricType', 'totalRawQuantity', 'expectedWastePercent', 'widthMode', 'inchWidth', 'widthLinesBox', 'widthLinesEditor', 'addWidthLineBtn', 'kiloPrice', 'paymentMode', 'paymentDetails', 'paymentTerms', 'accessoryType', 'accessoryPercent', 'accessoryLinesEditor', 'addAccessoryLineBtn', 'dyehouse', 'weavingSource', 'orderNotes', 'weavingSlipDialog', 'weavingSlipForm', 'weavingSlipFile', 'weavingSlipPreview', 'weavingSlipType', 'weavingSlipOrderNumber', 'weavingSlipDate', 'weavingSlipAllocation', 'weavingSlipWidthLine', 'weavingSlipQuantity', 'weavingSlipSupplier', 'weavingSlipNoteNumber', 'reviewMatchNoteBtn', 'reviewMatchStatus', 'weavingSlipNotes', 'closeWeavingSlipBtn', 'documentDialog', 'documentTitle', 'documentBody', 'closeDocumentBtn', 'printDocumentBtn', 'shareWhatsAppBtn', 'deletePricingBtn'].map(function (id) {
   return [id, document.getElementById(id)];
 }));
@@ -1804,7 +1805,7 @@ function pollWhatsappService() {
 }
 function _pollWhatsappService() {
   _pollWhatsappService = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee24() {
-    var _refs$orderDetailsPan4, response, data, localById, _t13;
+    var _refs$orderDetailsPan3, response, data, localById, _t13;
     return _regenerator().w(function (_context24) {
       while (1) switch (_context24.p = _context24.n) {
         case 0:
@@ -1842,7 +1843,7 @@ function _pollWhatsappService() {
           }
           save();
           updateWhatsappStatusBadge();
-          if (selectedOrderId && (_refs$orderDetailsPan4 = refs.orderDetailsPanel) !== null && _refs$orderDetailsPan4 !== void 0 && _refs$orderDetailsPan4.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
+          if (selectedOrderId && (_refs$orderDetailsPan3 = refs.orderDetailsPanel) !== null && _refs$orderDetailsPan3 !== void 0 && _refs$orderDetailsPan3.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
           _context24.n = 6;
           break;
         case 5:
@@ -4785,6 +4786,32 @@ function renderOrders() {
     return "<tr><td data-label=\"\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628\">".concat(order.orderNumber, "</td><td data-label=\"\u0627\u0644\u0639\u0645\u064A\u0644\">").concat(order.customer, "</td><td data-label=\"\u0627\u0644\u0635\u0646\u0641\">").concat(order.fabricType, "</td><td data-label=\"\u062E\u0627\u0645 \u0645\u0637\u0644\u0648\u0628\">").concat(order.totalRawOrdered, "</td><td data-label=\"\u062E\u0627\u0645 \u0645\u0633\u062A\u0644\u0645\">").concat(order.totalRawReceived, "</td><td data-label=\"\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063A\u0629\">").concat(order.totalSentToDyehouse, "</td><td data-label=\"\u0645\u062C\u0647\u0632 \u0645\u0633\u062A\u0644\u0645\">").concat(order.totalFinishedReceived, "</td><td data-label=\"\u0627\u0644\u0647\u0627\u0644\u0643\">").concat(formatNumber(order.totalWastePercent || 0, 1), "%</td><td data-label=\"\u0627\u0644\u062D\u0627\u0644\u0629\"><span class=\"status ").concat(order.status, "\">").concat(statusLabel(order.status), "</span></td><td data-label=\"\u0625\u062C\u0631\u0627\u0621\u0627\u062A\"><div class=\"batch-actions\"><button class=\"mini-btn\" data-view=\"").concat(order.id, "\">\u0639\u0631\u0636</button><button class=\"mini-btn\" data-edit-order=\"").concat(order.id, "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" data-delete-order=\"").concat(order.id, "\">\u062D\u0630\u0641</button></div></td></tr>");
   }).join('');
 }
+function syncOrderFocusMode() {
+  document.body.classList.toggle('order-focus-mode', orderFocusMode);
+}
+function decorateOrderFocusHeader(order) {
+  if (!orderFocusMode || !refs.orderDetailsPanel || refs.orderDetailsPanel.querySelector('.order-focus-toolbar')) return;
+  refs.orderDetailsPanel.insertAdjacentHTML('afterbegin', "<div class=\"order-focus-toolbar\"><button class=\"mini-btn gold\" id=\"backToOrdersBtn\" type=\"button\">\u0631\u062C\u0648\u0639 \u0644\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0637\u0644\u0628\u0627\u062A</button><div><span class=\"eyebrow\">\u0639\u0631\u0636 \u0637\u0644\u0628 \u0641\u0642\u0637</span><strong>".concat(escapeHtml((order === null || order === void 0 ? void 0 : order.orderNumber) || '-'), " - ").concat(escapeHtml((order === null || order === void 0 ? void 0 : order.customer) || '-'), "</strong></div><div class=\"batch-actions\"><button class=\"mini-btn\" id=\"focusEditOrderBtn\" type=\"button\">\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0637\u0644\u0628</button><button class=\"mini-btn danger\" id=\"focusDeleteOrderBtn\" type=\"button\">\u062D\u0630\u0641 \u0627\u0644\u0637\u0644\u0628</button></div></div>"));
+}
+function closeOrderFocusMode() {
+  var _document$querySelect;
+  orderFocusMode = false;
+  syncOrderFocusMode();
+  (_document$querySelect = document.querySelector('.orders-list-panel')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
+function openOrderFocusMode(orderId) {
+  selectedOrderId = orderId;
+  orderFocusMode = true;
+  syncOrderFocusMode();
+  renderDetails();
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
 function documentFooter() {
   var printedAt = new Date().toLocaleString('en-US', {
     dateStyle: 'medium',
@@ -5014,8 +5041,12 @@ function renderDocuments() {
   refs.documentsPanel.innerHTML = "\n    <div class=\"document-action-group\">\n      <h3>\u0639\u0631\u0636 \u0627\u0644\u0639\u0645\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"quotation\">\u0625\u0646\u0634\u0627\u0621 \u0639\u0631\u0636 \u0633\u0639\u0631</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0623\u0648\u0627\u0645\u0631 \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"weaving\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0646\u0633\u064A\u062C</button>\n      <button class=\"mini-btn gold\" data-doc=\"dyeing\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0635\u0628\u0627\u063A\u0629</button>\n      <button class=\"mini-btn gold\" data-doc=\"labSamples\">\u0639\u064A\u0646\u0627\u062A \u0645\u0639\u0645\u0644</button>\n      <button class=\"mini-btn gold\" data-doc=\"stickers\">\u0627\u0633\u062A\u064A\u0643\u0631\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0643\u0634\u0648\u0641\u0627\u062A</h3>\n      <button class=\"mini-btn\" data-doc=\"waste\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0647\u0627\u0644\u0643</button>\n      <button class=\"mini-btn gold\" data-doc=\"fullreport\">\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A</button>\n      <button class=\"mini-btn\" data-doc=\"print\">\u0637\u0628\u0627\u0639\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u064A</button>\n      <button class=\"mini-btn\" disabled>\u062A\u0635\u062F\u064A\u0631 PDF \u0644\u0627\u062D\u0642\u064B\u0627</button>\n    </div>";
 }
 function handleNavMenuAction(action) {
-  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB0, _refs$printFilteredOr, _document$querySelect, _refs$searchInput, _refs$orderDetailsPan2;
+  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB0, _refs$printFilteredOr, _document$querySelect2, _refs$searchInput, _refs$orderDetailsPan2;
   if (!action) return;
+  if (action === 'ordersList') {
+    closeOrderFocusMode();
+    return;
+  }
   if (action === 'pricingNew') (_refs$openPricingForm = refs.openPricingFormBtn) === null || _refs$openPricingForm === void 0 || _refs$openPricingForm.click();
   if (action === 'orderNew') (_refs$openOrderFormBt = refs.openOrderFormBtn) === null || _refs$openOrderFormBt === void 0 || _refs$openOrderFormBt.click();
   if (action === 'managementReports') (_refs$openManagementR = refs.openManagementReportsBtn) === null || _refs$openManagementR === void 0 || _refs$openManagementR.click();
@@ -5048,7 +5079,7 @@ function handleNavMenuAction(action) {
   if (action === 'users') openUsersDialog();
   if (action === 'systemStatus') openSystemStatusDialog();
   if (action === 'dyehousePrices') renderDyehousePricesDialog();
-  if (action === 'pricingList') (_document$querySelect = document.querySelector('.pricing-panel')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
+  if (action === 'pricingList') (_document$querySelect2 = document.querySelector('.pricing-panel')) === null || _document$querySelect2 === void 0 || _document$querySelect2.scrollIntoView({
     behavior: 'smooth',
     block: 'start'
   });
@@ -5348,6 +5379,7 @@ function renderDetails() {
   });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
   repairOrderDetailsArabic(order);
+  decorateOrderFocusHeader(order);
   renderDocuments();
 }
 function toggleOperationClosed() {
@@ -8499,14 +8531,8 @@ refs.ordersTableBody.onclick = function (event) {
   var button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.view) {
-    selectedOrderId = button.dataset.view;
     try {
-      var _refs$orderDetailsPan3;
-      renderDetails();
-      (_refs$orderDetailsPan3 = refs.orderDetailsPanel) === null || _refs$orderDetailsPan3 === void 0 || _refs$orderDetailsPan3.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
+      openOrderFocusMode(button.dataset.view);
     } catch (error) {
       console.error('Order details failed', error);
       recordAudit('error', 'orderDetails', button.dataset.view, null, {
@@ -8558,13 +8584,37 @@ refs.orderDetailsPanel.addEventListener('change', function (event) {
 refs.orderDetailsPanel.addEventListener('click', function (event) {
   var target = event.target.closest('button');
   if (!target) return;
-  if (target.id === 'editOrderBtn') {
+  if (target.id === 'backToOrdersBtn') {
+    closeOrderFocusMode();
+    return;
+  }
+  if (target.id === 'focusEditOrderBtn') {
     editingOrderId = selectedOrderId;
     var order = orders.find(function (item) {
       return item.id === selectedOrderId;
     });
     if (order) {
       fillOrderForm(order);
+      refs.orderDialog.showModal();
+    }
+    return;
+  }
+  if (target.id === 'focusDeleteOrderBtn') {
+    if (selectedOrderId) deleteOrder(selectedOrderId).then(function () {
+      if (!selectedOrderId) closeOrderFocusMode();
+    })["catch"](function (error) {
+      console.error('order-delete-error', error);
+      alert('تعذر حذف الطلب.');
+    });
+    return;
+  }
+  if (target.id === 'editOrderBtn') {
+    editingOrderId = selectedOrderId;
+    var _order = orders.find(function (item) {
+      return item.id === selectedOrderId;
+    });
+    if (_order) {
+      fillOrderForm(_order);
       refs.orderDialog.showModal();
     }
   }

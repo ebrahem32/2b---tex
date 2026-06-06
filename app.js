@@ -200,6 +200,7 @@ let editingPricingId = null;
 let currentDocumentType = null;
 let pendingConvertedPricingId = null;
 let initialLocalStorageSnapshot = null;
+let orderFocusMode = false;
 
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
@@ -2714,6 +2715,29 @@ function renderOrders() {
   refs.ordersTableBody.innerHTML = list.map((order) => `<tr><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="خام مستلم">${order.totalRawReceived}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="الهالك">${formatNumber(order.totalWastePercent || 0, 1)}%</td><td data-label="الحالة"><span class="status ${order.status}">${statusLabel(order.status)}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button><button class="mini-btn danger" data-delete-order="${order.id}">حذف</button></div></td></tr>`).join('');
 }
 
+function syncOrderFocusMode() {
+  document.body.classList.toggle('order-focus-mode', orderFocusMode);
+}
+
+function decorateOrderFocusHeader(order) {
+  if (!orderFocusMode || !refs.orderDetailsPanel || refs.orderDetailsPanel.querySelector('.order-focus-toolbar')) return;
+  refs.orderDetailsPanel.insertAdjacentHTML('afterbegin', `<div class="order-focus-toolbar"><button class="mini-btn gold" id="backToOrdersBtn" type="button">رجوع لقائمة الطلبات</button><div><span class="eyebrow">عرض طلب فقط</span><strong>${escapeHtml(order?.orderNumber || '-')} - ${escapeHtml(order?.customer || '-')}</strong></div><div class="batch-actions"><button class="mini-btn" id="focusEditOrderBtn" type="button">تعديل الطلب</button><button class="mini-btn danger" id="focusDeleteOrderBtn" type="button">حذف الطلب</button></div></div>`);
+}
+
+function closeOrderFocusMode() {
+  orderFocusMode = false;
+  syncOrderFocusMode();
+  document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function openOrderFocusMode(orderId) {
+  selectedOrderId = orderId;
+  orderFocusMode = true;
+  syncOrderFocusMode();
+  renderDetails();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
 function documentFooter() {
   const printedAt = new Date().toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' });
   return `<div class="document-footer"><span>${printedAt}</span><strong>Manager : Ibrahim Assem</strong></div>`;
@@ -2887,6 +2911,10 @@ function renderDocuments() {
 }
 function handleNavMenuAction(action) {
   if (!action) return;
+  if (action === 'ordersList') {
+    closeOrderFocusMode();
+    return;
+  }
   if (action === 'pricingNew') refs.openPricingFormBtn?.click();
   if (action === 'orderNew') refs.openOrderFormBtn?.click();
   if (action === 'managementReports') refs.openManagementReportsBtn?.click();
@@ -3037,6 +3065,7 @@ function renderDetails() {
   });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
   repairOrderDetailsArabic(order);
+  decorateOrderFocusHeader(order);
   renderDocuments();
 }
 async function toggleOperationClosed() {
@@ -4306,10 +4335,8 @@ refs.ordersTableBody.onclick = (event) => {
   const button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.view) {
-    selectedOrderId = button.dataset.view;
     try {
-      renderDetails();
-      refs.orderDetailsPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      openOrderFocusMode(button.dataset.view);
     } catch (error) {
       console.error('Order details failed', error);
       recordAudit('error', 'orderDetails', button.dataset.view, null, { message: error && error.message ? error.message : String(error) }, 'فشل فتح تفاصيل الطلب');
@@ -4348,6 +4375,17 @@ refs.orderDetailsPanel.addEventListener('change', (event) => {
 refs.orderDetailsPanel.addEventListener('click', (event) => {
   const target = event.target.closest('button');
   if (!target) return;
+  if (target.id === 'backToOrdersBtn') { closeOrderFocusMode(); return; }
+  if (target.id === 'focusEditOrderBtn') {
+    editingOrderId = selectedOrderId;
+    const order = orders.find((item)=>item.id===selectedOrderId);
+    if (order) { fillOrderForm(order); refs.orderDialog.showModal(); }
+    return;
+  }
+  if (target.id === 'focusDeleteOrderBtn') {
+    if (selectedOrderId) deleteOrder(selectedOrderId).then(()=>{ if (!selectedOrderId) closeOrderFocusMode(); }).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
+    return;
+  }
   if (target.id === 'editOrderBtn') { editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
   if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
   if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
