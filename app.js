@@ -2890,11 +2890,25 @@ function handleNavMenuAction(action) {
   if (action === 'pricingNew') refs.openPricingFormBtn?.click();
   if (action === 'orderNew') refs.openOrderFormBtn?.click();
   if (action === 'managementReports') refs.openManagementReportsBtn?.click();
+  if (action.startsWith('report:')) {
+    openManagementReport(action.slice('report:'.length));
+    return;
+  }
   if (action === 'aiModel') document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
   if (action === 'aiAnalyze') {
     document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     refs.analyzeReportBtn?.click();
   }
+  if (action === 'printFilteredOrders') refs.printFilteredOrdersBtn?.click();
+  if (action === 'customerAccounts') renderCustomerAccountsDialog();
+  if (action === 'a5Accounts') renderA5AccountsDialog();
+  if (action === 'a5Export') renderA5ExportDialog();
+  if (action === 'whatsappSettings') openWhatsappSettingsDialog().catch((error)=>{ console.error('whatsapp-settings-open-error', error); renderWhatsappSettingsDialog([]); });
+  if (action === 'outbox') openOutboxDialog();
+  if (action === 'auditLog') openAuditLogDialog().catch(console.error);
+  if (action === 'users') openUsersDialog();
+  if (action === 'systemStatus') openSystemStatusDialog();
+  if (action === 'dyehousePrices') renderDyehousePricesDialog();
   if (action === 'pricingList') document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
   if (action === 'ordersList') refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
   if (action === 'orderDetails') refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' });

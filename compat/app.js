@@ -5014,11 +5014,15 @@ function renderDocuments() {
   refs.documentsPanel.innerHTML = "\n    <div class=\"document-action-group\">\n      <h3>\u0639\u0631\u0636 \u0627\u0644\u0639\u0645\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"quotation\">\u0625\u0646\u0634\u0627\u0621 \u0639\u0631\u0636 \u0633\u0639\u0631</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0623\u0648\u0627\u0645\u0631 \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"weaving\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0646\u0633\u064A\u062C</button>\n      <button class=\"mini-btn gold\" data-doc=\"dyeing\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0635\u0628\u0627\u063A\u0629</button>\n      <button class=\"mini-btn gold\" data-doc=\"labSamples\">\u0639\u064A\u0646\u0627\u062A \u0645\u0639\u0645\u0644</button>\n      <button class=\"mini-btn gold\" data-doc=\"stickers\">\u0627\u0633\u062A\u064A\u0643\u0631\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0643\u0634\u0648\u0641\u0627\u062A</h3>\n      <button class=\"mini-btn\" data-doc=\"waste\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0647\u0627\u0644\u0643</button>\n      <button class=\"mini-btn gold\" data-doc=\"fullreport\">\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A</button>\n      <button class=\"mini-btn\" data-doc=\"print\">\u0637\u0628\u0627\u0639\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u064A</button>\n      <button class=\"mini-btn\" disabled>\u062A\u0635\u062F\u064A\u0631 PDF \u0644\u0627\u062D\u0642\u064B\u0627</button>\n    </div>";
 }
 function handleNavMenuAction(action) {
-  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB0, _document$querySelect, _refs$searchInput, _refs$orderDetailsPan2;
+  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB0, _refs$printFilteredOr, _document$querySelect, _refs$searchInput, _refs$orderDetailsPan2;
   if (!action) return;
   if (action === 'pricingNew') (_refs$openPricingForm = refs.openPricingFormBtn) === null || _refs$openPricingForm === void 0 || _refs$openPricingForm.click();
   if (action === 'orderNew') (_refs$openOrderFormBt = refs.openOrderFormBtn) === null || _refs$openOrderFormBt === void 0 || _refs$openOrderFormBt.click();
   if (action === 'managementReports') (_refs$openManagementR = refs.openManagementReportsBtn) === null || _refs$openManagementR === void 0 || _refs$openManagementR.click();
+  if (action.startsWith('report:')) {
+    openManagementReport(action.slice('report:'.length));
+    return;
+  }
   if (action === 'aiModel') (_document$getElementB0 = document.getElementById('aiModelPanel')) === null || _document$getElementB0 === void 0 || _document$getElementB0.scrollIntoView({
     behavior: 'smooth',
     block: 'start'
@@ -5031,6 +5035,19 @@ function handleNavMenuAction(action) {
     });
     (_refs$analyzeReportBt = refs.analyzeReportBtn) === null || _refs$analyzeReportBt === void 0 || _refs$analyzeReportBt.click();
   }
+  if (action === 'printFilteredOrders') (_refs$printFilteredOr = refs.printFilteredOrdersBtn) === null || _refs$printFilteredOr === void 0 || _refs$printFilteredOr.click();
+  if (action === 'customerAccounts') renderCustomerAccountsDialog();
+  if (action === 'a5Accounts') renderA5AccountsDialog();
+  if (action === 'a5Export') renderA5ExportDialog();
+  if (action === 'whatsappSettings') openWhatsappSettingsDialog()["catch"](function (error) {
+    console.error('whatsapp-settings-open-error', error);
+    renderWhatsappSettingsDialog([]);
+  });
+  if (action === 'outbox') openOutboxDialog();
+  if (action === 'auditLog') openAuditLogDialog()["catch"](console.error);
+  if (action === 'users') openUsersDialog();
+  if (action === 'systemStatus') openSystemStatusDialog();
+  if (action === 'dyehousePrices') renderDyehousePricesDialog();
   if (action === 'pricingList') (_document$querySelect = document.querySelector('.pricing-panel')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
     behavior: 'smooth',
     block: 'start'
