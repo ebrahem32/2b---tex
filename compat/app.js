@@ -4992,7 +4992,9 @@ function renderDocuments() {
   refs.documentsPanel.innerHTML = "<button class=\"mini-btn gold\" data-doc=\"quotation\">\u0625\u0646\u0634\u0627\u0621 \u0639\u0631\u0636 \u0633\u0639\u0631</button><button class=\"mini-btn gold\" data-doc=\"weaving\">\u0625\u0646\u0634\u0627\u0621 \u0623\u0645\u0631 \u0646\u0633\u064A\u062C</button><button class=\"mini-btn gold\" data-doc=\"dyeing\">\u0625\u0646\u0634\u0627\u0621 \u0623\u0645\u0631 \u0635\u0628\u0627\u063A\u0629</button><button class=\"mini-btn gold\" data-doc=\"labSamples\">\u0639\u064A\u0646\u0627\u062A \u0645\u0639\u0645\u0644</button><button class=\"mini-btn\" data-doc=\"waste\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0647\u0627\u0644\u0643</button><button class=\"mini-btn gold\" data-doc=\"fullreport\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0643\u0627\u0645\u0644</button><button class=\"mini-btn gold\" data-doc=\"stickers\">\u0637\u0628\u0627\u0639\u0629 \u0627\u0633\u062A\u064A\u0643\u0631\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</button><button class=\"mini-btn\" data-doc=\"print\">\u0637\u0628\u0627\u0639\u0629</button><button class=\"mini-btn\" disabled>\u062A\u0635\u062F\u064A\u0631 PDF \u0644\u0627\u062D\u0642\u064B\u0627</button>";
 }
 function batchItemHtml(type, batch, label) {
-  return "<div class=\"batch-item\"><span>".concat(label, "</span><div class=\"batch-actions\"><button class=\"mini-btn\" data-batch-action=\"edit\" data-batch-type=\"").concat(type, "\" data-batch-id=\"").concat(batch.id, "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" data-batch-action=\"delete\" data-batch-type=\"").concat(type, "\" data-batch-id=\"").concat(batch.id, "\">\u062D\u0630\u0641</button></div></div>");
+  var quantity = Number((batch === null || batch === void 0 ? void 0 : batch.quantity) || 0);
+  var displayLabel = type === 'customer' && quantity < 0 ? String(label).replace('تسليم قماش للعميل', 'مرتجع قماش من العميل').replace(String(batch.quantity), formatNumber(Math.abs(quantity))) : label;
+  return "<div class=\"batch-item\"><span>".concat(displayLabel, "</span><div class=\"batch-actions\"><button class=\"mini-btn\" data-batch-action=\"edit\" data-batch-type=\"").concat(type, "\" data-batch-id=\"").concat(batch.id, "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" data-batch-action=\"delete\" data-batch-type=\"").concat(type, "\" data-batch-id=\"").concat(batch.id, "\">\u062D\u0630\u0641</button></div></div>");
 }
 function listHtml(items, formatter) {
   var rows = Array.isArray(items) ? items : [];
@@ -5202,6 +5204,13 @@ function renderDetails() {
   }).join(''), "</select><input name=\"date\" type=\"date\" required>").concat(order.accessoryLines.length ? "<span data-accessory-only class=\"field-hidden\">".concat(accessoryTypeSelectHtml(order), "</span>") : '', "<input name=\"quantity\" type=\"number\" step=\"0.01\" placeholder=\"&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;\" required><input class=\"full\" name=\"notes\" placeholder=\"&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;\"><button class=\"mini-btn full\">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class=\"batch-list\">").concat(customerItems, "</div></div><div class=\"batch-box\"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class=\"eyebrow\">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class=\"batch-list\">").concat(transferItems, "</div></div></div>");
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
   refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach(updateRawMovementVisibility);
+  refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"] select[name="movementKind"]').forEach(function (select) {
+    if (!_toConsumableArray(select.options).some(function (option) {
+      return option.value === 'clothReturn';
+    })) {
+      select.options.add(new Option('مرتجع قماش من العميل', 'clothReturn'), 1);
+    }
+  });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
   repairOrderDetailsArabic(order);
   renderDocuments();
@@ -5505,7 +5514,7 @@ function addBatch(_x35) {
 function _addBatch() {
   _addBatch = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee59(event) {
     var _event$target$element;
-    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, _allocation, alreadyDelivered, warehouseAvailable, _t27;
+    var type, data, rawDocumentFile, backendSaveRequired, backendResult, currentOrder, allocation, receivedAccessory, deliveredAccessory, availableAccessory, isCustomerReturn, _allocation, alreadyDelivered, warehouseAvailable, returnQuantity, _t27;
     return _regenerator().w(function (_context59) {
       while (1) switch (_context59.n) {
         case 0:
@@ -5713,6 +5722,7 @@ function _addBatch() {
           _context59.n = 31;
           break;
         case 29:
+          isCustomerReturn = data.movementKind === 'clothReturn';
           _allocation = calculateAllocation(allocations.find(function (item) {
             return item.id === data.allocationId;
           }));
@@ -5720,7 +5730,12 @@ function _addBatch() {
             return batch.allocationId === data.allocationId;
           }));
           warehouseAvailable = Math.max(_allocation.finishedReceived - alreadyDelivered, 0);
-          if (data.quantity > warehouseAvailable) {
+          if (isCustomerReturn) {
+            returnQuantity = Math.abs(Number(data.quantity || 0));
+            if (returnQuantity > Math.max(alreadyDelivered, 0)) data.notes = [data.notes, 'تنبيه: كمية المرتجع أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
+            data.quantity = -returnQuantity;
+            data.notes = [data.notes, 'مرتجع من العميل'].filter(Boolean).join(' - ');
+          } else if (data.quantity > warehouseAvailable) {
             data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - ');
           }
           _context59.n = 30;
