@@ -92,6 +92,17 @@
       return roundNumber(Number(allocation.plannedQuantity || 0) * percent / 100);
     }
 
+    const OPERATION_TOLERANCE_PERCENT = 5;
+
+    function toleranceFor(quantity) {
+      return Math.abs(Number(quantity || 0)) * OPERATION_TOLERANCE_PERCENT / 100;
+    }
+
+    function remainingWithTolerance(target, actual) {
+      const remaining = Math.max(Number(target || 0) - Number(actual || 0), 0);
+      return remaining <= toleranceFor(target) ? 0 : remaining;
+    }
+
     function calculateOrder(order) {
       const data = state();
       order = normalizeOrderForRuntime(order);
@@ -117,6 +128,7 @@
       const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
       const totalWidthQuantity = roundNumber(widthLines.reduce((total, item)=>total + Number(item.quantity || 0), 0));
       const totalRawOrdered = order.widthMode === 'multiple' && totalWidthQuantity > 0 ? totalWidthQuantity : roundNumber(order.totalRawQuantity);
+      const rawToleranceQuantity = toleranceFor(totalRawOrdered);
       const configuredAccessoryLines = orderAccessoryConfig(order).map((line)=>{
         const quantity = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined
           ? Number(line.quantityManual || 0)
@@ -133,6 +145,13 @@
       const accessoryReceived = sum(data.accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'));
       const accessoryDelivered = sum(data.accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer'));
       const accessoryWaste = isClosed ? Math.max(accessorySent - accessoryReceived, 0) : 0;
+      const remainingToCustomer = remainingWithTolerance(allocated || totalRawOrdered, deliveredToCustomer);
+      const operationallyComplete = rawToDyehouse > 0
+        && remainingWithTolerance(totalRawOrdered, rawToDyehouse) === 0
+        && Number(Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving - waste, 0)) <= toleranceFor(rawToDyehouse)
+        && Number(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing, 0)) <= toleranceFor(warehouseReceived || totalRawOrdered)
+        && Number(Math.max(receivedFromGluing - deliveredFromGluing, 0)) <= toleranceFor(receivedFromGluing || totalRawOrdered)
+        && remainingToCustomer === 0;
       return {
         ...order,
         allocations: orderAllocations,
@@ -143,10 +162,10 @@
         accessoryLines,
         totalRawReceived: roundNumber(rawToDyehouse),
         totalAllocated: roundNumber(allocated),
-        remainingUnallocatedRaw: roundNumber(Math.max(rawToDyehouse - allocated, 0)),
-        allocationExceedsRaw: allocated > rawToDyehouse,
+        remainingUnallocatedRaw: roundNumber(remainingWithTolerance(rawToDyehouse, allocated)),
+        allocationExceedsRaw: allocated - rawToDyehouse > toleranceFor(rawToDyehouse || allocated),
         totalSentToDyehouse: roundNumber(rawToDyehouse),
-        rawAtDyehouseAvailable: roundNumber(Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving - waste, 0)),
+        rawAtDyehouseAvailable: roundNumber(remainingWithTolerance(rawToDyehouse, warehouseReceived + rawReturnedToWeaving + waste)),
         totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
         totalSentToGluing: roundNumber(sentToGluing),
         totalReceivedFromGluing: roundNumber(receivedFromGluing),
@@ -156,10 +175,10 @@
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),
         gluedProductBalance: roundNumber(Math.max(receivedFromGluing - deliveredFromGluing, 0)),
-        warehouseBalance: roundNumber(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing, 0)),
+        warehouseBalance: roundNumber(remainingWithTolerance(warehouseReceived, deliveredToCustomer + sentToGluing)),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
-        remainingToCustomer: roundNumber(Math.max(allocated - deliveredToCustomer, 0)),
-        remainingAtDyehouse: roundNumber(Math.max(operated - warehouseReceived, 0)),
+        remainingToCustomer: roundNumber(remainingToCustomer),
+        remainingAtDyehouse: roundNumber(remainingWithTolerance(operated, warehouseReceived)),
         totalWaste: roundNumber(waste),
         totalWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
         totalActualWaste: roundNumber(waste),
@@ -171,7 +190,8 @@
         accessoryBalance: roundNumber(Math.max(accessoryReceived - accessoryDelivered, 0)),
         accessoryWaste: roundNumber(accessoryWaste),
         accessoryWastePercent: accessorySent ? roundNumber(accessoryWaste / accessorySent * 100) : 0,
-        status: order.operationClosed ? 'closed' : deliveredToCustomer >= allocated && allocated > 0 ? 'completed' : rawToDyehouse === 0 ? 'pending' : 'in-progress',
+        operationallyComplete,
+        status: order.operationClosed ? 'closed' : operationallyComplete || (deliveredToCustomer >= allocated && allocated > 0) ? 'completed' : rawToDyehouse === 0 ? 'pending' : 'in-progress',
       };
     }
 
