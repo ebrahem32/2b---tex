@@ -824,6 +824,58 @@ function aiFallbackAnalysis(data) {
   };
 }
 
+function buildOperationalEmployeeReport(context = {}) {
+  const snapshot = context.factorySnapshot || {};
+  const stageGroups = normalizeAiArray(context.stageGroups);
+  const priorityOrders = normalizeAiArray(context.priorityOrders);
+  const reportOutbox = normalizeAiArray(context.reportOutbox);
+  const stageLine = stageGroups.length
+    ? stageGroups.map((stage) => `${stage.label}: ${stage.count} طلب / ${Math.round(Number(stage.quantity || 0)).toLocaleString('en-US')} كجم`).join('، ')
+    : 'لا توجد طلبات مفتوحة ظاهرة.';
+  const watch = priorityOrders
+    .filter((order) => !['completed', 'closed'].includes(String(order.status || '').toLowerCase()) && !order.isClosed)
+    .slice(0, 12)
+    .map((order) => ({
+      orderNumber: order.orderNumber || '-',
+      customer: order.customer || '-',
+      fabricType: order.fabricType || '-',
+      stage: order.stage?.label || '-',
+      daysInStage: Number(order.stage?.days || 0),
+      reason: order.stage?.reason || '-',
+    }));
+  const failedReports = reportOutbox.filter((item) => ['pending', 'queued', 'failed'].includes(item.status));
+  const dyehouseBalance = Math.round(Number(snapshot.dyehouseBalance || 0));
+  const warehouseBalance = Math.round(Number(snapshot.warehouseBalance || 0));
+  return {
+    source: 'railway-operational-rules',
+    executiveSummary: `يوجد ${Number(snapshot.ordersCount || 0).toLocaleString('en-US')} طلب داخل النظام، منها ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم.`,
+    keyFindings: [
+      `طلبات مفتوحة: ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')}`,
+      `رصيد داخل المصابغ حسب استلام المجهز: ${dyehouseBalance.toLocaleString('en-US')} كجم`,
+      `رصيد جاهز أو واقف بالمخزن: ${warehouseBalance.toLocaleString('en-US')} كجم`,
+      `مجهز مستلم: ${Math.round(Number(snapshot.finishedReceived || 0)).toLocaleString('en-US')} كجم`,
+      `تقارير واتساب تحتاج متابعة: ${failedReports.length}`,
+    ],
+    ordersToWatch: watch,
+    risks: [
+      dyehouseBalance > 0 ? 'يوجد رصيد داخل المصابغ يحتاج مراجعة حسب أوامر الاستلام الفعلية.' : 'لا يظهر رصيد مصبغة مفتوح من الحساب التشغيلي.',
+      warehouseBalance > 0 ? 'يوجد رصيد مخزن يحتاج خطة تسليم حسب العميل وتاريخ الدخول.' : 'لا يظهر رصيد مخزن مفتوح كبير من الحساب التشغيلي.',
+      failedReports.length ? 'بعض رسائل أو تقارير واتساب لم ترسل أو ما زالت معلقة.' : 'لا توجد مشكلة واضحة في قائمة إرسال التقارير.',
+    ],
+    recommendations: [
+      'تابع الطلبات حسب المرحلة المحسوبة من حركات التشغيل، وليس من كمية الخام المرسل فقط.',
+      'أي طلب دخل مخزنه فعليًا لا يعرض كواقف في المصبغة إلا إذا كان رصيد المصبغة الحقيقي أكبر من السماحية.',
+      'ابدأ بالطلبات صاحبة أكبر عدد أيام وقوف ثم الأكبر كمية.',
+    ],
+    priorityActions: [
+      'راجع فلتر: واقف في المصبغة للطلبات التي لم يكتمل لها استلام مجهز فعلي.',
+      'راجع فلتر: واقف في المخزن للطلبات الجاهزة للتسليم.',
+      'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
+    ],
+    whatsappMessage: `ملخص 2B: الطلبات المفتوحة ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')}. رصيد المصابغ ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم. الأولوية حسب المرحلة المحسوبة من حركات التشغيل الفعلية.`,
+  };
+}
+
 function daysBetween(startValue, endValue = new Date()) {
   const start = startValue ? new Date(startValue) : null;
   const end = endValue instanceof Date ? endValue : new Date(endValue);
@@ -1154,20 +1206,7 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
     ...context,
     userRequest: String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim(),
   };
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      return res.json(await runGeminiAnalysis(data));
-    } catch (error) {
-      console.warn('[2B Tex] Gemini employee report failed, trying next provider:', error.message);
-    }
-  }
-  if (!process.env.OPENAI_API_KEY) return res.json(aiFallbackAnalysis({ orders: data.priorityOrders, reportOutbox: data.reportOutbox, summaryStats: data.factorySnapshot }));
-  try {
-    return res.json(await runOpenAiAnalysis(data));
-  } catch (error) {
-    console.warn('[2B Tex] OpenAI employee report failed, using local rules:', error.message);
-    return res.json(aiFallbackAnalysis({ orders: data.priorityOrders, reportOutbox: data.reportOutbox, summaryStats: data.factorySnapshot }));
-  }
+  return res.json({ ...buildOperationalEmployeeReport(data), userRequest: data.userRequest });
 }));
 
 app.post('/api/backup', requireRole('admin'), asyncHandler(async (_req, res) => {
