@@ -601,12 +601,68 @@ async function runOpenAiAnalysis(data) {
   };
 }
 
+async function runGeminiAnalysis(data) {
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': process.env.GEMINI_API_KEY,
+    },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [{
+          text: [
+            'أنت نموذج ذكاء اصطناعي متخصص في تشغيل 2B Tex للنسيج والصباغة والتجهيز.',
+            'حلل النظام من منظور صاحب المصنع: ما الذي واقف؟ واقف من امتى؟ ما سبب الوقوف؟ وما الأولوية اليوم؟',
+            'لا تعتبر rawAtDyehouseAvailable أو remainingAtDyehouse هالكًا نهائيًا أثناء التشغيل.',
+            'الهالك النهائي يظهر فقط بعد اكتمال أو إغلاق دورة الطلب.',
+            'اكتب عربي واضح مختصر وعملي، واعتمد على الأرقام فقط.',
+            'أرجع JSON فقط بالمفاتيح: source, executiveSummary, keyFindings, ordersToWatch, risks, recommendations, priorityActions, whatsappMessage.',
+          ].join('\n'),
+        }],
+      },
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      },
+      contents: [{
+        role: 'user',
+        parts: [{ text: JSON.stringify(data) }],
+      }],
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error?.message || body.message || `Gemini ${response.status}`);
+  const content = body.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('') || '{}';
+  const parsed = JSON.parse(content);
+  return {
+    source: 'gemini',
+    executiveSummary: parsed.executiveSummary || '',
+    keyFindings: normalizeAiArray(parsed.keyFindings),
+    ordersToWatch: normalizeAiArray(parsed.ordersToWatch),
+    risks: normalizeAiArray(parsed.risks),
+    recommendations: normalizeAiArray(parsed.recommendations),
+    priorityActions: normalizeAiArray(parsed.priorityActions),
+    whatsappMessage: parsed.whatsappMessage || '',
+  };
+}
+
 app.get('/api/ai/health', (_req, res) => {
-  res.json({ ok: true, provider: process.env.OPENAI_API_KEY ? 'openai' : 'local-rules', model: process.env.OPENAI_MODEL || 'gpt-4.1-mini' });
+  const provider = process.env.GEMINI_API_KEY ? 'gemini' : (process.env.OPENAI_API_KEY ? 'openai' : 'local-rules');
+  const model = process.env.GEMINI_API_KEY ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite') : (process.env.OPENAI_MODEL || 'gpt-4.1-mini');
+  res.json({ ok: true, provider, model, hasGeminiKey: Boolean(process.env.GEMINI_API_KEY), hasOpenAiKey: Boolean(process.env.OPENAI_API_KEY) });
 });
 
 app.post('/api/ai/analyze-report', asyncHandler(async (req, res) => {
   const data = compactAiPayload(req.body || {});
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return res.json(await runGeminiAnalysis(data));
+    } catch (error) {
+      console.warn('[2B Tex] Gemini analysis failed, trying next provider:', error.message);
+    }
+  }
   if (!process.env.OPENAI_API_KEY) return res.json(aiFallbackAnalysis(data));
   try {
     return res.json(await runOpenAiAnalysis(data));
