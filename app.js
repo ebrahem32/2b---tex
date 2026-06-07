@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.07.15';
-const APP_BUILD_TIME = '2026-06-07 17:18';
+const APP_VERSION = 'v2026.06.07.16';
+const APP_BUILD_TIME = '2026-06-07 17:42';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3145,11 +3145,11 @@ function openGluingQueueDialog() {
     const ready = roundNumber(Math.max(received - delivered, 0));
     const sourceRows = group.sources.map((batch)=>`<tr><td>${escapeHtml(gluingSourceLabel(batch))}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${formatNumber(sum(group.returns.filter((item)=>item.allocationId === batch.allocationId)))}</td></tr>`).join('');
     const outputRows = group.received.concat(group.delivered).map((batch)=>`<tr><td>${batch.movement === 'customer' ? 'تسليم عميل' : 'استلام منتج'}</td><td>${escapeHtml(batch.outputName || '-')}</td><td>${escapeHtml(batch.customerName || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${escapeHtml(batch.date || '-')}</td></tr>`).join('');
-    return `<div class="subsection"><div class="subsection-head"><div><h3>تشغيل لزق ${escapeHtml(group.key)}</h3><p class="eyebrow">داخل اللزق ${formatNumber(inGluing)} كجم - جاهز للتسليم ${formatNumber(ready)} كجم</p></div></div><div class="summary-grid"><div class="metric"><span>خامات داخلة</span><strong>${formatNumber(sent)}</strong></div><div class="metric"><span>رجوع للمخزن</span><strong>${formatNumber(returned)}</strong></div><div class="metric"><span>منتج ملزوق</span><strong>${formatNumber(received)}</strong></div><div class="metric"><span>تسليم عميل</span><strong>${formatNumber(delivered)}</strong></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>الخامة المصدر</th><th>خروج للزق</th><th>رجع للمخزن</th></tr></thead><tbody>${sourceRows}</tbody></table></div>${outputRows ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>الحركة</th><th>المنتج</th><th>العميل</th><th>الكمية</th><th>التاريخ</th></tr></thead><tbody>${outputRows}</tbody></table></div>` : ''}</div>`;
-  }).join('') : '<div class="empty-state">لا توجد خامات في تشغيل اللزق حتى الآن.</div>';
-  refs.documentTitle.textContent = 'قائمة تشغيل اللزق';
+    return `<div class="subsection"><div class="subsection-head"><div><h3>عملية دمج ${escapeHtml(group.key)}</h3><p class="eyebrow">داخل الدمج ${formatNumber(inGluing)} كجم - جاهز للتسليم ${formatNumber(ready)} كجم</p></div></div><div class="summary-grid"><div class="metric"><span>خامات داخلة</span><strong>${formatNumber(sent)}</strong></div><div class="metric"><span>رجوع للمخزن</span><strong>${formatNumber(returned)}</strong></div><div class="metric"><span>منتج ناتج</span><strong>${formatNumber(received)}</strong></div><div class="metric"><span>تسليم عميل</span><strong>${formatNumber(delivered)}</strong></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>الخامة المصدر</th><th>خروج للدمج</th><th>رجع للمخزن</th></tr></thead><tbody>${sourceRows}</tbody></table></div>${outputRows ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>الحركة</th><th>المنتج</th><th>العميل</th><th>الكمية</th><th>التاريخ</th></tr></thead><tbody>${outputRows}</tbody></table></div>` : ''}</div>`;
+  }).join('') : '<div class="empty-state">لا توجد خامات في دمج الخامات حتى الآن.</div>';
+  refs.documentTitle.textContent = 'دمج خامات';
   refs.documentBody.dataset.documentType = 'gluing-queue';
-  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>&#1573;&#1590;&#1575;&#1601;&#1577; &#1582;&#1575;&#1605;&#1577; &#1573;&#1604;&#1609; &#1578;&#1588;&#1594;&#1610;&#1604; &#1575;&#1604;&#1604;&#1586;&#1602;</h3><p class="eyebrow">&#1575;&#1603;&#1578;&#1576; &#1606;&#1601;&#1587; &#1585;&#1602;&#1605; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;&#1548; &#1579;&#1605; &#1575;&#1582;&#1578;&#1585; &#1571;&#1610; &#1582;&#1575;&#1605;&#1577; &#1604;&#1607;&#1575; &#1585;&#1589;&#1610;&#1583; &#1605;&#1582;&#1586;&#1606; &#1604;&#1573;&#1583;&#1582;&#1575;&#1604;&#1607;&#1575; &#1601;&#1610; &#1606;&#1601;&#1587; &#1602;&#1575;&#1574;&#1605;&#1577; &#1575;&#1604;&#1604;&#1586;&#1602;.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="&#1585;&#1602;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604; &#1575;&#1604;&#1604;&#1586;&#1602;" required><select name="sourceKey" required><option value="">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</option>${warehouseSourceOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="quantity" type="number" step="0.01" placeholder="&#1603;&#1605;&#1610;&#1577; &#1583;&#1575;&#1582;&#1604;&#1577; &#1604;&#1604;&#1586;&#1602;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button type="button" class="mini-btn full" data-save-gluing-source>&#1573;&#1583;&#1582;&#1575;&#1604; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1573;&#1604;&#1609; &#1602;&#1575;&#1574;&#1605;&#1577; &#1575;&#1604;&#1604;&#1586;&#1602;</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الجديد</h3><p class="eyebrow">خروج الخام يتم من الطلب، والدمج يتم هنا حسب رقم تشغيل اللزق.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم تشغيل اللزق</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الجديد" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الملزوق" required><input name="customerName" placeholder="العميل"><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div><div class="subsection"><div class="subsection-head"><h3>رجوع متبقي من اللزق للمخزن</h3></div><form class="batch-form" data-gluing-return-form><select name="sourceKey" required><option value="">اختر الخامة المصدر</option>${sourceOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="quantity" type="number" step="0.01" placeholder="كمية راجعة" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-return>تسجيل رجوع للمخزن</button></form></div><div class="subsection"><div class="subsection-head"><h3>تسليم منتج ملزوق للعميل</h3></div><form class="batch-form" data-gluing-customer-form><select name="operationKey" required><option value="">اختر رقم تشغيل اللزق</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الملزوق" required><input name="customerName" placeholder="العميل" required><input name="quantity" type="number" step="0.01" placeholder="كمية التسليم" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-customer>تسجيل التسليم</button></form></div>${cards}</div>`;
+  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>&#1583;&#1605;&#1580; &#1582;&#1575;&#1605;&#1575;&#1578; &#1605;&#1606; &#1575;&#1604;&#1571;&#1608;&#1585;&#1583;&#1585;&#1575;&#1578; &#1575;&#1604;&#1585;&#1574;&#1610;&#1587;&#1610;&#1577;</h3><p class="eyebrow">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1582;&#1575;&#1605;&#1578;&#1610;&#1606; &#1608;&#1575;&#1604;&#1603;&#1605;&#1610;&#1575;&#1578; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;&#1577; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;&#1548; &#1579;&#1605; &#1610;&#1578;&#1605; &#1587;&#1581;&#1576;&#1607;&#1605; &#1573;&#1604;&#1609; &#1606;&#1601;&#1587; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="&#1585;&#1602;&#1605; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;" required><select name="sourceKey" required><option value="">&#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1571;&#1608;&#1604;&#1609; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</option>${warehouseSourceOptions}</select><input name="quantity" type="number" step="0.01" placeholder="&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1571;&#1608;&#1604;&#1609;" required><select name="sourceKey2"><option value="">&#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1579;&#1575;&#1606;&#1610;&#1577; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</option>${warehouseSourceOptions}</select><input name="quantity2" type="number" step="0.01" placeholder="&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1579;&#1575;&#1606;&#1610;&#1577;"><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button type="button" class="mini-btn full" data-save-gluing-source>&#1587;&#1581;&#1576; &#1575;&#1604;&#1582;&#1575;&#1605;&#1575;&#1578; &#1573;&#1604;&#1609; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الناتج</h3><p class="eyebrow">اختر عملية الدمج بعد سحب الخامتين، ثم سجل المنتج الناتج منها.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم عملية الدمج</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الناتج" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الناتج" required><input name="customerName" placeholder="العميل"><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div><div class="subsection"><div class="subsection-head"><h3>رجوع متبقي من الدمج للمخزن</h3></div><form class="batch-form" data-gluing-return-form><select name="sourceKey" required><option value="">اختر الخامة المصدر</option>${sourceOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="quantity" type="number" step="0.01" placeholder="كمية راجعة" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-return>تسجيل رجوع للمخزن</button></form></div><div class="subsection"><div class="subsection-head"><h3>تسليم المنتج الناتج للعميل</h3></div><form class="batch-form" data-gluing-customer-form><select name="operationKey" required><option value="">اختر رقم عملية الدمج</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الناتج" required><input name="customerName" placeholder="العميل" required><input name="quantity" type="number" step="0.01" placeholder="كمية التسليم" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-customer>تسجيل التسليم</button></form></div>${cards}</div>`;
   if (!refs.documentDialog.open) refs.documentDialog.showModal();
 }
 
@@ -3161,27 +3161,38 @@ async function saveGluingSourceFromDialog(form) {
   if (!(await ensureBackendForWrite())) return;
   const data = Object.fromEntries(new FormData(form).entries());
   const operationKey = String(data.operationKey || '').trim();
-  const [orderId, allocationId] = String(data.sourceKey || '').split('|');
-  if (!operationKey) { alert('اكتب رقم تشغيل اللزق.'); return; }
-  if (!orderId || !allocationId) { alert('اختر الخامة التي ستدخل تشغيل اللزق.'); return; }
-  const order = orders.find((item)=>item.id === orderId);
-  const allocation = allocations.find((item)=>item.id === allocationId);
-  if (!order || !allocation) { alert('تعذر العثور على الخامة المختارة.'); return; }
-  const calculatedOrder = calculateOrder(order);
-  const available = gluingAllocationAvailable(calculatedOrder, allocation);
-  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: الكمية أكبر من رصيد المخزن المتاح لهذه الخامة'].filter(Boolean).join(' - ');
-  const saved = await postBackend('/batches/gluing', batchToApi({
-    id: uid(),
-    orderId,
-    allocationId,
-    date: data.date,
-    quantity: Number(data.quantity || 0),
-    movement: 'sent',
-    noteNumber: operationKey,
-    partnerFabric: operationKey,
-    notes: data.notes || ''
-  }));
-  if (!saved) { alert('تعذر إدخال الخامة إلى قائمة اللزق.'); return; }
+  if (!operationKey) { alert('اكتب رقم عملية الدمج.'); return; }
+  const sourceRows = [
+    { sourceKey:data.sourceKey, quantity:data.quantity },
+    { sourceKey:data.sourceKey2, quantity:data.quantity2 }
+  ].filter((row)=>String(row.sourceKey || '').trim() && Number(row.quantity || 0) > 0);
+  if (!sourceRows.length) { alert('اختر خامة واحدة على الأقل وكمية مطلوبة.'); return; }
+  let savedAny = false;
+  for (const row of sourceRows) {
+    const [orderId, allocationId] = String(row.sourceKey || '').split('|');
+    const order = orders.find((item)=>item.id === orderId);
+    const allocation = allocations.find((item)=>item.id === allocationId);
+    if (!order || !allocation) { alert('تعذر قراءة الخامة المختارة من الطلب.'); return; }
+    const calculatedOrder = calculateOrder(order);
+    const available = gluingAllocationAvailable(calculatedOrder, allocation);
+    const quantity = Number(row.quantity || 0);
+    let notes = data.notes || '';
+    if (quantity > available) notes = [notes, 'تنبيه: الكمية أكبر من رصيد المخزن المتاح لهذه الخامة'].filter(Boolean).join(' - ');
+    const saved = await postBackend('/batches/gluing', batchToApi({
+      id: uid(),
+      orderId,
+      allocationId,
+      date: data.date,
+      quantity,
+      movement: 'sent',
+      noteNumber: operationKey,
+      partnerFabric: operationKey,
+      notes
+    }));
+    if (!saved) { alert('تعذر سحب الخامات إلى عملية الدمج.'); return; }
+    savedAny = true;
+  }
+  if (!savedAny) return;
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -3191,13 +3202,13 @@ async function saveGluingMergeFromDialog(form) {
   const data = Object.fromEntries(new FormData(form).entries());
   const group = findGluingGroup(data.operationKey);
   const source = group?.sources?.[0];
-  if (!group || !source) { alert('اختر رقم تشغيل لزق يحتوي على خامات داخلة أولا.'); return; }
+  if (!group || !source) { alert('اختر رقم عملية دمج تحتوي على خامات داخلة أولا.'); return; }
   if (!String(data.outputName || '').trim()) { alert('اكتب اسم المنتج الجديد.'); return; }
   const sent = sum(group.sources);
   const returned = sum(group.returns);
   const received = sum(group.received);
   const available = Math.max(sent - returned - received, 0);
-  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: كمية المنتج الملزوق أكبر من الرصيد الموجود داخل اللزق'].filter(Boolean).join(' - ');
+  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: كمية المنتج الناتج أكبر من الرصيد الموجود داخل الدمج'].filter(Boolean).join(' - ');
   const saved = await postBackend('/batches/gluing', batchToApi({
     id: uid(),
     orderId: source.orderId,
@@ -3210,7 +3221,7 @@ async function saveGluingMergeFromDialog(form) {
     partnerFabric: group.key,
     notes: data.notes || ''
   }));
-  if (!saved) { alert('تعذر حفظ دمج اللزق في قاعدة البيانات.'); return; }
+  if (!saved) { alert('تعذر حفظ عملية الدمج في قاعدة البيانات.'); return; }
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -3225,7 +3236,7 @@ async function saveGluingReturnFromDialog(form) {
   const sent = sum(group.sources.filter((batch)=>batch.allocationId === allocationId));
   const returned = sum(group.returns.filter((batch)=>batch.allocationId === allocationId));
   const available = Math.max(sent - returned, 0);
-  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: المرتجع أكبر من رصيد هذه الخامة داخل اللزق'].filter(Boolean).join(' - ');
+  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: المرتجع أكبر من رصيد هذه الخامة داخل الدمج'].filter(Boolean).join(' - ');
   const saved = await postBackend('/batches/gluing', batchToApi({
     id: uid(),
     orderId: source.orderId,
@@ -3237,7 +3248,7 @@ async function saveGluingReturnFromDialog(form) {
     partnerFabric: group.key,
     notes: data.notes || ''
   }));
-  if (!saved) { alert('تعذر حفظ رجوع المتبقي من اللزق.'); return; }
+  if (!saved) { alert('تعذر حفظ رجوع المتبقي من الدمج.'); return; }
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -3247,11 +3258,11 @@ async function saveGluingCustomerFromDialog(form) {
   const data = Object.fromEntries(new FormData(form).entries());
   const group = findGluingGroup(data.operationKey);
   const source = group?.sources?.[0];
-  if (!group || !source) { alert('اختر رقم تشغيل لزق أولا.'); return; }
+  if (!group || !source) { alert('اختر رقم عملية الدمج أولا.'); return; }
   if (!String(data.outputName || '').trim() || !String(data.customerName || '').trim()) { alert('اكتب اسم المنتج والعميل قبل التسليم.'); return; }
   const received = sum(group.received.filter((batch)=>normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
   const delivered = sum(group.delivered.filter((batch)=>normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
-  if (Number(data.quantity || 0) > Math.max(received - delivered, 0)) data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المنتج الملزوق'].filter(Boolean).join(' - ');
+  if (Number(data.quantity || 0) > Math.max(received - delivered, 0)) data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المنتج الناتج'].filter(Boolean).join(' - ');
   const saved = await postBackend('/batches/gluing', batchToApi({
     id: uid(),
     orderId: source.orderId,
@@ -3264,7 +3275,7 @@ async function saveGluingCustomerFromDialog(form) {
     partnerFabric: group.key,
     notes: data.notes || ''
   }));
-  if (!saved) { alert('تعذر حفظ تسليم المنتج الملزوق.'); return; }
+  if (!saved) { alert('تعذر حفظ تسليم المنتج الناتج.'); return; }
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -3407,16 +3418,16 @@ function renderDetails() {
   const accessoryReceivedItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'), (batch)=>batchItemHtml('accessory', batch, movementLine('استلام إكسسوار', batch.date, accessoryColor(batch), batch.quantity, batch.accessoryType || 'إكسسوار') + noteSuffix(batch)));
   const productionItems = listHtml(productionBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('production', batch, movementLine('استلام مجهز', batch.date, allocation?.dyehouse || '-', allocation?.color || '-', batch.quantity) + noteSuffix(batch)); });
   const customerItems = (()=>{ const cloth = customerBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : '-'; return { type:'customer', batch, label:movementLine('تسليم قماش للعميل', batch.date, label, batch.quantity) }; }); const accessories = accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer').map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : accessoryColor(batch); return { type:'accessory', batch, label:movementLine('تسليم إكسسوار للعميل', batch.date, label, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'إكسسوار') + noteSuffix(batch) }; }); const rows = cloth.concat(accessories).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">لا توجد دفعات بعد.</div>'; })();
-  const gluingItems = listHtml(gluingBatches.filter((batch)=>batch.orderId===order.id && ['sent','return'].includes(String(batch.movement || 'sent'))), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const movement = String(batch.movement || 'sent'); const action = movement === 'return' ? '&#1585;&#1580;&#1608;&#1593; &#1605;&#1578;&#1576;&#1602;&#1610; &#1605;&#1606; &#1575;&#1604;&#1604;&#1586;&#1602; &#1604;&#1604;&#1605;&#1582;&#1586;&#1606;' : '&#1582;&#1585;&#1608;&#1580; &#1582;&#1575;&#1605; &#1604;&#1604;&#1586;&#1602;'; const name = allocation ? allocationColorLabel(order, allocation) : '-'; return batchItemHtml('gluing', batch, movementLine(action, batch.date, name, batch.quantity, batch.noteNumber || batch.partnerFabric || '-') + noteSuffix(batch)); });
+  const gluingItems = listHtml(gluingBatches.filter((batch)=>batch.orderId===order.id && ['sent','return'].includes(String(batch.movement || 'sent'))), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const movement = String(batch.movement || 'sent'); const action = movement === 'return' ? '&#1585;&#1580;&#1608;&#1593; &#1605;&#1578;&#1576;&#1602;&#1610; &#1605;&#1606; &#1575;&#1604;&#1583;&#1605;&#1580; &#1604;&#1604;&#1605;&#1582;&#1586;&#1606;' : '&#1582;&#1585;&#1608;&#1580; &#1582;&#1575;&#1605; &#1604;&#1604;&#1583;&#1605;&#1580;'; const name = allocation ? allocationColorLabel(order, allocation) : '-'; return batchItemHtml('gluing', batch, movementLine(action, batch.date, name, batch.quantity, batch.noteNumber || batch.partnerFabric || '-') + noteSuffix(batch)); });
   const transferItems = listHtml(dyehouseTransfers.filter((batch)=>batch.orderId===order.id), (batch)=>batchItemHtml('transfer', batch, movementLine('تحويل مصبغة', batch.date, batch.color || '-', batch.fromDyehouse || '-', batch.toDyehouse || '-', batch.quantity) + noteSuffix(batch)));
   const rawReturnItems = listHtml(rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('rawReturn', batch, movementLine('مرتجع خام للنسيج', batch.date, allocation?.dyehouse || '-', allocation?.color || '-', batch.quantity) + noteSuffix(batch)); });
   const stockRows = order.allocations.map((allocation)=>{ const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===allocation.id)); const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent')); const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return')); const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue); const widthInfo = order.widthMode === 'multiple' ? `&#1576;&#1608;&#1589;&#1577; ${allocation.rawInch || '-'} / &#1593;&#1585;&#1590; ${allocation.rawWidth || allocation.targetFinishedWidth || '-'}` : `&#1576;&#1608;&#1589;&#1577; ${order.inchWidth || '-'} / &#1593;&#1585;&#1590; ${allocation.targetFinishedWidth || '-'}`; return `<tr><td>${allocation.color}</td><td>${widthInfo}</td><td>${formatNumber(allocation.finishedReceived || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; }).join('');
   const accessoryStockRows = order.accessoryLines.length ? order.allocations.flatMap((allocation)=>order.accessoryLines.map((line)=>{ const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type)); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type)); const balance = roundNumber(received - delivered); return `<tr><td>${allocation.color}</td><td>${line.type}</td><td>${formatNumber(received || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; })).join('') : '';
   const inventorySection = `<div class="subsection"><div class="subsection-head"><div><h3>رصيد المخزن الحالي</h3><p class="eyebrow">رصيد المخزن حسب التشغيل والتسليم</p></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${stockRows}</tbody></table></div>${order.accessoryLines.length ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${accessoryStockRows}</tbody></table></div>` : ''}</div>`;
   refs.orderDetailsPanel.innerHTML = `<div class="section-head"><div><p class="eyebrow">${order.orderNumber}</p><h2>${order.customer}</h2></div><div class="actions"><button class="mini-btn" id="editOrderBtn">تعديل الطلب</button><button class="mini-btn ${order.operationClosed ? 'gold' : 'danger'}" id="toggleOperationClosedBtn">${order.operationClosed ? 'إعادة فتح التشغيل' : 'إغلاق دورة التشغيل'}</button><span class="status ${order.status}">${statusLabel(order.status)}</span></div></div><h3>&#1605;&#1604;&#1582;&#1589; &#1583;&#1608;&#1585;&#1577; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;</h3><div class="summary-grid"><div class="metric"><span>&#1573;&#1580;&#1605;&#1575;&#1604;&#1610; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;</span><strong>${order.totalRawOrdered}</strong></div><div class="metric"><span>&#1582;&#1585;&#1580; &#1605;&#1606; &#1575;&#1604;&#1606;&#1587;&#1610;&#1580; &#1573;&#1604;&#1609; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalRawReceived}</strong></div><div class="metric"><span>&#1582;&#1575;&#1605; &#1605;&#1578;&#1575;&#1581; &#1576;&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.rawAtDyehouseAvailable}</strong></div><div class="metric"><span>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606; &#1605;&#1606; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalFinishedReceived}</strong></div><div class="metric emphasis"><span>&#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</span><strong>${order.warehouseBalance}</strong></div><div class="metric"><span>&#1578;&#1605; &#1578;&#1587;&#1604;&#1610;&#1605;&#1607; &#1604;&#1604;&#1593;&#1605;&#1610;&#1604;</span><strong>${order.totalDeliveredToCustomer}</strong></div><div class="metric"><span>مرتجع خام للنسيج</span><strong>${order.totalRawReturnedToWeaving}</strong></div><div class="metric"><span>هالك تقديري</span><strong>${order.expectedWasteQuantity} (${order.expectedWastePercent}%)</strong></div><div class="metric"><span>هالك فعلي</span><strong>${order.totalWaste} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div></div>${order.widthMode === 'multiple' ? `<div class="subsection"><div class="subsection-head"><h3>توزيع العروض</h3></div>${order.widthDistributionMatches ? '' : `<div class="warning">تنبيه: مجموع العروض لا يطابق إجمالي الطلب</div>`}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((item)=>`<tr><td>${item.inch}</td><td>${item.width}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<div class="subsection"><div class="subsection-head"><div><h3>&#1582;&#1591;&#1577; &#1578;&#1608;&#1586;&#1610;&#1593; &#1575;&#1604;&#1571;&#1604;&#1608;&#1575;&#1606;</h3><p class="eyebrow">${order.totalAllocated} / ${order.totalRawReceived} &#1603;&#1580;&#1605; &#1605;&#1606; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;</p></div><button class="mini-btn" id="addAllocationBtn">+ &#1573;&#1590;&#1575;&#1601;&#1577; &#1604;&#1608;&#1606;</button></div><div class="allocation-bar"><div class="allocation-fill" style="width:${allocationPercent}%"></div></div>${order.allocationExceedsRaw ? `<div class="warning">&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1589;&#1576;&#1575;&#1594;&#1577; &#1575;&#1604;&#1605;&#1582;&#1591;&#1591;&#1577; &#1571;&#1603;&#1576;&#1585; &#1605;&#1606; &#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1578;&#1575;&#1581;&#1577;</div>` : ''}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>&#1575;&#1604;&#1604;&#1608;&#1606;</th><th>&#1575;&#1604;&#1605;&#1582;&#1591;&#1591;</th><th>&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</th><th>&#1575;&#1604;&#1593;&#1585;&#1590;</th><th>&#1575;&#1604;&#1608;&#1586;&#1606; &#1605;&#1580;&#1607;&#1586;</th>${order.accessoryLines.length ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>&#1578;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604;&#1607;</th><th>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</th><th>هالك تقديري</th><th>هالك فعلي</th><th>إجراء</th></tr></thead><tbody>${order.allocations.map((allocation)=>`<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${order.accessoryLines.length ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${allocation.expectedWasteQuantity || 0} (${allocation.expectedWastePercent || 0}%)</td><td>${allocation.wasteQuantity} (${formatNumber(allocation.wastePercent || 0, 1)}%)</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">&#1578;&#1593;&#1583;&#1610;&#1604;</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">&#1606;&#1602;&#1604; &#1605;&#1589;&#1576;&#1594;&#1577;</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">&#1581;&#1584;&#1601;</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>${inventorySection}<div class="batch-grid compact"><div class="batch-box"><h3>خروج خام</h3><form class="batch-form" data-form="raw"><select name="movementKind" class="full"><option value="out">خروج خام للمصبغة</option><option value="return">ارتجاع خام للنسيج</option></select><input name="date" type="date" required>${order.widthMode === 'multiple' ? `<select name="widthLineId" data-out-only><option value="">اختر العرض عند خروج الخام</option>${order.widthLines.map((item)=>`<option value="${item.id}">بوصة ${item.inch} - عرض ${item.width} - كمية ${item.quantity}</option>`).join('')}</select>` : ''}<select name="allocationId" data-return-only class="field-hidden"><option value="">اختر اللون / المصبغة للمرتجع</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="supplier" placeholder="مصدر النسيج" value="${order.weavingSource}"><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><label class="full batch-file-label" data-out-only><span>صورة إذن الخام</span><input name="sourceDocumentFile" type="file" accept="image/*"></label><button class="mini-btn full">إضافة حركة</button></form><div class="batch-list">${rawItems}</div></div>${order.accessoryLines.length ? `<div class="batch-box"><h3>خروج إكسسوار</h3><form class="batch-form" data-form="accessory"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة خروج</button></form><div class="batch-list">${accessoryItems}</div></div><div class="batch-box"><h3>استلام إكسسوار</h3><form class="batch-form" data-form="accessoryReceived"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<select name="allocationId" required><option value="">اختر اللون</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية المستلمة" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة استلام</button></form><div class="batch-list">${accessoryReceivedItems}</div></div>` : ''}<div class="batch-box"><h3>استلام مجهز</h3><form class="batch-form" data-form="production"><select name="allocationId"><option value="raw">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1573;&#1584;&#1606; &#1575;&#1604;&#1575;&#1587;&#1578;&#1604;&#1575;&#1605;"><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1575;&#1587;&#1578;&#1604;&#1575;&#1605;</button></form><div class="batch-list">${productionItems}</div></div><div class="batch-box"><h3>تسليم عميل</h3><form class="batch-form" data-form="customer"><select name="movementKind" class="full"><option value="cloth">تسليم قماش</option>${order.accessoryLines.length ? '<option value="accessory">تسليم إكسسوار</option>' : ''}</select><select name="allocationId">${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required>${order.accessoryLines.length ? `<span data-accessory-only class="field-hidden">${accessoryTypeSelectHtml(order)}</span>` : ''}<input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class="batch-list">${customerItems}</div></div><div class="batch-box"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class="eyebrow">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class="batch-list">${transferItems}</div></div></div>`;
-  refs.orderDetailsPanel.querySelector('.batch-grid.compact')?.insertAdjacentHTML('beforeend', `<div class="batch-box"><h3>&#1582;&#1585;&#1608;&#1580; &#1582;&#1575;&#1605; &#1604;&#1604;&#1586;&#1602;</h3><p class="eyebrow">&#1575;&#1604;&#1583;&#1605;&#1580; &#1608;&#1575;&#1604;&#1605;&#1585;&#1578;&#1580;&#1593; &#1610;&#1578;&#1605;&#1575;&#1606; &#1605;&#1606; &#1602;&#1575;&#1574;&#1605;&#1577; &#1578;&#1588;&#1594;&#1610;&#1604; &#1575;&#1604;&#1604;&#1586;&#1602;.</p><form class="batch-form" data-form="gluing"><input type="hidden" name="movementKind" value="sent"><select name="allocationId" required><option value="">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1605;&#1589;&#1583;&#1585;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604; &#1575;&#1604;&#1604;&#1586;&#1602;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1583;&#1582;&#1575;&#1604; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1604;&#1602;&#1575;&#1574;&#1605;&#1577; &#1575;&#1604;&#1604;&#1586;&#1602;</button></form><div class="batch-list">${gluingItems}</div></div>`);
+  refs.orderDetailsPanel.querySelector('.batch-grid.compact')?.insertAdjacentHTML('beforeend', `<div class="batch-box"><h3>&#1582;&#1585;&#1608;&#1580; &#1582;&#1575;&#1605; &#1604;&#1604;&#1583;&#1605;&#1580;</h3><p class="eyebrow">&#1587;&#1581;&#1576; &#1582;&#1575;&#1605;&#1575;&#1578; &#1575;&#1604;&#1583;&#1605;&#1580; &#1575;&#1604;&#1571;&#1587;&#1575;&#1587;&#1610; &#1610;&#1578;&#1605; &#1605;&#1606; &#1602;&#1575;&#1574;&#1605;&#1577; &#1583;&#1605;&#1580; &#1575;&#1604;&#1582;&#1575;&#1605;&#1575;&#1578;.</p><form class="batch-form" data-form="gluing"><input type="hidden" name="movementKind" value="sent"><select name="allocationId" required><option value="">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1605;&#1589;&#1583;&#1585;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1583;&#1582;&#1575;&#1604; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1604;&#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;</button></form><div class="batch-list">${gluingItems}</div></div>`);
   if (Number(order.gluingBalance || 0) > 0 || Number(order.gluedProductBalance || 0) > 0) {
-    refs.orderDetailsPanel.querySelector('.summary-grid')?.insertAdjacentHTML('beforeend', `<div class="metric"><span>واقف في اللزق</span><strong>${formatNumber(order.gluingBalance || 0)}</strong></div><div class="metric"><span>ملزوق جاهز للتسليم</span><strong>${formatNumber(order.gluedProductBalance || 0)}</strong></div>`);
+    refs.orderDetailsPanel.querySelector('.summary-grid')?.insertAdjacentHTML('beforeend', `<div class="metric"><span>واقف في دمج الخامات</span><strong>${formatNumber(order.gluingBalance || 0)}</strong></div><div class="metric"><span>منتج مدمج جاهز للتسليم</span><strong>${formatNumber(order.gluedProductBalance || 0)}</strong></div>`);
   }
   consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
@@ -3591,27 +3602,27 @@ async function addBatch(event) {
   if (type === 'gluing') {
     data.movement = ['return', 'received', 'customer'].includes(data.movementKind) ? data.movementKind : 'sent';
     if (data.movement === 'sent' || data.movement === 'return') {
-      if (!data.allocationId) { alert('\u0627\u062e\u062a\u0631 \u0627\u0644\u0644\u0648\u0646 / \u0627\u0644\u062e\u0627\u0645\u0629 \u0627\u0644\u0645\u0635\u062f\u0631 \u0642\u0628\u0644 \u062a\u0633\u062c\u064a\u0644 \u062d\u0631\u0643\u0629 \u0627\u0644\u0644\u0632\u0642.'); return; }
-      if (!String(data.noteNumber || '').trim()) { alert('اكتب رقم تشغيل اللزق حتى تظهر الخامة داخل قائمة تشغيل اللزق المستقلة.'); return; }
+      if (!data.allocationId) { alert('اختر اللون / الخامة المصدر قبل تسجيل حركة الدمج.'); return; }
+      if (!String(data.noteNumber || '').trim()) { alert('اكتب رقم عملية الدمج حتى تظهر الخامة داخل قائمة دمج الخامات المستقلة.'); return; }
       const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
       const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===data.allocationId));
       const sentToGluing = sum(gluingBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement === 'sent'));
       const returnedFromGluing = sum(gluingBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement === 'return'));
       if (data.movement === 'sent') {
         const available = Math.max(Number(allocation.finishedReceived || 0) - delivered - sentToGluing + returnedFromGluing, 0);
-        if (data.quantity > available) data.notes = [data.notes, '\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u0644\u0632\u0642 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646 \u0627\u0644\u0645\u062a\u0627\u062d'].filter(Boolean).join(' - ');
+        if (data.quantity > available) data.notes = [data.notes, 'تنبيه: كمية الدمج أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - ');
       } else {
         const availableAtGluing = Math.max(sentToGluing - returnedFromGluing, 0);
-        if (data.quantity > availableAtGluing) data.notes = [data.notes, '\u062a\u0646\u0628\u064a\u0647: \u0627\u0644\u0645\u0631\u062a\u062c\u0639 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0631\u0635\u064a\u062f \u0627\u0644\u062e\u0627\u0645\u0629 \u0641\u064a \u0627\u0644\u0644\u0632\u0642'].filter(Boolean).join(' - ');
+        if (data.quantity > availableAtGluing) data.notes = [data.notes, 'تنبيه: المرتجع أكبر من رصيد الخامة في الدمج'].filter(Boolean).join(' - ');
       }
     } else {
       delete data.allocationId;
-      if (!data.outputName) { alert('\u0627\u0643\u062a\u0628 \u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062a\u062c \u0628\u0639\u062f \u0627\u0644\u0644\u0632\u0642.'); return; }
-      if (data.movement === 'customer' && !data.customerName) { alert('\u0627\u0643\u062a\u0628 \u0627\u0633\u0645 \u0627\u0644\u0639\u0645\u064a\u0644 \u0642\u0628\u0644 \u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0645\u0646\u062a\u062c \u0627\u0644\u0645\u0644\u0632\u0648\u0642.'); return; }
+      if (!data.outputName) { alert('اكتب اسم المنتج الناتج.'); return; }
+      if (data.movement === 'customer' && !data.customerName) { alert('اكتب اسم العميل قبل تسليم المنتج الناتج.'); return; }
       if (data.movement === 'customer') {
         const received = sum(gluingBatches.filter((batch)=>batch.orderId===selectedOrderId && batch.movement === 'received' && normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
         const delivered = sum(gluingBatches.filter((batch)=>batch.orderId===selectedOrderId && batch.movement === 'customer' && normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
-        if (data.quantity > Math.max(received - delivered, 0)) data.notes = [data.notes, '\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u0633\u0644\u064a\u0645 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0631\u0635\u064a\u062f \u0627\u0644\u0645\u0646\u062a\u062c \u0627\u0644\u0645\u0644\u0632\u0648\u0642'].filter(Boolean).join(' - ');
+        if (data.quantity > Math.max(received - delivered, 0)) data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المنتج الناتج'].filter(Boolean).join(' - ');
       }
     }
     backendResult = await postBackend('/batches/gluing', batchToApi(data));
@@ -3969,7 +3980,7 @@ async function editBatch(type, id) {
   if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; }
   if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'accessory') { updatedBatch.accessoryType = prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('الخامة الثانية / المصدر الآخر', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('اسم المنتج بعد اللزق', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('مصدر الدمج / العملية', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('اسم المنتج الناتج', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'dye') { updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'production') { updatedBatch.noteNumber = prompt('رقم إذن استلام المجهز', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'finished') { updatedBatch.finishedWidth = Number(prompt('العرض', updatedBatch.finishedWidth)); updatedBatch.finishedWeight = Number(prompt('الوزن المجهز', updatedBatch.finishedWeight)); updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
@@ -3988,8 +3999,8 @@ function getOperationalStage(order) {
   if (order.totalRawReceived === 0 && order.totalAllocated > 0) return 'بانتظار خروج الخام';
   if (order.totalRawReceived === 0) return 'بانتظار استلام الخام';
   if (order.totalAllocated === 0) return 'بانتظار توزيع الألوان';
-  if (Number(order.gluingBalance || 0) > 0) return 'واقف في اللزق';
-  if (Number(order.gluedProductBalance || 0) > 0) return 'منتج ملزوق جاهز للتسليم';
+  if (Number(order.gluingBalance || 0) > 0) return 'واقف في دمج الخامات';
+  if (Number(order.gluedProductBalance || 0) > 0) return 'منتج مدمج جاهز للتسليم';
   if (order.rawAtDyehouseAvailable > 0 || order.remainingAtDyehouse > 0) return 'تحت التشغيل بالمصبغة';
   if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'بالمخزن';
   if (order.totalDeliveredToCustomer < order.totalAllocated) return 'تسليم العميل';
@@ -4021,9 +4032,9 @@ function orderStageInfo(order) {
   } else if (Number(order.totalAllocated || 0) === 0) {
     key = 'color-planning'; label = 'بانتظار توزيع الألوان'; startDate = order.orderDate || rawDate || ''; reason = 'الخام موجود لكن لم يتم توزيع الألوان.';
   } else if (Number(order.gluingBalance || 0) > 0) {
-    key = 'gluing'; label = 'واقف في اللزق'; startDate = gluingDate || rawDate || order.orderDate || ''; reason = 'خرج خام للزق ولم يكتمل استلام الخام الملزوق.';
+    key = 'gluing'; label = 'واقف في دمج الخامات'; startDate = gluingDate || rawDate || order.orderDate || ''; reason = 'خرج خام للدمج ولم يكتمل استلام المنتج الناتج.';
   } else if (Number(order.gluedProductBalance || 0) > 0) {
-    key = 'glued-ready'; label = 'ملزوق جاهز للتسليم'; startDate = gluingDate || finishedDate || order.orderDate || ''; reason = 'تم استلام منتج ملزوق ولم يكتمل تسليمه للعميل.';
+    key = 'glued-ready'; label = 'منتج مدمج جاهز للتسليم'; startDate = gluingDate || finishedDate || order.orderDate || ''; reason = 'تم استلام منتج مدمج ولم يكتمل تسليمه للعميل.';
   } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.remainingAtDyehouse || 0) > 0) {
     key = 'dyehouse'; label = 'واقف في المصبغة'; startDate = rawDate || order.orderDate || ''; reason = 'تم تسليم خام للمصبغة ولم يكتمل استلام المجهز.';
   } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
@@ -4034,15 +4045,15 @@ function orderStageInfo(order) {
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في اللزق', 'stage:glued-ready':'ملزوق جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
   const select = refs.orderStatusFilter;
   if (!select) return;
   const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');
-  if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('واقف في اللزق', 'stage:gluing'), before || null);
-  if (![...select.options].some((option)=>option.value === 'stage:glued-ready')) select.add(new Option('ملزوق جاهز للتسليم', 'stage:glued-ready'), before || null);
+  if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('واقف في دمج الخامات', 'stage:gluing'), before || null);
+  if (![...select.options].some((option)=>option.value === 'stage:glued-ready')) select.add(new Option('منتج مدمج جاهز للتسليم', 'stage:glued-ready'), before || null);
 }
 function dateRangeLabel(items) {
   const dates = items.map((item)=>item.date).filter(Boolean).sort();
@@ -4805,19 +4816,19 @@ document.addEventListener('click', (event) => {
 });
 if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (event.target.closest('[data-save-gluing-source]')) {
-    saveGluingSourceFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-source-save-error', error); alert('تعذر إدخال الخامة إلى قائمة اللزق.'); });
+    saveGluingSourceFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-source-save-error', error); alert('تعذر سحب الخامة إلى عملية الدمج.'); });
     return;
   }
   if (event.target.closest('[data-save-gluing-merge]')) {
-    saveGluingMergeFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-merge-save-error', error); alert('تعذر حفظ دمج اللزق.'); });
+    saveGluingMergeFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-merge-save-error', error); alert('تعذر حفظ عملية الدمج.'); });
     return;
   }
   if (event.target.closest('[data-save-gluing-return]')) {
-    saveGluingReturnFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-return-save-error', error); alert('تعذر حفظ رجوع اللزق.'); });
+    saveGluingReturnFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-return-save-error', error); alert('تعذر حفظ رجوع متبقي الدمج.'); });
     return;
   }
   if (event.target.closest('[data-save-gluing-customer]')) {
-    saveGluingCustomerFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-customer-save-error', error); alert('تعذر حفظ تسليم المنتج الملزوق.'); });
+    saveGluingCustomerFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-customer-save-error', error); alert('تعذر حفظ تسليم المنتج الناتج.'); });
     return;
   }
   const button = event.target.closest('[data-management-report]');

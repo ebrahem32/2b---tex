@@ -302,7 +302,7 @@ function auditEntityLabel(entityType) {
     customer_delivery_batches: 'تسليم عميل',
     accessory_batches: 'إكسسوار',
     raw_returns: 'مرتجع خام',
-    gluing_batches: 'لزق خام',
+    gluing_batches: 'دمج خامات',
     dyehouse_transfers: 'تحويل مصبغة',
     report_outbox: 'إرسال تقرير',
     system_settings: 'إعدادات النظام',
@@ -368,7 +368,7 @@ const AUDIT_FIELD_LABELS = {
   to_dyehouse: 'إلى مصبغة',
   reason: 'السبب',
   partner_fabric: 'الخامة الثانية',
-  output_name: 'اسم المنتج بعد اللزق',
+  output_name: 'اسم المنتج الناتج',
   customer_name: 'العميل',
   movement: 'نوع الحركة',
   value_json: 'الإعداد',
@@ -902,8 +902,8 @@ function orderStageForAi(order, summary, movementDates = {}, allocationsCount = 
   if (!allocationsCount) return { key: 'color-planning', label: 'بانتظار توزيع الألوان', since: order.created_at || order.order_date, reason: 'لا توجد خطة ألوان مسجلة' };
   if (summary.remainingRawToReceive > 0) return { key: 'weaving', label: 'واقف في النسيج', since: order.order_date || order.created_at, reason: `متبقي استلام خام ${summary.remainingRawToReceive} كجم` };
   if (summary.remainingNotSentToDyehouse > 0) return { key: 'ready-to-dyehouse', label: 'خام جاهز لم يرسل للمصبغة', since: movementDates.rawReceived || order.order_date || order.created_at, reason: `رصيد خام لم يرسل ${summary.remainingNotSentToDyehouse} كجم` };
-  if (summary.gluingBalance > 0) return { key: 'gluing', label: 'واقف في اللزق', since: movementDates.gluing || movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `رصيد خام في اللزق ${summary.gluingBalance} كجم` };
-  if (summary.gluedProductBalance > 0) return { key: 'glued-ready', label: 'ملزوق جاهز للتسليم', since: movementDates.gluing || movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد منتج ملزوق ${summary.gluedProductBalance} كجم` };
+  if (summary.gluingBalance > 0) return { key: 'gluing', label: 'واقف في دمج الخامات', since: movementDates.gluing || movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `رصيد خام في دمج الخامات ${summary.gluingBalance} كجم` };
+  if (summary.gluedProductBalance > 0) return { key: 'glued-ready', label: 'منتج مدمج جاهز للتسليم', since: movementDates.gluing || movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد منتج مدمج ${summary.gluedProductBalance} كجم` };
   if (summary.remainingAtDyehouse > 0) return { key: 'dyehouse', label: 'واقف في المصبغة', since: movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `داخل المصبغة ${summary.remainingAtDyehouse} كجم` };
   if (summary.warehouseBalance > 0) return { key: 'warehouse', label: 'واقف في المخزن', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد مخزن ${summary.warehouseBalance} كجم` };
   if (summary.customerRemainingQuantity > 0 && summary.totalFinishedReceived > 0) return { key: 'delivery', label: 'جاهز للتسليم', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `متبقي للعميل ${summary.customerRemainingQuantity} كجم` };
