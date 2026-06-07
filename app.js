@@ -2711,6 +2711,78 @@ function buildAiSummaryStats(list = allOrders()) {
     reportsNeedAttention: pendingReports.length,
   };
 }
+
+let operationFollowLoading = false;
+
+function operationStageSummaryHtml(groups = []) {
+  if (!groups.length) return '<div class="empty-state">لا توجد طلبات واقفة حاليًا.</div>';
+  return groups.map((stage) => `
+    <article class="operation-stage-card" data-stage-filter="${escapeHtml(stage.key || '')}">
+      <span>${escapeHtml(stage.label || '-')}</span>
+      <strong>${Number(stage.count || 0).toLocaleString('en-US')}</strong>
+      <em>${Number(stage.quantity || 0).toLocaleString('en-US')} كجم</em>
+      <small>أقدم وقوف: ${Number(stage.oldestDays || 0).toLocaleString('en-US')} يوم</small>
+    </article>
+  `).join('');
+}
+
+function operationFollowRowHtml(order = {}) {
+  const stage = order.stage || {};
+  return `<tr>
+    <td data-label="رقم الطلب">${escapeHtml(order.orderNumber || '-')}</td>
+    <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
+    <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
+    <td data-label="المرحلة"><span class="status ${escapeHtml(order.status || 'in-progress')}" title="${escapeHtml(stage.reason || '')}">${escapeHtml(stage.label || '-')}</span></td>
+    <td data-label="واقف من">${escapeHtml(String(stage.since || '-').slice(0, 10))}</td>
+    <td data-label="الأيام">${Number(stage.days || 0).toLocaleString('en-US')}</td>
+    <td data-label="السبب">${escapeHtml(stage.reason || '-')}</td>
+    <td data-label="إجراء"><button class="mini-btn" type="button" data-view="${escapeHtml(order.id || '')}">عرض الطلب</button></td>
+  </tr>`;
+}
+
+function renderOperationFollowData(context = {}) {
+  const summary = document.getElementById('operationFollowSummary');
+  const body = document.getElementById('operationFollowBody');
+  if (!summary || !body) return;
+  const groups = Array.isArray(context.stageGroups) ? context.stageGroups : [];
+  const ordersToWatch = Array.isArray(context.priorityOrders) ? context.priorityOrders : [];
+  summary.innerHTML = operationStageSummaryHtml(groups);
+  body.innerHTML = ordersToWatch.length
+    ? ordersToWatch.slice(0, 12).map(operationFollowRowHtml).join('')
+    : '<tr><td colspan="8">لا توجد طلبات تحتاج متابعة حاليًا.</td></tr>';
+}
+
+function renderOperationFollowFallback(message = 'تعذر تحميل متابعة التشغيل من Railway.') {
+  const summary = document.getElementById('operationFollowSummary');
+  const body = document.getElementById('operationFollowBody');
+  if (summary) summary.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+  if (body) body.innerHTML = '<tr><td colspan="8">راجع اتصال قاعدة البيانات ثم اضغط تحديث المتابعة.</td></tr>';
+}
+
+async function refreshOperationFollowPanel() {
+  if (operationFollowLoading) return;
+  const summary = document.getElementById('operationFollowSummary');
+  if (!summary) return;
+  operationFollowLoading = true;
+  summary.innerHTML = '<div class="empty-state">جاري قراءة متابعة التشغيل من Railway...</div>';
+  try {
+    const context = await backendRequest('/ai/employee-context', { cache:'no-store' });
+    renderOperationFollowData(context);
+  } catch (error) {
+    console.warn('operation-follow-load-failed', error);
+    renderOperationFollowFallback();
+  } finally {
+    operationFollowLoading = false;
+  }
+}
+
+function renderOperationFollowPanel() {
+  const summary = document.getElementById('operationFollowSummary');
+  if (!summary || summary.dataset.loaded === 'true') return;
+  summary.dataset.loaded = 'true';
+  refreshOperationFollowPanel();
+}
+
 function collectAiReportPayload() {
   const calculatedOrders = allOrders().map((order)=>({
     ...order,
@@ -3051,6 +3123,10 @@ function handleNavMenuAction(action) {
     return;
   }
   if (action === 'aiModel') document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  if (action === 'operationalFollow') {
+    document.getElementById('operationFollowPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    refreshOperationFollowPanel();
+  }
   if (action === 'aiAnalyze') {
     document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     refs.analyzeReportBtn?.click();
@@ -4035,7 +4111,7 @@ function orderStageInfo(order) {
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:ready-to-dyehouse':'خام جاهز للمصبغة', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
@@ -4540,7 +4616,7 @@ function repairGlobalArabicText() {
   });
 }
 
-function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
+function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderOperationFollowPanel(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
 let pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {
   return new Promise((resolve, reject) => {
@@ -4907,6 +4983,21 @@ refs.ordersTableBody.onclick = (event) => {
   }
   if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
 };
+document.getElementById('refreshOperationFollowBtn')?.addEventListener('click', refreshOperationFollowPanel);
+document.getElementById('operationFollowPanel')?.addEventListener('click', (event) => {
+  const stageCard = event.target.closest('[data-stage-filter]');
+  if (stageCard) {
+    const stageKey = stageCard.dataset.stageFilter;
+    if (stageKey && refs.orderStatusFilter) {
+      refs.orderStatusFilter.value = `stage:${stageKey}`;
+      renderOrders();
+      document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+    return;
+  }
+  const viewButton = event.target.closest('[data-view]');
+  if (viewButton?.dataset.view) openOrderFocusMode(viewButton.dataset.view);
+});
 refs.orderDetailsPanel.addEventListener('submit', (event) => {
   addBatch(event).catch((error) => {
     console.error('batch-save-error', error);
