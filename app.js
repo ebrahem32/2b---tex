@@ -2663,11 +2663,24 @@ function collectAiReportPayload() {
 }
 function asListHtml(items) {
   const rows = Array.isArray(items) ? items : [];
-  return rows.length ? `<ul>${rows.map((item)=>`<li>${item}</li>`).join('')}</ul>` : '<p class="empty-state">لا توجد بيانات كافية للعرض.</p>';
+  return rows.length ? `<ul>${rows.map((item)=>`<li>${escapeHtml(formatAiItem(item))}</li>`).join('')}</ul>` : '<p class="empty-state">لا توجد بيانات كافية للعرض.</p>';
+}
+function formatAiItem(item) {
+  if (item == null) return '-';
+  if (typeof item !== 'object') return String(item);
+  const parts = [];
+  if (item.orderNumber || item.orderId) parts.push(`طلب ${item.orderNumber || item.orderId}`);
+  if (item.customer) parts.push(`العميل ${item.customer}`);
+  if (item.status) parts.push(item.status);
+  if (item.stage?.label) parts.push(item.stage.label);
+  if (item.daysInStatus != null) parts.push(`واقف ${item.daysInStatus} يوم`);
+  if (item.stage?.days != null) parts.push(`واقف ${item.stage.days} يوم`);
+  if (item.reason || item.notes) parts.push(item.reason || item.notes);
+  return parts.length ? parts.join(' - ') : JSON.stringify(item);
 }
 function renderAiAnalysis(result) {
   const safe = result || {};
-  const sourceLabel = safe.source === 'openai' ? 'تحليل OpenAI' : 'تحليل تشغيلي من قواعد 2B';
+  const sourceLabel = safe.source === 'gemini' ? 'موظف 2B الذكي - Gemini' : (safe.source === 'openai' ? 'موظف 2B الذكي - OpenAI' : 'تحليل تشغيلي من قواعد 2B');
   refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><p class="eyebrow">${sourceLabel}</p><h3>الملخص التنفيذي</h3><p>${safe.executiveSummary || '-'}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>الطلبات التي تحتاج متابعة</h3>${asListHtml(safe.ordersToWatch)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>أولويات اليوم</h3>${asListHtml(safe.priorityActions)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${safe.whatsappMessage || '-'}</div></section>`;
   refs.aiAnalysisDialog.showModal();
 }
@@ -2676,12 +2689,12 @@ async function analyzeReportWithAi() {
   const oldText = refs.analyzeReportBtn.textContent;
   refs.analyzeReportBtn.disabled = true;
   refs.analyzeReportBtn.textContent = 'جاري التحليل...';
-  if (refs.aiStatusText) refs.aiStatusText.textContent = 'جاري إرسال بيانات التشغيل إلى مساعد 2B الذكي.';
+  if (refs.aiStatusText) refs.aiStatusText.textContent = 'موظف 2B الذكي يقرأ قاعدة البيانات من Railway الآن.';
   try {
-    const response = await fetch(`${AI_SERVICE_URL}/api/ai/analyze-report`, {
+    const response = await fetch(`${AI_SERVICE_URL}/api/ai/employee-report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(collectAiReportPayload()),
+      body: JSON.stringify({ question:'حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟' }),
     });
     const data = await response.json().catch(()=>({}));
     if (!response.ok) {
@@ -2689,7 +2702,7 @@ async function analyzeReportWithAi() {
       throw new Error(data.message || 'تعذر تحليل التقرير من خدمة مساعد 2B الذكي');
     }
     renderAiAnalysis(data);
-    if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم تحليل التقرير بواسطة خدمة OpenAI.';
+    if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير الموظف الذكي من بيانات Railway.';
   } catch (error) {
     const message = error.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? error.message : (error.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا');
     if (refs.aiStatusText) refs.aiStatusText.textContent = message;

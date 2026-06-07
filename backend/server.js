@@ -558,6 +558,205 @@ function aiFallbackAnalysis(data) {
   };
 }
 
+function daysBetween(startValue, endValue = new Date()) {
+  const start = startValue ? new Date(startValue) : null;
+  const end = endValue instanceof Date ? endValue : new Date(endValue);
+  if (!start || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)));
+}
+
+function latestDate(rows, ...keys) {
+  const dates = [];
+  for (const row of rows || []) {
+    for (const key of keys) {
+      const value = row?.[key];
+      if (!value) continue;
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) dates.push(date);
+    }
+  }
+  if (!dates.length) return '';
+  return new Date(Math.max(...dates.map((date) => date.getTime()))).toISOString().slice(0, 10);
+}
+
+function orderStageForAi(order, summary, movementDates = {}, allocationsCount = 0) {
+  if (Number(order.is_closed || 0) === 1) return { key: 'closed', label: 'مغلق', since: movementDates.closed || order.updated_at || order.created_at, reason: 'تم إغلاق الطلب تشغيليًا' };
+  if (!allocationsCount) return { key: 'color-planning', label: 'بانتظار توزيع الألوان', since: order.created_at || order.order_date, reason: 'لا توجد خطة ألوان مسجلة' };
+  if (summary.remainingRawToReceive > 0) return { key: 'weaving', label: 'واقف في النسيج', since: order.order_date || order.created_at, reason: `متبقي استلام خام ${summary.remainingRawToReceive} كجم` };
+  if (summary.remainingNotSentToDyehouse > 0) return { key: 'ready-to-dyehouse', label: 'خام جاهز لم يرسل للمصبغة', since: movementDates.rawReceived || order.order_date || order.created_at, reason: `رصيد خام لم يرسل ${summary.remainingNotSentToDyehouse} كجم` };
+  if (summary.remainingAtDyehouse > 0) return { key: 'dyehouse', label: 'واقف في المصبغة', since: movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `داخل المصبغة ${summary.remainingAtDyehouse} كجم` };
+  if (summary.warehouseBalance > 0) return { key: 'warehouse', label: 'واقف في المخزن', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد مخزن ${summary.warehouseBalance} كجم` };
+  if (summary.customerRemainingQuantity > 0 && summary.totalFinishedReceived > 0) return { key: 'delivery', label: 'جاهز للتسليم', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `متبقي للعميل ${summary.customerRemainingQuantity} كجم` };
+  return { key: 'completed', label: 'مكتمل فعليًا', since: movementDates.customerDelivered || order.updated_at || order.created_at, reason: 'لا يظهر رصيد تشغيل مفتوح' };
+}
+
+function groupSum(rows, key = 'quantity') {
+  return (rows || []).reduce((total, row) => total + Number(row?.[key] || 0), 0);
+}
+
+async function buildAiEmployeeContext() {
+  await repairMissingCustomersFromReferences();
+  const today = new Date();
+  const [
+    customers,
+    orders,
+    allocations,
+    rawReceivingBatches,
+    dyehouseDeliveryBatches,
+    finishedReceivingBatches,
+    customerDeliveryBatches,
+    accessoryBatches,
+    rawReturns,
+    dyehouseTransfers,
+    reportOutbox,
+    auditLog,
+  ] = await Promise.all([
+    all('SELECT * FROM customers ORDER BY name'),
+    all('SELECT * FROM orders ORDER BY created_at DESC'),
+    all('SELECT * FROM order_allocations ORDER BY created_at'),
+    all('SELECT * FROM raw_receiving_batches ORDER BY created_at'),
+    all('SELECT * FROM dyehouse_delivery_batches ORDER BY created_at'),
+    all('SELECT * FROM finished_receiving_batches ORDER BY created_at'),
+    all('SELECT * FROM customer_delivery_batches ORDER BY created_at'),
+    all('SELECT * FROM accessory_batches ORDER BY created_at'),
+    all('SELECT * FROM raw_returns ORDER BY created_at'),
+    all('SELECT * FROM dyehouse_transfers ORDER BY created_at'),
+    all('SELECT * FROM report_outbox ORDER BY created_at DESC LIMIT 100'),
+    all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 80'),
+  ]);
+  const customersById = new Map(customers.map((customer) => [customer.id, customer]));
+  const byOrder = (rows) => rows.reduce((acc, row) => {
+    const key = row.order_id;
+    if (!key) return acc;
+    acc[key] = acc[key] || [];
+    acc[key].push(row);
+    return acc;
+  }, {});
+  const buckets = {
+    allocations: byOrder(allocations),
+    rawReceivingBatches: byOrder(rawReceivingBatches),
+    dyehouseDeliveryBatches: byOrder(dyehouseDeliveryBatches),
+    finishedReceivingBatches: byOrder(finishedReceivingBatches),
+    customerDeliveryBatches: byOrder(customerDeliveryBatches),
+    accessoryBatches: byOrder(accessoryBatches),
+    rawReturns: byOrder(rawReturns),
+    dyehouseTransfers: byOrder(dyehouseTransfers),
+  };
+
+  const orderCards = orders.map((order) => {
+    const orderAllocations = buckets.allocations[order.id] || [];
+    const summary = calculateOrderSummary(order, {
+      rawReceivingBatches: buckets.rawReceivingBatches[order.id] || [],
+      dyehouseDeliveryBatches: buckets.dyehouseDeliveryBatches[order.id] || [],
+      finishedReceivingBatches: buckets.finishedReceivingBatches[order.id] || [],
+      customerDeliveryBatches: buckets.customerDeliveryBatches[order.id] || [],
+      rawReturns: buckets.rawReturns[order.id] || [],
+    });
+    const movementDates = {
+      rawReceived: latestDate(buckets.rawReceivingBatches[order.id], 'batch_date', 'created_at'),
+      sentToDyehouse: latestDate(buckets.dyehouseDeliveryBatches[order.id], 'batch_date', 'created_at'),
+      finishedReceived: latestDate(buckets.finishedReceivingBatches[order.id], 'batch_date', 'created_at'),
+      customerDelivered: latestDate(buckets.customerDeliveryBatches[order.id], 'batch_date', 'created_at'),
+    };
+    const stage = orderStageForAi(order, summary, movementDates, orderAllocations.length);
+    const customer = customersById.get(order.customer_id);
+    return {
+      id: order.id,
+      orderNumber: order.order_number,
+      customer: customer?.name || readableCustomerNameFromId(order.customer_id) || '-',
+      fabricType: order.fabric_type || '-',
+      dyehouse: order.dyehouse || '-',
+      orderDate: order.order_date,
+      status: order.status,
+      isClosed: Number(order.is_closed || 0) === 1,
+      stage: { ...stage, days: daysBetween(stage.since, today) },
+      quantities: summary,
+      movementDates,
+      allocationsCount: orderAllocations.length,
+      colors: orderAllocations.slice(0, 20).map((allocation) => ({
+        color: allocation.color || '-',
+        dyehouse: allocation.dyehouse || order.dyehouse || '-',
+        plannedQuantity: Number(allocation.planned_quantity || 0),
+        width: Number(allocation.finished_width || allocation.raw_width || 0),
+        weight: Number(allocation.finished_weight || 0),
+      })),
+      rawNotes: (buckets.rawReceivingBatches[order.id] || []).map((row) => row.note_number).filter(Boolean),
+      dyehouseNotes: (buckets.dyehouseDeliveryBatches[order.id] || []).map((row) => row.note_number).filter(Boolean),
+      operationNotes: safeJsonParse(order.operation_notes_json, null) || order.notes || '',
+      notes: order.notes || '',
+    };
+  });
+
+  const openOrders = orderCards.filter((order) => !order.isClosed && !['completed', 'closed'].includes(order.status));
+  const stageGroups = openOrders.reduce((acc, order) => {
+    const key = order.stage.key;
+    acc[key] = acc[key] || { key, label: order.stage.label, count: 0, quantity: 0, oldestDays: 0 };
+    acc[key].count += 1;
+    acc[key].quantity += Number(order.quantities.totalRequestedQuantity || 0);
+    acc[key].oldestDays = Math.max(acc[key].oldestDays, Number(order.stage.days || 0));
+    return acc;
+  }, {});
+  const dyehouseBalances = dyehouseDeliveryBatches.reduce((acc, row) => {
+    const dyehouse = row.dyehouse || 'غير محدد';
+    acc[dyehouse] = acc[dyehouse] || { dyehouse, sent: 0, finished: 0, balance: 0 };
+    acc[dyehouse].sent += Number(row.quantity || 0);
+    return acc;
+  }, {});
+  for (const row of finishedReceivingBatches) {
+    const allocation = allocations.find((item) => item.id === row.allocation_id);
+    const order = orders.find((item) => item.id === row.order_id);
+    const dyehouse = allocation?.dyehouse || order?.dyehouse || 'غير محدد';
+    dyehouseBalances[dyehouse] = dyehouseBalances[dyehouse] || { dyehouse, sent: 0, finished: 0, balance: 0 };
+    dyehouseBalances[dyehouse].finished += Number(row.quantity || 0);
+  }
+  Object.values(dyehouseBalances).forEach((row) => { row.balance = Math.max(row.sent - row.finished, 0); });
+
+  return {
+    generatedAt: now(),
+    role: '2B Tex AI Employee',
+    mission: 'متابعة التشغيل اليومي، كشف الوقوف، ترتيب الأولويات، ومساعدة الإدارة برسائل عملية.',
+    factorySnapshot: {
+      customersCount: customers.length,
+      ordersCount: orders.length,
+      openOrdersCount: openOrders.length,
+      requestedRaw: groupSum(orderCards.map((order) => ({ quantity: order.quantities.totalRequestedQuantity }))),
+      rawReceived: groupSum(orderCards.map((order) => ({ quantity: order.quantities.totalRawReceived }))),
+      sentToDyehouse: groupSum(orderCards.map((order) => ({ quantity: order.quantities.totalSentToDyehouse }))),
+      finishedReceived: groupSum(orderCards.map((order) => ({ quantity: order.quantities.totalFinishedReceived }))),
+      warehouseBalance: groupSum(orderCards.map((order) => ({ quantity: order.quantities.warehouseBalance }))),
+      dyehouseBalance: groupSum(orderCards.map((order) => ({ quantity: order.quantities.remainingAtDyehouse }))),
+      deliveredToCustomers: groupSum(orderCards.map((order) => ({ quantity: order.quantities.customerDeliveredQuantity }))),
+      accessoryMovements: accessoryBatches.length,
+      rawReturns: groupSum(rawReturns),
+      transfersCount: dyehouseTransfers.length,
+      pendingWhatsappReports: reportOutbox.filter((item) => ['pending', 'queued', 'failed'].includes(item.status)).length,
+    },
+    stageGroups: Object.values(stageGroups).sort((a, b) => (b.oldestDays - a.oldestDays) || (b.quantity - a.quantity)),
+    priorityOrders: openOrders
+      .slice()
+      .sort((a, b) => (b.stage.days - a.stage.days) || (b.quantities.totalRequestedQuantity - a.quantities.totalRequestedQuantity))
+      .slice(0, 20),
+    dyehouseBalances: Object.values(dyehouseBalances).sort((a, b) => b.balance - a.balance),
+    recentAudit: auditLog.map((row) => ({
+      action: row.action,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      note: row.note,
+      createdAt: row.created_at,
+    })),
+    reportOutbox: reportOutbox.map((row) => ({
+      reportType: row.report_type,
+      orderNumber: row.order_number,
+      customerName: row.customer_name,
+      targetGroup: row.target_group,
+      status: row.status,
+      errorMessage: row.error_message || '',
+      createdAt: row.created_at,
+      sentAt: row.sent_at,
+    })),
+  };
+}
+
 async function runOpenAiAnalysis(data) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -669,6 +868,32 @@ app.post('/api/ai/analyze-report', asyncHandler(async (req, res) => {
   } catch (error) {
     console.warn('[2B Tex] OpenAI analysis failed, using local rules:', error.message);
     return res.json(aiFallbackAnalysis(data));
+  }
+}));
+
+app.get('/api/ai/employee-context', asyncHandler(async (_req, res) => {
+  res.json(await buildAiEmployeeContext());
+}));
+
+app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
+  const context = await buildAiEmployeeContext();
+  const data = {
+    ...context,
+    userRequest: String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim(),
+  };
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return res.json(await runGeminiAnalysis(data));
+    } catch (error) {
+      console.warn('[2B Tex] Gemini employee report failed, trying next provider:', error.message);
+    }
+  }
+  if (!process.env.OPENAI_API_KEY) return res.json(aiFallbackAnalysis({ orders: data.priorityOrders, reportOutbox: data.reportOutbox, summaryStats: data.factorySnapshot }));
+  try {
+    return res.json(await runOpenAiAnalysis(data));
+  } catch (error) {
+    console.warn('[2B Tex] OpenAI employee report failed, using local rules:', error.message);
+    return res.json(aiFallbackAnalysis({ orders: data.priorityOrders, reportOutbox: data.reportOutbox, summaryStats: data.factorySnapshot }));
   }
 }));
 

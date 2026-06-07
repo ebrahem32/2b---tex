@@ -4661,12 +4661,26 @@ function collectAiReportPayload() {
 function asListHtml(items) {
   var rows = Array.isArray(items) ? items : [];
   return rows.length ? "<ul>".concat(rows.map(function (item) {
-    return "<li>".concat(item, "</li>");
+    return "<li>".concat(escapeHtml(formatAiItem(item)), "</li>");
   }).join(''), "</ul>") : '<p class="empty-state">لا توجد بيانات كافية للعرض.</p>';
+}
+function formatAiItem(item) {
+  var _item$stage, _item$stage2;
+  if (item == null) return '-';
+  if (_typeof(item) !== 'object') return String(item);
+  var parts = [];
+  if (item.orderNumber || item.orderId) parts.push("\u0637\u0644\u0628 ".concat(item.orderNumber || item.orderId));
+  if (item.customer) parts.push("\u0627\u0644\u0639\u0645\u064A\u0644 ".concat(item.customer));
+  if (item.status) parts.push(item.status);
+  if ((_item$stage = item.stage) !== null && _item$stage !== void 0 && _item$stage.label) parts.push(item.stage.label);
+  if (item.daysInStatus != null) parts.push("\u0648\u0627\u0642\u0641 ".concat(item.daysInStatus, " \u064A\u0648\u0645"));
+  if (((_item$stage2 = item.stage) === null || _item$stage2 === void 0 ? void 0 : _item$stage2.days) != null) parts.push("\u0648\u0627\u0642\u0641 ".concat(item.stage.days, " \u064A\u0648\u0645"));
+  if (item.reason || item.notes) parts.push(item.reason || item.notes);
+  return parts.length ? parts.join(' - ') : JSON.stringify(item);
 }
 function renderAiAnalysis(result) {
   var safe = result || {};
-  var sourceLabel = safe.source === 'openai' ? 'تحليل OpenAI' : 'تحليل تشغيلي من قواعد 2B';
+  var sourceLabel = safe.source === 'gemini' ? 'موظف 2B الذكي - Gemini' : safe.source === 'openai' ? 'موظف 2B الذكي - OpenAI' : 'تحليل تشغيلي من قواعد 2B';
   refs.aiAnalysisBody.innerHTML = "<section class=\"ai-result-section\"><p class=\"eyebrow\">".concat(sourceLabel, "</p><h3>\u0627\u0644\u0645\u0644\u062E\u0635 \u0627\u0644\u062A\u0646\u0641\u064A\u0630\u064A</h3><p>").concat(safe.executiveSummary || '-', "</p></section><section class=\"ai-result-section\"><h3>\u0623\u0647\u0645 \u0627\u0644\u0645\u0644\u0627\u062D\u0638\u0627\u062A</h3>").concat(asListHtml(safe.keyFindings), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u0645\u062A\u0627\u0628\u0639\u0629</h3>").concat(asListHtml(safe.ordersToWatch), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0645\u062E\u0627\u0637\u0631</h3>").concat(asListHtml(safe.risks), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A</h3>").concat(asListHtml(safe.recommendations), "</section><section class=\"ai-result-section\"><h3>\u0623\u0648\u0644\u0648\u064A\u0627\u062A \u0627\u0644\u064A\u0648\u0645</h3>").concat(asListHtml(safe.priorityActions), "</section><section class=\"ai-result-section\"><h3>\u0631\u0633\u0627\u0644\u0629 \u0648\u0627\u062A\u0633\u0627\u0628 \u0644\u0644\u0625\u062F\u0627\u0631\u0629</h3><div class=\"ai-whatsapp-message\" id=\"aiWhatsappMessage\">").concat(safe.whatsappMessage || '-', "</div></section>");
   refs.aiAnalysisDialog.showModal();
 }
@@ -4688,15 +4702,17 @@ function _analyzeReportWithAi() {
           oldText = refs.analyzeReportBtn.textContent;
           refs.analyzeReportBtn.disabled = true;
           refs.analyzeReportBtn.textContent = 'جاري التحليل...';
-          if (refs.aiStatusText) refs.aiStatusText.textContent = 'جاري إرسال بيانات التشغيل إلى مساعد 2B الذكي.';
+          if (refs.aiStatusText) refs.aiStatusText.textContent = 'موظف 2B الذكي يقرأ قاعدة البيانات من Railway الآن.';
           _context54.p = 2;
           _context54.n = 3;
-          return fetch("".concat(AI_SERVICE_URL, "/api/ai/analyze-report"), {
+          return fetch("".concat(AI_SERVICE_URL, "/api/ai/employee-report"), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify(collectAiReportPayload())
+            body: JSON.stringify({
+              question: 'حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟'
+            })
           });
         case 3:
           response = _context54.v;
@@ -4719,7 +4735,7 @@ function _analyzeReportWithAi() {
           throw new Error(data.message || 'تعذر تحليل التقرير من خدمة مساعد 2B الذكي');
         case 6:
           renderAiAnalysis(data);
-          if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم تحليل التقرير بواسطة خدمة OpenAI.';
+          if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير الموظف الذكي من بيانات Railway.';
           _context54.n = 8;
           break;
         case 7:
