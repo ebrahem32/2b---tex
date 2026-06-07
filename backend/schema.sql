@@ -184,6 +184,23 @@ CREATE TABLE IF NOT EXISTS raw_returns (
   FOREIGN KEY (allocation_id) REFERENCES order_allocations(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS gluing_batches (
+  id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL,
+  allocation_id TEXT,
+  batch_date TEXT,
+  quantity REAL DEFAULT 0,
+  movement TEXT DEFAULT 'sent',
+  partner_fabric TEXT,
+  note_number TEXT,
+  notes TEXT,
+  source_document_json TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (allocation_id) REFERENCES order_allocations(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS dyehouse_transfers (
   id TEXT PRIMARY KEY,
   order_id TEXT NOT NULL,

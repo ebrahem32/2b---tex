@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   accessory: '2btex.accessory.v1',
   transfers: '2btex.dyehouseTransfers.v1',
   rawReturns: '2btex.rawReturns.v1',
+  gluing: '2btex.gluing.v1',
   pricings: '2btex.pricings.v1',
   customerAccounts: '2btex.customerAccounts.v1',
   reportOutbox: '2btex.reportOutbox.v1',
@@ -17,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.06.12';
-const APP_BUILD_TIME = '2026-06-06 15:50';
+const APP_VERSION = 'v2026.06.07.11';
+const APP_BUILD_TIME = '2026-06-07 14:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -62,6 +63,7 @@ const OPERATIONAL_STORAGE_KEYS = [
   STORAGE_KEYS.accessory,
   STORAGE_KEYS.transfers,
   STORAGE_KEYS.rawReturns,
+  STORAGE_KEYS.gluing,
   STORAGE_KEYS.pricings,
 ];
 function clearOperationalLocalStorageCache() {
@@ -80,6 +82,7 @@ const defaults = {
   accessory: [],
   transfers: [],
   rawReturns: [],
+  gluing: [],
   pricings: [],
   customerAccounts: {},
   reportOutbox: [],
@@ -98,6 +101,7 @@ let customerBatches = clone(defaults.customer);
 let accessoryBatches = clone(defaults.accessory);
 let dyehouseTransfers = clone(defaults.transfers);
 let rawReturns = clone(defaults.rawReturns);
+let gluingBatches = clone(defaults.gluing);
 let pricings = clone(defaults.pricings);
 let customerAccounts = (() => {
   try {
@@ -123,6 +127,7 @@ if (!Array.isArray(auditLog)) auditLog = clone(defaults.auditLog);
 if (!Array.isArray(customerBatches)) customerBatches = clone(defaults.customer);
 if (!Array.isArray(dyehouseTransfers)) dyehouseTransfers = clone(defaults.transfers);
 if (!Array.isArray(rawReturns)) rawReturns = clone(defaults.rawReturns);
+if (!Array.isArray(gluingBatches)) gluingBatches = clone(defaults.gluing);
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
 const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
 function normalizeLegacyCustomerName(value) {
@@ -141,6 +146,7 @@ function purgeLegacyTestOrdersFromMemory() {
   allocations = allocations.filter((allocation)=>!legacyIdSet.has(allocation.orderId));
   rawBatches = rawBatches.filter((batch)=>!legacyIdSet.has(batch.orderId));
   rawReturns = rawReturns.filter((batch)=>!legacyIdSet.has(batch.orderId) && !legacyAllocationIds.has(batch.allocationId));
+  gluingBatches = gluingBatches.filter((batch)=>!legacyIdSet.has(batch.orderId) && !legacyAllocationIds.has(batch.allocationId));
   dyeBatches = dyeBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
   productionBatches = productionBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
   finishedBatches = finishedBatches.filter((batch)=>!legacyAllocationIds.has(batch.allocationId));
@@ -160,6 +166,7 @@ function ensureRuntimeCollections() {
   if (!Array.isArray(accessoryBatches)) accessoryBatches = clone(defaults.accessory);
   if (!Array.isArray(dyehouseTransfers)) dyehouseTransfers = clone(defaults.transfers);
   if (!Array.isArray(rawReturns)) rawReturns = clone(defaults.rawReturns);
+  if (!Array.isArray(gluingBatches)) gluingBatches = clone(defaults.gluing);
   if (!Array.isArray(pricings)) pricings = clone(defaults.pricings);
   if (!customerAccounts || typeof customerAccounts !== 'object' || Array.isArray(customerAccounts)) customerAccounts = clone(defaults.customerAccounts);
   if (!Array.isArray(reportOutbox)) reportOutbox = clone(defaults.reportOutbox);
@@ -192,7 +199,7 @@ function repairTransferredAllocationDyehouses() {
   });
   return changed;
 }
-if ([rawBatches, rawReturns, dyeBatches, productionBatches, finishedBatches, customerBatches, accessoryBatches, dyehouseTransfers].some(ensureRecordIds) || repairTransferredAllocationDyehouses()) save();
+if ([rawBatches, rawReturns, gluingBatches, dyeBatches, productionBatches, finishedBatches, customerBatches, accessoryBatches, dyehouseTransfers].some(ensureRecordIds) || repairTransferredAllocationDyehouses()) save();
 const saveData = save;
 let selectedOrderId = null;
 let editingOrderId = null;
@@ -388,6 +395,7 @@ function mapDbBatch(row) {
     finishedWeight: row.finished_weight || '',
     accessoryType: row.accessory_type || '',
     movement: row.movement || '',
+    partnerFabric: row.partner_fabric || '',
   };
 }
 function mapDbTransfer(row) {
@@ -442,6 +450,7 @@ function renderBackendUnavailable() {
   accessoryBatches = clone(defaults.accessory);
   dyehouseTransfers = clone(defaults.transfers);
   rawReturns = clone(defaults.rawReturns);
+  gluingBatches = clone(defaults.gluing);
   pricings = clone(defaults.pricings);
   if (refs.statsGrid) refs.statsGrid.innerHTML = '<div class="metric"><span>حالة قاعدة البيانات</span><strong>غير متاحة</strong></div>';
   if (refs.pricingTableBody) refs.pricingTableBody.innerHTML = '<tr><td colspan="8">قاعدة البيانات غير متاحة حاليًا. أعد تحميل الصفحة بعد عودة الاتصال.</td></tr>';
@@ -509,6 +518,7 @@ async function loadBackendData(options = {}) {
     customerBatches = (data.customerDeliveryBatches || []).map(mapDbBatch);
     accessoryBatches = (data.accessoryBatches || []).map(mapDbBatch);
     rawReturns = (data.rawReturns || []).map(mapDbBatch);
+    gluingBatches = (data.gluingBatches || []).map(mapDbBatch);
     dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbTransfer);
     purgeLegacyTestOrdersFromMemory();
     if (!orders.some((order)=>order.id === selectedOrderId)) selectedOrderId = orders[0]?.id || null;
@@ -672,6 +682,7 @@ const batchToApi = (batch) => ({
   finished_weight: batch.finishedWeight || null,
   accessory_type: batch.accessoryType || null,
   movement: batch.movement || null,
+  partner_fabric: batch.partnerFabric || null,
 });
 const transferToApi = (transfer) => ({
   id: transfer.id,
@@ -741,6 +752,7 @@ async function ensureBackendForWrite(message = 'تعذر الاتصال بقاع
 function backendBatchType(type) {
   return type === 'production' || type === 'finished' ? 'finished'
     : type === 'rawReturn' ? 'raw-return'
+    : type === 'gluing' ? 'gluing'
     : type === 'accessory' ? 'accessory'
     : type === 'customer' ? 'customer'
     : type === 'raw' ? 'dyehouse'
@@ -754,6 +766,7 @@ function backendSnapshotCollection(snapshot, type) {
   if (key === 'customer') return snapshot.customerDeliveryBatches || [];
   if (key === 'accessory') return snapshot.accessoryBatches || [];
   if (key === 'raw-return') return snapshot.rawReturns || [];
+  if (key === 'gluing') return snapshot.gluingBatches || [];
   if (key === 'transfer') return snapshot.dyehouseTransfers || [];
   if (key === 'allocation') return snapshot.allocations || [];
   if (key === 'pricing') return snapshot.pricings || [];
@@ -2388,6 +2401,7 @@ const orderDomain = window.TwoBTexOrders.createOrderDomain({
     accessoryBatches,
     dyehouseTransfers,
     rawReturns,
+    gluingBatches,
   }),
 });
 
@@ -2683,6 +2697,7 @@ function buildAiSummaryStats(list = allOrders()) {
     closedOrdersCount: list.filter((order)=>order.status === 'closed').length,
     totalRawOrdered: roundNumber(list.reduce((total, order)=>total + Number(order.totalRawOrdered || 0), 0)),
     totalSentToDyehouse: roundNumber(list.reduce((total, order)=>total + Number(order.totalSentToDyehouse || 0), 0)),
+    totalGluingBalance: roundNumber(list.reduce((total, order)=>total + Number(order.gluingBalance || 0), 0)),
     totalFinishedReceived: roundNumber(list.reduce((total, order)=>total + Number(order.totalFinishedReceived || 0), 0)),
     totalRemainingAtDyehouse: roundNumber(list.reduce((total, order)=>total + Number(order.rawAtDyehouseAvailable || 0), 0)),
     totalWarehouseBalance: roundNumber(list.reduce((total, order)=>total + Number(order.warehouseBalance || 0), 0)),
@@ -2707,6 +2722,7 @@ function collectAiReportPayload() {
       customerBatches,
       accessoryBatches,
       rawReturns,
+      gluingBatches,
       dyehouseTransfers,
     },
     reportOutbox,
@@ -3187,12 +3203,14 @@ function renderDetails() {
   const accessoryReceivedItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'), (batch)=>batchItemHtml('accessory', batch, movementLine('استلام إكسسوار', batch.date, accessoryColor(batch), batch.quantity, batch.accessoryType || 'إكسسوار') + noteSuffix(batch)));
   const productionItems = listHtml(productionBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('production', batch, movementLine('استلام مجهز', batch.date, allocation?.dyehouse || '-', allocation?.color || '-', batch.quantity) + noteSuffix(batch)); });
   const customerItems = (()=>{ const cloth = customerBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : '-'; return { type:'customer', batch, label:movementLine('تسليم قماش للعميل', batch.date, label, batch.quantity) }; }); const accessories = accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer').map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : accessoryColor(batch); return { type:'accessory', batch, label:movementLine('تسليم إكسسوار للعميل', batch.date, label, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'إكسسوار') + noteSuffix(batch) }; }); const rows = cloth.concat(accessories).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">لا توجد دفعات بعد.</div>'; })();
+  const gluingItems = listHtml(gluingBatches.filter((batch)=>batch.orderId===order.id), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const action = String(batch.movement || 'sent') === 'received' ? 'استلام خام ملزوق' : 'خروج خام للزق'; return batchItemHtml('gluing', batch, movementLine(action, batch.date, allocation ? allocationColorLabel(order, allocation) : '-', batch.quantity, batch.partnerFabric || '-') + noteSuffix(batch)); });
   const transferItems = listHtml(dyehouseTransfers.filter((batch)=>batch.orderId===order.id), (batch)=>batchItemHtml('transfer', batch, movementLine('تحويل مصبغة', batch.date, batch.color || '-', batch.fromDyehouse || '-', batch.toDyehouse || '-', batch.quantity) + noteSuffix(batch)));
   const rawReturnItems = listHtml(rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('rawReturn', batch, movementLine('مرتجع خام للنسيج', batch.date, allocation?.dyehouse || '-', allocation?.color || '-', batch.quantity) + noteSuffix(batch)); });
   const stockRows = order.allocations.map((allocation)=>{ const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===allocation.id)); const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered); const widthInfo = order.widthMode === 'multiple' ? `بوصة ${allocation.rawInch || '-'} / عرض ${allocation.rawWidth || allocation.targetFinishedWidth || '-'}` : `بوصة ${order.inchWidth || '-'} / عرض ${allocation.targetFinishedWidth || '-'}`; return `<tr><td>${allocation.color}</td><td>${widthInfo}</td><td>${formatNumber(allocation.finishedReceived || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; }).join('');
   const accessoryStockRows = order.accessoryLines.length ? order.allocations.flatMap((allocation)=>order.accessoryLines.map((line)=>{ const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type)); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type)); const balance = roundNumber(received - delivered); return `<tr><td>${allocation.color}</td><td>${line.type}</td><td>${formatNumber(received || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; })).join('') : '';
   const inventorySection = `<div class="subsection"><div class="subsection-head"><div><h3>رصيد المخزن الحالي</h3><p class="eyebrow">رصيد المخزن حسب التشغيل والتسليم</p></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${stockRows}</tbody></table></div>${order.accessoryLines.length ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${accessoryStockRows}</tbody></table></div>` : ''}</div>`;
   refs.orderDetailsPanel.innerHTML = `<div class="section-head"><div><p class="eyebrow">${order.orderNumber}</p><h2>${order.customer}</h2></div><div class="actions"><button class="mini-btn" id="editOrderBtn">تعديل الطلب</button><button class="mini-btn ${order.operationClosed ? 'gold' : 'danger'}" id="toggleOperationClosedBtn">${order.operationClosed ? 'إعادة فتح التشغيل' : 'إغلاق دورة التشغيل'}</button><span class="status ${order.status}">${statusLabel(order.status)}</span></div></div><h3>&#1605;&#1604;&#1582;&#1589; &#1583;&#1608;&#1585;&#1577; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;</h3><div class="summary-grid"><div class="metric"><span>&#1573;&#1580;&#1605;&#1575;&#1604;&#1610; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;</span><strong>${order.totalRawOrdered}</strong></div><div class="metric"><span>&#1582;&#1585;&#1580; &#1605;&#1606; &#1575;&#1604;&#1606;&#1587;&#1610;&#1580; &#1573;&#1604;&#1609; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalRawReceived}</strong></div><div class="metric"><span>&#1582;&#1575;&#1605; &#1605;&#1578;&#1575;&#1581; &#1576;&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.rawAtDyehouseAvailable}</strong></div><div class="metric"><span>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606; &#1605;&#1606; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalFinishedReceived}</strong></div><div class="metric emphasis"><span>&#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</span><strong>${order.warehouseBalance}</strong></div><div class="metric"><span>&#1578;&#1605; &#1578;&#1587;&#1604;&#1610;&#1605;&#1607; &#1604;&#1604;&#1593;&#1605;&#1610;&#1604;</span><strong>${order.totalDeliveredToCustomer}</strong></div><div class="metric"><span>مرتجع خام للنسيج</span><strong>${order.totalRawReturnedToWeaving}</strong></div><div class="metric"><span>هالك تقديري</span><strong>${order.expectedWasteQuantity} (${order.expectedWastePercent}%)</strong></div><div class="metric"><span>هالك فعلي</span><strong>${order.totalWaste} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div></div>${order.widthMode === 'multiple' ? `<div class="subsection"><div class="subsection-head"><h3>توزيع العروض</h3></div>${order.widthDistributionMatches ? '' : `<div class="warning">تنبيه: مجموع العروض لا يطابق إجمالي الطلب</div>`}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((item)=>`<tr><td>${item.inch}</td><td>${item.width}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<div class="subsection"><div class="subsection-head"><div><h3>&#1582;&#1591;&#1577; &#1578;&#1608;&#1586;&#1610;&#1593; &#1575;&#1604;&#1571;&#1604;&#1608;&#1575;&#1606;</h3><p class="eyebrow">${order.totalAllocated} / ${order.totalRawReceived} &#1603;&#1580;&#1605; &#1605;&#1606; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;</p></div><button class="mini-btn" id="addAllocationBtn">+ &#1573;&#1590;&#1575;&#1601;&#1577; &#1604;&#1608;&#1606;</button></div><div class="allocation-bar"><div class="allocation-fill" style="width:${allocationPercent}%"></div></div>${order.allocationExceedsRaw ? `<div class="warning">&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1589;&#1576;&#1575;&#1594;&#1577; &#1575;&#1604;&#1605;&#1582;&#1591;&#1591;&#1577; &#1571;&#1603;&#1576;&#1585; &#1605;&#1606; &#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1578;&#1575;&#1581;&#1577;</div>` : ''}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>&#1575;&#1604;&#1604;&#1608;&#1606;</th><th>&#1575;&#1604;&#1605;&#1582;&#1591;&#1591;</th><th>&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</th><th>&#1575;&#1604;&#1593;&#1585;&#1590;</th><th>&#1575;&#1604;&#1608;&#1586;&#1606; &#1605;&#1580;&#1607;&#1586;</th>${order.accessoryLines.length ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>&#1578;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604;&#1607;</th><th>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</th><th>هالك تقديري</th><th>هالك فعلي</th><th>إجراء</th></tr></thead><tbody>${order.allocations.map((allocation)=>`<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${order.accessoryLines.length ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${allocation.expectedWasteQuantity || 0} (${allocation.expectedWastePercent || 0}%)</td><td>${allocation.wasteQuantity} (${formatNumber(allocation.wastePercent || 0, 1)}%)</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">&#1578;&#1593;&#1583;&#1610;&#1604;</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">&#1606;&#1602;&#1604; &#1605;&#1589;&#1576;&#1594;&#1577;</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">&#1581;&#1584;&#1601;</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>${inventorySection}<div class="batch-grid compact"><div class="batch-box"><h3>خروج خام</h3><form class="batch-form" data-form="raw"><select name="movementKind" class="full"><option value="out">خروج خام للمصبغة</option><option value="return">ارتجاع خام للنسيج</option></select><input name="date" type="date" required>${order.widthMode === 'multiple' ? `<select name="widthLineId" data-out-only><option value="">اختر العرض عند خروج الخام</option>${order.widthLines.map((item)=>`<option value="${item.id}">بوصة ${item.inch} - عرض ${item.width} - كمية ${item.quantity}</option>`).join('')}</select>` : ''}<select name="allocationId" data-return-only class="field-hidden"><option value="">اختر اللون / المصبغة للمرتجع</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="supplier" placeholder="مصدر النسيج" value="${order.weavingSource}"><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><label class="full batch-file-label" data-out-only><span>صورة إذن الخام</span><input name="sourceDocumentFile" type="file" accept="image/*"></label><button class="mini-btn full">إضافة حركة</button></form><div class="batch-list">${rawItems}</div></div>${order.accessoryLines.length ? `<div class="batch-box"><h3>خروج إكسسوار</h3><form class="batch-form" data-form="accessory"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة خروج</button></form><div class="batch-list">${accessoryItems}</div></div><div class="batch-box"><h3>استلام إكسسوار</h3><form class="batch-form" data-form="accessoryReceived"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<select name="allocationId" required><option value="">اختر اللون</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية المستلمة" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة استلام</button></form><div class="batch-list">${accessoryReceivedItems}</div></div>` : ''}<div class="batch-box"><h3>استلام مجهز</h3><form class="batch-form" data-form="production"><select name="allocationId"><option value="raw">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1573;&#1584;&#1606; &#1575;&#1604;&#1575;&#1587;&#1578;&#1604;&#1575;&#1605;"><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1575;&#1587;&#1578;&#1604;&#1575;&#1605;</button></form><div class="batch-list">${productionItems}</div></div><div class="batch-box"><h3>تسليم عميل</h3><form class="batch-form" data-form="customer"><select name="movementKind" class="full"><option value="cloth">تسليم قماش</option>${order.accessoryLines.length ? '<option value="accessory">تسليم إكسسوار</option>' : ''}</select><select name="allocationId">${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required>${order.accessoryLines.length ? `<span data-accessory-only class="field-hidden">${accessoryTypeSelectHtml(order)}</span>` : ''}<input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class="batch-list">${customerItems}</div></div><div class="batch-box"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class="eyebrow">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class="batch-list">${transferItems}</div></div></div>`;
+  refs.orderDetailsPanel.querySelector('.batch-grid.compact')?.insertAdjacentHTML('beforeend', `<div class="batch-box"><h3>لزق خام</h3><form class="batch-form" data-form="gluing"><select name="movementKind" class="full"><option value="sent">خروج خام للزق</option><option value="received">استلام خام ملزوق</option></select><select name="allocationId" required><option value="">اختر اللون / البند</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="partnerFabric" placeholder="الخامة الثانية"><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة حركة لزق</button></form><div class="batch-list">${gluingItems}</div></div>`);
   consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
   refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach((form) => {
@@ -3362,6 +3380,11 @@ async function addBatch(event) {
   if (type === 'production') {
     if (!data.allocationId || data.allocationId === 'raw') { alert('اختر اللون / المصبغة قبل تسجيل استلام المجهز.'); return; }
     backendResult = await postBackend('/batches/finished', batchToApi(data));
+  }
+  if (type === 'gluing') {
+    if (!data.allocationId) { alert('اختر اللون / البند المرتبط باللزق.'); return; }
+    data.movement = data.movementKind === 'received' ? 'received' : 'sent';
+    backendResult = await postBackend('/batches/gluing', batchToApi(data));
   }
   if (type === 'finished') {
     const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
@@ -3666,6 +3689,7 @@ async function deleteBatch(type, id) {
           ...finishedBatches,
           ...customerBatches,
           ...accessoryBatches,
+          ...gluingBatches,
         ].some((batch)=>batch.allocationId === transfer.newAllocationId);
         if (newAllocation && originalAllocation && !hasLinkedMovements) {
           const newQty = Number(newAllocation.plannedQuantity || transfer.quantity || 0);
@@ -3704,7 +3728,7 @@ async function deleteBatch(type, id) {
   await loadBackendData();
 }
 async function editBatch(type, id) {
-  const collection = type === 'raw' ? rawBatches : type === 'accessory' ? accessoryBatches : type === 'transfer' ? dyehouseTransfers : type === 'rawReturn' ? rawReturns : type === 'production' ? productionBatches : type === 'customer' ? customerBatches : finishedBatches;
+  const collection = type === 'raw' ? rawBatches : type === 'accessory' ? accessoryBatches : type === 'transfer' ? dyehouseTransfers : type === 'gluing' ? gluingBatches : type === 'rawReturn' ? rawReturns : type === 'production' ? productionBatches : type === 'customer' ? customerBatches : finishedBatches;
   const batch = collection.find((item)=>item.id===id); if (!batch) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
@@ -3715,6 +3739,7 @@ async function editBatch(type, id) {
   if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; }
   if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'accessory') { updatedBatch.accessoryType = prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('الخامة الثانية', updatedBatch.partnerFabric || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'dye') { updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'production') { updatedBatch.noteNumber = prompt('رقم إذن استلام المجهز', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'finished') { updatedBatch.finishedWidth = Number(prompt('العرض', updatedBatch.finishedWidth)); updatedBatch.finishedWeight = Number(prompt('الوزن المجهز', updatedBatch.finishedWeight)); updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
@@ -3733,6 +3758,7 @@ function getOperationalStage(order) {
   if (order.totalRawReceived === 0 && order.totalAllocated > 0) return 'بانتظار خروج الخام';
   if (order.totalRawReceived === 0) return 'بانتظار استلام الخام';
   if (order.totalAllocated === 0) return 'بانتظار توزيع الألوان';
+  if (Number(order.gluingBalance || 0) > 0) return 'واقف في اللزق';
   if (order.rawAtDyehouseAvailable > 0 || order.totalFinishedReceived < Math.min(order.totalRawReceived, order.totalAllocated)) return 'تحت التشغيل بالمصبغة';
   if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'بالمخزن';
   if (order.totalDeliveredToCustomer < order.totalAllocated) return 'تسليم العميل';
@@ -3748,6 +3774,7 @@ function firstDate(items) {
 function orderStageInfo(order) {
   const allocationIds = (order.allocations || []).map((allocation)=>allocation.id);
   const rawDate = firstDate(rawBatches.filter((batch)=>batch.orderId === order.id));
+  const gluingDate = firstDate(gluingBatches.filter((batch)=>batch.orderId === order.id));
   const finishedDate = firstDate(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId)));
   const customerDate = firstDate(customerBatches.filter((batch)=>allocationIds.includes(batch.allocationId)));
   let key = 'completed';
@@ -3762,6 +3789,8 @@ function orderStageInfo(order) {
     key = 'weaving'; label = 'واقف في النسيج'; startDate = order.orderDate || ''; reason = 'لم يتم تسجيل خروج خام من النسيج للمصبغة.';
   } else if (Number(order.totalAllocated || 0) === 0) {
     key = 'color-planning'; label = 'بانتظار توزيع الألوان'; startDate = order.orderDate || rawDate || ''; reason = 'الخام موجود لكن لم يتم توزيع الألوان.';
+  } else if (Number(order.gluingBalance || 0) > 0) {
+    key = 'gluing'; label = 'واقف في اللزق'; startDate = gluingDate || rawDate || order.orderDate || ''; reason = 'خرج خام للزق ولم يكتمل استلام الخام الملزوق.';
   } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.totalFinishedReceived || 0) < Math.min(Number(order.totalRawReceived || 0), Number(order.totalAllocated || 0))) {
     key = 'dyehouse'; label = 'واقف في المصبغة'; startDate = rawDate || order.orderDate || ''; reason = 'تم تسليم خام للمصبغة ولم يكتمل استلام المجهز.';
   } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
@@ -3772,8 +3801,15 @@ function orderStageInfo(order) {
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في اللزق', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
   return labels[value] || statusLabel(value) || value || '-';
+}
+function ensureStageFilterOptions() {
+  const select = refs.orderStatusFilter;
+  if (!select || [...select.options].some((option)=>option.value === 'stage:gluing')) return;
+  const option = new Option('واقف في اللزق', 'stage:gluing');
+  const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');
+  select.add(option, before || null);
 }
 function dateRangeLabel(items) {
   const dates = items.map((item)=>item.date).filter(Boolean).sort();
@@ -3785,6 +3821,7 @@ function orderMovementDates(order) {
   return {
     orderDate: order.orderDate || '-',
     weavingDate: dateRangeLabel(rawBatches.filter((batch)=>batch.orderId===order.id)),
+    gluingDate: dateRangeLabel(gluingBatches.filter((batch)=>batch.orderId===order.id)),
     dyehouseDate: dateRangeLabel(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId))),
     customerDate: dateRangeLabel(customerBatches.filter((batch)=>allocationIds.includes(batch.allocationId))),
   };
@@ -4269,7 +4306,7 @@ function repairGlobalArabicText() {
   });
 }
 
-function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); renderOrders(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
+function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
 let pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {
   return new Promise((resolve, reject) => {

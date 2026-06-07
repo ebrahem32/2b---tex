@@ -72,11 +72,13 @@
       const finished = sum(data.productionBatches.filter((batch) => batch.allocationId === allocation.id));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => batch.allocationId === allocation.id));
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));
+      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || 'sent') !== 'received'));
+      const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'received'));
       const actualBase = sent || Number(allocation.plannedQuantity || 0);
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(Math.max(sent - finished - rawReturned - actualWaste, 0)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(Math.max(sent - finished - rawReturned - actualWaste, 0)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
     }
 
     function expectedWasteFor(order, quantity) {
@@ -107,6 +109,8 @@
       const operated = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.sentToDyehouse || 0), 0));
       const warehouseReceived = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.finishedReceived || 0), 0));
       const rawReturnedToWeaving = sum(data.rawReturns.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
+      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || 'sent') !== 'received'));
+      const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'received'));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
       const waste = isClosed ? Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving, 0) : 0;
       const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
@@ -143,6 +147,9 @@
         totalSentToDyehouse: roundNumber(rawToDyehouse),
         rawAtDyehouseAvailable: roundNumber(Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving - waste, 0)),
         totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
+        totalSentToGluing: roundNumber(sentToGluing),
+        totalReceivedFromGluing: roundNumber(receivedFromGluing),
+        gluingBalance: roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)),
         expectedWastePercent,
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),

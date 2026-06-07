@@ -32,6 +32,7 @@ const TABLE_FIELDS = {
   customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','notes','source_document_json','created_at','updated_at'],
   accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','source_document_json','created_at','updated_at'],
   raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','source_document_json','created_at','updated_at'],
+  gluing_batches: ['id','order_id','allocation_id','batch_date','quantity','movement','partner_fabric','note_number','notes','source_document_json','created_at','updated_at'],
   dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
@@ -301,6 +302,7 @@ function auditEntityLabel(entityType) {
     customer_delivery_batches: 'تسليم عميل',
     accessory_batches: 'إكسسوار',
     raw_returns: 'مرتجع خام',
+    gluing_batches: 'لزق خام',
     dyehouse_transfers: 'تحويل مصبغة',
     report_outbox: 'إرسال تقرير',
     system_settings: 'إعدادات النظام',
@@ -365,6 +367,7 @@ const AUDIT_FIELD_LABELS = {
   from_dyehouse: 'من مصبغة',
   to_dyehouse: 'إلى مصبغة',
   reason: 'السبب',
+  partner_fabric: 'الخامة الثانية',
   movement: 'نوع الحركة',
   value_json: 'الإعداد',
 };
@@ -518,6 +521,7 @@ async function deleteOrderGraph(orderId) {
   await run('DELETE FROM report_outbox WHERE order_id = ? OR order_number = ?', [order.id, order.order_number || '']);
   await run('DELETE FROM dyehouse_transfers WHERE order_id = ?', [order.id]);
   await run('DELETE FROM raw_returns WHERE order_id = ?', [order.id]);
+  await run('DELETE FROM gluing_batches WHERE order_id = ?', [order.id]);
   await run('DELETE FROM accessory_batches WHERE order_id = ?', [order.id]);
   await run('DELETE FROM customer_delivery_batches WHERE order_id = ?', [order.id]);
   await run('DELETE FROM finished_receiving_batches WHERE order_id = ?', [order.id]);
@@ -533,6 +537,7 @@ async function deleteAllocationGraph(allocationId) {
   if (!allocation) return 0;
   await run('DELETE FROM dyehouse_transfers WHERE from_allocation_id = ? OR to_allocation_id = ?', [allocation.id, allocation.id]);
   await run('DELETE FROM raw_returns WHERE allocation_id = ?', [allocation.id]);
+  await run('DELETE FROM gluing_batches WHERE allocation_id = ?', [allocation.id]);
   await run('DELETE FROM accessory_batches WHERE allocation_id = ?', [allocation.id]);
   await run('DELETE FROM customer_delivery_batches WHERE allocation_id = ?', [allocation.id]);
   await run('DELETE FROM finished_receiving_batches WHERE allocation_id = ?', [allocation.id]);
@@ -650,6 +655,7 @@ app.get('/api/system/check', asyncHandler(async (_req, res) => {
     customerDelivery: await tableCount('customer_delivery_batches'),
     accessories: await tableCount('accessory_batches'),
     rawReturns: await tableCount('raw_returns'),
+    gluing: await tableCount('gluing_batches'),
     transfers: await tableCount('dyehouse_transfers'),
     auditLog: await tableCount('audit_log'),
   };
@@ -662,6 +668,7 @@ app.get('/api/system/check', asyncHandler(async (_req, res) => {
       totalRequestedQuantity: summaries.reduce((t, s) => t + s.totalRequestedQuantity, 0),
       totalRawReceived: summaries.reduce((t, s) => t + s.totalRawReceived, 0),
       totalSentToDyehouse: summaries.reduce((t, s) => t + s.totalSentToDyehouse, 0),
+      totalGluingBalance: summaries.reduce((t, s) => t + Number(s.gluingBalance || 0), 0),
       totalFinishedReceived: summaries.reduce((t, s) => t + s.totalFinishedReceived, 0),
       warehouseBalance: summaries.reduce((t, s) => t + s.warehouseBalance, 0),
       wasteQuantity: summaries.reduce((t, s) => t + s.wasteQuantity, 0),
@@ -839,6 +846,7 @@ function orderStageForAi(order, summary, movementDates = {}, allocationsCount = 
   if (!allocationsCount) return { key: 'color-planning', label: 'بانتظار توزيع الألوان', since: order.created_at || order.order_date, reason: 'لا توجد خطة ألوان مسجلة' };
   if (summary.remainingRawToReceive > 0) return { key: 'weaving', label: 'واقف في النسيج', since: order.order_date || order.created_at, reason: `متبقي استلام خام ${summary.remainingRawToReceive} كجم` };
   if (summary.remainingNotSentToDyehouse > 0) return { key: 'ready-to-dyehouse', label: 'خام جاهز لم يرسل للمصبغة', since: movementDates.rawReceived || order.order_date || order.created_at, reason: `رصيد خام لم يرسل ${summary.remainingNotSentToDyehouse} كجم` };
+  if (summary.gluingBalance > 0) return { key: 'gluing', label: 'واقف في اللزق', since: movementDates.gluing || movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `رصيد خام في اللزق ${summary.gluingBalance} كجم` };
   if (summary.remainingAtDyehouse > 0) return { key: 'dyehouse', label: 'واقف في المصبغة', since: movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `داخل المصبغة ${summary.remainingAtDyehouse} كجم` };
   if (summary.warehouseBalance > 0) return { key: 'warehouse', label: 'واقف في المخزن', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد مخزن ${summary.warehouseBalance} كجم` };
   if (summary.customerRemainingQuantity > 0 && summary.totalFinishedReceived > 0) return { key: 'delivery', label: 'جاهز للتسليم', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `متبقي للعميل ${summary.customerRemainingQuantity} كجم` };
@@ -862,6 +870,7 @@ async function buildAiEmployeeContext() {
     customerDeliveryBatches,
     accessoryBatches,
     rawReturns,
+    gluingBatches,
     dyehouseTransfers,
     reportOutbox,
     auditLog,
@@ -875,6 +884,7 @@ async function buildAiEmployeeContext() {
     all('SELECT * FROM customer_delivery_batches ORDER BY created_at'),
     all('SELECT * FROM accessory_batches ORDER BY created_at'),
     all('SELECT * FROM raw_returns ORDER BY created_at'),
+    all('SELECT * FROM gluing_batches ORDER BY created_at'),
     all('SELECT * FROM dyehouse_transfers ORDER BY created_at'),
     all('SELECT * FROM report_outbox ORDER BY created_at DESC LIMIT 100'),
     all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 80'),
@@ -895,6 +905,7 @@ async function buildAiEmployeeContext() {
     customerDeliveryBatches: byOrder(customerDeliveryBatches),
     accessoryBatches: byOrder(accessoryBatches),
     rawReturns: byOrder(rawReturns),
+    gluingBatches: byOrder(gluingBatches),
     dyehouseTransfers: byOrder(dyehouseTransfers),
   };
 
@@ -906,10 +917,12 @@ async function buildAiEmployeeContext() {
       finishedReceivingBatches: buckets.finishedReceivingBatches[order.id] || [],
       customerDeliveryBatches: buckets.customerDeliveryBatches[order.id] || [],
       rawReturns: buckets.rawReturns[order.id] || [],
+      gluingBatches: buckets.gluingBatches[order.id] || [],
     });
     const movementDates = {
       rawReceived: latestDate(buckets.rawReceivingBatches[order.id], 'batch_date', 'created_at'),
       sentToDyehouse: latestDate(buckets.dyehouseDeliveryBatches[order.id], 'batch_date', 'created_at'),
+      gluing: latestDate(buckets.gluingBatches[order.id], 'batch_date', 'created_at'),
       finishedReceived: latestDate(buckets.finishedReceivingBatches[order.id], 'batch_date', 'created_at'),
       customerDelivered: latestDate(buckets.customerDeliveryBatches[order.id], 'batch_date', 'created_at'),
     };
@@ -1337,6 +1350,8 @@ const batchTables = {
   finished: 'finished_receiving_batches',
   customer: 'customer_delivery_batches',
   accessory: 'accessory_batches',
+  gluing: 'gluing_batches',
+  glue: 'gluing_batches',
   rawReturn: 'raw_returns',
   'raw-return': 'raw_returns'
 };
@@ -1349,6 +1364,7 @@ app.get('/api/orders/:orderId/batches', asyncHandler(async (req, res) => {
   }
   result.accessories = await all('SELECT * FROM accessory_batches WHERE order_id = ? ORDER BY created_at', [orderId]);
   result.rawReturns = await all('SELECT * FROM raw_returns WHERE order_id = ? ORDER BY created_at', [orderId]);
+  result.gluing = await all('SELECT * FROM gluing_batches WHERE order_id = ? ORDER BY created_at', [orderId]);
   result.transfers = await all('SELECT * FROM dyehouse_transfers WHERE order_id = ? ORDER BY created_at', [orderId]);
   res.json(result);
 }));
@@ -1385,6 +1401,7 @@ app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
     customerDeliveryBatches: await all('SELECT * FROM customer_delivery_batches ORDER BY created_at'),
     accessoryBatches: await all('SELECT * FROM accessory_batches ORDER BY created_at'),
     rawReturns: await all('SELECT * FROM raw_returns ORDER BY created_at'),
+    gluingBatches: await all('SELECT * FROM gluing_batches ORDER BY created_at'),
     dyehouseTransfers: await all('SELECT * FROM dyehouse_transfers ORDER BY created_at'),
     reportOutbox: await all('SELECT * FROM report_outbox ORDER BY created_at DESC'),
     systemSettings,
@@ -1867,7 +1884,8 @@ async function orderSummary(orderId) {
     dyehouseDeliveryBatches: await all('SELECT * FROM dyehouse_delivery_batches WHERE order_id = ?', [orderId]),
     finishedReceivingBatches: await all('SELECT * FROM finished_receiving_batches WHERE order_id = ?', [orderId]),
     customerDeliveryBatches: await all('SELECT * FROM customer_delivery_batches WHERE order_id = ?', [orderId]),
-    rawReturns: await all('SELECT * FROM raw_returns WHERE order_id = ?', [orderId])
+    rawReturns: await all('SELECT * FROM raw_returns WHERE order_id = ?', [orderId]),
+    gluingBatches: await all('SELECT * FROM gluing_batches WHERE order_id = ?', [orderId])
   });
 }
 
@@ -1886,6 +1904,7 @@ app.get('/api/dashboard/summary', asyncHandler(async (_req, res) => {
     totalRequestedQuantity: summaries.reduce((t, s) => t + s.totalRequestedQuantity, 0),
     totalRawReceived: summaries.reduce((t, s) => t + s.totalRawReceived, 0),
     totalSentToDyehouse: summaries.reduce((t, s) => t + s.totalSentToDyehouse, 0),
+    totalGluingBalance: summaries.reduce((t, s) => t + Number(s.gluingBalance || 0), 0),
     totalFinishedReceived: summaries.reduce((t, s) => t + s.totalFinishedReceived, 0),
     warehouseBalance: summaries.reduce((t, s) => t + s.warehouseBalance, 0),
     wasteQuantity: summaries.reduce((t, s) => t + s.wasteQuantity, 0)

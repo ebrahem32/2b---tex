@@ -13,6 +13,10 @@ function calculateOrderSummary(order, data = {}) {
   const finishedReceived = sum(data.finishedReceivingBatches || []);
   const customerDelivered = sum(data.customerDeliveryBatches || []);
   const rawReturned = sum(data.rawReturns || []);
+  const gluingBatches = data.gluingBatches || [];
+  const sentToGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || 'sent') !== 'received'));
+  const receivedFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'received'));
+  const gluingBalance = Math.max(sentToGluing - receivedFromGluing, 0);
   const requested = Number(order?.total_raw_quantity || order?.totalRawQuantity || 0);
   const isClosed = Boolean(order?.is_closed || order?.operationClosed);
   const wasteQuantity = isClosed ? Math.max(sentToDyehouse - finishedReceived - rawReturned, 0) : 0;
@@ -24,6 +28,9 @@ function calculateOrderSummary(order, data = {}) {
     totalRawReceived: round(rawReceived),
     remainingRawToReceive: round(Math.max(requested - rawReceived, 0)),
     totalSentToDyehouse: round(sentToDyehouse),
+    totalSentToGluing: round(sentToGluing),
+    totalReceivedFromGluing: round(receivedFromGluing),
+    gluingBalance: round(gluingBalance),
     remainingNotSentToDyehouse: round(Math.max(rawReceived - sentToDyehouse, 0)),
     totalFinishedReceived: round(finishedReceived),
     remainingAtDyehouse: round(Math.max(sentToDyehouse - finishedReceived - rawReturned - wasteQuantity, 0)),
