@@ -3737,9 +3737,10 @@ async function addBatch(event) {
   await loadBackendData();
 }
 
-function defaultBulkMovementForForm(formType) {
+function defaultBulkMovementForForm(formType, form = null) {
+  if (formType === 'raw') return 'rawOut';
   if (formType === 'production') return 'finished';
-  if (formType === 'customer') return 'customer';
+  if (formType === 'customer') return form?.elements?.movementKind?.value === 'accessory' ? 'accessoryCustomer' : 'customer';
   if (formType === 'accessoryReceived') return 'accessoryReceived';
   if (formType === 'accessory') return 'accessorySent';
   return '';
@@ -3749,17 +3750,19 @@ function openBulkBatchDialog(form) {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
   if (!order) return;
   const formType = form?.dataset.form || '';
-  const movement = defaultBulkMovementForForm(formType);
+  const movement = defaultBulkMovementForForm(formType, form);
   if (!movement) return;
   const date = form?.elements.date?.value || new Date().toISOString().slice(0, 10);
   const noteNumber = form?.elements.noteNumber?.value || '';
   const notes = form?.elements.notes?.value || '';
   const accessoryType = form?.elements.accessoryType?.value || order.accessoryLines?.[0]?.type || '';
   const title = {
+    rawOut: 'خروج خام جماعي للمصبغة',
     finished: 'استلام مجهز جماعي',
     customer: 'تسليم قماش جماعي',
     accessoryReceived: 'استلام إكسسوار جماعي',
     accessorySent: 'خروج إكسسوار جماعي',
+    accessoryCustomer: 'تسليم إكسسوار جماعي للعميل',
   }[movement] || 'إدخال جماعي';
   refs.documentTitle.textContent = title;
   refs.documentBody.dataset.documentType = 'bulk-batches';
@@ -3773,7 +3776,9 @@ function openBulkBatchDialog(form) {
     </div>
     <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th><th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
       ${order.allocations.map((allocation)=>{
-        const available = movement === 'finished'
+        const available = movement === 'rawOut'
+          ? Math.max(Number(allocation.plannedQuantity || 0) - Number(allocation.sentToDyehouse || 0), 0)
+          : movement === 'finished'
           ? allocation.remainingAtDyehouse
           : movement === 'customer'
             ? allocationAvailableToCustomer(allocation)
@@ -3801,10 +3806,13 @@ function bulkBatchItemsFromDialog() {
     const quantity = Number(row.querySelector('[data-bulk-quantity]')?.value || 0);
     if (!quantity) return null;
     const allocationId = row.dataset.bulkAllocation;
+    const allocation = allocations.find((item)=>item.id === allocationId) || {};
+    if (movement === 'rawOut') return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, dyehouse:allocation.dyehouse || '' }) };
     if (movement === 'finished') return { type:'finished', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     if (movement === 'customer') return { type:'customer', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     if (movement === 'accessoryReceived') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'received' }) };
     if (movement === 'accessorySent') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'sent' }) };
+    if (movement === 'accessoryCustomer') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'customer' }) };
     return null;
   }).filter(Boolean);
 }

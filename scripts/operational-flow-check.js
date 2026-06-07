@@ -79,6 +79,41 @@ function frontendSummary({ sent = 0, finished = 0, delivered = 0, closed = false
   return domain.calculateOrder(state.orders[0]);
 }
 
+function frontendMultiColorSummary() {
+  const state = {
+    orders: [{
+      id: 'order-multi-check',
+      orderNumber: 'CHECK-2',
+      totalRawQuantity: 100,
+      expectedWastePercent: 8,
+      widthMode: 'single',
+      inchWidth: 32,
+    }],
+    allocations: [
+      { id: 'alloc-a', orderId: 'order-multi-check', color: 'A', plannedQuantity: 60, dyehouse: 'D' },
+      { id: 'alloc-b', orderId: 'order-multi-check', color: 'B', plannedQuantity: 40, dyehouse: 'D' },
+    ],
+    rawBatches: [
+      { orderId: 'order-multi-check', allocationId: 'alloc-a', quantity: 60 },
+      { orderId: 'order-multi-check', allocationId: 'alloc-b', quantity: 40 },
+    ],
+    productionBatches: [
+      { orderId: 'order-multi-check', allocationId: 'alloc-a', quantity: 55 },
+      { orderId: 'order-multi-check', allocationId: 'alloc-b', quantity: 37 },
+    ],
+    customerBatches: [
+      { orderId: 'order-multi-check', allocationId: 'alloc-a', quantity: 30 },
+      { orderId: 'order-multi-check', allocationId: 'alloc-b', quantity: 20 },
+    ],
+    rawReturns: [],
+    gluingBatches: [],
+    dyehouseTransfers: [],
+    accessoryBatches: [],
+  };
+  const domain = createFrontendDomain(state);
+  return domain.calculateOrder(state.orders[0]);
+}
+
 function checkBackendFlow() {
   const atDyehouse = backendSummary({ rawReceived: 100, sent: 100, finished: 92, delivered: 0 });
   assertClose(atDyehouse.remainingAtDyehouse, 8, 'backend: dyehouse balance after partial finished receipt');
@@ -120,8 +155,18 @@ function checkFrontendBackendParity() {
   assertClose(frontend.totalWaste, backend.wasteQuantity, 'parity: actual waste');
 }
 
+function checkMultiColorOperationalEntry() {
+  const frontend = frontendMultiColorSummary();
+  assertClose(frontend.totalSentToDyehouse, 100, 'multi-color: sent quantities are combined');
+  assertClose(frontend.totalFinishedReceived, 92, 'multi-color: finished quantities are combined');
+  assertClose(frontend.totalDeliveredToCustomer, 50, 'multi-color: customer delivery quantities are combined');
+  assertClose(frontend.remainingAtDyehouse, 8, 'multi-color: dyehouse balance is still visible before closure');
+  assertClose(frontend.warehouseBalance, 42, 'multi-color: warehouse balance after partial delivery');
+}
+
 checkBackendFlow();
 checkFrontendFlow();
 checkFrontendBackendParity();
+checkMultiColorOperationalEntry();
 
 console.log('Operational flow check passed.');
