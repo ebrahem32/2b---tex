@@ -3118,8 +3118,30 @@ function systemUserRoleLabel(role) {
   return {
     admin: 'مدير',
     manager: 'مسؤول تشغيل',
-    user: 'مستخدم'
+    user: 'مستخدم',
+    accountant: 'حسابات',
+    viewer: 'مشاهدة'
   }[role] || role || 'مستخدم';
+}
+function currentUserRole() {
+  return (currentUser === null || currentUser === void 0 ? void 0 : currentUser.role) || 'viewer';
+}
+function canManageUsers() {
+  return currentUserRole() === 'admin';
+}
+function canDeleteRecords() {
+  return currentUserRole() === 'admin';
+}
+function applyPermissionVisibility() {
+  if (!canManageUsers()) {
+    var usersButton = document.getElementById('usersBtn');
+    if (usersButton) usersButton.remove();
+  }
+  if (!canDeleteRecords()) {
+    document.querySelectorAll('[data-delete-pricing], [data-delete-order], [data-delete-allocation], [data-delete-system-user], [data-batch-action="delete"], #focusDeleteOrderBtn').forEach(function (button) {
+      button.remove();
+    });
+  }
 }
 function openUsersDialog() {
   return _openUsersDialog.apply(this, arguments);
@@ -3130,31 +3152,38 @@ function _openUsersDialog() {
     return _regenerator().w(function (_context39) {
       while (1) switch (_context39.p = _context39.n) {
         case 0:
+          if (canManageUsers()) {
+            _context39.n = 1;
+            break;
+          }
+          alert('إدارة المستخدمين للمدير فقط.');
+          return _context39.a(2);
+        case 1:
           refs.documentTitle.textContent = 'المستخدمين';
           refs.documentBody.dataset.documentType = 'system-users';
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><p class="muted">جاري تحميل المستخدمين...</p></div>';
           if (refs.documentDialog.open) refs.documentDialog.close();
           refs.documentDialog.showModal();
-          _context39.p = 1;
-          _context39.n = 2;
+          _context39.p = 2;
+          _context39.n = 3;
           return fetchSystemUsers();
-        case 2:
+        case 3:
           users = _context39.v;
           rows = users.map(function (user) {
             return "<tr>\n      <td><strong>".concat(escapeHtml(user.name || '-'), "</strong></td>\n      <td>").concat(escapeHtml(user.username || '-'), "</td>\n      <td>").concat(escapeHtml(systemUserRoleLabel(user.role)), "</td>\n      <td><span class=\"status ").concat(Number(user.is_active) === 1 ? 'completed' : 'failed', "\">").concat(Number(user.is_active) === 1 ? 'نشط' : 'موقوف', "</span></td>\n      <td>").concat(escapeHtml(arDateTime(user.updated_at || user.created_at)), "</td>\n      <td><div class=\"batch-actions\"><button class=\"mini-btn\" type=\"button\" data-edit-system-user=\"").concat(escapeHtml(user.id), "\">\u062A\u0639\u062F\u064A\u0644</button><button class=\"mini-btn danger\" type=\"button\" data-delete-system-user=\"").concat(escapeHtml(user.id), "\">\u062D\u0630\u0641</button></div></td>\n    </tr>");
           }).join('');
           refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <div class=\"subsection-head\"><div><h2>\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646</h2><p class=\"muted\">\u0625\u062F\u0627\u0631\u0629 \u0645\u0633\u062A\u062E\u062F\u0645\u064A \u0627\u0644\u0646\u0638\u0627\u0645. \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u062D\u0627\u0644\u064A \u064A\u0638\u0644 \u0645\u0624\u0645\u0646\u064B\u0627 \u0628\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u062D\u062A\u0649 \u0646\u0642\u0644 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0627\u0644\u0643\u0627\u0645\u0644 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646.</p></div><button class=\"mini-btn gold\" type=\"button\" data-new-system-user>\u0625\u0636\u0627\u0641\u0629 \u0645\u0633\u062A\u062E\u062F\u0645</button></div>\n      <table><thead><tr><th>\u0627\u0644\u0627\u0633\u0645</th><th>\u0627\u0633\u0645 \u0627\u0644\u062F\u062E\u0648\u0644</th><th>\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0629</th><th>\u0627\u0644\u062D\u0627\u0644\u0629</th><th>\u0622\u062E\u0631 \u062A\u0639\u062F\u064A\u0644</th><th>\u0625\u062C\u0631\u0627\u0621\u0627\u062A</th></tr></thead><tbody>".concat(rows || '<tr><td colspan="6">لا يوجد مستخدمين حتى الآن.</td></tr>', "</tbody></table>\n    </div>");
           refs.documentBody.dataset.usersJson = JSON.stringify(users);
-          _context39.n = 4;
+          _context39.n = 5;
           break;
-        case 3:
-          _context39.p = 3;
+        case 4:
+          _context39.p = 4;
           _t20 = _context39.v;
           refs.documentBody.innerHTML = '<div class="document-sheet"><h2>المستخدمين</h2><div class="notice warning">تعذر تحميل المستخدمين حاليًا.</div></div>';
-        case 4:
+        case 5:
           return _context39.a(2);
       }
-    }, _callee39, null, [[1, 3]]);
+    }, _callee39, null, [[2, 4]]);
   }));
   return _openUsersDialog.apply(this, arguments);
 }
@@ -3163,7 +3192,7 @@ function openSystemUserForm() {
   var user = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
   refs.documentTitle.textContent = user ? 'تعديل مستخدم' : 'إضافة مستخدم';
   refs.documentBody.dataset.documentType = 'system-user-form';
-  refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n    <div class=\"subsection-head\"><h2>".concat(user ? 'تعديل مستخدم' : 'إضافة مستخدم', "</h2><button class=\"mini-btn\" type=\"button\" data-back-system-users>\u0631\u062C\u0648\u0639</button></div>\n    <div class=\"summary-grid\">\n      <label><span>\u0627\u0644\u0627\u0633\u0645</span><input data-user-name value=\"").concat(escapeHtml((user === null || user === void 0 ? void 0 : user.name) || ''), "\"></label>\n      <label><span>\u0627\u0633\u0645 \u0627\u0644\u062F\u062E\u0648\u0644</span><input data-user-username value=\"").concat(escapeHtml((user === null || user === void 0 ? void 0 : user.username) || ''), "\" required></label>\n      <label><span>\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0629</span><select data-user-role><option value=\"admin\">\u0645\u062F\u064A\u0631</option><option value=\"manager\">\u0645\u0633\u0624\u0648\u0644 \u062A\u0634\u063A\u064A\u0644</option><option value=\"user\">\u0645\u0633\u062A\u062E\u062F\u0645</option></select></label>\n      <label><span>\u0627\u0644\u062D\u0627\u0644\u0629</span><select data-user-active><option value=\"1\">\u0646\u0634\u0637</option><option value=\"0\">\u0645\u0648\u0642\u0648\u0641</option></select></label>\n      <label class=\"full-row\"><span>").concat(user ? 'كلمة مرور جديدة - اختياري' : 'كلمة المرور', "</span><input data-user-password type=\"password\" autocomplete=\"new-password\"></label>\n    </div>\n    <div class=\"dialog-actions\"><button class=\"primary-btn\" type=\"button\" data-save-system-user=\"").concat(escapeHtml((user === null || user === void 0 ? void 0 : user.id) || ''), "\">\u062D\u0641\u0638 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645</button></div>\n  </div>");
+  refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n    <div class=\"subsection-head\"><h2>".concat(user ? 'تعديل مستخدم' : 'إضافة مستخدم', "</h2><button class=\"mini-btn\" type=\"button\" data-back-system-users>\u0631\u062C\u0648\u0639</button></div>\n    <div class=\"summary-grid\">\n      <label><span>\u0627\u0644\u0627\u0633\u0645</span><input data-user-name value=\"").concat(escapeHtml((user === null || user === void 0 ? void 0 : user.name) || ''), "\"></label>\n      <label><span>\u0627\u0633\u0645 \u0627\u0644\u062F\u062E\u0648\u0644</span><input data-user-username value=\"").concat(escapeHtml((user === null || user === void 0 ? void 0 : user.username) || ''), "\" required></label>\n      <label><span>\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0629</span><select data-user-role><option value=\"admin\">\u0645\u062F\u064A\u0631</option><option value=\"manager\">\u0645\u0633\u0624\u0648\u0644 \u062A\u0634\u063A\u064A\u0644</option><option value=\"user\">\u0645\u0633\u062A\u062E\u062F\u0645</option><option value=\"accountant\">\u062D\u0633\u0627\u0628\u0627\u062A</option><option value=\"viewer\">\u0645\u0634\u0627\u0647\u062F\u0629</option></select></label>\n      <label><span>\u0627\u0644\u062D\u0627\u0644\u0629</span><select data-user-active><option value=\"1\">\u0646\u0634\u0637</option><option value=\"0\">\u0645\u0648\u0642\u0648\u0641</option></select></label>\n      <label class=\"full-row\"><span>").concat(user ? 'كلمة مرور جديدة - اختياري' : 'كلمة المرور', "</span><input data-user-password type=\"password\" autocomplete=\"new-password\"></label>\n    </div>\n    <div class=\"dialog-actions\"><button class=\"primary-btn\" type=\"button\" data-save-system-user=\"").concat(escapeHtml((user === null || user === void 0 ? void 0 : user.id) || ''), "\">\u062D\u0641\u0638 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645</button></div>\n  </div>");
   refs.documentBody.querySelector('[data-user-role]').value = (user === null || user === void 0 ? void 0 : user.role) || 'user';
   refs.documentBody.querySelector('[data-user-active]').value = String(Number((_user$is_active = user === null || user === void 0 ? void 0 : user.is_active) !== null && _user$is_active !== void 0 ? _user$is_active : 1));
 }
@@ -3326,6 +3355,10 @@ function installAutomationUi() {
     var _currentUser, _currentUser2;
     var userName = ((_currentUser = currentUser) === null || _currentUser === void 0 ? void 0 : _currentUser.name) || ((_currentUser2 = currentUser) === null || _currentUser2 === void 0 ? void 0 : _currentUser2.username) || 'مستخدم';
     actionBar.insertAdjacentHTML('beforeend', "<span class=\"mini-btn version-badge\" id=\"appVersionBadge\" title=\"\u0648\u0642\u062A \u0625\u0635\u062F\u0627\u0631 \u0647\u0630\u0647 \u0627\u0644\u0646\u0633\u062E\u0629\">\u0627\u0644\u0646\u0633\u062E\u0629 ".concat(APP_VERSION, " | ").concat(APP_BUILD_TIME, "</span><span class=\"mini-btn version-badge\" id=\"currentUserBadge\">\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ").concat(escapeHtml(userName), "</span><button class=\"mini-btn\" id=\"logoutBtn\" type=\"button\">\u062E\u0631\u0648\u062C</button><button class=\"mini-btn connection-badge is-down\" id=\"backendStatusBadge\" type=\"button\"><span class=\"connection-dot\"></span><span data-connection-text>\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A: \u063A\u064A\u0631 \u0645\u062A\u0635\u0644</span></button><button class=\"mini-btn connection-badge is-down\" id=\"whatsappStatusBadge\" type=\"button\"><span class=\"connection-dot\"></span><span data-connection-text>\u0648\u0627\u062A\u0633\u0627\u0628: \u063A\u064A\u0631 \u0645\u062A\u0635\u0644</span></button><button class=\"mini-btn\" id=\"systemStatusBtn\" type=\"button\">\u062D\u0627\u0644\u0629 \u0627\u0644\u0646\u0638\u0627\u0645</button><button class=\"mini-btn\" id=\"usersBtn\" type=\"button\">\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646</button><button class=\"mini-btn\" id=\"whatsappSettingsBtn\" type=\"button\">\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0648\u0627\u062A\u0633\u0627\u0628</button><button class=\"mini-btn\" id=\"dyehousePricesBtn\" type=\"button\">\u0623\u0633\u0639\u0627\u0631 \u0627\u0644\u0645\u0635\u0627\u0628\u063A</button><button class=\"mini-btn\" id=\"a5AccountsBtn\" type=\"button\">\u062D\u0633\u0627\u0628\u0627\u062A A5</button><button class=\"mini-btn\" id=\"outboxBtn\" type=\"button\">\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0625\u0631\u0633\u0627\u0644</button><button class=\"mini-btn\" id=\"auditLogBtn\" type=\"button\">\u0633\u062C\u0644 \u0627\u0644\u062A\u0639\u062F\u064A\u0644\u0627\u062A</button>"));
+  }
+  if (!canManageUsers()) {
+    var usersButton = document.getElementById('usersBtn');
+    if (usersButton) usersButton.remove();
   }
   (_document$getElementB = document.getElementById('backendStatusBadge')) === null || _document$getElementB === void 0 || _document$getElementB.addEventListener('click', pollBackendStatus);
   (_document$getElementB2 = document.getElementById('whatsappStatusBadge')) === null || _document$getElementB2 === void 0 || _document$getElementB2.addEventListener('click', pollWhatsappService);
@@ -5497,6 +5530,7 @@ function renderDetails() {
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
   repairOrderDetailsArabic(order);
   decorateOrderFocusHeader(order);
+  applyPermissionVisibility();
   renderDocuments();
 }
 function toggleOperationClosed() {
@@ -8061,6 +8095,7 @@ function renderAll() {
   renderOrders();
   renderDetails();
   repairGlobalArabicText();
+  applyPermissionVisibility();
 }
 var pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {

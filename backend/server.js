@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { AsyncLocalStorage } = require('async_hooks');
 const express = require('express');
 const cors = require('cors');
 const { DB_PATH, initDb, run, get, all, schemaHealth } = require('./db');
@@ -13,8 +14,12 @@ const BACKUP_DIR = path.join(__dirname, 'backups');
 fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
 const app = express();
+const requestContext = new AsyncLocalStorage();
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
+app.use((req, _res, next) => {
+  requestContext.run({ user: null }, next);
+});
 
 const TABLE_FIELDS = {
   customers: ['id','name','phone','a5_customer_id','notes','created_at','updated_at'],
@@ -233,6 +238,8 @@ function requireRole(minRole = 'viewer') {
     if (!user) return res.status(401).json({ error: 'غير مسجل الدخول' });
     if (roleRank(user.role) < roleRank(minRole)) return res.status(403).json({ error: 'هذه الحركة تحتاج صلاحية أعلى' });
     req.currentUser = user;
+    const store = requestContext.getStore();
+    if (store) store.user = user;
     next();
   });
 }
@@ -373,7 +380,19 @@ function auditChangedFields(beforeValue = null, afterValue = null) {
     .slice(0, 8);
 }
 
-function describeAudit(action, entityType, entityId, beforeValue = null, afterValue = null, note = '') {
+function currentAuditActor() {
+  return requestContext.getStore()?.user || null;
+}
+
+function auditActorLabel(actor) {
+  const name = String(actor?.name || actor?.username || '').trim();
+  const username = String(actor?.username || '').trim();
+  if (!name && !username) return '';
+  if (name && username && name !== username) return `${name} (${username})`;
+  return name || username;
+}
+
+function describeAudit(action, entityType, entityId, beforeValue = null, afterValue = null, note = '', actor = null) {
   const row = afterValue && !afterValue.deleted ? afterValue : beforeValue;
   const entity = auditEntityLabel(entityType);
   const actionText = auditActionLabel(action);
@@ -396,6 +415,8 @@ function describeAudit(action, entityType, entityId, beforeValue = null, afterVa
   if (!orderNumber && !pricingNumber && !color && !quantity && !noteNumber && !username && entityId) parts.push(`ID ${entityId}`);
   const changedFields = action === 'update' ? auditChangedFields(beforeValue, afterValue) : [];
   if (changedFields.length) parts.push(`تغير: ${changedFields.join('، ')}`);
+  const actorLabel = auditActorLabel(actor);
+  if (actorLabel) parts.push(`بواسطة ${actorLabel}`);
   const cleanNote = String(note || '').trim();
   if (cleanNote && !/^POST |^PUT |^DELETE |^upsert via POST /.test(cleanNote)) parts.push(cleanNote);
   return parts.join(' - ');
@@ -403,7 +424,7 @@ function describeAudit(action, entityType, entityId, beforeValue = null, afterVa
 
 async function auditMutation(action, entityType, entityId, beforeValue = null, afterValue = null, note = '') {
   try {
-    const readableNote = describeAudit(action, entityType, entityId, beforeValue, afterValue, note);
+    const readableNote = describeAudit(action, entityType, entityId, beforeValue, afterValue, note, currentAuditActor());
     await run(
       'INSERT INTO audit_log (id, action, entity_type, entity_id, before_json, after_json, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [id(), action, entityType, entityId || '', JSON.stringify(beforeValue ?? null), JSON.stringify(afterValue ?? null), readableNote, now()]
