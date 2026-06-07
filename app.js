@@ -203,7 +203,7 @@ let initialLocalStorageSnapshot = null;
 let orderFocusMode = false;
 
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
@@ -2678,30 +2678,30 @@ function formatAiItem(item) {
   if (item.reason || item.notes) parts.push(item.reason || item.notes);
   return parts.length ? parts.join(' - ') : JSON.stringify(item);
 }
-function renderAiAnalysis(result) {
+function renderAiAnalysis(result, title = 'الملخص التنفيذي') {
   const safe = result || {};
   const sourceLabel = safe.source === 'gemini' ? 'موظف 2B الذكي - Gemini' : (safe.source === 'openai' ? 'موظف 2B الذكي - OpenAI' : 'تحليل تشغيلي من قواعد 2B');
-  refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><p class="eyebrow">${sourceLabel}</p><h3>الملخص التنفيذي</h3><p>${safe.executiveSummary || '-'}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>الطلبات التي تحتاج متابعة</h3>${asListHtml(safe.ordersToWatch)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>أولويات اليوم</h3>${asListHtml(safe.priorityActions)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${safe.whatsappMessage || '-'}</div></section>`;
+  refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><p class="eyebrow">${sourceLabel}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(safe.executiveSummary || '-')}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>الطلبات التي تحتاج متابعة</h3>${asListHtml(safe.ordersToWatch)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>أولويات اليوم</h3>${asListHtml(safe.priorityActions)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${escapeHtml(safe.whatsappMessage || '-')}</div></section>`;
   refs.aiAnalysisDialog.showModal();
 }
-async function analyzeReportWithAi() {
-  if (!refs.analyzeReportBtn) return;
-  const oldText = refs.analyzeReportBtn.textContent;
-  refs.analyzeReportBtn.disabled = true;
-  refs.analyzeReportBtn.textContent = 'جاري التحليل...';
+async function requestAiEmployee(question, triggerButton, title = 'الملخص التنفيذي') {
+  if (!triggerButton) return;
+  const oldText = triggerButton.textContent;
+  triggerButton.disabled = true;
+  triggerButton.textContent = 'جاري التحليل...';
   if (refs.aiStatusText) refs.aiStatusText.textContent = 'موظف 2B الذكي يقرأ قاعدة البيانات من Railway الآن.';
   try {
     const response = await fetch(`${AI_SERVICE_URL}/api/ai/employee-report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question:'حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟' }),
+      body: JSON.stringify({ question }),
     });
     const data = await response.json().catch(()=>({}));
     if (!response.ok) {
       if (data.error === 'MISSING_OPENAI_API_KEY') throw new Error('لم يتم ضبط مفتاح OpenAI API داخل السيرفر');
       throw new Error(data.message || 'تعذر تحليل التقرير من خدمة مساعد 2B الذكي');
     }
-    renderAiAnalysis(data);
+    renderAiAnalysis(data, title);
     if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير الموظف الذكي من بيانات Railway.';
   } catch (error) {
     const message = error.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? error.message : (error.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا');
@@ -2709,9 +2709,17 @@ async function analyzeReportWithAi() {
     refs.aiAnalysisBody.innerHTML = `<div class="empty-state">${message}</div>`;
     refs.aiAnalysisDialog.showModal();
   } finally {
-    refs.analyzeReportBtn.disabled = false;
-    refs.analyzeReportBtn.textContent = oldText;
+    triggerButton.disabled = false;
+    triggerButton.textContent = oldText;
   }
+}
+async function analyzeReportWithAi() {
+  await requestAiEmployee('حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟', refs.analyzeReportBtn, 'تقرير الموظف الذكي');
+}
+async function askAiEmployee() {
+  const question = String(refs.aiQuestionInput?.value || '').trim();
+  if (!question) { alert('اكتب سؤالك للموظف الذكي أولًا.'); return; }
+  await requestAiEmployee(question, refs.askAiBtn, 'رد الموظف الذكي');
 }
 async function copyAiWhatsappMessage() {
   const text = document.getElementById('aiWhatsappMessage')?.textContent?.trim() || '';
@@ -4568,6 +4576,13 @@ refs.weavingSlipForm.onsubmit = (event) => confirmWeavingSlip(event).catch((erro
 }
 refs.printDocumentBtn.onclick = () => printCurrentDocument();
 if (refs.analyzeReportBtn) refs.analyzeReportBtn.onclick = analyzeReportWithAi;
+if (refs.askAiBtn) refs.askAiBtn.onclick = askAiEmployee;
+if (refs.aiQuestionInput) refs.aiQuestionInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    askAiEmployee();
+  }
+});
 if (refs.closeAiAnalysisBtn) refs.closeAiAnalysisBtn.onclick = () => refs.aiAnalysisDialog.close();
 if (refs.copyAiWhatsappBtn) refs.copyAiWhatsappBtn.onclick = copyAiWhatsappMessage;
 function currentReportTypeFromDocument() {

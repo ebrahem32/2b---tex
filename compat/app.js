@@ -272,7 +272,7 @@ var currentDocumentType = null;
 var pendingConvertedPricingId = null;
 var initialLocalStorageSnapshot = null;
 var orderFocusMode = false;
-var refs = Object.fromEntries(['statsGrid', 'pricingTableBody', 'ordersTableBody', 'searchInput', 'customerFilter', 'dyehouseFilter', 'fabricFilter', 'orderStatusFilter', 'printFilteredOrdersBtn', 'orderDetailsPanel', 'documentsPanel', 'analyzeReportBtn', 'aiStatusText', 'aiAnalysisDialog', 'aiAnalysisBody', 'closeAiAnalysisBtn', 'copyAiWhatsappBtn', 'openPricingFormBtn', 'openDocumentReviewBtn', 'openOrderFormBtn', 'openOrdersReportBtn', 'openDyehouseBalancesReportBtn', 'openManagementReportsBtn', 'closePricingFormBtn', 'pricingDialog', 'pricingForm', 'pricingNumber', 'pricingProductCode', 'pricingCustomer', 'pricingDate', 'pricingFabricType', 'pricingMaterialType', 'pricingDyehouse', 'pricingColorClass', 'pricingQuantity', 'pricingInchWidth', 'pricingFinishedWeight', 'pricingRawCost', 'pricingDyeCost', 'pricingSuggestedDyeCost', 'pricingWastePercent', 'pricingExtraCost', 'pricingProfitPerKg', 'pricingPaymentMode', 'pricingPaymentDetails', 'pricingPaymentTerms', 'pricingNotes', 'pricingWasteCostPreview', 'pricingCostPreview', 'pricingSellPreview', 'pricingTotalPreview', 'closeOrderFormBtn', 'orderDialog', 'orderForm', 'orderNumber', 'productCode', 'customer', 'orderDate', 'fabricType', 'totalRawQuantity', 'expectedWastePercent', 'widthMode', 'inchWidth', 'widthLinesBox', 'widthLinesEditor', 'addWidthLineBtn', 'kiloPrice', 'paymentMode', 'paymentDetails', 'paymentTerms', 'accessoryType', 'accessoryPercent', 'accessoryLinesEditor', 'addAccessoryLineBtn', 'dyehouse', 'weavingSource', 'orderNotes', 'weavingSlipDialog', 'weavingSlipForm', 'weavingSlipFile', 'weavingSlipPreview', 'weavingSlipType', 'weavingSlipOrderNumber', 'weavingSlipDate', 'weavingSlipAllocation', 'weavingSlipWidthLine', 'weavingSlipQuantity', 'weavingSlipSupplier', 'weavingSlipNoteNumber', 'reviewMatchNoteBtn', 'reviewMatchStatus', 'weavingSlipNotes', 'closeWeavingSlipBtn', 'documentDialog', 'documentTitle', 'documentBody', 'closeDocumentBtn', 'printDocumentBtn', 'shareWhatsAppBtn', 'deletePricingBtn'].map(function (id) {
+var refs = Object.fromEntries(['statsGrid', 'pricingTableBody', 'ordersTableBody', 'searchInput', 'customerFilter', 'dyehouseFilter', 'fabricFilter', 'orderStatusFilter', 'printFilteredOrdersBtn', 'orderDetailsPanel', 'documentsPanel', 'analyzeReportBtn', 'aiQuestionInput', 'askAiBtn', 'aiStatusText', 'aiAnalysisDialog', 'aiAnalysisBody', 'closeAiAnalysisBtn', 'copyAiWhatsappBtn', 'openPricingFormBtn', 'openDocumentReviewBtn', 'openOrderFormBtn', 'openOrdersReportBtn', 'openDyehouseBalancesReportBtn', 'openManagementReportsBtn', 'closePricingFormBtn', 'pricingDialog', 'pricingForm', 'pricingNumber', 'pricingProductCode', 'pricingCustomer', 'pricingDate', 'pricingFabricType', 'pricingMaterialType', 'pricingDyehouse', 'pricingColorClass', 'pricingQuantity', 'pricingInchWidth', 'pricingFinishedWeight', 'pricingRawCost', 'pricingDyeCost', 'pricingSuggestedDyeCost', 'pricingWastePercent', 'pricingExtraCost', 'pricingProfitPerKg', 'pricingPaymentMode', 'pricingPaymentDetails', 'pricingPaymentTerms', 'pricingNotes', 'pricingWasteCostPreview', 'pricingCostPreview', 'pricingSellPreview', 'pricingTotalPreview', 'closeOrderFormBtn', 'orderDialog', 'orderForm', 'orderNumber', 'productCode', 'customer', 'orderDate', 'fabricType', 'totalRawQuantity', 'expectedWastePercent', 'widthMode', 'inchWidth', 'widthLinesBox', 'widthLinesEditor', 'addWidthLineBtn', 'kiloPrice', 'paymentMode', 'paymentDetails', 'paymentTerms', 'accessoryType', 'accessoryPercent', 'accessoryLinesEditor', 'addAccessoryLineBtn', 'dyehouse', 'weavingSource', 'orderNotes', 'weavingSlipDialog', 'weavingSlipForm', 'weavingSlipFile', 'weavingSlipPreview', 'weavingSlipType', 'weavingSlipOrderNumber', 'weavingSlipDate', 'weavingSlipAllocation', 'weavingSlipWidthLine', 'weavingSlipQuantity', 'weavingSlipSupplier', 'weavingSlipNoteNumber', 'reviewMatchNoteBtn', 'reviewMatchStatus', 'weavingSlipNotes', 'closeWeavingSlipBtn', 'documentDialog', 'documentTitle', 'documentBody', 'closeDocumentBtn', 'printDocumentBtn', 'shareWhatsAppBtn', 'deletePricingBtn'].map(function (id) {
   return [id, document.getElementById(id)];
 }));
 ((_refs$orderNotes = refs.orderNotes) === null || _refs$orderNotes === void 0 || (_refs$orderNotes = _refs$orderNotes.closest('label')) === null || _refs$orderNotes === void 0 ? void 0 : _refs$orderNotes.querySelector('span')) && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
@@ -4684,8 +4684,43 @@ function renderAiAnalysis(result) {
   refs.aiAnalysisBody.innerHTML = "<section class=\"ai-result-section\"><p class=\"eyebrow\">".concat(sourceLabel, "</p><h3>\u0627\u0644\u0645\u0644\u062E\u0635 \u0627\u0644\u062A\u0646\u0641\u064A\u0630\u064A</h3><p>").concat(safe.executiveSummary || '-', "</p></section><section class=\"ai-result-section\"><h3>\u0623\u0647\u0645 \u0627\u0644\u0645\u0644\u0627\u062D\u0638\u0627\u062A</h3>").concat(asListHtml(safe.keyFindings), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u0645\u062A\u0627\u0628\u0639\u0629</h3>").concat(asListHtml(safe.ordersToWatch), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0645\u062E\u0627\u0637\u0631</h3>").concat(asListHtml(safe.risks), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A</h3>").concat(asListHtml(safe.recommendations), "</section><section class=\"ai-result-section\"><h3>\u0623\u0648\u0644\u0648\u064A\u0627\u062A \u0627\u0644\u064A\u0648\u0645</h3>").concat(asListHtml(safe.priorityActions), "</section><section class=\"ai-result-section\"><h3>\u0631\u0633\u0627\u0644\u0629 \u0648\u0627\u062A\u0633\u0627\u0628 \u0644\u0644\u0625\u062F\u0627\u0631\u0629</h3><div class=\"ai-whatsapp-message\" id=\"aiWhatsappMessage\">").concat(safe.whatsappMessage || '-', "</div></section>");
   refs.aiAnalysisDialog.showModal();
 }
+async function requestAiEmployee(question, triggerButton, title) {
+  if (!triggerButton) return;
+  var oldText = triggerButton.textContent;
+  triggerButton.disabled = true;
+  triggerButton.textContent = 'جاري التحليل...';
+  if (refs.aiStatusText) refs.aiStatusText.textContent = 'موظف 2B الذكي يقرأ قاعدة البيانات من Railway الآن.';
+  try {
+    var response = await fetch("".concat(AI_SERVICE_URL, "/api/ai/employee-report"), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: question })
+    });
+    var data = await response.json()["catch"](function () { return {}; });
+    if (!response.ok) throw new Error(data.message || 'تعذر تحليل التقرير من خدمة مساعد 2B الذكي');
+    renderAiAnalysis(data);
+    if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء رد الموظف الذكي من بيانات Railway.';
+  } catch (error) {
+    var message = error.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا';
+    if (refs.aiStatusText) refs.aiStatusText.textContent = message;
+    refs.aiAnalysisBody.innerHTML = "<div class=\"empty-state\">".concat(escapeHtml(message), "</div>");
+    refs.aiAnalysisDialog.showModal();
+  } finally {
+    triggerButton.disabled = false;
+    triggerButton.textContent = oldText;
+  }
+}
 function analyzeReportWithAi() {
-  return _analyzeReportWithAi.apply(this, arguments);
+  return requestAiEmployee('حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟', refs.analyzeReportBtn, 'تقرير الموظف الذكي');
+}
+function askAiEmployee() {
+  var _refs$aiQuestionInput;
+  var question = String(((_refs$aiQuestionInput = refs.aiQuestionInput) === null || _refs$aiQuestionInput === void 0 ? void 0 : _refs$aiQuestionInput.value) || '').trim();
+  if (!question) {
+    alert('اكتب سؤالك للموظف الذكي أولًا.');
+    return;
+  }
+  return requestAiEmployee(question, refs.askAiBtn, 'رد الموظف الذكي');
 }
 function _analyzeReportWithAi() {
   _analyzeReportWithAi = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee54() {
@@ -8936,6 +8971,13 @@ refs.printDocumentBtn.onclick = function () {
   return printCurrentDocument();
 };
 if (refs.analyzeReportBtn) refs.analyzeReportBtn.onclick = analyzeReportWithAi;
+if (refs.askAiBtn) refs.askAiBtn.onclick = askAiEmployee;
+if (refs.aiQuestionInput) refs.aiQuestionInput.addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    askAiEmployee();
+  }
+});
 if (refs.closeAiAnalysisBtn) refs.closeAiAnalysisBtn.onclick = function () {
   return refs.aiAnalysisDialog.close();
 };
