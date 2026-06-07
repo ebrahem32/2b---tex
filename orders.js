@@ -74,11 +74,13 @@
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));
       const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || 'sent') === 'sent'));
       const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'received'));
-      const actualBase = sent || Number(allocation.plannedQuantity || 0);
+      const planned = Number(allocation.plannedQuantity || 0);
+      const dyehouseTarget = sent && planned ? Math.min(sent, planned) : sent;
+      const actualBase = sent || planned;
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(remainingWithTolerance(sent, finished + rawReturned + actualWaste)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(remainingWithTolerance(dyehouseTarget, finished + rawReturned + actualWaste)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
     }
 
     function expectedWasteFor(order, quantity) {
@@ -128,6 +130,7 @@
       const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
       const totalWidthQuantity = roundNumber(widthLines.reduce((total, item)=>total + Number(item.quantity || 0), 0));
       const totalRawOrdered = order.widthMode === 'multiple' && totalWidthQuantity > 0 ? totalWidthQuantity : roundNumber(order.totalRawQuantity);
+      const dyehouseTarget = rawToDyehouse && totalRawOrdered ? Math.min(rawToDyehouse, totalRawOrdered) : rawToDyehouse;
       const rawToleranceQuantity = toleranceFor(totalRawOrdered);
       const configuredAccessoryLines = orderAccessoryConfig(order).map((line)=>{
         const quantity = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined
@@ -148,7 +151,7 @@
       const remainingToCustomer = remainingWithTolerance(allocated || totalRawOrdered, deliveredToCustomer);
       const operationallyComplete = rawToDyehouse > 0
         && remainingWithTolerance(totalRawOrdered, rawToDyehouse) === 0
-        && Number(Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving - waste, 0)) <= toleranceFor(rawToDyehouse)
+        && remainingWithTolerance(dyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste) === 0
         && Number(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing, 0)) <= toleranceFor(warehouseReceived || totalRawOrdered)
         && Number(Math.max(receivedFromGluing - deliveredFromGluing, 0)) <= toleranceFor(receivedFromGluing || totalRawOrdered)
         && remainingToCustomer === 0;
@@ -165,7 +168,7 @@
         remainingUnallocatedRaw: roundNumber(remainingWithTolerance(rawToDyehouse, allocated)),
         allocationExceedsRaw: allocated - rawToDyehouse > toleranceFor(rawToDyehouse || allocated),
         totalSentToDyehouse: roundNumber(rawToDyehouse),
-        rawAtDyehouseAvailable: roundNumber(remainingWithTolerance(rawToDyehouse, warehouseReceived + rawReturnedToWeaving + waste)),
+        rawAtDyehouseAvailable: roundNumber(remainingWithTolerance(dyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste)),
         totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
         totalSentToGluing: roundNumber(sentToGluing),
         totalReceivedFromGluing: roundNumber(receivedFromGluing),
@@ -178,7 +181,7 @@
         warehouseBalance: roundNumber(remainingWithTolerance(warehouseReceived, deliveredToCustomer + sentToGluing)),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
         remainingToCustomer: roundNumber(remainingToCustomer),
-        remainingAtDyehouse: roundNumber(remainingWithTolerance(operated, warehouseReceived)),
+        remainingAtDyehouse: roundNumber(remainingWithTolerance(dyehouseTarget || operated, warehouseReceived + rawReturnedToWeaving + waste)),
         totalWaste: roundNumber(waste),
         totalWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
         totalActualWaste: roundNumber(waste),
