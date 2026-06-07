@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.07.14';
-const APP_BUILD_TIME = '2026-06-07 17:05';
+const APP_VERSION = 'v2026.06.07.15';
+const APP_BUILD_TIME = '2026-06-07 17:18';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3088,6 +3088,26 @@ function gluingSourceLabel(batch = {}) {
   return `طلب ${orderNumber} - ${customer} - ${color} - عرض ${width} - وزن ${weight}`;
 }
 
+function gluingAllocationAvailable(order, allocation) {
+  const calculatedAllocation = calculateAllocation(allocation, order);
+  const delivered = sum(customerBatches.filter((batch)=>batch.allocationId === allocation.id));
+  const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'sent'));
+  const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'return'));
+  return roundNumber(Math.max(Number(calculatedAllocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue, 0));
+}
+
+function gluingWarehouseSourceOptions() {
+  return orders.flatMap((order) => {
+    const calculatedOrder = calculateOrder(order);
+    return (calculatedOrder.allocations || []).map((allocation) => {
+      const available = gluingAllocationAvailable(calculatedOrder, allocation);
+      if (available <= 0) return '';
+      const label = gluingSourceLabel({ orderId: order.id, allocationId: allocation.id });
+      return `<option value="${escapeHtml(order.id)}|${escapeHtml(allocation.id)}">${escapeHtml(label)} - متاح ${formatNumber(available)}</option>`;
+    }).filter(Boolean);
+  }).join('');
+}
+
 function gluingQueueGroups() {
   const groups = new Map();
   (gluingBatches || []).forEach((batch) => {
@@ -3108,6 +3128,8 @@ function gluingQueueGroups() {
 function openGluingQueueDialog() {
   const groups = gluingQueueGroups();
   const groupOptions = groups.map((group)=>`<option value="${escapeHtml(group.key)}">${escapeHtml(group.key)}</option>`).join('');
+  const groupDatalist = `<datalist id="gluingOperationKeys">${groups.map((group)=>`<option value="${escapeHtml(group.key)}"></option>`).join('')}</datalist>`;
+  const warehouseSourceOptions = gluingWarehouseSourceOptions();
   const sourceOptions = groups.flatMap((group)=>group.sources.map((batch)=>{
     const sent = sum(group.sources.filter((item)=>item.allocationId === batch.allocationId));
     const returned = sum(group.returns.filter((item)=>item.allocationId === batch.allocationId));
@@ -3127,12 +3149,41 @@ function openGluingQueueDialog() {
   }).join('') : '<div class="empty-state">لا توجد خامات في تشغيل اللزق حتى الآن.</div>';
   refs.documentTitle.textContent = 'قائمة تشغيل اللزق';
   refs.documentBody.dataset.documentType = 'gluing-queue';
-  refs.documentBody.innerHTML = `<div class="doc-root"><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الجديد</h3><p class="eyebrow">خروج الخام يتم من الطلب، والدمج يتم هنا حسب رقم تشغيل اللزق.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم تشغيل اللزق</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الجديد" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الملزوق" required><input name="customerName" placeholder="العميل"><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div><div class="subsection"><div class="subsection-head"><h3>رجوع متبقي من اللزق للمخزن</h3></div><form class="batch-form" data-gluing-return-form><select name="sourceKey" required><option value="">اختر الخامة المصدر</option>${sourceOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="quantity" type="number" step="0.01" placeholder="كمية راجعة" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-return>تسجيل رجوع للمخزن</button></form></div><div class="subsection"><div class="subsection-head"><h3>تسليم منتج ملزوق للعميل</h3></div><form class="batch-form" data-gluing-customer-form><select name="operationKey" required><option value="">اختر رقم تشغيل اللزق</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الملزوق" required><input name="customerName" placeholder="العميل" required><input name="quantity" type="number" step="0.01" placeholder="كمية التسليم" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-customer>تسجيل التسليم</button></form></div>${cards}</div>`;
+  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>&#1573;&#1590;&#1575;&#1601;&#1577; &#1582;&#1575;&#1605;&#1577; &#1573;&#1604;&#1609; &#1578;&#1588;&#1594;&#1610;&#1604; &#1575;&#1604;&#1604;&#1586;&#1602;</h3><p class="eyebrow">&#1575;&#1603;&#1578;&#1576; &#1606;&#1601;&#1587; &#1585;&#1602;&#1605; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;&#1548; &#1579;&#1605; &#1575;&#1582;&#1578;&#1585; &#1571;&#1610; &#1582;&#1575;&#1605;&#1577; &#1604;&#1607;&#1575; &#1585;&#1589;&#1610;&#1583; &#1605;&#1582;&#1586;&#1606; &#1604;&#1573;&#1583;&#1582;&#1575;&#1604;&#1607;&#1575; &#1601;&#1610; &#1606;&#1601;&#1587; &#1602;&#1575;&#1574;&#1605;&#1577; &#1575;&#1604;&#1604;&#1586;&#1602;.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="&#1585;&#1602;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604; &#1575;&#1604;&#1604;&#1586;&#1602;" required><select name="sourceKey" required><option value="">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</option>${warehouseSourceOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="quantity" type="number" step="0.01" placeholder="&#1603;&#1605;&#1610;&#1577; &#1583;&#1575;&#1582;&#1604;&#1577; &#1604;&#1604;&#1586;&#1602;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button type="button" class="mini-btn full" data-save-gluing-source>&#1573;&#1583;&#1582;&#1575;&#1604; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1573;&#1604;&#1609; &#1602;&#1575;&#1574;&#1605;&#1577; &#1575;&#1604;&#1604;&#1586;&#1602;</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الجديد</h3><p class="eyebrow">خروج الخام يتم من الطلب، والدمج يتم هنا حسب رقم تشغيل اللزق.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم تشغيل اللزق</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الجديد" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الملزوق" required><input name="customerName" placeholder="العميل"><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div><div class="subsection"><div class="subsection-head"><h3>رجوع متبقي من اللزق للمخزن</h3></div><form class="batch-form" data-gluing-return-form><select name="sourceKey" required><option value="">اختر الخامة المصدر</option>${sourceOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="quantity" type="number" step="0.01" placeholder="كمية راجعة" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-return>تسجيل رجوع للمخزن</button></form></div><div class="subsection"><div class="subsection-head"><h3>تسليم منتج ملزوق للعميل</h3></div><form class="batch-form" data-gluing-customer-form><select name="operationKey" required><option value="">اختر رقم تشغيل اللزق</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الملزوق" required><input name="customerName" placeholder="العميل" required><input name="quantity" type="number" step="0.01" placeholder="كمية التسليم" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-customer>تسجيل التسليم</button></form></div>${cards}</div>`;
   if (!refs.documentDialog.open) refs.documentDialog.showModal();
 }
 
 function findGluingGroup(operationKey) {
   return gluingQueueGroups().find((group)=>group.key === String(operationKey || '').trim());
+}
+
+async function saveGluingSourceFromDialog(form) {
+  if (!(await ensureBackendForWrite())) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const operationKey = String(data.operationKey || '').trim();
+  const [orderId, allocationId] = String(data.sourceKey || '').split('|');
+  if (!operationKey) { alert('اكتب رقم تشغيل اللزق.'); return; }
+  if (!orderId || !allocationId) { alert('اختر الخامة التي ستدخل تشغيل اللزق.'); return; }
+  const order = orders.find((item)=>item.id === orderId);
+  const allocation = allocations.find((item)=>item.id === allocationId);
+  if (!order || !allocation) { alert('تعذر العثور على الخامة المختارة.'); return; }
+  const calculatedOrder = calculateOrder(order);
+  const available = gluingAllocationAvailable(calculatedOrder, allocation);
+  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: الكمية أكبر من رصيد المخزن المتاح لهذه الخامة'].filter(Boolean).join(' - ');
+  const saved = await postBackend('/batches/gluing', batchToApi({
+    id: uid(),
+    orderId,
+    allocationId,
+    date: data.date,
+    quantity: Number(data.quantity || 0),
+    movement: 'sent',
+    noteNumber: operationKey,
+    partnerFabric: operationKey,
+    notes: data.notes || ''
+  }));
+  if (!saved) { alert('تعذر إدخال الخامة إلى قائمة اللزق.'); return; }
+  await loadBackendData();
+  openGluingQueueDialog();
 }
 
 async function saveGluingMergeFromDialog(form) {
@@ -4753,6 +4804,10 @@ document.addEventListener('click', (event) => {
   }
 });
 if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
+  if (event.target.closest('[data-save-gluing-source]')) {
+    saveGluingSourceFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-source-save-error', error); alert('تعذر إدخال الخامة إلى قائمة اللزق.'); });
+    return;
+  }
   if (event.target.closest('[data-save-gluing-merge]')) {
     saveGluingMergeFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-merge-save-error', error); alert('تعذر حفظ دمج اللزق.'); });
     return;
