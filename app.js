@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.07.11';
-const APP_BUILD_TIME = '2026-06-07 14:05';
+const APP_VERSION = 'v2026.06.07.12';
+const APP_BUILD_TIME = '2026-06-07 14:50';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3784,7 +3784,7 @@ function getOperationalStage(order) {
   if (order.totalAllocated === 0) return 'بانتظار توزيع الألوان';
   if (Number(order.gluingBalance || 0) > 0) return 'واقف في اللزق';
   if (Number(order.gluedProductBalance || 0) > 0) return 'منتج ملزوق جاهز للتسليم';
-  if (order.rawAtDyehouseAvailable > 0 || order.totalFinishedReceived < Math.min(order.totalRawReceived, order.totalAllocated)) return 'تحت التشغيل بالمصبغة';
+  if (order.rawAtDyehouseAvailable > 0 || order.remainingAtDyehouse > 0) return 'تحت التشغيل بالمصبغة';
   if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'بالمخزن';
   if (order.totalDeliveredToCustomer < order.totalAllocated) return 'تسليم العميل';
   return 'مكتمل';
@@ -3818,7 +3818,7 @@ function orderStageInfo(order) {
     key = 'gluing'; label = 'واقف في اللزق'; startDate = gluingDate || rawDate || order.orderDate || ''; reason = 'خرج خام للزق ولم يكتمل استلام الخام الملزوق.';
   } else if (Number(order.gluedProductBalance || 0) > 0) {
     key = 'glued-ready'; label = 'ملزوق جاهز للتسليم'; startDate = gluingDate || finishedDate || order.orderDate || ''; reason = 'تم استلام منتج ملزوق ولم يكتمل تسليمه للعميل.';
-  } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.totalFinishedReceived || 0) < Math.min(Number(order.totalRawReceived || 0), Number(order.totalAllocated || 0))) {
+  } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.remainingAtDyehouse || 0) > 0) {
     key = 'dyehouse'; label = 'واقف في المصبغة'; startDate = rawDate || order.orderDate || ''; reason = 'تم تسليم خام للمصبغة ولم يكتمل استلام المجهز.';
   } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
     key = 'warehouse'; label = 'واقف في المخزن'; startDate = finishedDate || order.orderDate || ''; reason = 'دخل مجهز إلى المخزن ولم يكتمل تسليمه للعميل.';
