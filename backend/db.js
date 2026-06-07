@@ -195,6 +195,38 @@ async function run(sql, params = []) {
   return { changes: db.getRowsModified() };
 }
 
+async function transaction(work) {
+  await initDb();
+  db.run('BEGIN IMMEDIATE TRANSACTION');
+  try {
+    const result = await work({
+      run(sql, params = []) {
+        db.run(sql, params);
+        return { changes: db.getRowsModified() };
+      },
+      get(sql, params = []) {
+        const stmt = db.prepare(sql, params);
+        const row = stmt.step() ? stmt.getAsObject() : null;
+        stmt.free();
+        return row;
+      },
+      all(sql, params = []) {
+        const stmt = db.prepare(sql, params);
+        const resultRows = [];
+        while (stmt.step()) resultRows.push(stmt.getAsObject());
+        stmt.free();
+        return resultRows;
+      },
+    });
+    db.run('COMMIT');
+    persist();
+    return result;
+  } catch (error) {
+    db.run('ROLLBACK');
+    throw error;
+  }
+}
+
 async function all(sql, params = []) {
   await initDb();
   const stmt = db.prepare(sql, params);
@@ -209,4 +241,4 @@ async function get(sql, params = []) {
   return rows[0] || null;
 }
 
-module.exports = { get db() { return db; }, DB_PATH, initDb, exec, run, get, all, schemaHealth };
+module.exports = { get db() { return db; }, DB_PATH, initDb, exec, run, transaction, get, all, schemaHealth };

@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { AsyncLocalStorage } = require('async_hooks');
 const express = require('express');
 const cors = require('cors');
-const { DB_PATH, initDb, run, get, all, schemaHealth } = require('./db');
+const { DB_PATH, initDb, run, transaction, get, all, schemaHealth } = require('./db');
 const { calculateOrderSummary } = require('./calculations');
 
 const PORT = Number(process.env.PORT || 3050);
@@ -1434,6 +1434,35 @@ batchPost('/api/batches/finished', 'finished_receiving_batches');
 batchPost('/api/batches/customer', 'customer_delivery_batches');
 batchPost('/api/batches/accessory', 'accessory_batches');
 batchPost('/api/batches/raw-return', 'raw_returns');
+
+function normalizeBulkBatchItem(item = {}) {
+  const table = batchTables[item.type];
+  if (!table) throw new Error(`Unknown batch type: ${item.type || ''}`);
+  const body = tableData(table, item.data || {});
+  if (!body.id) body.id = id();
+  if (!body.order_id) throw new Error('order_id is required');
+  if (!body.batch_date) body.batch_date = now().slice(0, 10);
+  body.quantity = Number(body.quantity || 0);
+  if (!Number.isFinite(body.quantity) || body.quantity === 0) throw new Error('quantity is required');
+  return { type: item.type, table, body };
+}
+
+app.post('/api/batches/bulk', requireRole('manager'), asyncHandler(async (req, res) => {
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+  if (!items.length) return res.status(400).json({ error: 'لا توجد حركات للحفظ' });
+  const normalized = items.map(normalizeBulkBatchItem);
+  const saved = await transaction(async (tx) => {
+    const rows = [];
+    for (const item of normalized) {
+      const query = insertSql(item.table, item.body);
+      tx.run(query.sql, query.values);
+      rows.push({ type: item.type, table: item.table, row: tx.get(`SELECT * FROM ${item.table} WHERE id = ?`, [query.id]) });
+    }
+    return rows;
+  });
+  await auditMutation('create', 'system_settings', 'bulk-batches', null, { count: saved.length, types: saved.map((item) => item.type) }, `حفظ جماعي ${saved.length} حركة تشغيل`);
+  res.status(201).json({ ok: true, count: saved.length, items: saved });
+}));
 
 app.post('/api/transfers', requireRole('manager'), asyncHandler(async (req, res) => {
   const query = insertSql('dyehouse_transfers', req.body || {});
