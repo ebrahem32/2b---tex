@@ -32,7 +32,7 @@ const TABLE_FIELDS = {
   customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','notes','source_document_json','created_at','updated_at'],
   accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','source_document_json','created_at','updated_at'],
   raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','source_document_json','created_at','updated_at'],
-  gluing_batches: ['id','order_id','allocation_id','batch_date','quantity','movement','partner_fabric','note_number','notes','source_document_json','created_at','updated_at'],
+  gluing_batches: ['id','order_id','allocation_id','batch_date','quantity','movement','partner_fabric','output_name','customer_name','note_number','notes','source_document_json','created_at','updated_at'],
   dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
@@ -368,6 +368,8 @@ const AUDIT_FIELD_LABELS = {
   to_dyehouse: 'إلى مصبغة',
   reason: 'السبب',
   partner_fabric: 'الخامة الثانية',
+  output_name: 'اسم المنتج بعد اللزق',
+  customer_name: 'العميل',
   movement: 'نوع الحركة',
   value_json: 'الإعداد',
 };
@@ -669,6 +671,7 @@ app.get('/api/system/check', asyncHandler(async (_req, res) => {
       totalRawReceived: summaries.reduce((t, s) => t + s.totalRawReceived, 0),
       totalSentToDyehouse: summaries.reduce((t, s) => t + s.totalSentToDyehouse, 0),
       totalGluingBalance: summaries.reduce((t, s) => t + Number(s.gluingBalance || 0), 0),
+      totalGluedProductBalance: summaries.reduce((t, s) => t + Number(s.gluedProductBalance || 0), 0),
       totalFinishedReceived: summaries.reduce((t, s) => t + s.totalFinishedReceived, 0),
       warehouseBalance: summaries.reduce((t, s) => t + s.warehouseBalance, 0),
       wasteQuantity: summaries.reduce((t, s) => t + s.wasteQuantity, 0),
@@ -847,6 +850,7 @@ function orderStageForAi(order, summary, movementDates = {}, allocationsCount = 
   if (summary.remainingRawToReceive > 0) return { key: 'weaving', label: 'واقف في النسيج', since: order.order_date || order.created_at, reason: `متبقي استلام خام ${summary.remainingRawToReceive} كجم` };
   if (summary.remainingNotSentToDyehouse > 0) return { key: 'ready-to-dyehouse', label: 'خام جاهز لم يرسل للمصبغة', since: movementDates.rawReceived || order.order_date || order.created_at, reason: `رصيد خام لم يرسل ${summary.remainingNotSentToDyehouse} كجم` };
   if (summary.gluingBalance > 0) return { key: 'gluing', label: 'واقف في اللزق', since: movementDates.gluing || movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `رصيد خام في اللزق ${summary.gluingBalance} كجم` };
+  if (summary.gluedProductBalance > 0) return { key: 'glued-ready', label: 'ملزوق جاهز للتسليم', since: movementDates.gluing || movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد منتج ملزوق ${summary.gluedProductBalance} كجم` };
   if (summary.remainingAtDyehouse > 0) return { key: 'dyehouse', label: 'واقف في المصبغة', since: movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `داخل المصبغة ${summary.remainingAtDyehouse} كجم` };
   if (summary.warehouseBalance > 0) return { key: 'warehouse', label: 'واقف في المخزن', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد مخزن ${summary.warehouseBalance} كجم` };
   if (summary.customerRemainingQuantity > 0 && summary.totalFinishedReceived > 0) return { key: 'delivery', label: 'جاهز للتسليم', since: movementDates.finishedReceived || order.order_date || order.created_at, reason: `متبقي للعميل ${summary.customerRemainingQuantity} كجم` };
@@ -1905,6 +1909,7 @@ app.get('/api/dashboard/summary', asyncHandler(async (_req, res) => {
     totalRawReceived: summaries.reduce((t, s) => t + s.totalRawReceived, 0),
     totalSentToDyehouse: summaries.reduce((t, s) => t + s.totalSentToDyehouse, 0),
     totalGluingBalance: summaries.reduce((t, s) => t + Number(s.gluingBalance || 0), 0),
+    totalGluedProductBalance: summaries.reduce((t, s) => t + Number(s.gluedProductBalance || 0), 0),
     totalFinishedReceived: summaries.reduce((t, s) => t + s.totalFinishedReceived, 0),
     warehouseBalance: summaries.reduce((t, s) => t + s.warehouseBalance, 0),
     wasteQuantity: summaries.reduce((t, s) => t + s.wasteQuantity, 0)

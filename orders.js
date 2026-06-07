@@ -72,7 +72,7 @@
       const finished = sum(data.productionBatches.filter((batch) => batch.allocationId === allocation.id));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => batch.allocationId === allocation.id));
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));
-      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || 'sent') !== 'received'));
+      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || 'sent') === 'sent'));
       const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'received'));
       const actualBase = sent || Number(allocation.plannedQuantity || 0);
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
@@ -109,8 +109,9 @@
       const operated = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.sentToDyehouse || 0), 0));
       const warehouseReceived = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.finishedReceived || 0), 0));
       const rawReturnedToWeaving = sum(data.rawReturns.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
-      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || 'sent') !== 'received'));
+      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || 'sent') === 'sent'));
       const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'received'));
+      const deliveredFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'customer'));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
       const waste = isClosed ? Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving, 0) : 0;
       const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
@@ -149,11 +150,13 @@
         totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
         totalSentToGluing: roundNumber(sentToGluing),
         totalReceivedFromGluing: roundNumber(receivedFromGluing),
+        totalDeliveredFromGluing: roundNumber(deliveredFromGluing),
         gluingBalance: roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)),
         expectedWastePercent,
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),
-        warehouseBalance: roundNumber(Math.max(warehouseReceived - deliveredToCustomer, 0)),
+        gluedProductBalance: roundNumber(Math.max(receivedFromGluing - deliveredFromGluing, 0)),
+        warehouseBalance: roundNumber(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing, 0)),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
         remainingToCustomer: roundNumber(Math.max(allocated - deliveredToCustomer, 0)),
         remainingAtDyehouse: roundNumber(Math.max(operated - warehouseReceived, 0)),

@@ -192,6 +192,8 @@ CREATE TABLE IF NOT EXISTS gluing_batches (
   quantity REAL DEFAULT 0,
   movement TEXT DEFAULT 'sent',
   partner_fabric TEXT,
+  output_name TEXT,
+  customer_name TEXT,
   note_number TEXT,
   notes TEXT,
   source_document_json TEXT,
