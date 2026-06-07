@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.07.17';
-const APP_BUILD_TIME = '2026-06-07 18:12';
+const APP_VERSION = 'v2026.06.07.18';
+const APP_BUILD_TIME = '2026-06-07 18:27';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3082,10 +3082,11 @@ function gluingSourceLabel(batch = {}) {
   const calculatedAllocation = calculatedOrder?.allocations?.find((item)=>item.id === batch.allocationId) || allocation;
   const orderNumber = order.orderNumber || order.order_number || '-';
   const customer = order.customer || '-';
+  const fabricType = order.fabricType || order.fabric_type || '-';
   const color = calculatedAllocation.color || '-';
   const width = calculatedAllocation.rawWidth || calculatedAllocation.targetFinishedWidth || '-';
   const weight = calculatedAllocation.targetFinishedWeight || '-';
-  return `طلب ${orderNumber} - ${customer} - ${color} - عرض ${width} - وزن ${weight}`;
+  return `\u0637\u0644\u0628 ${orderNumber} - ${customer} - ${fabricType} - ${color} - \u0639\u0631\u0636 ${width} - \u0648\u0632\u0646 ${weight}`;
 }
 
 function gluingAllocationAvailable(order, allocation) {
