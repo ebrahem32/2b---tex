@@ -192,6 +192,51 @@ function publicUser(row) {
   };
 }
 
+function roleRank(role) {
+  return { viewer: 0, accountant: 1, user: 1, manager: 2, admin: 3 }[role] ?? 0;
+}
+
+function userFromSessionPayload(payload) {
+  if (!payload?.id) return null;
+  return {
+    id: payload.id,
+    username: payload.username || '',
+    name: payload.name || payload.username || '',
+    role: payload.role || 'viewer',
+    is_active: 1,
+  };
+}
+
+async function requestUser(req) {
+  const tokenUser = userFromSessionPayload(verifySessionToken(cookieValue(req.headers.cookie, 'twobtex_session')));
+  if (tokenUser) return tokenUser;
+  const header = req.headers.authorization || '';
+  if (header.startsWith('Basic ')) {
+    try {
+      const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+      const separator = decoded.indexOf(':');
+      const username = decoded.slice(0, separator);
+      const password = decoded.slice(separator + 1);
+      if (username === (process.env.SYSTEM_USER || 'admin') && password === (process.env.SYSTEM_PASS || '151297')) {
+        return { id: 'system-admin', username, name: 'مدير النظام', role: 'admin', is_active: 1 };
+      }
+      const row = await get('SELECT * FROM users WHERE username = ?', [username]);
+      if (row && Number(row.is_active) === 1 && verifyPassword(password, row.password_hash)) return publicUser(row);
+    } catch {}
+  }
+  return null;
+}
+
+function requireRole(minRole = 'viewer') {
+  return asyncHandler(async (req, res, next) => {
+    const user = await requestUser(req);
+    if (!user) return res.status(401).json({ error: 'غير مسجل الدخول' });
+    if (roleRank(user.role) < roleRank(minRole)) return res.status(403).json({ error: 'هذه الحركة تحتاج صلاحية أعلى' });
+    req.currentUser = user;
+    next();
+  });
+}
+
 async function ensureDefaultAdminUser() {
   const countRow = await get('SELECT COUNT(*) AS count FROM users');
   if (Number(countRow?.count || 0) > 0) return;
@@ -269,6 +314,65 @@ function auditRowValue(row, keys) {
   return '';
 }
 
+const AUDIT_FIELD_LABELS = {
+  name: 'الاسم',
+  username: 'اسم الدخول',
+  role: 'الصلاحية',
+  is_active: 'الحالة',
+  customer_id: 'العميل',
+  pricing_id: 'التسعيرة',
+  order_number: 'رقم الطلب',
+  pricing_number: 'رقم التسعيرة',
+  order_date: 'تاريخ الطلب',
+  pricing_date: 'تاريخ التسعيرة',
+  fabric_type: 'الصنف',
+  material_type: 'الخامة',
+  dyehouse: 'المصبغة',
+  color_class: 'درجة اللون',
+  color: 'اللون',
+  pantone_code: 'كود اللون',
+  total_raw_quantity: 'إجمالي الخام',
+  planned_quantity: 'كمية اللون',
+  quantity: 'الكمية',
+  inch_width: 'البوصة',
+  raw_width: 'العرض',
+  finished_width: 'العرض',
+  finished_weight: 'الوزن',
+  raw_cost: 'سعر الخام',
+  kilo_price: 'سعر الكيلو',
+  unit_price: 'سعر الوحدة',
+  total_price: 'الإجمالي',
+  payment_terms: 'السداد',
+  accessory_type: 'نوع الإكسسوار',
+  accessory_percent: 'نسبة الإكسسوار',
+  accessory_lines_json: 'الإكسسوارات',
+  weaving_source: 'مصدر النسيج',
+  notes: 'الملاحظات',
+  operation_notes_json: 'ملاحظات التشغيل',
+  status: 'الحالة',
+  is_closed: 'إغلاق الطلب',
+  batch_date: 'تاريخ الحركة',
+  supplier: 'المورد',
+  note_number: 'رقم الإذن',
+  source_document_json: 'بيانات المستند',
+  from_dyehouse: 'من مصبغة',
+  to_dyehouse: 'إلى مصبغة',
+  reason: 'السبب',
+  movement: 'نوع الحركة',
+  value_json: 'الإعداد',
+};
+
+function auditChangedFields(beforeValue = null, afterValue = null) {
+  if (!beforeValue || !afterValue) return [];
+  const skip = new Set(['id', 'created_at', 'updated_at', 'password_hash']);
+  const keys = Array.from(new Set([...Object.keys(beforeValue || {}), ...Object.keys(afterValue || {})]));
+  return keys
+    .filter((key) => !skip.has(key))
+    .filter((key) => JSON.stringify(beforeValue?.[key] ?? null) !== JSON.stringify(afterValue?.[key] ?? null))
+    .map((key) => AUDIT_FIELD_LABELS[key] || key)
+    .slice(0, 8);
+}
+
 function describeAudit(action, entityType, entityId, beforeValue = null, afterValue = null, note = '') {
   const row = afterValue && !afterValue.deleted ? afterValue : beforeValue;
   const entity = auditEntityLabel(entityType);
@@ -290,6 +394,8 @@ function describeAudit(action, entityType, entityId, beforeValue = null, afterVa
   if (dyehouse) parts.push(`المصبغة ${dyehouse}`);
   if (username || name) parts.push(username ? `المستخدم ${username}` : `الاسم ${name}`);
   if (!orderNumber && !pricingNumber && !color && !quantity && !noteNumber && !username && entityId) parts.push(`ID ${entityId}`);
+  const changedFields = action === 'update' ? auditChangedFields(beforeValue, afterValue) : [];
+  if (changedFields.length) parts.push(`تغير: ${changedFields.join('، ')}`);
   const cleanNote = String(note || '').trim();
   if (cleanNote && !/^POST |^PUT |^DELETE |^upsert via POST /.test(cleanNote)) parts.push(cleanNote);
   return parts.join(' - ');
@@ -333,7 +439,7 @@ function crudRoutes(base, table) {
   app.get(`/api/${base}`, asyncHandler(async (_req, res) => {
     res.json(await all(`SELECT * FROM ${table} ORDER BY created_at DESC`));
   }));
-  app.post(`/api/${base}`, asyncHandler(async (req, res) => {
+  app.post(`/api/${base}`, requireRole('manager'), asyncHandler(async (req, res) => {
     if (table === 'customers' && req.body?.id) {
       const customer = await ensureCustomerReference(req.body.id, req.body.name, req.body.notes || 'مضاف من الواجهة');
       return res.status(200).json(customer);
@@ -353,7 +459,7 @@ function crudRoutes(base, table) {
     await auditMutation('create', table, query.id, null, after, `POST /api/${base}`);
     res.status(201).json(after);
   }));
-  app.put(`/api/${base}/:id`, asyncHandler(async (req, res) => {
+  app.put(`/api/${base}/:id`, requireRole('manager'), asyncHandler(async (req, res) => {
     const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
     const query = updateSql(table, req.body || {}, req.params.id);
     await run(query.sql, query.values);
@@ -361,7 +467,7 @@ function crudRoutes(base, table) {
     await auditMutation('update', table, req.params.id, before, after, `PUT /api/${base}/${req.params.id}`);
     res.json(after);
   }));
-  app.delete(`/api/${base}/:id`, asyncHandler(async (req, res) => {
+  app.delete(`/api/${base}/:id`, requireRole('admin'), asyncHandler(async (req, res) => {
     const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
     if (table === 'orders') {
       const deleted = await deleteOrderGraph(req.params.id);
@@ -1025,7 +1131,7 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
   }
 }));
 
-app.post('/api/backup', asyncHandler(async (_req, res) => {
+app.post('/api/backup', requireRole('admin'), asyncHandler(async (_req, res) => {
   res.json(await createDatabaseBackup('manual'));
 }));
 
@@ -1090,13 +1196,13 @@ app.post('/api/auth/logout', asyncHandler(async (_req, res) => {
   res.json({ ok: true });
 }));
 
-app.get('/api/users', asyncHandler(async (_req, res) => {
+app.get('/api/users', requireRole('admin'), asyncHandler(async (_req, res) => {
   await ensureDefaultAdminUser();
   const rows = await all('SELECT * FROM users ORDER BY created_at DESC');
   res.json(rows.map(publicUser));
 }));
 
-app.post('/api/users', asyncHandler(async (req, res) => {
+app.post('/api/users', requireRole('admin'), asyncHandler(async (req, res) => {
   await ensureDefaultAdminUser();
   const body = req.body || {};
   const username = String(body.username || '').trim();
@@ -1110,7 +1216,7 @@ app.post('/api/users', asyncHandler(async (req, res) => {
     name: String(body.name || username).trim(),
     username,
     password_hash: hashPassword(password),
-    role: ['admin','manager','user'].includes(body.role) ? body.role : 'user',
+    role: ['admin','manager','user','accountant','viewer'].includes(body.role) ? body.role : 'user',
     is_active: body.is_active === 0 ? 0 : 1,
     created_at: now(),
     updated_at: now(),
@@ -1124,7 +1230,7 @@ app.post('/api/users', asyncHandler(async (req, res) => {
   res.status(201).json(publicUser(after));
 }));
 
-app.put('/api/users/:id', asyncHandler(async (req, res) => {
+app.put('/api/users/:id', requireRole('admin'), asyncHandler(async (req, res) => {
   await ensureDefaultAdminUser();
   const before = await get('SELECT * FROM users WHERE id = ?', [req.params.id]);
   if (!before) return res.status(404).json({ error: 'المستخدم غير موجود' });
@@ -1132,7 +1238,7 @@ app.put('/api/users/:id', asyncHandler(async (req, res) => {
   const fields = {
     name: body.name !== undefined ? String(body.name || '').trim() : before.name,
     username: body.username !== undefined ? String(body.username || '').trim() : before.username,
-    role: ['admin','manager','user'].includes(body.role) ? body.role : before.role,
+    role: ['admin','manager','user','accountant','viewer'].includes(body.role) ? body.role : before.role,
     is_active: body.is_active === 0 || body.is_active === 1 ? body.is_active : before.is_active,
     updated_at: now(),
   };
@@ -1153,7 +1259,7 @@ app.put('/api/users/:id', asyncHandler(async (req, res) => {
   res.json(publicUser(after));
 }));
 
-app.delete('/api/users/:id', asyncHandler(async (req, res) => {
+app.delete('/api/users/:id', requireRole('admin'), asyncHandler(async (req, res) => {
   await ensureDefaultAdminUser();
   const before = await get('SELECT * FROM users WHERE id = ?', [req.params.id]);
   if (!before) return res.status(404).json({ error: 'المستخدم غير موجود' });
@@ -1180,7 +1286,7 @@ app.get('/api/orders/:orderId/allocations', asyncHandler(async (req, res) => {
   res.json(await all('SELECT * FROM order_allocations WHERE order_id = ? ORDER BY created_at', [req.params.orderId]));
 }));
 
-app.post('/api/orders/:orderId/allocations', asyncHandler(async (req, res) => {
+app.post('/api/orders/:orderId/allocations', requireRole('manager'), asyncHandler(async (req, res) => {
   const query = insertSql('order_allocations', { ...req.body, order_id: req.params.orderId });
   await run(query.sql, query.values);
   const after = await get('SELECT * FROM order_allocations WHERE id = ?', [query.id]);
@@ -1188,7 +1294,7 @@ app.post('/api/orders/:orderId/allocations', asyncHandler(async (req, res) => {
   res.status(201).json(after);
 }));
 
-app.put('/api/allocations/:id', asyncHandler(async (req, res) => {
+app.put('/api/allocations/:id', requireRole('manager'), asyncHandler(async (req, res) => {
   const before = await get('SELECT * FROM order_allocations WHERE id = ?', [req.params.id]);
   const query = updateSql('order_allocations', req.body || {}, req.params.id);
   await run(query.sql, query.values);
@@ -1197,7 +1303,7 @@ app.put('/api/allocations/:id', asyncHandler(async (req, res) => {
   res.json(after);
 }));
 
-app.delete('/api/allocations/:id', asyncHandler(async (req, res) => {
+app.delete('/api/allocations/:id', requireRole('admin'), asyncHandler(async (req, res) => {
   const before = await get('SELECT * FROM order_allocations WHERE id = ?', [req.params.id]);
   const deleted = await deleteAllocationGraph(req.params.id);
   await auditMutation('delete', 'order_allocations', req.params.id, before, { deleted }, `DELETE /api/allocations/${req.params.id}`);
@@ -1226,7 +1332,7 @@ app.get('/api/orders/:orderId/batches', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-app.post('/api/batches/:type', asyncHandler(async (req, res) => {
+app.post('/api/batches/:type', requireRole('manager'), asyncHandler(async (req, res) => {
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
   const query = insertSql(table, req.body || {});
@@ -1274,7 +1380,7 @@ app.get('/api/settings/:key', asyncHandler(async (req, res) => {
   res.json({ key: row.key, value });
 }));
 
-app.put('/api/settings/:key', asyncHandler(async (req, res) => {
+app.put('/api/settings/:key', requireRole('manager'), asyncHandler(async (req, res) => {
   if (req.params.key === 'auditLog') {
     return res.json({ key: req.params.key, value: null, ignored: true });
   }
@@ -1292,7 +1398,7 @@ app.put('/api/settings/:key', asyncHandler(async (req, res) => {
 }));
 
 function batchPost(route, table) {
-  app.post(route, asyncHandler(async (req, res) => {
+  app.post(route, requireRole('manager'), asyncHandler(async (req, res) => {
     const query = insertSql(table, req.body || {});
     await run(query.sql, query.values);
     const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]);
@@ -1308,7 +1414,7 @@ batchPost('/api/batches/customer', 'customer_delivery_batches');
 batchPost('/api/batches/accessory', 'accessory_batches');
 batchPost('/api/batches/raw-return', 'raw_returns');
 
-app.post('/api/transfers', asyncHandler(async (req, res) => {
+app.post('/api/transfers', requireRole('manager'), asyncHandler(async (req, res) => {
   const query = insertSql('dyehouse_transfers', req.body || {});
   await run(query.sql, query.values);
   const after = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [query.id]);
@@ -1316,7 +1422,7 @@ app.post('/api/transfers', asyncHandler(async (req, res) => {
   res.status(201).json(after);
 }));
 
-app.put('/api/transfers/:id', asyncHandler(async (req, res) => {
+app.put('/api/transfers/:id', requireRole('manager'), asyncHandler(async (req, res) => {
   const before = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
   const query = updateSql('dyehouse_transfers', req.body || {}, req.params.id);
   await run(query.sql, query.values);
@@ -1325,7 +1431,7 @@ app.put('/api/transfers/:id', asyncHandler(async (req, res) => {
   res.json(after);
 }));
 
-app.delete('/api/transfers/:id', asyncHandler(async (req, res) => {
+app.delete('/api/transfers/:id', requireRole('admin'), asyncHandler(async (req, res) => {
   const before = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
   await run('DELETE FROM dyehouse_transfers WHERE id = ?', [req.params.id]);
   await auditMutation('delete', 'dyehouse_transfers', req.params.id, before, { deleted: 1 }, `DELETE /api/transfers/${req.params.id}`);
@@ -1464,7 +1570,7 @@ function mapPricing(row, customerId) {
 }
 
 // Sync browser LocalStorage payload into SQLite through safe field mapping.
-app.post('/api/import-local', asyncHandler(async (req, res) => {
+app.post('/api/import-local', requireRole('admin'), asyncHandler(async (req, res) => {
   if (!LOCAL_IMPORT_ENABLED) {
     return res.status(403).json({ ok: false, error: 'LOCAL_IMPORT_DISABLED', message: 'Importing browser LocalStorage into Railway is disabled.' });
   }
@@ -1683,7 +1789,7 @@ app.post('/api/import-local', asyncHandler(async (req, res) => {
   res.json({ ok: true, backup, ...stats });
 }));
 
-app.delete('/api/batches/:type/:id', asyncHandler(async (req, res) => {
+app.delete('/api/batches/:type/:id', requireRole('admin'), asyncHandler(async (req, res) => {
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
   const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
@@ -1692,7 +1798,7 @@ app.delete('/api/batches/:type/:id', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
-app.put('/api/batches/:type/:id', asyncHandler(async (req, res) => {
+app.put('/api/batches/:type/:id', requireRole('manager'), asyncHandler(async (req, res) => {
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
   const before = await get(`SELECT * FROM ${table} WHERE id = ?`, [req.params.id]);
@@ -1748,7 +1854,7 @@ app.get('/api/export/localstorage-template', (_req, res) => {
   });
 });
 
-app.post('/api/import/localstorage', (_req, res) => {
+app.post('/api/import/localstorage', requireRole('admin'), (_req, res) => {
   res.status(202).json({ ok: true, message: 'Import is prepared but not automatic. Use backend/tools/import-localstorage.js.' });
 });
 
