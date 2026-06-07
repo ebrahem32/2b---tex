@@ -10,5 +10,9 @@
     "check:server": "node --check server.js",
     "check:backend": "node --check backend/server.js && node --check backend/calculations.js && node --check backend/tools/import-localstorage.js",
     "check:start": "node --check start.js"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2"
   }
 }
