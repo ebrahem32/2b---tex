@@ -73,6 +73,7 @@
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => batch.allocationId === allocation.id));
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));
       const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || 'sent') === 'sent'));
+      const returnedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'return'));
       const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'received'));
       const planned = Number(allocation.plannedQuantity || 0);
       const dyehouseTarget = sent && planned ? Math.min(sent, planned) : sent;
@@ -80,7 +81,7 @@
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(remainingWithTolerance(dyehouseTarget, finished + rawReturned + actualWaste)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), returnedFromGluing:roundNumber(returnedFromGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(Math.max(sentToGluing - returnedFromGluing, 0)), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(remainingWithTolerance(dyehouseTarget, finished + rawReturned + actualWaste)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
     }
 
     function expectedWasteFor(order, quantity) {
@@ -123,6 +124,7 @@
       const warehouseReceived = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.finishedReceived || 0), 0));
       const rawReturnedToWeaving = sum(data.rawReturns.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
       const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || 'sent') === 'sent'));
+      const returnedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'return'));
       const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'received'));
       const deliveredFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'customer'));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
@@ -152,7 +154,7 @@
       const operationallyComplete = rawToDyehouse > 0
         && remainingWithTolerance(totalRawOrdered, rawToDyehouse) === 0
         && remainingWithTolerance(dyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste) === 0
-        && Number(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing, 0)) <= toleranceFor(warehouseReceived || totalRawOrdered)
+        && Number(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing + returnedFromGluing, 0)) <= toleranceFor(warehouseReceived || totalRawOrdered)
         && Number(Math.max(receivedFromGluing - deliveredFromGluing, 0)) <= toleranceFor(receivedFromGluing || totalRawOrdered)
         && remainingToCustomer === 0;
       return {
@@ -171,14 +173,15 @@
         rawAtDyehouseAvailable: roundNumber(remainingWithTolerance(dyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste)),
         totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
         totalSentToGluing: roundNumber(sentToGluing),
+        totalReturnedFromGluing: roundNumber(returnedFromGluing),
         totalReceivedFromGluing: roundNumber(receivedFromGluing),
         totalDeliveredFromGluing: roundNumber(deliveredFromGluing),
-        gluingBalance: roundNumber(Math.max(sentToGluing - receivedFromGluing, 0)),
+        gluingBalance: roundNumber(Math.max(sentToGluing - returnedFromGluing - receivedFromGluing, 0)),
         expectedWastePercent,
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),
         gluedProductBalance: roundNumber(Math.max(receivedFromGluing - deliveredFromGluing, 0)),
-        warehouseBalance: roundNumber(remainingWithTolerance(warehouseReceived, deliveredToCustomer + sentToGluing)),
+        warehouseBalance: roundNumber(remainingWithTolerance(warehouseReceived + returnedFromGluing, deliveredToCustomer + sentToGluing)),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
         remainingToCustomer: roundNumber(remainingToCustomer),
         remainingAtDyehouse: roundNumber(remainingWithTolerance(dyehouseTarget || operated, warehouseReceived + rawReturnedToWeaving + waste)),

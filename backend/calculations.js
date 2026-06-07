@@ -26,9 +26,10 @@ function calculateOrderSummary(order, data = {}) {
   const rawReturned = sum(data.rawReturns || []);
   const gluingBatches = data.gluingBatches || [];
   const sentToGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || 'sent') === 'sent'));
+  const returnedFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'return'));
   const receivedFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'received'));
   const deliveredFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'customer'));
-  const gluingBalance = Math.max(sentToGluing - receivedFromGluing, 0);
+  const gluingBalance = Math.max(sentToGluing - returnedFromGluing - receivedFromGluing, 0);
   const gluedProductBalance = Math.max(receivedFromGluing - deliveredFromGluing, 0);
   const requested = Number(order?.total_raw_quantity || order?.totalRawQuantity || 0);
   const dyehouseTarget = sentToDyehouse && requested ? Math.min(sentToDyehouse, requested) : sentToDyehouse;
@@ -41,7 +42,7 @@ function calculateOrderSummary(order, data = {}) {
   const remainingNotSentToDyehouse = remainingWithTolerance(rawReceived, sentToDyehouse);
   const remainingAtDyehouse = remainingWithTolerance(dyehouseTarget, finishedReceived + rawReturned + wasteQuantity);
   const customerRemainingQuantity = remainingWithTolerance(requested, customerDelivered);
-  const warehouseBalance = remainingWithTolerance(finishedReceived, customerDelivered + sentToGluing);
+  const warehouseBalance = remainingWithTolerance(finishedReceived + returnedFromGluing, customerDelivered + sentToGluing);
   const operationallyComplete = sentToDyehouse > 0
     && remainingRawToReceive === 0
     && remainingNotSentToDyehouse === 0
@@ -57,6 +58,7 @@ function calculateOrderSummary(order, data = {}) {
     remainingRawToReceive: round(remainingRawToReceive),
     totalSentToDyehouse: round(sentToDyehouse),
     totalSentToGluing: round(sentToGluing),
+    totalReturnedFromGluing: round(returnedFromGluing),
     totalReceivedFromGluing: round(receivedFromGluing),
     totalDeliveredFromGluing: round(deliveredFromGluing),
     gluingBalance: round(gluingBalance),
