@@ -2919,8 +2919,23 @@ function renderDocuments() {
       <button class="mini-btn" disabled>تصدير PDF لاحقًا</button>
     </div>`;
 }
+function openMainWorkspace() {
+  document.body.classList.add('workspace-open');
+  document.getElementById('mainWorkspace')?.removeAttribute('aria-hidden');
+}
+function closeOpenErpMenus(except = null) {
+  document.querySelectorAll('.erp-menu.open').forEach((menu) => {
+    if (menu !== except) menu.classList.remove('open');
+  });
+}
 function handleNavMenuAction(action) {
   if (!action) return;
+  openMainWorkspace();
+  closeOpenErpMenus();
+  if (action === 'workspaceHome') {
+    document.getElementById('mainWorkspace')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
   if (action === 'ordersList') {
     closeOrderFocusMode();
     return;
@@ -4327,6 +4342,15 @@ if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilte
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
 document.addEventListener('click', (event) => {
+  const menuButton = event.target.closest('.erp-menu > button');
+  if (menuButton) {
+    const menu = menuButton.closest('.erp-menu');
+    const willOpen = !menu.classList.contains('open');
+    closeOpenErpMenus(menu);
+    menu.classList.toggle('open', willOpen);
+    return;
+  }
+  if (!event.target.closest('.erp-menu')) closeOpenErpMenus();
   const navAction = event.target.closest('[data-nav-action]')?.dataset.navAction;
   if (navAction) {
     event.preventDefault();

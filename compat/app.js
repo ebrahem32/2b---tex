@@ -4745,12 +4745,12 @@ function copyAiWhatsappMessage() {
 }
 function _copyAiWhatsappMessage() {
   _copyAiWhatsappMessage = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee55() {
-    var _document$getElementB12;
+    var _document$getElementB14;
     var text, area, _t25;
     return _regenerator().w(function (_context55) {
       while (1) switch (_context55.p = _context55.n) {
         case 0:
-          text = ((_document$getElementB12 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB12 === void 0 || (_document$getElementB12 = _document$getElementB12.textContent) === null || _document$getElementB12 === void 0 ? void 0 : _document$getElementB12.trim()) || '';
+          text = ((_document$getElementB14 = document.getElementById('aiWhatsappMessage')) === null || _document$getElementB14 === void 0 || (_document$getElementB14 = _document$getElementB14.textContent) === null || _document$getElementB14 === void 0 ? void 0 : _document$getElementB14.trim()) || '';
           if (!(!text || text === '-')) {
             _context55.n = 1;
             break;
@@ -5044,9 +5044,30 @@ function orderDetailsHasActiveDraft() {
 function renderDocuments() {
   refs.documentsPanel.innerHTML = "\n    <div class=\"document-action-group\">\n      <h3>\u0639\u0631\u0636 \u0627\u0644\u0639\u0645\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"quotation\">\u0625\u0646\u0634\u0627\u0621 \u0639\u0631\u0636 \u0633\u0639\u0631</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0623\u0648\u0627\u0645\u0631 \u0627\u0644\u062A\u0634\u063A\u064A\u0644</h3>\n      <button class=\"mini-btn gold\" data-doc=\"weaving\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0646\u0633\u064A\u062C</button>\n      <button class=\"mini-btn gold\" data-doc=\"dyeing\">\u0623\u0645\u0631 \u062A\u0634\u063A\u064A\u0644 \u0635\u0628\u0627\u063A\u0629</button>\n      <button class=\"mini-btn gold\" data-doc=\"labSamples\">\u0639\u064A\u0646\u0627\u062A \u0645\u0639\u0645\u0644</button>\n      <button class=\"mini-btn gold\" data-doc=\"stickers\">\u0627\u0633\u062A\u064A\u0643\u0631\u0627\u062A \u0627\u0644\u062A\u0634\u063A\u064A\u0644</button>\n    </div>\n    <div class=\"document-action-group\">\n      <h3>\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0643\u0634\u0648\u0641\u0627\u062A</h3>\n      <button class=\"mini-btn\" data-doc=\"waste\">\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0647\u0627\u0644\u0643</button>\n      <button class=\"mini-btn gold\" data-doc=\"fullreport\">\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A</button>\n      <button class=\"mini-btn\" data-doc=\"print\">\u0637\u0628\u0627\u0639\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u064A</button>\n      <button class=\"mini-btn\" disabled>\u062A\u0635\u062F\u064A\u0631 PDF \u0644\u0627\u062D\u0642\u064B\u0627</button>\n    </div>";
 }
+function openMainWorkspace() {
+  var _document$getElementB0;
+  document.body.classList.add('workspace-open');
+  (_document$getElementB0 = document.getElementById('mainWorkspace')) === null || _document$getElementB0 === void 0 || _document$getElementB0.removeAttribute('aria-hidden');
+}
+function closeOpenErpMenus() {
+  var except = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+  document.querySelectorAll('.erp-menu.open').forEach(function (menu) {
+    if (menu !== except) menu.classList.remove('open');
+  });
+}
 function handleNavMenuAction(action) {
-  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB0, _refs$printFilteredOr, _document$querySelect2, _refs$searchInput, _refs$orderDetailsPan2;
+  var _refs$openPricingForm, _refs$openOrderFormBt, _refs$openManagementR, _document$getElementB10, _refs$printFilteredOr, _document$querySelect2, _refs$searchInput, _refs$orderDetailsPan2;
   if (!action) return;
+  openMainWorkspace();
+  closeOpenErpMenus();
+  if (action === 'workspaceHome') {
+    var _document$getElementB1;
+    (_document$getElementB1 = document.getElementById('mainWorkspace')) === null || _document$getElementB1 === void 0 || _document$getElementB1.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+    return;
+  }
   if (action === 'ordersList') {
     closeOrderFocusMode();
     return;
@@ -5058,13 +5079,13 @@ function handleNavMenuAction(action) {
     openManagementReport(action.slice('report:'.length));
     return;
   }
-  if (action === 'aiModel') (_document$getElementB0 = document.getElementById('aiModelPanel')) === null || _document$getElementB0 === void 0 || _document$getElementB0.scrollIntoView({
+  if (action === 'aiModel') (_document$getElementB10 = document.getElementById('aiModelPanel')) === null || _document$getElementB10 === void 0 || _document$getElementB10.scrollIntoView({
     behavior: 'smooth',
     block: 'start'
   });
   if (action === 'aiAnalyze') {
-    var _document$getElementB1, _refs$analyzeReportBt;
-    (_document$getElementB1 = document.getElementById('aiModelPanel')) === null || _document$getElementB1 === void 0 || _document$getElementB1.scrollIntoView({
+    var _document$getElementB11, _refs$analyzeReportBt;
+    (_document$getElementB11 = document.getElementById('aiModelPanel')) === null || _document$getElementB11 === void 0 || _document$getElementB11.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
@@ -7601,15 +7622,15 @@ function _openDocument() {
   return _openDocument.apply(this, arguments);
 }
 function installAmalReviewUi() {
-  var _document$getElementB10;
+  var _document$getElementB12;
   refs.weavingSlipType.innerHTML = '<option value="weaving">إذن خام رايح للمصبغة</option>';
-  (_document$getElementB10 = document.getElementById('amalReviewBox')) === null || _document$getElementB10 === void 0 || _document$getElementB10.remove();
+  (_document$getElementB12 = document.getElementById('amalReviewBox')) === null || _document$getElementB12 === void 0 || _document$getElementB12.remove();
 }
 function toggleAmalReviewMode() {
-  var _document$getElementB11;
+  var _document$getElementB13;
   var normalGrid = refs.weavingSlipOrderNumber.closest('.form-grid');
   if (normalGrid) normalGrid.style.display = '';
-  (_document$getElementB11 = document.getElementById('amalReviewBox')) === null || _document$getElementB11 === void 0 || _document$getElementB11.remove();
+  (_document$getElementB13 = document.getElementById('amalReviewBox')) === null || _document$getElementB13 === void 0 || _document$getElementB13.remove();
   refs.weavingSlipForm.querySelector('.dialog-actions .primary-btn').textContent = 'تسجيل المستند';
 }
 function renderAmalSuggestion() {
@@ -8492,6 +8513,15 @@ if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.oncli
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
 document.addEventListener('click', function (event) {
   var _event$target$closest, _event$target$closest2;
+  var menuButton = event.target.closest('.erp-menu > button');
+  if (menuButton) {
+    var menu = menuButton.closest('.erp-menu');
+    var willOpen = !menu.classList.contains('open');
+    closeOpenErpMenus(menu);
+    menu.classList.toggle('open', willOpen);
+    return;
+  }
+  if (!event.target.closest('.erp-menu')) closeOpenErpMenus();
   var navAction = (_event$target$closest = event.target.closest('[data-nav-action]')) === null || _event$target$closest === void 0 ? void 0 : _event$target$closest.dataset.navAction;
   if (navAction) {
     event.preventDefault();
