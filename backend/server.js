@@ -216,6 +216,8 @@ async function ensureDefaultAdminUser() {
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
 const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
 const LOCAL_IMPORT_ENABLED = process.env.ALLOW_LOCAL_IMPORT === '1';
+const BACKUP_RETENTION_DAYS = Number(process.env.BACKUP_RETENTION_DAYS || 6);
+let lastBackupCleanup = { deleted: 0, deletedFiles: [], retentionDays: BACKUP_RETENTION_DAYS, ranAt: null };
 const OPERATION_STAGE_DEFINITIONS = [
   { key: 'weaving', label: 'واقف في النسيج', description: 'طلب لم يكتمل استلام الخام/خروجه من النسيج.' },
   { key: 'color-planning', label: 'بانتظار توزيع الألوان', description: 'خام موجود بدون خطة ألوان واضحة.' },
@@ -442,7 +444,27 @@ function sqliteBackupFiles() {
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
 }
 
+async function cleanupOldBackups() {
+  const cutoff = Date.now() - Math.max(1, BACKUP_RETENTION_DAYS) * 24 * 60 * 60 * 1000;
+  const backupRoot = path.resolve(BACKUP_DIR);
+  const deletedFiles = [];
+  for (const file of sqliteBackupFiles()) {
+    const resolved = path.resolve(file.path);
+    if (!resolved.startsWith(backupRoot + path.sep)) continue;
+    const fileTime = new Date(file.updatedAt || file.createdAt || 0).getTime();
+    if (!Number.isFinite(fileTime) || fileTime >= cutoff) continue;
+    fs.unlinkSync(resolved);
+    deletedFiles.push(file.name);
+  }
+  lastBackupCleanup = { deleted: deletedFiles.length, deletedFiles, retentionDays: BACKUP_RETENTION_DAYS, ranAt: now() };
+  if (deletedFiles.length) {
+    await auditMutation('delete', 'system_settings', 'backup-retention', { files: deletedFiles }, { deleted: deletedFiles.length, retentionDays: BACKUP_RETENTION_DAYS }, `حذف نسخ احتياطية أقدم من ${BACKUP_RETENTION_DAYS} أيام`);
+  }
+  return lastBackupCleanup;
+}
+
 async function createDatabaseBackup(reason = 'manual') {
+  await cleanupOldBackups();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const target = path.join(BACKUP_DIR, `2btex-${reason}-${stamp}.sqlite`);
   if (!fs.existsSync(DB_PATH)) return { ok: false, error: 'DB_NOT_FOUND', file: target };
@@ -453,6 +475,7 @@ async function createDatabaseBackup(reason = 'manual') {
 }
 
 async function ensureDailyBackup() {
+  await cleanupOldBackups();
   if (!fs.existsSync(DB_PATH)) return null;
   const today = new Date().toISOString().slice(0, 10);
   const exists = sqliteBackupFiles().some((file) => file.name.includes(`auto-${today}`) || file.updatedAt.startsWith(today));
@@ -541,6 +564,8 @@ app.get('/api/system/check', asyncHandler(async (_req, res) => {
       backupsDir: BACKUP_DIR,
       latestBackup: backups[0] || null,
       backupsCount: backups.length,
+      retentionDays: BACKUP_RETENTION_DAYS,
+      lastCleanup: lastBackupCleanup,
     },
   });
 }));
@@ -1005,7 +1030,7 @@ app.post('/api/backup', asyncHandler(async (_req, res) => {
 }));
 
 app.get('/api/backups', asyncHandler(async (_req, res) => {
-  res.json(sqliteBackupFiles());
+  res.json({ retentionDays: BACKUP_RETENTION_DAYS, lastCleanup: lastBackupCleanup, backups: sqliteBackupFiles() });
 }));
 
 app.get('/api/audit-log', asyncHandler(async (req, res) => {

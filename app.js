@@ -1928,6 +1928,8 @@ async function openSystemStatusDialog() {
       <h3>النسخ الاحتياطي</h3>
       <p><strong>آخر نسخة:</strong> ${escapeHtml(status.storage?.latestBackup?.name || 'لا توجد نسخة')}</p>
       <p><strong>عدد النسخ:</strong> ${Number(status.storage?.backupsCount || 0).toLocaleString('en-US')}</p>
+      <p><strong>سياسة الاحتفاظ:</strong> حذف تلقائي بعد ${Number(status.storage?.retentionDays || 6).toLocaleString('en-US')} أيام</p>
+      <p><strong>آخر تنظيف:</strong> ${escapeHtml(status.storage?.lastCleanup?.ranAt || '-')} - محذوف ${Number(status.storage?.lastCleanup?.deleted || 0).toLocaleString('en-US')} نسخة</p>
       <button class="mini-btn gold" type="button" data-create-backup>إنشاء نسخة احتياطية الآن</button>
     </div>`;
   } catch {
