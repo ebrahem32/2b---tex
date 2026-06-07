@@ -216,6 +216,16 @@ async function ensureDefaultAdminUser() {
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
 const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
 const LOCAL_IMPORT_ENABLED = process.env.ALLOW_LOCAL_IMPORT === '1';
+const OPERATION_STAGE_DEFINITIONS = [
+  { key: 'weaving', label: 'واقف في النسيج', description: 'طلب لم يكتمل استلام الخام/خروجه من النسيج.' },
+  { key: 'color-planning', label: 'بانتظار توزيع الألوان', description: 'خام موجود بدون خطة ألوان واضحة.' },
+  { key: 'ready-to-dyehouse', label: 'خام جاهز للمصبغة', description: 'خام مستلم ولم يرسل للمصبغة بالكامل.' },
+  { key: 'dyehouse', label: 'واقف في المصبغة', description: 'خام مرسل للمصبغة ولم يكتمل استلام المجهز.' },
+  { key: 'warehouse', label: 'واقف في المخزن', description: 'مجهز مستلم ولم يتم تسليمه للعميل بالكامل.' },
+  { key: 'delivery', label: 'جاهز للتسليم', description: 'يوجد رصيد جاهز يحتاج تسليم ومتابعة.' },
+  { key: 'completed', label: 'مكتمل فعليًا', description: 'لا يوجد رصيد تشغيل مفتوح ظاهر.' },
+  { key: 'closed', label: 'مغلق تشغيليًا', description: 'تم إغلاق دورة الطلب يدويًا.' },
+];
 
 function normalizeArabicName(value) {
   return String(value || '').replace(/[إأآ]/g, 'ا').replace(/\s+/g, ' ').trim();
@@ -421,6 +431,40 @@ async function cleanupLegacyTestOrders() {
   console.log(`[2B Tex] Removed ${matches.length} legacy test orders after backup: ${target}`);
 }
 
+function sqliteBackupFiles() {
+  return fs.readdirSync(BACKUP_DIR)
+    .filter((name) => name.endsWith('.sqlite'))
+    .map((name) => {
+      const filePath = path.join(BACKUP_DIR, name);
+      const stat = fs.statSync(filePath);
+      return { name, path: filePath, size: stat.size, createdAt: stat.birthtime.toISOString(), updatedAt: stat.mtime.toISOString() };
+    })
+    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+}
+
+async function createDatabaseBackup(reason = 'manual') {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const target = path.join(BACKUP_DIR, `2btex-${reason}-${stamp}.sqlite`);
+  if (!fs.existsSync(DB_PATH)) return { ok: false, error: 'DB_NOT_FOUND', file: target };
+  fs.copyFileSync(DB_PATH, target);
+  const stat = fs.statSync(target);
+  await auditMutation('create', 'system_settings', 'backup', null, { file: target, size: stat.size, reason, created_at: now() }, 'إنشاء نسخة احتياطية');
+  return { ok: true, file: target, name: path.basename(target), size: stat.size, createdAt: stat.birthtime.toISOString() };
+}
+
+async function ensureDailyBackup() {
+  if (!fs.existsSync(DB_PATH)) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const exists = sqliteBackupFiles().some((file) => file.name.includes(`auto-${today}`) || file.updatedAt.startsWith(today));
+  if (exists) return null;
+  return createDatabaseBackup(`auto-${today}`);
+}
+
+async function tableCount(table) {
+  const row = await get(`SELECT COUNT(*) AS count FROM ${table}`);
+  return Number(row?.count || 0);
+}
+
 app.get('/api/health', asyncHandler(async (_req, res) => {
   const row = await get('SELECT COUNT(*) AS count FROM sqlite_master WHERE type = ?', ['table']);
   const schema = schemaHealth();
@@ -439,6 +483,65 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
       localImportEnabled: LOCAL_IMPORT_ENABLED,
     },
     time: now()
+  });
+}));
+
+app.get('/api/system/check', asyncHandler(async (_req, res) => {
+  const schema = schemaHealth();
+  const backups = sqliteBackupFiles();
+  const tables = {
+    customers: await tableCount('customers'),
+    pricings: await tableCount('pricings'),
+    orders: await tableCount('orders'),
+    allocations: await tableCount('order_allocations'),
+    rawReceiving: await tableCount('raw_receiving_batches'),
+    dyehouseDelivery: await tableCount('dyehouse_delivery_batches'),
+    finishedReceiving: await tableCount('finished_receiving_batches'),
+    customerDelivery: await tableCount('customer_delivery_batches'),
+    accessories: await tableCount('accessory_batches'),
+    rawReturns: await tableCount('raw_returns'),
+    transfers: await tableCount('dyehouse_transfers'),
+    auditLog: await tableCount('audit_log'),
+  };
+  const dashboard = await (async () => {
+    const ordersRows = await all('SELECT * FROM orders');
+    const summaries = [];
+    for (const order of ordersRows) summaries.push(await orderSummary(order.id));
+    return {
+      ordersCount: ordersRows.length,
+      totalRequestedQuantity: summaries.reduce((t, s) => t + s.totalRequestedQuantity, 0),
+      totalRawReceived: summaries.reduce((t, s) => t + s.totalRawReceived, 0),
+      totalSentToDyehouse: summaries.reduce((t, s) => t + s.totalSentToDyehouse, 0),
+      totalFinishedReceived: summaries.reduce((t, s) => t + s.totalFinishedReceived, 0),
+      warehouseBalance: summaries.reduce((t, s) => t + s.warehouseBalance, 0),
+      wasteQuantity: summaries.reduce((t, s) => t + s.wasteQuantity, 0),
+    };
+  })();
+  const dbExists = fs.existsSync(DB_PATH);
+  const dbStat = dbExists ? fs.statSync(DB_PATH) : null;
+  const checks = [
+    { key: 'database', label: 'قاعدة البيانات', ok: dbExists, detail: dbExists ? `${Math.round(dbStat.size / 1024 / 1024 * 100) / 100} MB` : 'غير موجودة' },
+    { key: 'schema', label: 'هيكل قاعدة البيانات', ok: schema.ok, detail: schema.ok ? 'مكتمل' : `${schema.missing.length} أعمدة ناقصة` },
+    { key: 'orders', label: 'بيانات الطلبات', ok: tables.orders > 0, detail: `${tables.orders} طلب` },
+    { key: 'movements', label: 'حركات التشغيل', ok: (tables.rawReceiving + tables.dyehouseDelivery + tables.finishedReceiving + tables.customerDelivery) > 0, detail: `${tables.rawReceiving + tables.dyehouseDelivery + tables.finishedReceiving + tables.customerDelivery} حركة` },
+    { key: 'backup', label: 'النسخ الاحتياطي', ok: backups.length > 0, detail: backups[0]?.name || 'لا توجد نسخ' },
+    { key: 'ai', label: 'Gemini AI', ok: Boolean(process.env.GEMINI_API_KEY), detail: process.env.GEMINI_API_KEY ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite') : 'غير مضبوط' },
+    { key: 'audit', label: 'سجل التعديلات', ok: tables.auditLog > 0, detail: `${tables.auditLog} حركة مسجلة` },
+  ];
+  res.json({
+    ok: checks.every((check) => check.ok),
+    generatedAt: now(),
+    checks,
+    tables,
+    dashboard,
+    orderStages: OPERATION_STAGE_DEFINITIONS,
+    storage: {
+      database: DB_PATH,
+      databaseSize: dbStat?.size || 0,
+      backupsDir: BACKUP_DIR,
+      latestBackup: backups[0] || null,
+      backupsCount: backups.length,
+    },
   });
 }));
 
@@ -898,16 +1001,11 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
 }));
 
 app.post('/api/backup', asyncHandler(async (_req, res) => {
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const target = path.join(BACKUP_DIR, `2btex-${stamp}.sqlite`);
-  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, target);
-  await auditMutation('create', 'system_settings', 'backup', null, { file: target, created_at: now() }, 'إنشاء نسخة احتياطية');
-  res.json({ ok: true, file: target });
+  res.json(await createDatabaseBackup('manual'));
 }));
 
 app.get('/api/backups', asyncHandler(async (_req, res) => {
-  const files = fs.readdirSync(BACKUP_DIR).filter((name) => name.endsWith('.sqlite'));
-  res.json(files.map((name) => ({ name, path: path.join(BACKUP_DIR, name) })));
+  res.json(sqliteBackupFiles());
 }));
 
 app.get('/api/audit-log', asyncHandler(async (req, res) => {
@@ -1636,6 +1734,7 @@ app.use((error, _req, res, _next) => {
 
 initDb().then(async () => {
   await ensureDefaultAdminUser();
+  await ensureDailyBackup();
   app.listen(PORT, HOST, () => {
     console.log(`2B Tex Backend: http://localhost:${PORT}/api/health`);
   });

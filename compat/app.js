@@ -3280,44 +3280,44 @@ function openOutboxDialog() {
   refs.documentDialog.showModal();
 }
 function openSystemStatusDialog() {
-  return _openSystemStatusDialog.apply(this, arguments);
+  refs.documentTitle.textContent = 'فحص النظام';
+  refs.documentBody.dataset.documentType = 'system-status';
+  refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>جاري قراءة حالة Railway وقاعدة البيانات...</p></div>';
+  refs.documentDialog.showModal();
+  return backendRequest('/system/check', { cache: 'no-store' }).then(function (status) {
+    var row = function row(item) {
+      return "<tr><td>".concat(escapeHtml(item.label), "</td><td><span class=\"status ").concat(item.ok ? 'completed' : 'failed', "\">").concat(item.ok ? 'سليم' : 'يحتاج مراجعة', "</span></td><td>").concat(escapeHtml(item.detail || '-'), "</td></tr>");
+    };
+    var tableRow = function tableRow(label, value) {
+      return "<tr><td>".concat(escapeHtml(label), "</td><td>").concat(Number(value || 0).toLocaleString('en-US'), "</td></tr>");
+    };
+    var stageRows = (status.orderStages || []).map(function (stage) {
+      return "<tr><td>".concat(escapeHtml(stage.label), "</td><td>").concat(escapeHtml(stage.description), "</td></tr>");
+    }).join('');
+    refs.documentBody.innerHTML = "<div class=\"document-sheet\"><h2>فحص النظام</h2><p class=\"muted\">آخر فحص: ".concat(escapeHtml(status.generatedAt || '-'), "</p><table><thead><tr><th>البند</th><th>الحالة</th><th>التفاصيل</th></tr></thead><tbody>").concat((status.checks || []).map(row).join(''), "</tbody></table><h3>ملخص البيانات</h3><table><tbody>").concat(tableRow('الطلبات', status.tables && status.tables.orders)).concat(tableRow('الألوان', status.tables && status.tables.allocations)).concat(tableRow('استلام الخام', status.tables && status.tables.rawReceiving)).concat(tableRow('إرسال المصبغة', status.tables && status.tables.dyehouseDelivery)).concat(tableRow('استلام المجهز', status.tables && status.tables.finishedReceiving)).concat(tableRow('تسليم العميل', status.tables && status.tables.customerDelivery)).concat(tableRow('الإكسسوارات', status.tables && status.tables.accessories)).concat(tableRow('سجل التعديلات', status.tables && status.tables.auditLog), "</tbody></table><h3>حالات الطلب المعتمدة</h3><table><thead><tr><th>الحالة</th><th>المعنى</th></tr></thead><tbody>").concat(stageRows, "</tbody></table><h3>النسخ الاحتياطي</h3><p><strong>آخر نسخة:</strong> ").concat(escapeHtml(status.storage && status.storage.latestBackup ? status.storage.latestBackup.name : 'لا توجد نسخة'), "</p><p><strong>عدد النسخ:</strong> ").concat(Number(status.storage && status.storage.backupsCount || 0).toLocaleString('en-US'), "</p><button class=\"mini-btn gold\" type=\"button\" data-create-backup>إنشاء نسخة احتياطية الآن</button></div>");
+  })["catch"](function () {
+    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
+  });
 }
-function _openSystemStatusDialog() {
-  _openSystemStatusDialog = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee42() {
-    var _status$cloudflare, _status$frontend, _status$frontend2, _status$backend, _status$backend2, _status$cloudflare2, _status$backup, _status$backup2, status, cloudflareUrl, row, _t21;
-    return _regenerator().w(function (_context42) {
-      while (1) switch (_context42.p = _context42.n) {
-        case 0:
-          refs.documentTitle.textContent = 'حالة تشغيل النظام';
-          refs.documentBody.dataset.documentType = 'system-status';
-          refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>جاري فحص الخدمات...</p></div>';
-          refs.documentDialog.showModal();
-          _context42.p = 1;
-          _context42.n = 2;
-          return fetch('/system/status', {
-            cache: 'no-store'
-          }).then(function (response) {
-            return response.json();
-          });
-        case 2:
-          status = _context42.v;
-          cloudflareUrl = ((_status$cloudflare = status.cloudflare) === null || _status$cloudflare === void 0 ? void 0 : _status$cloudflare.url) || 'لا يوجد رابط مسجل حاليًا';
-          row = function row(label, value, ok) {
-            return "<tr><td>".concat(label, "</td><td><span class=\"status ").concat(ok ? 'completed' : 'failed', "\">").concat(ok ? 'يعمل' : 'متوقف', "</span></td><td>").concat(escapeHtml(value || '-'), "</td></tr>");
-          };
-          refs.documentBody.innerHTML = "<div class=\"document-sheet\">\n      <h2>\u062D\u0627\u0644\u0629 \u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0646\u0638\u0627\u0645</h2>\n      <table>\n        <thead><tr><th>\u0627\u0644\u0628\u0646\u062F</th><th>\u0627\u0644\u062D\u0627\u0644\u0629</th><th>\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644</th></tr></thead>\n        <tbody>\n          ".concat(row('Frontend', "Port ".concat(((_status$frontend = status.frontend) === null || _status$frontend === void 0 ? void 0 : _status$frontend.port) || 3000), (_status$frontend2 = status.frontend) === null || _status$frontend2 === void 0 ? void 0 : _status$frontend2.ok), "\n          ").concat(row('Backend', "Port ".concat(((_status$backend = status.backend) === null || _status$backend === void 0 ? void 0 : _status$backend.port) || 3050), (_status$backend2 = status.backend) === null || _status$backend2 === void 0 ? void 0 : _status$backend2.ok), "\n          ").concat(row('Cloudflare', cloudflareUrl, (_status$cloudflare2 = status.cloudflare) === null || _status$cloudflare2 === void 0 ? void 0 : _status$cloudflare2.ok), "\n          ").concat(row('Backup', ((_status$backup = status.backup) === null || _status$backup === void 0 || (_status$backup = _status$backup.latest) === null || _status$backup === void 0 ? void 0 : _status$backup.path) || 'لا يوجد Backup معروف', (_status$backup2 = status.backup) === null || _status$backup2 === void 0 ? void 0 : _status$backup2.ok), "\n        </tbody>\n      </table>\n      <p><strong>\u0631\u0627\u0628\u0637 Cloudflare \u0627\u0644\u062D\u0627\u0644\u064A:</strong> ").concat(cloudflareUrl.startsWith('https://') ? "<a href=\"".concat(escapeHtml(cloudflareUrl), "\" target=\"_blank\" rel=\"noopener\">").concat(escapeHtml(cloudflareUrl), "</a>") : escapeHtml(cloudflareUrl), "</p>\n    </div>");
-          _context42.n = 4;
-          break;
-        case 3:
-          _context42.p = 3;
-          _t21 = _context42.v;
-          refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
-        case 4:
-          return _context42.a(2);
-      }
-    }, _callee42, null, [[1, 3]]);
-  }));
-  return _openSystemStatusDialog.apply(this, arguments);
+function createBackupFromStatusDialog() {
+  var button = refs.documentBody.querySelector('[data-create-backup]');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'جاري إنشاء النسخة...';
+  }
+  return backendRequest('/backup', {
+    method: 'POST',
+    body: JSON.stringify({})
+  }).then(function (result) {
+    alert(result.ok ? 'تم إنشاء النسخة الاحتياطية.' : 'تعذر إنشاء النسخة الاحتياطية.');
+    return openSystemStatusDialog();
+  })["catch"](function (error) {
+    alert(error.message || 'تعذر إنشاء النسخة الاحتياطية.');
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'إنشاء نسخة احتياطية الآن';
+    }
+  });
 }
 function installAutomationUi() {
   var _document$getElementB, _document$getElementB2, _document$getElementB3, _document$getElementB4, _document$getElementB5, _document$getElementB6, _document$getElementB7, _document$getElementB8, _document$getElementB9;
@@ -8970,6 +8970,10 @@ if (refs.weavingSlipDialog) {
 refs.printDocumentBtn.onclick = function () {
   return printCurrentDocument();
 };
+var _refs$documentBody4;
+(_refs$documentBody4 = refs.documentBody) === null || _refs$documentBody4 === void 0 || _refs$documentBody4.addEventListener('click', function (event) {
+  if (event.target.closest('[data-create-backup]')) createBackupFromStatusDialog();
+});
 if (refs.analyzeReportBtn) refs.analyzeReportBtn.onclick = analyzeReportWithAi;
 if (refs.askAiBtn) refs.askAiBtn.onclick = askAiEmployee;
 if (refs.aiQuestionInput) refs.aiQuestionInput.addEventListener('keydown', function (event) {

@@ -1891,29 +1891,59 @@ function openOutboxDialog() {
   refs.documentDialog.showModal();
 }
 async function openSystemStatusDialog() {
-  refs.documentTitle.textContent = 'حالة تشغيل النظام';
+  refs.documentTitle.textContent = 'فحص النظام';
   refs.documentBody.dataset.documentType = 'system-status';
-  refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>جاري فحص الخدمات...</p></div>';
+  refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>جاري قراءة حالة Railway وقاعدة البيانات...</p></div>';
   refs.documentDialog.showModal();
   try {
-    const status = await fetch('/system/status', { cache: 'no-store' }).then((response)=>response.json());
-    const cloudflareUrl = status.cloudflare?.url || 'لا يوجد رابط مسجل حاليًا';
-    const row = (label, value, ok) => `<tr><td>${label}</td><td><span class="status ${ok ? 'completed' : 'failed'}">${ok ? 'يعمل' : 'متوقف'}</span></td><td>${escapeHtml(value || '-')}</td></tr>`;
+    const status = await backendRequest('/system/check', { cache: 'no-store' });
+    const row = (item) => `<tr><td>${escapeHtml(item.label)}</td><td><span class="status ${item.ok ? 'completed' : 'failed'}">${item.ok ? 'سليم' : 'يحتاج مراجعة'}</span></td><td>${escapeHtml(item.detail || '-')}</td></tr>`;
+    const tableRow = (label, value) => `<tr><td>${escapeHtml(label)}</td><td>${Number(value || 0).toLocaleString('en-US')}</td></tr>`;
+    const stageRows = (status.orderStages || []).map((stage)=>`<tr><td>${escapeHtml(stage.label)}</td><td>${escapeHtml(stage.description)}</td></tr>`).join('');
     refs.documentBody.innerHTML = `<div class="document-sheet">
-      <h2>حالة تشغيل النظام</h2>
+      <h2>فحص النظام</h2>
+      <p class="muted">آخر فحص: ${escapeHtml(status.generatedAt || '-')}</p>
       <table>
         <thead><tr><th>البند</th><th>الحالة</th><th>التفاصيل</th></tr></thead>
+        <tbody>${(status.checks || []).map(row).join('')}</tbody>
+      </table>
+      <h3>ملخص البيانات</h3>
+      <table>
         <tbody>
-          ${row('Frontend', `Port ${status.frontend?.port || 3000}`, status.frontend?.ok)}
-          ${row('Backend', `Port ${status.backend?.port || 3050}`, status.backend?.ok)}
-          ${row('Cloudflare', cloudflareUrl, status.cloudflare?.ok)}
-          ${row('Backup', status.backup?.latest?.path || 'لا يوجد Backup معروف', status.backup?.ok)}
+          ${tableRow('الطلبات', status.tables?.orders)}
+          ${tableRow('الألوان', status.tables?.allocations)}
+          ${tableRow('استلام الخام', status.tables?.rawReceiving)}
+          ${tableRow('إرسال المصبغة', status.tables?.dyehouseDelivery)}
+          ${tableRow('استلام المجهز', status.tables?.finishedReceiving)}
+          ${tableRow('تسليم العميل', status.tables?.customerDelivery)}
+          ${tableRow('الإكسسوارات', status.tables?.accessories)}
+          ${tableRow('سجل التعديلات', status.tables?.auditLog)}
         </tbody>
       </table>
-      <p><strong>رابط Cloudflare الحالي:</strong> ${cloudflareUrl.startsWith('https://') ? `<a href="${escapeHtml(cloudflareUrl)}" target="_blank" rel="noopener">${escapeHtml(cloudflareUrl)}</a>` : escapeHtml(cloudflareUrl)}</p>
+      <h3>حالات الطلب المعتمدة</h3>
+      <table>
+        <thead><tr><th>الحالة</th><th>المعنى</th></tr></thead>
+        <tbody>${stageRows}</tbody>
+      </table>
+      <h3>النسخ الاحتياطي</h3>
+      <p><strong>آخر نسخة:</strong> ${escapeHtml(status.storage?.latestBackup?.name || 'لا توجد نسخة')}</p>
+      <p><strong>عدد النسخ:</strong> ${Number(status.storage?.backupsCount || 0).toLocaleString('en-US')}</p>
+      <button class="mini-btn gold" type="button" data-create-backup>إنشاء نسخة احتياطية الآن</button>
     </div>`;
   } catch {
-    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>حالة تشغيل النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
+    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
+  }
+}
+async function createBackupFromStatusDialog() {
+  const button = refs.documentBody.querySelector('[data-create-backup]');
+  if (button) { button.disabled = true; button.textContent = 'جاري إنشاء النسخة...'; }
+  try {
+    const result = await backendRequest('/backup', { method:'POST', body:JSON.stringify({}) });
+    alert(result.ok ? 'تم إنشاء النسخة الاحتياطية.' : 'تعذر إنشاء النسخة الاحتياطية.');
+    await openSystemStatusDialog();
+  } catch (error) {
+    alert(error.message || 'تعذر إنشاء النسخة الاحتياطية.');
+    if (button) { button.disabled = false; button.textContent = 'إنشاء نسخة احتياطية الآن'; }
   }
 }
 function installAutomationUi() {
@@ -4575,6 +4605,9 @@ if (refs.weavingSlipDialog) {
 refs.weavingSlipForm.onsubmit = (event) => confirmWeavingSlip(event).catch((error)=>{ console.error('document-review-save-error', error); alert('تعذر تسجيل المستند.'); });
 }
 refs.printDocumentBtn.onclick = () => printCurrentDocument();
+refs.documentBody?.addEventListener('click', (event) => {
+  if (event.target.closest('[data-create-backup]')) createBackupFromStatusDialog();
+});
 if (refs.analyzeReportBtn) refs.analyzeReportBtn.onclick = analyzeReportWithAi;
 if (refs.askAiBtn) refs.askAiBtn.onclick = askAiEmployee;
 if (refs.aiQuestionInput) refs.aiQuestionInput.addEventListener('keydown', (event) => {
