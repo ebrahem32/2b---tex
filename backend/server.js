@@ -442,6 +442,180 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
   });
 }));
 
+function normalizeAiArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAiPayload(input = {}) {
+  const orders = normalizeAiArray(input.orders);
+  const outbox = normalizeAiArray(input.reportOutbox);
+  const summaryStats = input.summaryStats && typeof input.summaryStats === 'object' ? input.summaryStats : {};
+  return {
+    summaryStats,
+    orders: orders.slice(0, 150).map((order) => ({
+      orderNumber: order.orderNumber,
+      customer: order.customer,
+      fabricType: order.fabricType,
+      dyehouse: order.dyehouse,
+      status: order.status,
+      stageInfo: order.stageInfo || null,
+      operationClosed: Boolean(order.operationClosed),
+      totalRawOrdered: Number(order.totalRawOrdered || 0),
+      totalRawReceived: Number(order.totalRawReceived || 0),
+      totalSentToDyehouse: Number(order.totalSentToDyehouse || 0),
+      totalFinishedReceived: Number(order.totalFinishedReceived || 0),
+      rawAtDyehouseAvailable: Number(order.rawAtDyehouseAvailable || 0),
+      warehouseBalance: Number(order.warehouseBalance || 0),
+      totalDeliveredToCustomer: Number(order.totalDeliveredToCustomer || 0),
+      totalWaste: Number(order.totalWaste || 0),
+      totalWastePercent: Number(order.totalWastePercent || 0),
+      expectedWasteQuantity: Number(order.expectedWasteQuantity || 0),
+      expectedWastePercent: Number(order.expectedWastePercent || 0),
+      accessoryRequired: Number(order.accessoryRequired || 0),
+      accessoryBalance: Number(order.accessoryBalance || 0),
+      rawNoteNumbers: normalizeAiArray(order.rawNoteNumbers),
+      notes: order.notes || '',
+      allocations: normalizeAiArray(order.allocations).map((allocation) => ({
+        color: allocation.color,
+        dyehouse: allocation.dyehouse,
+        plannedQuantity: Number(allocation.plannedQuantity || 0),
+        sentToDyehouse: Number(allocation.sentToDyehouse || 0),
+        finishedReceived: Number(allocation.finishedReceived || 0),
+        remainingAtDyehouse: Number(allocation.remainingAtDyehouse || 0),
+        wasteQuantity: Number(allocation.wasteQuantity || 0),
+        expectedWasteQuantity: Number(allocation.expectedWasteQuantity || 0),
+      })),
+    })),
+    reportOutbox: outbox.slice(0, 100).map((item) => ({
+      reportType: item.reportType,
+      orderNumber: item.orderNumber,
+      customerName: item.customerName,
+      targetGroup: item.targetGroup,
+      status: item.status,
+      errorMessage: item.errorMessage || '',
+      createdAt: item.createdAt,
+      sentAt: item.sentAt,
+    })),
+  };
+}
+
+function aiFallbackAnalysis(data) {
+  const orders = normalizeAiArray(data.orders);
+  const outbox = normalizeAiArray(data.reportOutbox);
+  const openOrders = orders.filter((order) => !['completed', 'closed'].includes(order.status) && !order.operationClosed);
+  const stageGroups = openOrders.reduce((acc, order) => {
+    const key = order.stageInfo?.key || 'unknown';
+    acc[key] = acc[key] || { count: 0, quantity: 0, label: order.stageInfo?.label || 'غير محدد' };
+    acc[key].count += 1;
+    acc[key].quantity += Number(order.totalRawOrdered || 0);
+    return acc;
+  }, {});
+  const stageLine = Object.values(stageGroups)
+    .sort((a, b) => b.count - a.count)
+    .map((item) => `${item.label}: ${item.count} طلب / ${Math.round(item.quantity).toLocaleString('en-US')} كجم`)
+    .join('، ') || 'لا توجد طلبات مفتوحة ظاهرة.';
+  const atDyehouse = orders.reduce((total, order) => total + Number(order.rawAtDyehouseAvailable || 0), 0);
+  const warehouse = orders.reduce((total, order) => total + Number(order.warehouseBalance || 0), 0);
+  const unsentRaw = orders.reduce((total, order) => total + Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0), 0);
+  const failedReports = outbox.filter((item) => item.status === 'failed' || item.status === 'pending');
+  const stuckOrders = openOrders
+    .map((order) => ({
+      label: `${order.orderNumber || '-'} - ${order.customer || '-'} - ${order.stageInfo?.label || 'غير محدد'} - واقف ${Number(order.stageInfo?.days || 0)} يوم`,
+      days: Number(order.stageInfo?.days || 0),
+      quantity: Number(order.totalRawOrdered || 0),
+    }))
+    .sort((a, b) => (b.days - a.days) || (b.quantity - a.quantity))
+    .slice(0, 8)
+    .map((item) => item.label);
+  return {
+    source: process.env.OPENAI_API_KEY ? 'local-fallback-after-openai-error' : 'local-rules',
+    executiveSummary: `يوجد ${orders.length} طلب داخل النظام، منها ${openOrders.length} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، ورصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم.`,
+    keyFindings: [
+      `طلبات مفتوحة: ${openOrders.length}`,
+      `خام لم يخرج للنسيج/المصبغة بعد: ${Math.round(unsentRaw).toLocaleString('en-US')} كجم`,
+      `رصيد داخل المصابغ: ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، وهذا ليس هالكًا نهائيًا أثناء التشغيل.`,
+      `رصيد جاهز أو واقف بالمخزن: ${Math.round(warehouse).toLocaleString('en-US')} كجم`,
+      `تقارير واتساب تحتاج متابعة: ${failedReports.length}`,
+    ],
+    ordersToWatch: stuckOrders,
+    risks: [
+      atDyehouse > 0 ? 'وجود رصيد داخل المصابغ يحتاج متابعة بتاريخ الإرسال حتى لا يتحول لتأخير غير واضح.' : 'لا يظهر رصيد كبير داخل المصابغ من البيانات الحالية.',
+      warehouse > 0 ? 'وجود رصيد بالمخزن يحتاج فلترة حسب العميل وتاريخ دخول المخزن لتحديد أولويات التسليم.' : 'رصيد المخزن الحالي محدود أو غير ظاهر في البيانات المرسلة.',
+      failedReports.length ? 'بعض رسائل أو تقارير واتساب لم ترسل أو ما زالت معلقة.' : 'لا توجد مشكلة واضحة في قائمة إرسال التقارير.',
+    ],
+    recommendations: [
+      'ابدأ بالطلبات صاحبة أكبر عدد أيام وقوف، ثم الأكبر كمية.',
+      'راجع أوامر المصبغة التي لها خام مرسل ولم يكتمل استلام المجهز.',
+      'راجع رصيد المخزن حسب العميل لتحديد ما يمكن تسليمه اليوم.',
+      'لا تغلق أي طلب قبل مطابقة الخام المرسل، المجهز المستلم، التسليم، والمرتجعات.',
+    ],
+    priorityActions: [
+      'فلتر الطلبات على: واقف في المصبغة، وراجع أقدم تاريخ إرسال.',
+      'فلتر الطلبات على: واقف في المخزن، ورتب حسب العميل والتاريخ.',
+      'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
+    ],
+    whatsappMessage: `ملخص 2B: ${orders.length} طلب، المفتوح ${openOrders.length}. رصيد المصابغ ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، رصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم، خام غير مرسل ${Math.round(unsentRaw).toLocaleString('en-US')} كجم. الأولوية: متابعة أقدم طلبات واقفة في المصبغة والمخزن.`,
+  };
+}
+
+async function runOpenAiAnalysis(data) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+      temperature: 0.2,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: [
+            'أنت نموذج ذكاء اصطناعي متخصص في تشغيل 2B Tex للنسيج والصباغة والتجهيز.',
+            'حلل النظام من منظور صاحب المصنع: ما الذي واقف؟ واقف من امتى؟ ما سبب الوقوف؟ وما الأولوية اليوم؟',
+            'لا تعتبر rawAtDyehouseAvailable أو remainingAtDyehouse هالكًا نهائيًا أثناء التشغيل.',
+            'الهالك النهائي يظهر فقط بعد اكتمال أو إغلاق دورة الطلب.',
+            'اكتب عربي واضح مختصر وعملي، واعتمد على الأرقام فقط.',
+            'أرجع JSON فقط بالمفاتيح: source, executiveSummary, keyFindings, ordersToWatch, risks, recommendations, priorityActions, whatsappMessage.',
+          ].join('\n'),
+        },
+        { role: 'user', content: JSON.stringify(data) },
+      ],
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error?.message || body.message || `OpenAI ${response.status}`);
+  const content = body.choices?.[0]?.message?.content || '{}';
+  const parsed = JSON.parse(content);
+  return {
+    source: 'openai',
+    executiveSummary: parsed.executiveSummary || '',
+    keyFindings: normalizeAiArray(parsed.keyFindings),
+    ordersToWatch: normalizeAiArray(parsed.ordersToWatch),
+    risks: normalizeAiArray(parsed.risks),
+    recommendations: normalizeAiArray(parsed.recommendations),
+    priorityActions: normalizeAiArray(parsed.priorityActions),
+    whatsappMessage: parsed.whatsappMessage || '',
+  };
+}
+
+app.get('/api/ai/health', (_req, res) => {
+  res.json({ ok: true, provider: process.env.OPENAI_API_KEY ? 'openai' : 'local-rules', model: process.env.OPENAI_MODEL || 'gpt-4.1-mini' });
+});
+
+app.post('/api/ai/analyze-report', asyncHandler(async (req, res) => {
+  const data = compactAiPayload(req.body || {});
+  if (!process.env.OPENAI_API_KEY) return res.json(aiFallbackAnalysis(data));
+  try {
+    return res.json(await runOpenAiAnalysis(data));
+  } catch (error) {
+    console.warn('[2B Tex] OpenAI analysis failed, using local rules:', error.message);
+    return res.json(aiFallbackAnalysis(data));
+  }
+}));
+
 app.post('/api/backup', asyncHandler(async (_req, res) => {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const target = path.join(BACKUP_DIR, `2btex-${stamp}.sqlite`);

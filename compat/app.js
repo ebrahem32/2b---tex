@@ -324,7 +324,7 @@ function captureLocalStorageSnapshot() {
   };
 }
 var WHATSAPP_SERVICE_URL = '/whatsapp';
-var AI_SERVICE_URL = 'http://127.0.0.1:3030';
+var AI_SERVICE_URL = '';
 var A5_SERVICE_URL = 'http://127.0.0.1:3041';
 var BACKEND_API_URL = '/api';
 var backendAvailable = false;
@@ -4666,7 +4666,8 @@ function asListHtml(items) {
 }
 function renderAiAnalysis(result) {
   var safe = result || {};
-  refs.aiAnalysisBody.innerHTML = "<section class=\"ai-result-section\"><h3>\u0627\u0644\u0645\u0644\u062E\u0635 \u0627\u0644\u062A\u0646\u0641\u064A\u0630\u064A</h3><p>".concat(safe.executiveSummary || '-', "</p></section><section class=\"ai-result-section\"><h3>\u0623\u0647\u0645 \u0627\u0644\u0645\u0644\u0627\u062D\u0638\u0627\u062A</h3>").concat(asListHtml(safe.keyFindings), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0645\u062E\u0627\u0637\u0631</h3>").concat(asListHtml(safe.risks), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A</h3>").concat(asListHtml(safe.recommendations), "</section><section class=\"ai-result-section\"><h3>\u0631\u0633\u0627\u0644\u0629 \u0648\u0627\u062A\u0633\u0627\u0628 \u0644\u0644\u0625\u062F\u0627\u0631\u0629</h3><div class=\"ai-whatsapp-message\" id=\"aiWhatsappMessage\">").concat(safe.whatsappMessage || '-', "</div></section>");
+  var sourceLabel = safe.source === 'openai' ? 'تحليل OpenAI' : 'تحليل تشغيلي من قواعد 2B';
+  refs.aiAnalysisBody.innerHTML = "<section class=\"ai-result-section\"><p class=\"eyebrow\">".concat(sourceLabel, "</p><h3>\u0627\u0644\u0645\u0644\u062E\u0635 \u0627\u0644\u062A\u0646\u0641\u064A\u0630\u064A</h3><p>").concat(safe.executiveSummary || '-', "</p></section><section class=\"ai-result-section\"><h3>\u0623\u0647\u0645 \u0627\u0644\u0645\u0644\u0627\u062D\u0638\u0627\u062A</h3>").concat(asListHtml(safe.keyFindings), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u0645\u062A\u0627\u0628\u0639\u0629</h3>").concat(asListHtml(safe.ordersToWatch), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u0645\u062E\u0627\u0637\u0631</h3>").concat(asListHtml(safe.risks), "</section><section class=\"ai-result-section\"><h3>\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A</h3>").concat(asListHtml(safe.recommendations), "</section><section class=\"ai-result-section\"><h3>\u0623\u0648\u0644\u0648\u064A\u0627\u062A \u0627\u0644\u064A\u0648\u0645</h3>").concat(asListHtml(safe.priorityActions), "</section><section class=\"ai-result-section\"><h3>\u0631\u0633\u0627\u0644\u0629 \u0648\u0627\u062A\u0633\u0627\u0628 \u0644\u0644\u0625\u062F\u0627\u0631\u0629</h3><div class=\"ai-whatsapp-message\" id=\"aiWhatsappMessage\">").concat(safe.whatsappMessage || '-', "</div></section>");
   refs.aiAnalysisDialog.showModal();
 }
 function analyzeReportWithAi() {

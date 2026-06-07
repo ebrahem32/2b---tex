@@ -246,7 +246,7 @@ function captureLocalStorageSnapshot() {
 }
 
 const WHATSAPP_SERVICE_URL = '/whatsapp';
-const AI_SERVICE_URL = 'http://127.0.0.1:3030';
+const AI_SERVICE_URL = '';
 const A5_SERVICE_URL = 'http://127.0.0.1:3041';
 const BACKEND_API_URL = '/api';
 let backendAvailable = false;
@@ -2667,7 +2667,8 @@ function asListHtml(items) {
 }
 function renderAiAnalysis(result) {
   const safe = result || {};
-  refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><h3>الملخص التنفيذي</h3><p>${safe.executiveSummary || '-'}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${safe.whatsappMessage || '-'}</div></section>`;
+  const sourceLabel = safe.source === 'openai' ? 'تحليل OpenAI' : 'تحليل تشغيلي من قواعد 2B';
+  refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><p class="eyebrow">${sourceLabel}</p><h3>الملخص التنفيذي</h3><p>${safe.executiveSummary || '-'}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>الطلبات التي تحتاج متابعة</h3>${asListHtml(safe.ordersToWatch)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>أولويات اليوم</h3>${asListHtml(safe.priorityActions)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${safe.whatsappMessage || '-'}</div></section>`;
   refs.aiAnalysisDialog.showModal();
 }
 async function analyzeReportWithAi() {
