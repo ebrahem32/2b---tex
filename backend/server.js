@@ -974,7 +974,7 @@ async function buildAiEmployeeContext() {
       finishedReceivingBatches: buckets.finishedReceivingBatches[order.id] || [],
       customerDeliveryBatches: buckets.customerDeliveryBatches[order.id] || [],
       rawReturns: buckets.rawReturns[order.id] || [],
-      gluingBatches: buckets.gluingBatches[order.id] || [],
+      gluingBatches,
     });
     const movementDates = {
       rawReceived: latestDate(buckets.rawReceivingBatches[order.id], 'batch_date', 'created_at'),
@@ -1929,7 +1929,7 @@ async function orderSummary(orderId) {
     finishedReceivingBatches: await all('SELECT * FROM finished_receiving_batches WHERE order_id = ?', [orderId]),
     customerDeliveryBatches: await all('SELECT * FROM customer_delivery_batches WHERE order_id = ?', [orderId]),
     rawReturns: await all('SELECT * FROM raw_returns WHERE order_id = ?', [orderId]),
-    gluingBatches: await all('SELECT * FROM gluing_batches WHERE order_id = ?', [orderId])
+    gluingBatches: await all('SELECT * FROM gluing_batches')
   });
 }
 

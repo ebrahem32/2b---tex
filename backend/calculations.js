@@ -17,6 +17,63 @@ function remainingWithTolerance(target, actual) {
   return remaining <= toleranceFor(target) ? 0 : remaining;
 }
 
+function gluingKey(batch = {}) {
+  return String(batch.note_number || batch.noteNumber || batch.partner_fabric || batch.partnerFabric || batch.id || '').trim();
+}
+
+function gluingMovement(batch = {}) {
+  return String(batch.movement || 'sent');
+}
+
+function gluingOrderId(batch = {}) {
+  return batch.order_id || batch.orderId || '';
+}
+
+function gluingAllocationId(batch = {}) {
+  return batch.allocation_id || batch.allocationId || '';
+}
+
+function gluingQuantity(batch = {}) {
+  return Number(batch.quantity || 0);
+}
+
+function gluingMetricsForOrder(order, rows = []) {
+  const orderId = order?.id || order?.order_id || order?.orderId || '';
+  const groups = rows.reduce((acc, row) => {
+    const key = gluingKey(row);
+    if (!key) return acc;
+    acc[key] = acc[key] || [];
+    acc[key].push(row);
+    return acc;
+  }, {});
+  const totals = { sent: 0, returned: 0, received: 0, balance: 0 };
+  Object.values(groups).forEach((groupRows) => {
+    const allSent = sum(groupRows.filter((row) => gluingMovement(row) === 'sent'));
+    const allReturned = sum(groupRows.filter((row) => gluingMovement(row) === 'return'));
+    const allReceived = sum(groupRows.filter((row) => gluingMovement(row) === 'received'));
+    const netGroupSent = Math.max(allSent - allReturned, 0);
+    const sourceRows = groupRows.filter((row) => gluingMovement(row) === 'sent' && gluingOrderId(row) === orderId);
+    const sourceKeys = [...new Set(sourceRows.map((row) => `${gluingOrderId(row)}|${gluingAllocationId(row)}`))];
+    sourceKeys.forEach((sourceKey) => {
+      const [sourceOrderId, sourceAllocationId] = sourceKey.split('|');
+      const sent = sum(groupRows.filter((row) => gluingMovement(row) === 'sent' && gluingOrderId(row) === sourceOrderId && gluingAllocationId(row) === sourceAllocationId));
+      const returned = sum(groupRows.filter((row) => gluingMovement(row) === 'return' && gluingOrderId(row) === sourceOrderId && gluingAllocationId(row) === sourceAllocationId));
+      const netSource = Math.max(sent - returned, 0);
+      const receivedShare = netGroupSent ? Math.min(netSource, allReceived * netSource / netGroupSent) : 0;
+      totals.sent += sent;
+      totals.returned += returned;
+      totals.received += receivedShare;
+      totals.balance += Math.max(netSource - receivedShare, 0);
+    });
+  });
+  return {
+    sent: round(totals.sent),
+    returned: round(totals.returned),
+    received: round(totals.received),
+    balance: round(totals.balance),
+  };
+}
+
 function calculateOrderSummary(order, data = {}) {
   const rawReceivedRecorded = sum(data.rawReceivingBatches || []);
   const sentToDyehouse = sum(data.dyehouseDeliveryBatches || []);
@@ -24,13 +81,13 @@ function calculateOrderSummary(order, data = {}) {
   const finishedReceived = sum(data.finishedReceivingBatches || []);
   const customerDelivered = sum(data.customerDeliveryBatches || []);
   const rawReturned = sum(data.rawReturns || []);
-  const gluingBatches = data.gluingBatches || [];
-  const sentToGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || 'sent') === 'sent'));
-  const returnedFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'return'));
-  const receivedFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'received'));
-  const deliveredFromGluing = sum(gluingBatches.filter((batch) => String(batch?.movement || '') === 'customer'));
-  const gluingBalance = Math.max(sentToGluing - returnedFromGluing - receivedFromGluing, 0);
-  const gluedProductBalance = Math.max(receivedFromGluing - deliveredFromGluing, 0);
+  const gluingMetrics = gluingMetricsForOrder(order, data.gluingBatches || []);
+  const sentToGluing = gluingMetrics.sent;
+  const returnedFromGluing = gluingMetrics.returned;
+  const receivedFromGluing = gluingMetrics.received;
+  const deliveredFromGluing = 0;
+  const gluingBalance = gluingMetrics.balance;
+  const gluedProductBalance = 0;
   const requested = Number(order?.total_raw_quantity || order?.totalRawQuantity || 0);
   const dyehouseTarget = sentToDyehouse && requested ? Math.min(sentToDyehouse, requested) : sentToDyehouse;
   const rawToleranceQuantity = toleranceFor(requested);

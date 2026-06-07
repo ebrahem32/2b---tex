@@ -55,6 +55,62 @@
       return state().allocations.filter((allocation) => allocation.orderId === order.id);
     }
 
+    function gluingKey(batch = {}) {
+      return String(batch.noteNumber || batch.note_number || batch.partnerFabric || batch.partner_fabric || batch.id || '').trim();
+    }
+
+    function gluingMovement(batch = {}) {
+      return String(batch.movement || 'sent');
+    }
+
+    function gluingBatchOrderId(batch = {}) {
+      return batch.orderId || batch.order_id || '';
+    }
+
+    function gluingBatchAllocationId(batch = {}) {
+      return batch.allocationId || batch.allocation_id || '';
+    }
+
+    function gluingMetricsForSource(rows = [], orderId = '', allocationId = null) {
+      const groups = rows.reduce((acc, row) => {
+        const key = gluingKey(row);
+        if (!key) return acc;
+        acc[key] = acc[key] || [];
+        acc[key].push(row);
+        return acc;
+      }, {});
+      const totals = { sent: 0, returned: 0, received: 0, balance: 0 };
+      Object.values(groups).forEach((groupRows) => {
+        const allSent = sum(groupRows.filter((row) => gluingMovement(row) === 'sent'));
+        const allReturned = sum(groupRows.filter((row) => gluingMovement(row) === 'return'));
+        const allReceived = sum(groupRows.filter((row) => gluingMovement(row) === 'received'));
+        const netGroupSent = Math.max(allSent - allReturned, 0);
+        const sourceRows = groupRows.filter((row) => (
+          gluingMovement(row) === 'sent'
+          && gluingBatchOrderId(row) === orderId
+          && (allocationId === null || gluingBatchAllocationId(row) === allocationId)
+        ));
+        const sourceKeys = [...new Set(sourceRows.map((row) => `${gluingBatchOrderId(row)}|${gluingBatchAllocationId(row)}`))];
+        sourceKeys.forEach((sourceKey) => {
+          const [sourceOrderId, sourceAllocationId] = sourceKey.split('|');
+          const sent = sum(groupRows.filter((row) => gluingMovement(row) === 'sent' && gluingBatchOrderId(row) === sourceOrderId && gluingBatchAllocationId(row) === sourceAllocationId));
+          const returned = sum(groupRows.filter((row) => gluingMovement(row) === 'return' && gluingBatchOrderId(row) === sourceOrderId && gluingBatchAllocationId(row) === sourceAllocationId));
+          const netSource = Math.max(sent - returned, 0);
+          const receivedShare = netGroupSent ? Math.min(netSource, allReceived * netSource / netGroupSent) : 0;
+          totals.sent += sent;
+          totals.returned += returned;
+          totals.received += receivedShare;
+          totals.balance += Math.max(netSource - receivedShare, 0);
+        });
+      });
+      return {
+        sent: roundNumber(totals.sent),
+        returned: roundNumber(totals.returned),
+        received: roundNumber(totals.received),
+        balance: roundNumber(totals.balance),
+      };
+    }
+
     function calculateAllocation(allocation = {}, orderContext = null) {
       const data = state();
       const order = orderContext || data.orders.find((item)=>item.id===allocation.orderId) || {};
@@ -72,16 +128,17 @@
       const finished = sum(data.productionBatches.filter((batch) => batch.allocationId === allocation.id));
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => batch.allocationId === allocation.id));
       const rawReturned = sum(data.rawReturns.filter((batch) => batch.allocationId === allocation.id));
-      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || 'sent') === 'sent'));
-      const returnedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'return'));
-      const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.allocationId === allocation.id && String(batch.movement || '') === 'received'));
+      const gluingMetrics = gluingMetricsForSource(data.gluingBatches || [], allocation.orderId, allocation.id);
+      const sentToGluing = gluingMetrics.sent;
+      const returnedFromGluing = gluingMetrics.returned;
+      const receivedFromGluing = gluingMetrics.received;
       const planned = Number(allocation.plannedQuantity || 0);
       const dyehouseTarget = sent && planned ? Math.min(sent, planned) : sent;
       const actualBase = sent || planned;
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), returnedFromGluing:roundNumber(returnedFromGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(Math.max(sentToGluing - returnedFromGluing, 0)), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(remainingWithTolerance(dyehouseTarget, finished + rawReturned + actualWaste)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), returnedFromGluing:roundNumber(returnedFromGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(gluingMetrics.balance), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:roundNumber(remainingWithTolerance(dyehouseTarget, finished + rawReturned + actualWaste)), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
     }
 
     function expectedWasteFor(order, quantity) {
@@ -123,10 +180,11 @@
       const operated = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.sentToDyehouse || 0), 0));
       const warehouseReceived = roundNumber(orderAllocations.reduce((total, item) => total + Number(item.finishedReceived || 0), 0));
       const rawReturnedToWeaving = sum(data.rawReturns.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
-      const sentToGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || 'sent') === 'sent'));
-      const returnedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'return'));
-      const receivedFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'received'));
-      const deliveredFromGluing = sum((data.gluingBatches || []).filter((batch) => batch.orderId === order.id && String(batch.movement || '') === 'customer'));
+      const gluingMetrics = gluingMetricsForSource(data.gluingBatches || [], order.id);
+      const sentToGluing = gluingMetrics.sent;
+      const returnedFromGluing = gluingMetrics.returned;
+      const receivedFromGluing = gluingMetrics.received;
+      const deliveredFromGluing = 0;
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
       const waste = isClosed ? Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving, 0) : 0;
       const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
@@ -155,7 +213,6 @@
         && remainingWithTolerance(totalRawOrdered, rawToDyehouse) === 0
         && remainingWithTolerance(dyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste) === 0
         && Number(Math.max(warehouseReceived - deliveredToCustomer - sentToGluing + returnedFromGluing, 0)) <= toleranceFor(warehouseReceived || totalRawOrdered)
-        && Number(Math.max(receivedFromGluing - deliveredFromGluing, 0)) <= toleranceFor(receivedFromGluing || totalRawOrdered)
         && remainingToCustomer === 0;
       return {
         ...order,
@@ -176,11 +233,11 @@
         totalReturnedFromGluing: roundNumber(returnedFromGluing),
         totalReceivedFromGluing: roundNumber(receivedFromGluing),
         totalDeliveredFromGluing: roundNumber(deliveredFromGluing),
-        gluingBalance: roundNumber(Math.max(sentToGluing - returnedFromGluing - receivedFromGluing, 0)),
+        gluingBalance: roundNumber(gluingMetrics.balance),
         expectedWastePercent,
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),
-        gluedProductBalance: roundNumber(Math.max(receivedFromGluing - deliveredFromGluing, 0)),
+        gluedProductBalance: 0,
         warehouseBalance: roundNumber(remainingWithTolerance(warehouseReceived + returnedFromGluing, deliveredToCustomer + sentToGluing)),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
         remainingToCustomer: roundNumber(remainingToCustomer),
