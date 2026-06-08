@@ -2998,8 +2998,33 @@ function accessoryBalancePartsForOrder(order, allocation) {
     const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type));
     const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type));
     const balance = roundNumber(received - delivered);
-    return balance ? `${formatNumber(balance)} ${line.type}` : '';
+    return balance ? `${formatNumber(balance)} ${accessoryLineName(line, order)}` : '';
   }).filter(Boolean);
+}
+function stockFlowCell(clothQuantity, accessoryParts = []) {
+  return stockFlowText(clothQuantity, accessoryParts)
+    .split(' - ')
+    .map((part)=>`<span class="stock-flow-line">${escapeHtml(part)}</span>`)
+    .join('');
+}
+function accessoryLineName(line, order) {
+  return String(line?.type || order?.accessoryType || '').trim() || '\u0625\u0643\u0633\u0633\u0648\u0627\u0631';
+}
+function accessoryPlannedPartsForOrder(order, allocation) {
+  const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
+  if (!lines.length) return [];
+  const allocations = Array.isArray(order?.allocations) ? order.allocations : [];
+  const totalPlanned = allocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) || Number(order?.totalRawQuantity || order?.totalRawOrdered || 0);
+  const parts = lines.map((line) => {
+    const hasManual = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined;
+    const baseQuantity = hasManual ? Number(line.quantityManual || 0) : Number(allocation.plannedQuantity || 0) * Number(line.percent || 0) / 100;
+    const quantity = hasManual && totalPlanned ? baseQuantity * Number(allocation.plannedQuantity || 0) / totalPlanned : baseQuantity;
+    return quantity ? `${formatNumber(roundNumber(quantity))} ${accessoryLineName(line, order)}` : '';
+  }).filter(Boolean);
+  if (!parts.length && Number(allocation.accessoryQuantity || 0)) {
+    parts.push(`${formatNumber(allocation.accessoryQuantity)} ${accessoryLineName(lines[0], order)}`);
+  }
+  return parts;
 }
 function accessoryDocumentSection(order, fmt, safe) {
   const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
@@ -3507,30 +3532,32 @@ function consolidateOrderDetailView(order) {
   const colorSection = root.querySelector('#addAllocationBtn')?.closest('.subsection');
   if (colorSection) {
     const title = colorSection.querySelector('h3');
-    if (title) title.textContent = 'خطة الألوان والرصيد';
+    if (title) title.textContent = '\u062e\u0637\u0629 \u0627\u0644\u0623\u0644\u0648\u0627\u0646 \u0648\u0627\u0644\u0631\u0635\u064a\u062f';
     const table = colorSection.querySelector('table');
     if (table) {
-      const hasAccessories = order.accessoryLines.length > 0;
       const head = table.querySelector('thead');
       const body = table.querySelector('tbody');
       if (head && body) {
-        head.innerHTML = `<tr><th>اللون</th><th>المخطط</th><th>المصبغة</th><th>العرض</th><th>الوزن مجهز</th>${hasAccessories ? '<th>رصيد الإكسسوار</th>' : ''}<th>مرسل للمصبغة</th><th>تسليم العميل</th><th>رصيد المخزن</th><th>الهالك</th><th>إجراء</th></tr>`;
+        head.innerHTML = '<tr><th>\u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0645\u062e\u0637\u0637</th><th>\u0627\u0644\u0645\u0635\u0628\u063a\u0629</th><th>\u0627\u0644\u0639\u0631\u0636</th><th>\u0627\u0644\u0648\u0632\u0646 \u0645\u062c\u0647\u0632</th><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629</th><th>\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0639\u0645\u064a\u0644</th><th>\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646</th><th>\u0627\u0644\u0647\u0627\u0644\u0643</th><th>\u0625\u062c\u0631\u0627\u0621</th></tr>';
         body.innerHTML = order.allocations.map((allocation) => {
           const delivered = sum(customerBatches.filter((batch)=>batch.allocationId === allocation.id));
           const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent'));
           const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return'));
           const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue);
           const wasteLabel = `${formatNumber(allocation.wasteQuantity || 0)} (${formatNumber(allocation.wastePercent || 0, 1)}%)`;
-          const sentText = stockFlowText(allocation.sentToDyehouse || 0, accessoryFlowPartsForOrder(order, allocation, 'sent'));
-          const accessoryBalance = stockFlowText(0, accessoryBalancePartsForOrder(order, allocation));
-          return `<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessories ? `<td>${accessoryBalance}</td>` : ''}<td>${sentText}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td><td>${wasteLabel}</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">تعديل لون</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">نقل مصبغة</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">حذف لون</button>` : ''}</div></td></tr>`;
+          const plannedCell = stockFlowCell(allocation.plannedQuantity || 0, accessoryPlannedPartsForOrder(order, allocation));
+          const sentCell = stockFlowCell(allocation.sentToDyehouse || 0, accessoryFlowPartsForOrder(order, allocation, 'sent'));
+          const deliveredCell = stockFlowCell(delivered || 0, accessoryFlowPartsForOrder(order, allocation, 'customer'));
+          const balanceCell = stockFlowCell(balance || 0, accessoryBalancePartsForOrder(order, allocation));
+          const actions = `<div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">\u062a\u0639\u062f\u064a\u0644 \u0644\u0648\u0646</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">\u0646\u0642\u0644 \u0645\u0635\u0628\u063a\u0629</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">\u062d\u0630\u0641 \u0644\u0648\u0646</button>` : ''}</div>`;
+          return `<tr><td>${escapeHtml(allocation.color || '-')}</td><td>${plannedCell}</td><td>${escapeHtml(allocation.dyehouse || order.dyehouse || '-')}</td><td>${escapeHtml(allocation.targetFinishedWidth || allocation.rawWidth || '-')}</td><td>${escapeHtml(allocation.targetFinishedWeight || '-')}</td><td>${sentCell}</td><td>${deliveredCell}</td><td><strong>${balanceCell}</strong></td><td>${wasteLabel}</td><td>${actions}</td></tr>`;
         }).join('');
       }
     }
   }
   root.querySelectorAll('.subsection').forEach((section) => {
     const heading = section.querySelector('h3')?.textContent || '';
-    if (heading.includes('رصيد المخزن') || heading.includes('رصيد القماش')) section.remove();
+    if (heading.includes('\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646') || heading.includes('\u0631\u0635\u064a\u062f \u0627\u0644\u0642\u0645\u0627\u0634')) section.remove();
   });
 }
 
