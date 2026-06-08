@@ -2938,7 +2938,6 @@ function decorateOrderFocusHeader(order) {
     ['المصبغة', order?.dyehouse || '-'],
     ['مصدر النسيج', order?.weavingSource || '-'],
     ['تاريخ الطلب', order?.orderDate || '-'],
-    ['إجمالي الخام', `${formatNumber(order?.totalRawOrdered || 0)} كجم`],
   ];
   const detailsHtml = details.map(([label, value])=>`<div class="order-focus-detail"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
   refs.orderDetailsPanel.insertAdjacentHTML('afterbegin', `<div class="order-focus-toolbar"><button class="mini-btn gold" id="backToOrdersBtn" type="button">رجوع لقائمة الطلبات</button><div class="order-focus-title"><span class="eyebrow">عرض طلب فقط</span><strong>${escapeHtml(order?.orderNumber || '-')} - ${escapeHtml(order?.customer || '-')}</strong></div><div class="batch-actions"><button class="mini-btn" id="focusEditOrderBtn" type="button">تعديل الطلب</button>${canDeleteRecords() ? '<button class="mini-btn danger" id="focusDeleteOrderBtn" type="button">حذف الطلب</button>' : ''}</div></div><div class="order-focus-details">${detailsHtml}</div>`);
