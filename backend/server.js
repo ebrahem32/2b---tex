@@ -1184,9 +1184,10 @@ async function runGeminiAnalysis(data) {
 function normalizeAiSearchText(value = '') {
   return String(value || '')
     .toLowerCase()
-    .replace(/[أإآا]/g, 'ا')
-    .replace(/[ة]/g, 'ه')
-    .replace(/[ى]/g, 'ي')
+    .replace(/[\u0623\u0625\u0622\u0671\u0627]/g, '\u0627')
+    .replace(/[\u0629]/g, '\u0647')
+    .replace(/[\u0649]/g, '\u064a')
+    .replace(/[\u0640]/g, '')
     .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -1194,14 +1195,18 @@ function normalizeAiSearchText(value = '') {
 
 function aiQuestionKeywords(question = '') {
   const stopWords = new Set([
-    'عن', 'على', 'علي', 'في', 'من', 'الى', 'الي', 'كل', 'ايه', 'اي', 'هو', 'هي', 'ما',
-    'عايز', 'عاوز', 'اريد', 'عايزه', 'راجع', 'شوف', 'قول', 'قولي', 'اعرف', 'حلل',
-    'اوردر', 'اوردرات', 'طلب', 'طلبات', 'الطلب', 'الاوامر', 'امر', 'اوامر',
-    'تقرير', 'متابعه', 'متابعة', 'حاله', 'حالة', 'التشغيل', 'عام', 'عامه', 'العامه', 'العامة', 'النظام', 'وضع',
-  ]);
-  return normalizeAiSearchText(question)
-    .split(/\s+/)
-    .filter((word) => word.length >= 2 && !stopWords.has(word));
+    '\u0639\u0646', '\u0639\u0644\u0649', '\u0639\u0644\u064a', '\u0641\u064a', '\u0645\u0646', '\u0627\u0644\u0649', '\u0627\u0644\u064a', '\u0643\u0644', '\u0627\u064a\u0647', '\u0627\u064a', '\u0647\u0648', '\u0647\u064a', '\u0645\u0627', '\u0645\u0627\u0630\u0627', '\u062f\u0647', '\u062f\u064a', '\u062f\u0627',
+    '\u0639\u0627\u064a\u0632', '\u0639\u0627\u0648\u0632', '\u0627\u0631\u064a\u062f', '\u0639\u0627\u064a\u0632\u0647', '\u0631\u0627\u062c\u0639', '\u0634\u0648\u0641', '\u0642\u0648\u0644', '\u0642\u0648\u0644\u064a', '\u0627\u0639\u0631\u0641', '\u0647\u0627\u062a', '\u0627\u0638\u0647\u0631', '\u0628\u064a\u0646', '\u0627\u0639\u0645\u0644',
+    '\u062d\u0644\u0644', '\u062a\u062d\u0644\u064a\u0644', '\u062d\u0644\u0644\u064a', '\u062d\u0644\u0644\u0644\u064a', '\u0645\u062a\u0627\u0628\u0639\u0647', '\u0645\u062a\u0627\u0628\u0639\u0629', '\u062a\u0642\u0631\u064a\u0631', '\u062a\u0642\u0627\u0631\u064a\u0631', '\u062d\u0627\u0644\u0647', '\u062d\u0627\u0644\u0629', '\u0648\u0636\u0639', '\u062a\u0641\u0627\u0635\u064a\u0644',
+    '\u0627\u0648\u0631\u062f\u0631', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a\u0647', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a\u0647\u0627', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a\u0647\u0645', '\u0637\u0644\u0628', '\u0637\u0644\u0628\u0627\u062a', '\u0627\u0644\u0637\u0644\u0628', '\u0627\u0644\u0627\u0648\u0627\u0645\u0631', '\u0627\u0645\u0631', '\u0627\u0648\u0627\u0645\u0631',
+    '\u0627\u0644\u062a\u0634\u063a\u064a\u0644', '\u0639\u0627\u0645', '\u0639\u0627\u0645\u0647', '\u0627\u0644\u0639\u0627\u0645\u0629', '\u0627\u0644\u0646\u0638\u0627\u0645', '\u0627\u0644\u0633\u064a\u0633\u062a\u0645', '2b', '\u062a\u0648', '\u0628\u064a'
+  ].map(normalizeAiSearchText));
+  const rawWords = normalizeAiSearchText(question).split(/\s+/).filter(Boolean);
+  const joined = rawWords.join(' ');
+  const keywords = rawWords.filter((word) => word.length >= 2 && !stopWords.has(word));
+  const customerLike = [];
+  for (let i = 0; i < keywords.length - 1; i += 1) customerLike.push(keywords[i] + ' ' + keywords[i + 1]);
+  return Array.from(new Set(customerLike.concat(keywords.filter((word) => !/^\d+$/.test(word) || joined.includes(word)))));
 }
 
 function buildAiQuestionFocus(question = '', orders = []) {
@@ -1223,7 +1228,7 @@ function buildAiQuestionFocus(question = '', orders = []) {
     const haystack = normalizeAiSearchText(fields.filter(Boolean).join(' '));
     const orderNumber = normalizeAiSearchText(order.orderNumber || '');
     const numericMatch = numericKeywords.length ? numericKeywords.some((word) => orderNumber.includes(word) || haystack.includes(word)) : true;
-    const textMatch = textKeywords.length ? textKeywords.every((word) => haystack.includes(word)) : true;
+    const textMatch = textKeywords.length ? textKeywords.some((word) => haystack.includes(word)) : true;
     return numericMatch && textMatch;
   });
   return { active: true, keywords, matches };
