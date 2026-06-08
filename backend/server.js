@@ -719,13 +719,15 @@ function compactAiPayload(input = {}) {
   const summaryStats = input.summaryStats && typeof input.summaryStats === 'object' ? input.summaryStats : {};
   return {
     summaryStats,
-    orders: orders.slice(0, 150).map((order) => ({
+    orders: orders.slice(0, 150).map((order) => {
+      const operationallyComplete = Boolean(order.operationallyComplete || order.operationClosed || ['completed', 'closed'].includes(String(order.status || '').toLowerCase()));
+      return {
       orderNumber: order.orderNumber,
       customer: order.customer,
       fabricType: order.fabricType,
       dyehouse: order.dyehouse,
-      status: summary.operationallyComplete ? 'completed' : order.status,
-      operationallyComplete: Boolean(summary.operationallyComplete),
+      status: operationallyComplete ? 'completed' : order.status,
+      operationallyComplete,
       stageInfo: order.stageInfo || null,
       operationClosed: Boolean(order.operationClosed),
       totalRawOrdered: Number(order.totalRawOrdered || 0),
@@ -753,7 +755,7 @@ function compactAiPayload(input = {}) {
         wasteQuantity: Number(allocation.wasteQuantity || 0),
         expectedWasteQuantity: Number(allocation.expectedWasteQuantity || 0),
       })),
-    })),
+    }; }),
     reportOutbox: outbox.slice(0, 100).map((item) => ({
       reportType: item.reportType,
       orderNumber: item.orderNumber,
@@ -1063,6 +1065,7 @@ async function buildAiEmployeeContext() {
       .slice()
       .sort((a, b) => (b.stage.days - a.stage.days) || (b.quantities.totalRequestedQuantity - a.quantities.totalRequestedQuantity))
       .slice(0, 20),
+    orders: orderCards,
     dyehouseBalances: Object.values(dyehouseBalances).sort((a, b) => b.balance - a.balance),
     recentAudit: auditLog.map((row) => ({
       action: row.action,
@@ -1104,6 +1107,8 @@ async function runOpenAiAnalysis(data) {
             'لا تعتبر rawAtDyehouseAvailable أو remainingAtDyehouse هالكًا نهائيًا أثناء التشغيل.',
             'الهالك النهائي يظهر فقط بعد اكتمال أو إغلاق دورة الطلب.',
             'اكتب عربي واضح مختصر وعملي، واعتمد على الأرقام فقط.',
+            'إذا كان payload يحتوي على questionFocus.active=true فالإجابة يجب أن تكون عن questionFocus.orders فقط. لا تعرض ملخصًا عامًا للنظام إلا إذا طلب المستخدم ذلك صراحة.',
+            'إذا كان questionFocus.active=true و questionFocus.matchesCount=0 فقل بوضوح أنه لا توجد أوامر مطابقة للسؤال ولا تختر أوامر أخرى بديلة.',
             'أرجع JSON فقط بالمفاتيح: source, executiveSummary, keyFindings, ordersToWatch, risks, recommendations, priorityActions, whatsappMessage.',
           ].join('\n'),
         },
@@ -1144,6 +1149,8 @@ async function runGeminiAnalysis(data) {
             'لا تعتبر rawAtDyehouseAvailable أو remainingAtDyehouse هالكًا نهائيًا أثناء التشغيل.',
             'الهالك النهائي يظهر فقط بعد اكتمال أو إغلاق دورة الطلب.',
             'اكتب عربي واضح مختصر وعملي، واعتمد على الأرقام فقط.',
+            'إذا كان payload يحتوي على questionFocus.active=true فالإجابة يجب أن تكون عن questionFocus.orders فقط. لا تعرض ملخصًا عامًا للنظام إلا إذا طلب المستخدم ذلك صراحة.',
+            'إذا كان questionFocus.active=true و questionFocus.matchesCount=0 فقل بوضوح أنه لا توجد أوامر مطابقة للسؤال ولا تختر أوامر أخرى بديلة.',
             'أرجع JSON فقط بالمفاتيح: source, executiveSummary, keyFindings, ordersToWatch, risks, recommendations, priorityActions, whatsappMessage.',
           ].join('\n'),
         }],
@@ -1172,6 +1179,54 @@ async function runGeminiAnalysis(data) {
     priorityActions: normalizeAiArray(parsed.priorityActions),
     whatsappMessage: parsed.whatsappMessage || '',
   };
+}
+
+function normalizeAiSearchText(value = '') {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[أإآا]/g, 'ا')
+    .replace(/[ة]/g, 'ه')
+    .replace(/[ى]/g, 'ي')
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function aiQuestionKeywords(question = '') {
+  const stopWords = new Set([
+    'عن', 'على', 'علي', 'في', 'من', 'الى', 'الي', 'كل', 'ايه', 'اي', 'هو', 'هي',
+    'عايز', 'عاوز', 'اريد', 'عايزه', 'راجع', 'شوف', 'قول', 'قولي', 'اعرف',
+    'اوردر', 'اوردرات', 'طلب', 'طلبات', 'الطلب', 'الاوامر', 'امر', 'اوامر',
+    'تقرير', 'متابعه', 'متابعة', 'حاله', 'حالة', 'التشغيل',
+  ]);
+  return normalizeAiSearchText(question)
+    .split(/\s+/)
+    .filter((word) => word.length >= 2 && !stopWords.has(word));
+}
+
+function buildAiQuestionFocus(question = '', orders = []) {
+  const keywords = aiQuestionKeywords(question);
+  const numericKeywords = keywords.filter((word) => /^\d+$/.test(word));
+  const textKeywords = keywords.filter((word) => !/^\d+$/.test(word));
+  if (!keywords.length) return { active: false, keywords: [], matches: [] };
+  const matches = (orders || []).filter((order) => {
+    const fields = [
+      order.orderNumber,
+      order.customer,
+      order.fabricType,
+      order.dyehouse,
+      order.stage?.label,
+      order.stage?.reason,
+      order.notes,
+      order.operationNotes,
+    ];
+    const haystack = normalizeAiSearchText(fields.filter(Boolean).join(' '));
+    const orderNumber = normalizeAiSearchText(order.orderNumber || '');
+    const numericMatch = numericKeywords.length ? numericKeywords.some((word) => orderNumber.includes(word) || haystack.includes(word)) : true;
+    const textMatch = textKeywords.length ? textKeywords.every((word) => haystack.includes(word)) : true;
+    return numericMatch && textMatch;
+  });
+  return { active: true, keywords, matches };
 }
 
 app.get('/api/ai/health', (_req, res) => {
@@ -1204,9 +1259,22 @@ app.get('/api/ai/employee-context', asyncHandler(async (_req, res) => {
 
 app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
   const context = await buildAiEmployeeContext();
+  const userRequest = String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim();
+  const questionFocus = buildAiQuestionFocus(userRequest, context.orders || context.priorityOrders || []);
   const data = {
     ...context,
-    userRequest: String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim(),
+    userRequest,
+    questionFocus: {
+      active: questionFocus.active,
+      keywords: questionFocus.keywords,
+      matchesCount: questionFocus.matches.length,
+      orders: questionFocus.matches.slice(0, 40),
+    },
+    focusInstruction: questionFocus.active
+      ? (questionFocus.matches.length
+        ? 'سؤال المستخدم محدد. اجعل الإجابة عن questionFocus.orders فقط، ولا تبدأ بتقرير عام إلا لو طلب المستخدم ذلك صراحة.'
+        : 'سؤال المستخدم محدد لكن لا توجد أوامر مطابقة في قاعدة البيانات. قل ذلك بوضوح ولا تعرض تقريرًا عامًا بدل الإجابة.')
+      : 'سؤال المستخدم عام، اعرض ملخص التشغيل والأولويات.',
   };
   if (process.env.GEMINI_API_KEY) {
     try {
