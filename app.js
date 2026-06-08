@@ -1826,8 +1826,39 @@ function canManageUsers() {
 function canDeleteRecords() {
   return currentUserRole() === 'admin';
 }
+function canWriteRecords() {
+  return ['admin', 'manager'].includes(currentUserRole());
+}
 function applyPermissionVisibility() {
   if (!canManageUsers()) document.getElementById('usersBtn')?.remove();
+  if (!canWriteRecords()) {
+    document.querySelectorAll([
+      '#openOrderFormBtn',
+      '#openPricingFormBtn',
+      '#dyehousePricesBtn',
+      '[data-nav-action="orderNew"]',
+      '[data-nav-action="pricingNew"]',
+      '[data-nav-action="dyehousePrices"]',
+      '[data-convert-pricing]',
+      '[data-edit-pricing]',
+      '[data-edit-pricing-doc]',
+      '[data-edit-order]',
+      '#editOrderBtn',
+      '#focusEditOrderBtn',
+      '#toggleOperationClosedBtn',
+      '#addAllocationBtn',
+      '[data-edit-allocation]',
+      '[data-transfer-allocation]',
+      '[data-open-bulk-entry]',
+      '[data-save-bulk-batches]',
+    ].join(',')).forEach((button) => button.remove());
+    document.querySelectorAll('#orderDetailsPanel .batch-form button, #orderDetailsPanel .batch-form input, #orderDetailsPanel .batch-form select, #orderDetailsPanel .batch-form textarea').forEach((element) => {
+      element.disabled = true;
+    });
+    document.querySelectorAll('#orderDetailsPanel .batch-form').forEach((form) => {
+      if (!form.querySelector('[data-readonly-note]')) form.insertAdjacentHTML('afterbegin', '<p class="eyebrow" data-readonly-note>صلاحيتك الحالية للعرض فقط. اطلب من مسؤول التشغيل تسجيل الحركة.</p>');
+    });
+  }
   if (!canDeleteRecords()) {
     document.querySelectorAll('[data-delete-pricing], [data-delete-order], [data-delete-allocation], [data-delete-system-user], [data-batch-action="delete"], #focusDeleteOrderBtn').forEach((button) => button.remove());
   }

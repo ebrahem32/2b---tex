@@ -312,6 +312,8 @@ function auditEntityLabel(entityType) {
 }
 
 function auditActionLabel(action) {
+  if (action === 'login') return 'تسجيل دخول';
+  if (action === 'logout') return 'تسجيل خروج';
   return { create:'إضافة', update:'تعديل', delete:'حذف' }[action] || action || 'حركة';
 }
 
@@ -1245,6 +1247,7 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
     const user = { id:'system-admin', name:'مدير النظام', username, role:'admin', is_active:1 };
     const token = signSessionPayload({ id:user.id, username:user.username, name:user.name, role:user.role, exp:Date.now() + (8 * 60 * 60 * 1000) });
     res.setHeader('Set-Cookie', sessionCookie(token));
+    await auditMutation('login', 'users', user.id, null, user, 'تسجيل دخول ناجح');
     return res.json({ ok: true, user });
   }
   if (!row || Number(row.is_active) !== 1 || (!matchesStoredPassword && !matchesSystemFallback)) {
@@ -1253,6 +1256,7 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
   const user = publicUser(row);
   const token = signSessionPayload({ id:user.id, username:user.username, name:user.name, role:user.role, exp:Date.now() + (8 * 60 * 60 * 1000) });
   res.setHeader('Set-Cookie', sessionCookie(token));
+  await auditMutation('login', 'users', user.id, null, user, 'تسجيل دخول ناجح');
   res.json({ ok: true, user });
 }));
 
@@ -1269,7 +1273,9 @@ app.get('/api/auth/me', asyncHandler(async (req, res) => {
   res.json({ ok: true, user: publicUser(row) });
 }));
 
-app.post('/api/auth/logout', asyncHandler(async (_req, res) => {
+app.post('/api/auth/logout', asyncHandler(async (req, res) => {
+  const user = await requestUser(req);
+  if (user) await auditMutation('logout', 'users', user.id, user, null, 'تسجيل خروج');
   res.setHeader('Set-Cookie', clearSessionCookie());
   res.json({ ok: true });
 }));
