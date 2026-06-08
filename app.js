@@ -715,6 +715,10 @@ async function postBackend(path, payload) {
   try { return await backendRequest(path, { method: 'POST', body: JSON.stringify(payload) }); }
   catch (error) { backendAvailable = false; console.warn('Backend write failed, kept LocalStorage copy', error); return null; }
 }
+async function postBackendStrict(path, payload) {
+  if (!backendAvailable) throw new Error('قاعدة البيانات غير متصلة الآن.');
+  return backendRequest(path, { method: 'POST', body: JSON.stringify(payload) });
+}
 async function putBackend(path, payload) {
   if (!backendAvailable) return null;
   try { return await backendRequest(path, { method: 'PUT', body: JSON.stringify(payload) }); }
@@ -2943,7 +2947,7 @@ function openOrderFocusMode(orderId) {
   orderFocusMode = true;
   syncOrderFocusMode();
   renderDetails();
-  window.scrollTo({ top:0, behavior:'smooth' });
+  refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function documentFooter() {
@@ -3831,7 +3835,8 @@ function bulkBatchItemsFromDialog() {
   const date = body.querySelector('[data-bulk-date]')?.value || new Date().toISOString().slice(0, 10);
   const noteNumber = body.querySelector('[data-bulk-note-number]')?.value || '';
   const notes = body.querySelector('[data-bulk-notes]')?.value || '';
-  const accessoryType = body.querySelector('[data-bulk-accessory-type]')?.value || '';
+  const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
+  const accessoryType = body.querySelector('[data-bulk-accessory-type]')?.value || currentOrder?.accessoryLines?.[0]?.type || 'إكسسوار';
   const rows = [...body.querySelectorAll('[data-bulk-allocation]')];
   return rows.map((row) => {
     const quantity = Number(row.querySelector('[data-bulk-quantity]')?.value || 0);
@@ -3852,7 +3857,15 @@ async function saveBulkBatchesFromDialog() {
   const items = bulkBatchItemsFromDialog();
   if (!items.length) { alert('اكتب كمية على لون واحد على الأقل.'); return; }
   if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ الإدخال الجماعي.'))) return;
-  const result = await postBackend('/batches/bulk', { items });
+  let result = null;
+  try {
+    result = await postBackendStrict('/batches/bulk', { items });
+  } catch (error) {
+    const message = `تعذر حفظ الإدخال الجماعي في قاعدة البيانات. السبب: ${error.message || error}`;
+    await rollbackAfterBackendWriteFailure(message);
+    alert(message);
+    return;
+  }
   if (!result?.ok) {
     await rollbackAfterBackendWriteFailure('تعذر حفظ الإدخال الجماعي في قاعدة البيانات. لم يتم اعتماد أي حركة.');
     return;
