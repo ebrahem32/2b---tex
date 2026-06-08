@@ -2993,6 +2993,14 @@ function stockFlowText(clothQuantity, accessoryParts = []) {
   parts.push(...accessoryParts);
   return parts.length ? parts.join(' - ') : '-';
 }
+function accessoryBalancePartsForOrder(order, allocation) {
+  return (order?.accessoryLines || []).map((line) => {
+    const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type));
+    const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type));
+    const balance = roundNumber(received - delivered);
+    return balance ? `${formatNumber(balance)} ${line.type}` : '';
+  }).filter(Boolean);
+}
 function accessoryDocumentSection(order, fmt, safe) {
   const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
   const hasAccessory = lines.length || Number(order?.accessoryRequired || 0) || Number(order?.accessorySent || 0) || Number(order?.accessoryReceived || 0) || Number(order?.accessoryDelivered || 0);
@@ -3506,19 +3514,23 @@ function consolidateOrderDetailView(order) {
       const head = table.querySelector('thead');
       const body = table.querySelector('tbody');
       if (head && body) {
-        head.innerHTML = `<tr><th>اللون</th><th>المخطط</th><th>المصبغة</th><th>العرض</th><th>الوزن مجهز</th>${hasAccessories ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>مرسل للمصبغة</th><th>دخل المخزن</th><th>تسليم العميل</th><th>رصيد المخزن</th><th>الهالك</th><th>إجراء</th></tr>`;
+        head.innerHTML = `<tr><th>اللون</th><th>المخطط</th><th>المصبغة</th><th>العرض</th><th>الوزن مجهز</th>${hasAccessories ? '<th>رصيد الإكسسوار</th>' : ''}<th>مرسل للمصبغة</th><th>تسليم العميل</th><th>رصيد المخزن</th><th>الهالك</th><th>إجراء</th></tr>`;
         body.innerHTML = order.allocations.map((allocation) => {
           const delivered = sum(customerBatches.filter((batch)=>batch.allocationId === allocation.id));
-          const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered);
+          const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent'));
+          const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return'));
+          const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue);
           const wasteLabel = `${formatNumber(allocation.wasteQuantity || 0)} (${formatNumber(allocation.wastePercent || 0, 1)}%)`;
-          return `<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessories ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td><td>${wasteLabel}</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">تعديل لون</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">نقل مصبغة</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">حذف لون</button>` : ''}</div></td></tr>`;
+          const sentText = stockFlowText(allocation.sentToDyehouse || 0, accessoryFlowPartsForOrder(order, allocation, 'sent'));
+          const accessoryBalance = stockFlowText(0, accessoryBalancePartsForOrder(order, allocation));
+          return `<tr><td>${allocation.color}</td><td>${allocation.plannedQuantity}</td><td>${allocation.dyehouse}</td><td>${allocation.targetFinishedWidth}</td><td>${allocation.targetFinishedWeight}</td>${hasAccessories ? `<td>${accessoryBalance}</td>` : ''}<td>${sentText}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td><td>${wasteLabel}</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">تعديل لون</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">نقل مصبغة</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">حذف لون</button>` : ''}</div></td></tr>`;
         }).join('');
       }
     }
   }
   root.querySelectorAll('.subsection').forEach((section) => {
     const heading = section.querySelector('h3')?.textContent || '';
-    if (heading.includes('رصيد المخزن')) section.remove();
+    if (heading.includes('رصيد المخزن') || heading.includes('رصيد القماش')) section.remove();
   });
 }
 
