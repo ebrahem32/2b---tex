@@ -1208,6 +1208,20 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
     ...context,
     userRequest: String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim(),
   };
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return res.json({ ...(await runGeminiAnalysis(data)), userRequest: data.userRequest });
+    } catch (error) {
+      console.warn('[2B Tex] Gemini employee report failed, trying next provider:', error.message);
+    }
+  }
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return res.json({ ...(await runOpenAiAnalysis(data)), userRequest: data.userRequest });
+    } catch (error) {
+      console.warn('[2B Tex] OpenAI employee report failed, using operational rules:', error.message);
+    }
+  }
   return res.json({ ...buildOperationalEmployeeReport(data), userRequest: data.userRequest });
 }));
 
