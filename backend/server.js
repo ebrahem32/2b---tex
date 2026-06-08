@@ -1229,6 +1229,78 @@ function buildAiQuestionFocus(question = '', orders = []) {
   return { active: true, keywords, matches };
 }
 
+function focusedOrderLine(order = {}) {
+  const quantity = Number(order.quantities?.totalRequestedQuantity || 0).toLocaleString('en-US');
+  const finished = Number(order.quantities?.totalFinishedReceived || 0).toLocaleString('en-US');
+  const balance = Number(order.quantities?.warehouseBalance || 0).toLocaleString('en-US');
+  return `${order.orderNumber || '-'} - ${order.customer || '-'} - ${order.fabricType || '-'} - ${order.stage?.label || '-'} منذ ${Number(order.stage?.days || 0)} يوم - ${order.stage?.reason || '-'} - خام ${quantity} كجم - مجهز ${finished} كجم - رصيد مخزن ${balance} كجم`;
+}
+
+function buildFocusedEmployeeReport(data = {}) {
+  const focus = data.questionFocus || {};
+  const matches = normalizeAiArray(focus.orders);
+  const keywords = normalizeAiArray(focus.keywords).join(' ');
+  if (!matches.length) {
+    return {
+      source: 'railway-focused-rules',
+      executiveSummary: `لا توجد أوامر مطابقة للسؤال: ${data.userRequest || keywords || '-'}.`,
+      keyFindings: [`كلمات البحث: ${keywords || '-'}`, 'لم يتم العثور على طلب أو عميل أو مرحلة مطابقة داخل بيانات Railway الحالية.'],
+      ordersToWatch: [],
+      risks: ['لو كان الاسم موجودًا بصيغة مختلفة، ابحث بجزء من اسم العميل أو رقم الطلب.'],
+      recommendations: ['جرّب البحث برقم الطلب، أو باسم العميل فقط، أو باسم الصنف.'],
+      priorityActions: ['لا توجد حركة مطلوبة قبل تحديد طلب مطابق.'],
+      whatsappMessage: `لا توجد أوامر مطابقة للسؤال: ${data.userRequest || keywords || '-'}.`,
+      userRequest: data.userRequest || '',
+    };
+  }
+  const stageGroups = matches.reduce((acc, order) => {
+    const key = order.stage?.label || 'غير محدد';
+    acc[key] = acc[key] || { label: key, count: 0, quantity: 0, oldestDays: 0 };
+    acc[key].count += 1;
+    acc[key].quantity += Number(order.quantities?.totalRequestedQuantity || 0);
+    acc[key].oldestDays = Math.max(acc[key].oldestDays, Number(order.stage?.days || 0));
+    return acc;
+  }, {});
+  const stageSummary = Object.values(stageGroups)
+    .sort((a, b) => b.oldestDays - a.oldestDays)
+    .map((stage) => `${stage.label}: ${stage.count} طلب / ${Math.round(stage.quantity).toLocaleString('en-US')} كجم / أقدم وقوف ${stage.oldestDays} يوم`)
+    .join('، ');
+  const watch = matches
+    .slice()
+    .sort((a, b) => (Number(b.stage?.days || 0) - Number(a.stage?.days || 0)) || (Number(b.quantities?.totalRequestedQuantity || 0) - Number(a.quantities?.totalRequestedQuantity || 0)))
+    .slice(0, 12)
+    .map((order) => ({
+      orderNumber: order.orderNumber || '-',
+      customer: order.customer || '-',
+      fabricType: order.fabricType || '-',
+      dyehouse: order.dyehouse || '-',
+      stage: order.stage?.label || '-',
+      daysInStage: Number(order.stage?.days || 0),
+      reason: order.stage?.reason || '-',
+      requestedRaw: Number(order.quantities?.totalRequestedQuantity || 0),
+      finishedReceived: Number(order.quantities?.totalFinishedReceived || 0),
+      warehouseBalance: Number(order.quantities?.warehouseBalance || 0),
+    }));
+  return {
+    source: 'railway-focused-rules',
+    executiveSummary: `وجدت ${matches.length} أمر مطابق للسؤال. التوزيع الحالي: ${stageSummary || 'غير محدد'}.`,
+    keyFindings: matches.slice(0, 10).map(focusedOrderLine),
+    ordersToWatch: watch,
+    risks: [
+      matches.some((order) => Number(order.stage?.days || 0) >= 7) ? 'يوجد أوامر مطابقة واقفة أكثر من 7 أيام وتحتاج متابعة مباشرة.' : 'لا يظهر تأخير كبير في الأوامر المطابقة من مدة الوقوف الحالية.',
+      matches.some((order) => Number(order.quantities?.warehouseBalance || 0) > 0) ? 'يوجد رصيد مخزن في بعض الأوامر المطابقة يحتاج خطة تسليم.' : 'لا يظهر رصيد مخزن مفتوح في الأوامر المطابقة.',
+    ],
+    recommendations: [
+      'راجع الأوامر المطابقة حسب أقدم مدة وقوف أولًا.',
+      'لو المطلوب عميل محدد، استخدم نفس الفلتر في شاشة الطلبات لمراجعة الحركات والتقارير.',
+      'طابق المرحلة مع آخر حركة تشغيل قبل اتخاذ قرار الإغلاق أو التسليم.',
+    ],
+    priorityActions: watch.slice(0, 3).map((order) => `راجع طلب ${order.orderNumber} - ${order.customer}: ${order.reason}`),
+    whatsappMessage: `متابعة ${data.userRequest || keywords}: ${matches.length} أمر مطابق. ${watch.slice(0, 3).map((order) => `${order.orderNumber} ${order.stage} ${order.daysInStage} يوم`).join(' | ')}`,
+    userRequest: data.userRequest || '',
+  };
+}
+
 app.get('/api/ai/health', (_req, res) => {
   const provider = process.env.GEMINI_API_KEY ? 'gemini' : (process.env.OPENAI_API_KEY ? 'openai' : 'local-rules');
   const model = process.env.GEMINI_API_KEY ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite') : (process.env.OPENAI_MODEL || 'gpt-4.1-mini');
@@ -1276,6 +1348,7 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
         : 'سؤال المستخدم محدد لكن لا توجد أوامر مطابقة في قاعدة البيانات. قل ذلك بوضوح ولا تعرض تقريرًا عامًا بدل الإجابة.')
       : 'سؤال المستخدم عام، اعرض ملخص التشغيل والأولويات.',
   };
+  if (questionFocus.active) return res.json(buildFocusedEmployeeReport(data));
   if (process.env.GEMINI_API_KEY) {
     try {
       return res.json({ ...(await runGeminiAnalysis(data)), userRequest: data.userRequest });
