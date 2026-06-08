@@ -1420,6 +1420,7 @@ app.get('/api/orders/:orderId/batches', asyncHandler(async (req, res) => {
 }));
 
 app.post('/api/batches/:type', requireRole('manager'), asyncHandler(async (req, res) => {
+  if (req.params.type === 'bulk') return saveBulkBatches(req, res);
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
   const query = insertSql(table, req.body || {});
@@ -1514,7 +1515,7 @@ function normalizeBulkBatchItem(item = {}) {
   return { type: item.type, table, body };
 }
 
-app.post('/api/batches/bulk', requireRole('manager'), asyncHandler(async (req, res) => {
+async function saveBulkBatches(req, res) {
   const items = Array.isArray(req.body?.items) ? req.body.items : [];
   if (!items.length) return res.status(400).json({ error: 'لا توجد حركات للحفظ' });
   const normalized = items.map(normalizeBulkBatchItem);
@@ -1529,7 +1530,9 @@ app.post('/api/batches/bulk', requireRole('manager'), asyncHandler(async (req, r
   });
   await auditMutation('create', 'system_settings', 'bulk-batches', null, { count: saved.length, types: saved.map((item) => item.type) }, `حفظ جماعي ${saved.length} حركة تشغيل`);
   res.status(201).json({ ok: true, count: saved.length, items: saved });
-}));
+}
+
+app.post('/api/batches/bulk', requireRole('manager'), asyncHandler(saveBulkBatches));
 
 app.post('/api/transfers', requireRole('manager'), asyncHandler(async (req, res) => {
   const query = insertSql('dyehouse_transfers', req.body || {});
