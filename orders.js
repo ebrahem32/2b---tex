@@ -134,7 +134,7 @@
       const receivedFromGluing = gluingMetrics.received;
       const planned = Number(allocation.plannedQuantity || 0);
       const dyehouseTarget = sent && planned ? Math.min(sent, planned) : sent;
-      const actualBase = sent || planned;
+      const actualBase = dyehouseTarget || planned;
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
@@ -148,6 +148,15 @@
     function allocationAccessoryQuantity(order, allocation) {
       if (allocation.accessoryQuantityManual !== null && allocation.accessoryQuantityManual !== undefined && allocation.accessoryQuantityManual !== '') return roundNumber(Number(allocation.accessoryQuantityManual || 0));
       const lines = orderAccessoryConfig(order);
+      const manualTotal = lines.reduce((total, line) => {
+        const hasManualQuantity = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined;
+        return total + (hasManualQuantity ? Number(line.quantityManual || 0) : 0);
+      }, 0);
+      if (manualTotal > 0) {
+        const orderAllocations = getAllocations(order);
+        const plannedTotal = orderAllocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) || Number(order.totalRawQuantity || 0);
+        return roundNumber(plannedTotal ? manualTotal * Number(allocation.plannedQuantity || 0) / plannedTotal : manualTotal);
+      }
       const percent = lines.length ? lines.reduce((total, line)=>total + Number(line.percent || 0), 0) : Number(order.accessoryPercent || 0);
       return roundNumber(Number(allocation.plannedQuantity || 0) * percent / 100);
     }

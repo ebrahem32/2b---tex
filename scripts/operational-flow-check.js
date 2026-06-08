@@ -114,6 +114,62 @@ function frontendMultiColorSummary() {
   return domain.calculateOrder(state.orders[0]);
 }
 
+function frontendOversentFinishedSummary() {
+  const state = {
+    orders: [{
+      id: 'order-oversent-check',
+      orderNumber: 'CHECK-3',
+      totalRawQuantity: 1000,
+      expectedWastePercent: 5,
+      widthMode: 'single',
+      inchWidth: 32,
+    }],
+    allocations: [{
+      id: 'alloc-oversent',
+      orderId: 'order-oversent-check',
+      color: 'oversent',
+      plannedQuantity: 1000,
+      dyehouse: 'D',
+    }],
+    rawBatches: [{ orderId: 'order-oversent-check', allocationId: 'alloc-oversent', quantity: 1035.5 }],
+    productionBatches: [{ orderId: 'order-oversent-check', allocationId: 'alloc-oversent', quantity: 1000 }],
+    customerBatches: [],
+    rawReturns: [],
+    gluingBatches: [],
+    dyehouseTransfers: [],
+    accessoryBatches: [],
+  };
+  const domain = createFrontendDomain(state);
+  return domain.calculateOrder(state.orders[0]);
+}
+
+function frontendManualAccessorySummary() {
+  const state = {
+    orders: [{
+      id: 'order-accessory-check',
+      orderNumber: 'CHECK-4',
+      totalRawQuantity: 700,
+      expectedWastePercent: 5,
+      widthMode: 'single',
+      inchWidth: 32,
+      accessoryLines: [{ id: 'acc-line', type: 'ريب', percent: 0, quantityManual: 70 }],
+    }],
+    allocations: [
+      { id: 'alloc-accessory-a', orderId: 'order-accessory-check', color: 'A', plannedQuantity: 350, dyehouse: 'D' },
+      { id: 'alloc-accessory-b', orderId: 'order-accessory-check', color: 'B', plannedQuantity: 350, dyehouse: 'D' },
+    ],
+    rawBatches: [],
+    productionBatches: [],
+    customerBatches: [],
+    rawReturns: [],
+    gluingBatches: [],
+    dyehouseTransfers: [],
+    accessoryBatches: [],
+  };
+  const domain = createFrontendDomain(state);
+  return domain.calculateOrder(state.orders[0]);
+}
+
 function checkBackendFlow() {
   const atDyehouse = backendSummary({ rawReceived: 100, sent: 100, finished: 92, delivered: 0 });
   assertClose(atDyehouse.remainingAtDyehouse, 8, 'backend: dyehouse balance after partial finished receipt');
@@ -164,9 +220,25 @@ function checkMultiColorOperationalEntry() {
   assertClose(frontend.warehouseBalance, 42, 'multi-color: warehouse balance after partial delivery');
 }
 
+function checkOversentFinishedOrderDoesNotStayAtDyehouse() {
+  const frontend = frontendOversentFinishedSummary();
+  assertClose(frontend.remainingAtDyehouse, 0, 'oversent: finished requested quantity clears dyehouse balance');
+  assertClose(frontend.rawAtDyehouseAvailable, 0, 'oversent: extra raw sent does not keep order at dyehouse');
+  assertClose(frontend.warehouseBalance, 1000, 'oversent: warehouse balance follows finished receipt');
+}
+
+function checkManualAccessoryDistribution() {
+  const frontend = frontendManualAccessorySummary();
+  assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
+  assertClose(frontend.allocations[0].accessoryQuantity, 35, 'accessory: first color receives proportional accessory quantity');
+  assertClose(frontend.allocations[1].accessoryQuantity, 35, 'accessory: second color receives proportional accessory quantity');
+}
+
 checkBackendFlow();
 checkFrontendFlow();
 checkFrontendBackendParity();
 checkMultiColorOperationalEntry();
+checkOversentFinishedOrderDoesNotStayAtDyehouse();
+checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');

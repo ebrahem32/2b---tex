@@ -17,6 +17,14 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     function state() {
       return getState();
     }
+    var OPERATION_TOLERANCE_PERCENT = 5;
+    function toleranceFor(quantity) {
+      return Math.abs(Number(quantity || 0)) * OPERATION_TOLERANCE_PERCENT / 100;
+    }
+    function remainingWithTolerance(target, actual) {
+      var remaining = Math.max(Number(target || 0) - Number(actual || 0), 0);
+      return remaining <= toleranceFor(target) ? 0 : remaining;
+    }
     function orderAccessoryConfig() {
       var order = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       var lines = Array.isArray(order.accessoryLines) ? order.accessoryLines : [];
@@ -115,7 +123,8 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
       var rawReturned = sum(data.rawReturns.filter(function (batch) {
         return batch.allocationId === allocation.id;
       }));
-      var actualBase = sent || Number(allocation.plannedQuantity || 0);
+      var dyehouseTarget = sent && basePlanned ? Math.min(sent, basePlanned) : sent;
+      var actualBase = dyehouseTarget || Number(allocation.plannedQuantity || 0);
       var actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       var actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       var transfers = data.dyehouseTransfers.filter(function (batch) {
@@ -129,7 +138,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         finishedReceived: roundNumber(finished),
         deliveredToCustomer: roundNumber(deliveredToCustomer),
         customerDelivered: roundNumber(deliveredToCustomer),
-        remainingAtDyehouse: roundNumber(Math.max(sent - finished - rawReturned - actualWaste, 0)),
+        remainingAtDyehouse: roundNumber(remainingWithTolerance(dyehouseTarget, finished + rawReturned + actualWaste)),
         actualWasteQuantity: roundNumber(actualWaste),
         actualWastePercent: actualWastePercent,
         wasteQuantity: roundNumber(actualWaste),
@@ -142,6 +151,16 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
     function allocationAccessoryQuantity(order, allocation) {
       if (allocation.accessoryQuantityManual !== null && allocation.accessoryQuantityManual !== undefined && allocation.accessoryQuantityManual !== '') return roundNumber(Number(allocation.accessoryQuantityManual || 0));
       var lines = orderAccessoryConfig(order);
+      var manualTotal = lines.reduce(function (total, line) {
+        return total + (line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined ? Number(line.quantityManual || 0) : 0);
+      }, 0);
+      if (manualTotal > 0) {
+        var orderAllocations = getAllocations(order);
+        var plannedTotal = orderAllocations.reduce(function (total, item) {
+          return total + Number(item.plannedQuantity || 0);
+        }, 0) || Number(order.totalRawQuantity || 0);
+        return roundNumber(plannedTotal ? manualTotal * Number(allocation.plannedQuantity || 0) / plannedTotal : manualTotal);
+      }
       var percent = lines.length ? lines.reduce(function (total, line) {
         return total + Number(line.percent || 0);
       }, 0) : Number(order.accessoryPercent || 0);
@@ -196,6 +215,7 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
           return allocation.id === batch.allocationId;
         });
       }));
+      var orderDyehouseTarget = rawToDyehouse && Number(order.totalRawQuantity || 0) ? Math.min(rawToDyehouse, Number(order.totalRawQuantity || 0)) : rawToDyehouse;
       var waste = isClosed ? Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving, 0) : 0;
       var widthLines = order.widthMode === 'multiple' ? order.widthLines || [] : [{
         inch: order.inchWidth || '',
@@ -256,15 +276,15 @@ function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e 
         remainingUnallocatedRaw: roundNumber(Math.max(rawToDyehouse - allocated, 0)),
         allocationExceedsRaw: allocated > rawToDyehouse,
         totalSentToDyehouse: roundNumber(rawToDyehouse),
-        rawAtDyehouseAvailable: roundNumber(Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving - waste, 0)),
+        rawAtDyehouseAvailable: roundNumber(remainingWithTolerance(orderDyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste)),
         totalRawReturnedToWeaving: roundNumber(rawReturnedToWeaving),
         expectedWastePercent: expectedWastePercent,
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),
         warehouseBalance: roundNumber(Math.max(warehouseReceived - deliveredToCustomer, 0)),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
-        remainingToCustomer: roundNumber(Math.max(allocated - deliveredToCustomer, 0)),
-        remainingAtDyehouse: roundNumber(Math.max(operated - warehouseReceived, 0)),
+        remainingToCustomer: roundNumber(remainingWithTolerance(allocated, deliveredToCustomer)),
+        remainingAtDyehouse: roundNumber(remainingWithTolerance(orderDyehouseTarget, warehouseReceived + rawReturnedToWeaving + waste)),
         totalWaste: roundNumber(waste),
         totalWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
         totalActualWaste: roundNumber(waste),
