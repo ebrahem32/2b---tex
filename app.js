@@ -4352,10 +4352,12 @@ function openManagementReport(type) {
       const balance = reportNumber(Number(allocation.finishedReceived || 0) - delivered);
       if (balance > 0) clothRows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${order.fabricType || '-'}</td><td>${allocation.color || '-'}</td><td>${allocation.rawInch || order.inchWidth || '-'}</td><td>${allocation.rawWidth || allocation.targetFinishedWidth || '-'}</td><td>${reportFmt(allocation.finishedReceived)}</td><td>${reportFmt(delivered)}</td><td><strong>${reportFmt(balance)}</strong></td></tr>`);
       if (order.accessoryLines.length) {
-        const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received'));
-        const customerDelivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer'));
-        const accessoryBalance = reportNumber(received - customerDelivered);
-        if (accessoryBalance > 0) accessoryRows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${allocation.color || '-'}</td><td>${accessoryTypesLabel(order)}</td><td>${reportFmt(received)}</td><td>${reportFmt(customerDelivered)}</td><td><strong>${reportFmt(accessoryBalance)}</strong></td></tr>`);
+        order.accessoryLines.forEach((line)=>{
+          const received = accessoryFlowQuantityForLine(order, allocation, 'received', line);
+          const customerDelivered = accessoryFlowQuantityForLine(order, allocation, 'customer', line);
+          const accessoryBalance = reportNumber(received - customerDelivered);
+          if (accessoryBalance > 0) accessoryRows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${allocation.color || '-'}</td><td>${accessoryLineName(line, order)}</td><td>${reportFmt(received)}</td><td>${reportFmt(customerDelivered)}</td><td><strong>${reportFmt(accessoryBalance)}</strong></td></tr>`);
+        });
       }
     }));
     return showManagementReport('تقرير رصيد المخزن', 'رصيد القماش والإكسسوار المتاح حسب الداخل للمخزن والتسليم للعميل.', `<section class="report-section"><h3>رصيد القماش الحالي</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>اللون</th><th>البوصة</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${clothRows.join('') || '<tr><td colspan="9">لا يوجد رصيد قماش حالي.</td></tr>'}</tbody></table></section><section class="report-section"><h3>رصيد الإكسسوار</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>اللون</th><th>نوع الإكسسوار</th><th>مستلم</th><th>مسلم للعميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${accessoryRows.join('') || '<tr><td colspan="7">لا يوجد رصيد إكسسوار حالي.</td></tr>'}</tbody></table></section>`, type);
@@ -4384,7 +4386,15 @@ function openManagementReport(type) {
   }
   if (type === 'accessories') {
     const rows = [];
-    list.filter((order)=>order.accessoryLines.length).forEach((order)=>order.allocations.forEach((allocation)=>{ const sent = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='sent')); const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received')); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer')); rows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${allocation.color || '-'}</td><td>${accessoryTypesLabel(order)}</td><td>${reportFmt(allocation.accessoryQuantity)}</td><td>${reportFmt(sent)}</td><td>${reportFmt(received)}</td><td>${reportFmt(delivered)}</td><td>${reportFmt(received - delivered)}</td></tr>`); }));
+    list.filter((order)=>order.accessoryLines.length).forEach((order)=>order.allocations.forEach((allocation)=>{
+      order.accessoryLines.forEach((line)=>{
+        const required = accessoryPlannedQuantityForLine(order, allocation, line);
+        const sent = accessoryFlowQuantityForLine(order, allocation, 'sent', line);
+        const received = accessoryFlowQuantityForLine(order, allocation, 'received', line);
+        const delivered = accessoryFlowQuantityForLine(order, allocation, 'customer', line);
+        rows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${allocation.color || '-'}</td><td>${accessoryLineName(line, order)}</td><td>${reportFmt(required)}</td><td>${reportFmt(sent)}</td><td>${reportFmt(received)}</td><td>${reportFmt(delivered)}</td><td>${reportFmt(received - delivered)}</td></tr>`);
+      });
+    }));
     return showManagementReport('تقرير الإكسسوار', 'حركات الإكسسوار خروجًا واستلامًا وتسليمًا.', `<section class="report-section"><h3>تفاصيل الإكسسوار</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>اللون</th><th>نوع الإكسسوار</th><th>المطلوب</th><th>المرسل</th><th>المستلم</th><th>المسلم للعميل</th><th>الرصيد</th></tr></thead><tbody>${rows.join('') || '<tr><td colspan="9">لا توجد حركات إكسسوار.</td></tr>'}</tbody></table></section>`, type);
   }
 }
@@ -4435,6 +4445,7 @@ function openOrdersReport(sourceList = null, title = 'تقرير متابعة ا
   ];
   if (hasAccessory) {
     columns.push(
+      ['نوع الملحق', (order)=>order.accessoryLines?.length ? accessoryTypesLabel(order) : '-'],
       ['إكس مطلوب', (order)=>fmt(order.accessoryRequired || 0)],
       ['إكس مرسل', (order)=>fmt(order.accessorySent || 0)],
       ['إكس مستلم', (order)=>fmt(order.accessoryReceived || 0)],
@@ -4551,6 +4562,13 @@ const {
   sum,
   roundNumber,
   accessoryTypesLabel,
+  accessoryLineName,
+  accessoryPlannedQuantityForLine,
+  accessoryPlannedPartsForOrder,
+  accessoryFlowQuantityForLine,
+  accessoryFlowPartsForOrder,
+  accessoryBalancePartsForOrder,
+  stockFlowText,
 });
 
 

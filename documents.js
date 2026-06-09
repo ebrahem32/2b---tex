@@ -14,12 +14,38 @@
       sum,
       roundNumber,
       accessoryTypesLabel,
+      accessoryLineName,
+      accessoryPlannedQuantityForLine,
+      accessoryPlannedPartsForOrder,
+      accessoryFlowQuantityForLine,
+      accessoryFlowPartsForOrder,
+      accessoryBalancePartsForOrder,
+      stockFlowText,
     } = deps;
 
     const safeText = (value) => escapeHtml(value === undefined || value === null || value === '' ? '-' : value);
     const fmt = (value, digits = 3) => formatNumber(Number(value || 0), digits);
     const clean = (value) => String(value || '').trim();
     const customerName = (order) => clean(order?.customer || order?.customerName || order?.clientName || '');
+    const fallbackAccessoryName = (line, order) => clean(line?.type || order?.accessoryType || 'إكسسوار');
+    const resolvedAccessoryName = (line, order) => (
+      typeof accessoryLineName === 'function' ? accessoryLineName(line, order) : fallbackAccessoryName(line, order)
+    );
+    const flowText = (clothQuantity, accessoryParts = []) => (
+      typeof stockFlowText === 'function'
+        ? stockFlowText(clothQuantity, accessoryParts)
+        : [Number(clothQuantity || 0) ? `${fmt(clothQuantity)} جسم` : '', ...(accessoryParts || [])].filter(Boolean).join(' - ') || '-'
+    );
+    const flowCell = (clothQuantity, accessoryParts = []) => flowText(clothQuantity, accessoryParts)
+      .split(' - ')
+      .map((part, index) => `<span class="report-flow-line ${index ? 'report-flow-accessory' : 'report-flow-body'}">${safeText(part)}</span>`)
+      .join('');
+    const plannedAccessoryParts = (order, allocation) => (
+      typeof accessoryPlannedPartsForOrder === 'function' ? accessoryPlannedPartsForOrder(order, allocation) : []
+    );
+    const movementAccessoryParts = (order, allocation, movement) => (
+      typeof accessoryFlowPartsForOrder === 'function' ? accessoryFlowPartsForOrder(order, allocation, movement) : []
+    );
 
     function uniqueBy(rows, keyFactory) {
       const seen = new Set();
@@ -47,7 +73,7 @@
       const configuredLines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
       const normalized = configuredLines
         .map((line) => ({
-          type: clean(line.type || 'إكسسوار'),
+          type: clean(resolvedAccessoryName(line, order)),
           percent: Number(line.percent || 0),
           quantity: Number(line.quantityManual || line.quantity || 0),
         }))
@@ -55,7 +81,7 @@
       if (normalized.length) {
         const byType = new Map();
         normalized.forEach((line) => {
-          const key = clean(line.type || 'إكسسوار');
+          const key = clean(line.type || resolvedAccessoryName(line, order));
           const current = byType.get(key) || { type: key, percent: 0, quantity: 0 };
           current.percent += Number(line.percent || 0);
           current.quantity += Number(line.quantity || 0);
@@ -73,7 +99,7 @@
       const percent = Number(order?.accessoryPercent || 0);
       const type = clean(order?.accessoryType || '');
       if (!type && !percent && !quantity) return [];
-      return [{ type: type || 'إكسسوار', percent, quantity }];
+      return [{ type: type || resolvedAccessoryName({}, order), percent, quantity }];
     }
 
     function reportShell(title, order, body, options = {}) {
@@ -117,10 +143,10 @@
         const cells = [
           safeText(line.color || line.pantoneCode),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
-          fmt(line.plannedQuantity),
+          flowCell(line.plannedQuantity, plannedAccessoryParts(order, line)),
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
-          includeReceived ? fmt(line.finishedReceived) : '',
-          includeCustomerDelivered ? fmt(line.deliveredToCustomer || line.customerDelivered) : '',
+          includeReceived ? flowCell(line.finishedReceived, movementAccessoryParts(order, line, 'received')) : '',
+          includeCustomerDelivered ? flowCell(line.deliveredToCustomer || line.customerDelivered, movementAccessoryParts(order, line, 'customer')) : '',
           includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(Number(line.wastePercent || 0), 1)}%)` : '',
           includeFinished ? safeText(line.targetFinishedWeight) : '',
           safeText(line.targetFinishedWidth || line.rawWidth),
@@ -139,7 +165,20 @@
         : '<tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr>';
       const rows = lines.map((line) => {
         if (!showMovement) return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity)}</td></tr>`;
-        return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity || order?.accessoryRequired)}</td><td>${fmt(order?.accessorySent)}</td><td>${fmt(order?.accessoryReceived)}</td><td>${fmt(order?.accessoryDelivered)}</td><td>${fmt(order?.accessoryBalance)}</td></tr>`;
+        const allocations = orderAllocations(order);
+        const required = typeof accessoryPlannedQuantityForLine === 'function'
+          ? allocations.reduce((total, allocation) => total + Number(accessoryPlannedQuantityForLine(order, allocation, line) || 0), 0)
+          : Number(line.quantity || order?.accessoryRequired || 0);
+        const sent = typeof accessoryFlowQuantityForLine === 'function'
+          ? allocations.reduce((total, allocation) => total + Number(accessoryFlowQuantityForLine(order, allocation, 'sent', line) || 0), 0)
+          : Number(order?.accessorySent || 0);
+        const received = typeof accessoryFlowQuantityForLine === 'function'
+          ? allocations.reduce((total, allocation) => total + Number(accessoryFlowQuantityForLine(order, allocation, 'received', line) || 0), 0)
+          : Number(order?.accessoryReceived || 0);
+        const delivered = typeof accessoryFlowQuantityForLine === 'function'
+          ? allocations.reduce((total, allocation) => total + Number(accessoryFlowQuantityForLine(order, allocation, 'customer', line) || 0), 0)
+          : Number(order?.accessoryDelivered || 0);
+        return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(required)}</td><td>${fmt(sent)}</td><td>${fmt(received)}</td><td>${fmt(delivered)}</td><td>${fmt(received - delivered)}</td></tr>`;
       }).join('');
       return `<section class="report-section"><h3>الإكسسوارات</h3><table class="summary-table"><thead>${header}</thead><tbody>${rows}</tbody></table></section>`;
     }
