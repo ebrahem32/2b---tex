@@ -2978,25 +2978,77 @@ function accessoryTypeSelectHtml(order) {
 }
 
 function accessoryTypesLabel(order) {
-  const names = uniqueNonEmpty((order?.accessoryLines || []).map((line)=>line.type));
-  return names.length ? names.join(' + ') : 'إكسسوار';
+  const names = uniqueNonEmpty((order?.accessoryLines || []).map((line)=>accessoryLineName(line, order)));
+  return names.length ? names.join(' + ') : '\u0625\u0643\u0633\u0633\u0648\u0627\u0631';
+}
+function isGenericAccessoryName(value) {
+  const text = normalizeForCompare(value);
+  return !text || text === normalizeForCompare('\u0625\u0643\u0633\u0633\u0648\u0627\u0631') || text === 'accessory';
+}
+function accessoryBatchTypesForOrder(order) {
+  return uniqueNonEmpty(accessoryBatches
+    .filter((batch)=>batch.orderId === order?.id)
+    .map((batch)=>batch.accessoryType)
+    .filter((type)=>!isGenericAccessoryName(type)));
+}
+function accessoryLineName(line, order) {
+  const direct = String(line?.type || '').trim();
+  if (!isGenericAccessoryName(direct)) return direct;
+  const orderType = String(order?.accessoryType || '').trim();
+  if (!isGenericAccessoryName(orderType)) return orderType;
+  return accessoryBatchTypesForOrder(order)[0] || '\u0625\u0643\u0633\u0633\u0648\u0627\u0631';
+}
+function accessoryTypeMatches(batch, line, order) {
+  const batchType = String(batch?.accessoryType || '').trim();
+  const lineType = String(line?.type || '').trim();
+  const lineName = accessoryLineName(line, order);
+  return isGenericAccessoryName(batchType)
+    || isGenericAccessoryName(lineType)
+    || normalizeForCompare(batchType) === normalizeForCompare(lineType)
+    || normalizeForCompare(batchType) === normalizeForCompare(lineName);
+}
+function accessoryPlannedQuantityForLine(order, allocation, line) {
+  const allocations = Array.isArray(order?.allocations) ? order.allocations : [];
+  const totalPlanned = allocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) || Number(order?.totalRawQuantity || order?.totalRawOrdered || 0);
+  const hasManual = line?.quantityManual !== '' && line?.quantityManual !== null && line?.quantityManual !== undefined;
+  const baseQuantity = hasManual ? Number(line.quantityManual || 0) : Number(allocation?.plannedQuantity || 0) * Number(line?.percent || 0) / 100;
+  const quantity = hasManual && totalPlanned ? baseQuantity * Number(allocation?.plannedQuantity || 0) / totalPlanned : baseQuantity;
+  if (quantity) return roundNumber(quantity);
+  const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
+  if (lines.length === 1 && Number(allocation?.accessoryQuantity || 0)) return roundNumber(allocation.accessoryQuantity);
+  return 0;
+}
+function accessoryPlannedPartsForOrder(order, allocation) {
+  return (order?.accessoryLines || []).map((line) => {
+    const quantity = accessoryPlannedQuantityForLine(order, allocation, line);
+    return quantity ? `${formatNumber(quantity)} ${accessoryLineName(line, order)}` : '';
+  }).filter(Boolean);
+}
+function accessoryFlowQuantityForLine(order, allocation, movement, line) {
+  const direct = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement===movement && accessoryTypeMatches(batch, line, order)));
+  if (direct || movement !== 'sent') return roundNumber(direct);
+  const orderLevelSent = sum(accessoryBatches.filter((batch)=>batch.orderId===order.id && !batch.allocationId && batch.movement===movement && accessoryTypeMatches(batch, line, order)));
+  if (!orderLevelSent) return 0;
+  const currentPlanned = accessoryPlannedQuantityForLine(order, allocation, line);
+  const totalPlanned = (order?.allocations || []).reduce((total, item)=>total + accessoryPlannedQuantityForLine(order, item, line), 0);
+  return totalPlanned ? roundNumber(orderLevelSent * currentPlanned / totalPlanned) : 0;
 }
 function accessoryFlowPartsForOrder(order, allocation, movement) {
   return (order?.accessoryLines || []).map((line) => {
-    const quantity = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement===movement && (batch.accessoryType || line.type) === line.type));
-    return quantity ? `${formatNumber(quantity)} ${line.type}` : '';
+    const quantity = accessoryFlowQuantityForLine(order, allocation, movement, line);
+    return quantity ? `${formatNumber(quantity)} ${accessoryLineName(line, order)}` : '';
   }).filter(Boolean);
 }
 function stockFlowText(clothQuantity, accessoryParts = []) {
   const parts = [];
-  if (Number(clothQuantity || 0)) parts.push(`${formatNumber(clothQuantity)} قماش`);
+  if (Number(clothQuantity || 0)) parts.push(`${formatNumber(clothQuantity)} \u062c\u0633\u0645`);
   parts.push(...accessoryParts);
   return parts.length ? parts.join(' - ') : '-';
 }
 function accessoryBalancePartsForOrder(order, allocation) {
   return (order?.accessoryLines || []).map((line) => {
-    const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type));
-    const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type));
+    const received = accessoryFlowQuantityForLine(order, allocation, 'received', line);
+    const delivered = accessoryFlowQuantityForLine(order, allocation, 'customer', line);
     const balance = roundNumber(received - delivered);
     return balance ? `${formatNumber(balance)} ${accessoryLineName(line, order)}` : '';
   }).filter(Boolean);
@@ -3006,25 +3058,6 @@ function stockFlowCell(clothQuantity, accessoryParts = []) {
     .split(' - ')
     .map((part)=>`<span class="stock-flow-line">${escapeHtml(part)}</span>`)
     .join('');
-}
-function accessoryLineName(line, order) {
-  return String(line?.type || order?.accessoryType || '').trim() || '\u0625\u0643\u0633\u0633\u0648\u0627\u0631';
-}
-function accessoryPlannedPartsForOrder(order, allocation) {
-  const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
-  if (!lines.length) return [];
-  const allocations = Array.isArray(order?.allocations) ? order.allocations : [];
-  const totalPlanned = allocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) || Number(order?.totalRawQuantity || order?.totalRawOrdered || 0);
-  const parts = lines.map((line) => {
-    const hasManual = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined;
-    const baseQuantity = hasManual ? Number(line.quantityManual || 0) : Number(allocation.plannedQuantity || 0) * Number(line.percent || 0) / 100;
-    const quantity = hasManual && totalPlanned ? baseQuantity * Number(allocation.plannedQuantity || 0) / totalPlanned : baseQuantity;
-    return quantity ? `${formatNumber(roundNumber(quantity))} ${accessoryLineName(line, order)}` : '';
-  }).filter(Boolean);
-  if (!parts.length && Number(allocation.accessoryQuantity || 0)) {
-    parts.push(`${formatNumber(allocation.accessoryQuantity)} ${accessoryLineName(lines[0], order)}`);
-  }
-  return parts;
 }
 function accessoryDocumentSection(order, fmt, safe) {
   const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
