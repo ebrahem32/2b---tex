@@ -3223,6 +3223,42 @@ function closeOpenErpMenus(except = null) {
     if (menu !== except) menu.classList.remove('open');
   });
 }
+function closeSidebar() {
+  document.body.classList.remove('sidebar-open');
+  document.querySelector('[data-sidebar-toggle]')?.setAttribute('aria-expanded', 'false');
+}
+function toggleSidebar() {
+  const opened = !document.body.classList.contains('sidebar-open');
+  document.body.classList.toggle('sidebar-open', opened);
+  document.querySelector('[data-sidebar-toggle]')?.setAttribute('aria-expanded', opened ? 'true' : 'false');
+}
+function setActiveSidebarButton(button = null) {
+  document.querySelectorAll('.sidebar-nav button.active').forEach((item) => item.classList.remove('active'));
+  if (button) button.classList.add('active');
+}
+function setWorkspaceModule(moduleKey = 'dashboard') {
+  const key = String(moduleKey || 'dashboard').trim();
+  document.body.dataset.activeModule = key;
+  document.querySelectorAll('[data-module-panel]').forEach((panel) => {
+    const modules = String(panel.dataset.modulePanel || '').split(/\s+/).filter(Boolean);
+    panel.classList.toggle('module-hidden', modules.length > 0 && !modules.includes(key));
+  });
+}
+function normalizeReportAction(type = '') {
+  return ({
+    'raw-available': 'inventory',
+    customer: 'customer-account',
+    'dyehouse-performance': 'dyehouse-balances',
+  })[type] || type;
+}
+function applyStageShortcut(stageValue) {
+  if (!stageValue || !refs.orderStatusFilter) return;
+  openMainWorkspace();
+  closeOrderFocusMode();
+  refs.orderStatusFilter.value = stageValue;
+  renderOrders();
+  document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 function handleNavMenuAction(action) {
   if (!action) return;
   openMainWorkspace();
@@ -3239,7 +3275,7 @@ function handleNavMenuAction(action) {
   if (action === 'orderNew') refs.openOrderFormBtn?.click();
   if (action === 'managementReports') refs.openManagementReportsBtn?.click();
   if (action.startsWith('report:')) {
-    openManagementReport(action.slice('report:'.length));
+    openManagementReport(normalizeReportAction(action.slice('report:'.length)));
     return;
   }
   if (action === 'aiModel') document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -5036,6 +5072,28 @@ if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilte
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
 document.addEventListener('click', (event) => {
+  if (event.target.closest('[data-sidebar-toggle]')) {
+    event.preventDefault();
+    toggleSidebar();
+    return;
+  }
+  if (event.target.closest('[data-sidebar-close]')) {
+    event.preventDefault();
+    closeSidebar();
+    return;
+  }
+  const moduleButton = event.target.closest('[data-module-action]');
+  if (moduleButton) {
+    setWorkspaceModule(moduleButton.dataset.moduleAction || 'dashboard');
+    setActiveSidebarButton(moduleButton);
+  }
+  const stageShortcut = event.target.closest('[data-stage-shortcut]')?.dataset.stageShortcut;
+  if (stageShortcut) {
+    event.preventDefault();
+    applyStageShortcut(stageShortcut);
+    closeSidebar();
+    return;
+  }
   const menuButton = event.target.closest('.erp-menu > button');
   if (menuButton) {
     const menu = menuButton.closest('.erp-menu');
@@ -5049,12 +5107,14 @@ document.addEventListener('click', (event) => {
   if (navAction) {
     event.preventDefault();
     handleNavMenuAction(navAction);
+    closeSidebar();
     return;
   }
   const docType = event.target.closest('[data-doc-menu]')?.dataset.docMenu;
   if (docType) {
     event.preventDefault();
     if (!selectedOrderId) { alert('اختر طلبًا أولًا لفتح المستند.'); return; }
+    closeSidebar();
     safeOpenDocument(docType);
   }
 });

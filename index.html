@@ -32,6 +32,78 @@
 </head>
 <body>
   <div class="app-shell">
+    <button type="button" class="mobile-menu-toggle" data-sidebar-toggle aria-controls="appSidebar" aria-expanded="false">Menu</button>
+    <div class="sidebar-backdrop" data-sidebar-close></div>
+    <aside class="app-sidebar" id="appSidebar" aria-label="أقسام النظام">
+      <div class="sidebar-brand">
+        <div class="brand-mark">2B</div>
+        <div>
+          <strong>2B Tex</strong>
+          <span>غرفة عمليات المصنع</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <section>
+          <h3>Dashboard</h3>
+          <button type="button" data-module-action="dashboard" data-nav-action="workspaceHome">ملخص الطلبات</button>
+          <button type="button" data-module-action="dashboard" data-nav-action="operationalFollow">داخل المصبغة</button>
+          <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:delivery">جاهز للتسليم</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:waste-analysis">الهالك</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:orders-follow">الطلبات المتأخرة</button>
+        </section>
+        <section>
+          <h3>المبيعات</h3>
+          <button type="button" data-module-action="sales" data-nav-action="customerAccounts">العملاء</button>
+          <button type="button" data-module-action="sales" data-nav-action="pricingList">عروض الأسعار</button>
+          <button type="button" data-module-action="sales" data-nav-action="ordersList">طلبات العملاء</button>
+        </section>
+        <section>
+          <h3>النسيج</h3>
+          <button type="button" data-module-action="weaving" data-doc-menu="weaving">أوامر تشغيل النسيج</button>
+          <button type="button" data-module-action="weaving" data-nav-action="orderDetails">استلام الخام</button>
+          <button type="button" data-module-action="weaving" data-stage-shortcut="stage:weaving">متابعة الخام</button>
+        </section>
+        <section>
+          <h3>المصبغة</h3>
+          <button type="button" data-module-action="dyehouse" data-doc-menu="dyeing">أوامر تشغيل الصباغة</button>
+          <button type="button" data-module-action="dyehouse" data-nav-action="orderDetails">إرسال للمصبغة</button>
+          <button type="button" data-module-action="dyehouse" data-nav-action="orderDetails">استلام المجهز</button>
+          <button type="button" data-module-action="dyehouse" data-nav-action="orderDetails">تحويلات المصابغ</button>
+          <button type="button" data-module-action="dyehouse" data-nav-action="report:dyehouse-balances">ما داخل المصبغة</button>
+        </section>
+        <section>
+          <h3>المخزن والتسليم</h3>
+          <button type="button" data-module-action="warehouse" data-nav-action="report:raw-available">رصيد الخام</button>
+          <button type="button" data-module-action="warehouse" data-nav-action="report:inventory">رصيد المجهز</button>
+          <button type="button" data-module-action="warehouse" data-stage-shortcut="stage:warehouse">تسليمات العملاء</button>
+          <button type="button" data-module-action="warehouse" data-nav-action="report:inventory">حركة المخزون</button>
+        </section>
+        <section>
+          <h3>التقارير</h3>
+          <button type="button" data-module-action="reports" data-doc-menu="fullreport">التقرير الكامل</button>
+          <button type="button" data-module-action="reports" data-doc-menu="waste">تقرير الهالك</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:dyehouse-balances">تقرير داخل المصبغة</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:raw-available">تقرير الخام المتاح</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:orders-follow">تقرير الطلبات المتأخرة</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:customer">تقرير العميل</button>
+          <button type="button" data-module-action="reports" data-nav-action="report:dyehouse-performance">تقرير المصبغة</button>
+        </section>
+        <section>
+          <h3>واتساب والإرسال</h3>
+          <button type="button" data-module-action="whatsapp" data-nav-action="outbox">قائمة الإرسال</button>
+          <button type="button" data-module-action="whatsapp" data-nav-action="outbox">سجل الإرسال</button>
+          <button type="button" data-module-action="whatsapp" data-nav-action="whatsappSettings">حالة تم الإرسال</button>
+          <button type="button" data-module-action="whatsapp" data-nav-action="whatsappSettings">تجهيز PDF/PNG</button>
+        </section>
+        <section>
+          <h3>الإدارة</h3>
+          <button type="button" data-module-action="admin" data-nav-action="systemStatus">الإعدادات</button>
+          <button type="button" data-module-action="admin" data-nav-action="auditLog">سجل التعديل والحذف</button>
+          <button type="button" data-module-action="admin" data-nav-action="users">المستخدمين والصلاحيات</button>
+        </section>
+      </nav>
+    </aside>
+    <div class="app-content">
     <nav class="erp-menu-bar" aria-label="قوائم النظام">
       <div class="erp-menu"><button type="button">تسعير</button><div class="erp-menu-list"><span class="erp-menu-section">التسعير</span><button type="button" data-nav-action="pricingNew">تسعيرة جديدة</button><button type="button" data-nav-action="pricingList">قائمة التسعيرات</button><button type="button" data-nav-action="dyehousePrices">أسعار المصابغ</button></div></div>
       <div class="erp-menu"><button type="button">الطلبات</button><div class="erp-menu-list"><span class="erp-menu-section">إدارة الطلبات</span><button type="button" data-nav-action="orderNew">طلب جديد</button><button type="button" data-nav-action="ordersList">قائمة الطلبات</button><button type="button" data-nav-action="orderDetails">تفاصيل الطلب الحالي</button><button type="button" data-nav-action="printFilteredOrders">طباعة الفلترة الحالية</button></div></div>
@@ -75,8 +147,8 @@
       <button type="button" id="openManagementReportsBtn">كل التقارير</button>
     </div>
     <main id="mainWorkspace" class="main-workspace">
-      <section class="panel pricing-panel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">تسعير</p><h2>التسعيرات</h2></div></div><div class="table-wrap"><table class="mobile-card-table pricing-table"><thead><tr><th>رقم التسعيرة</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>إجمالي العقد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="pricingTableBody"></tbody></table></div></section><section class="stats-grid" id="statsGrid"></section>
-      <section class="panel operation-follow-panel" id="operationFollowPanel">
+      <section class="panel pricing-panel" data-module-panel="sales reports"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">تسعير</p><h2>التسعيرات</h2></div></div><div class="table-wrap"><table class="mobile-card-table pricing-table"><thead><tr><th>رقم التسعيرة</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>إجمالي العقد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="pricingTableBody"></tbody></table></div></section><section class="stats-grid" id="statsGrid" data-module-panel="dashboard reports"></section>
+      <section class="panel operation-follow-panel" id="operationFollowPanel" data-module-panel="dashboard dyehouse reports">
         <div class="section-head stacked-on-mobile">
           <div><p class="eyebrow">متابعة التشغيل</p><h2>الطلبات الواقفة حسب الحركة الفعلية</h2></div>
           <button class="mini-btn gold" type="button" id="refreshOperationFollowBtn">تحديث المتابعة</button>
@@ -84,13 +156,14 @@
         <div class="operation-follow-summary" id="operationFollowSummary"><div class="empty-state">جاري قراءة متابعة التشغيل من Railway...</div></div>
         <div class="table-wrap"><table class="mobile-card-table operation-follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المرحلة</th><th>واقف من</th><th>الأيام</th><th>السبب</th><th>إجراء</th></tr></thead><tbody id="operationFollowBody"></tbody></table></div>
       </section>
-      <section class="panel ai-panel" id="aiModelPanel"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">نموذج الذكاء الاصطناعي لـ 2B</p><h2>موظف ذكي لتحليل التشغيل والرد على أسئلتك من قاعدة البيانات</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><div class="ai-question-row"><input id="aiQuestionInput" type="text" placeholder="اسأل الموظف الذكي: إيه الطلبات الواقفة في المصبغة؟ مين أقدم عميل واقف؟"><button class="mini-btn gold" id="askAiBtn" type="button">اسأل</button></div><p id="aiStatusText" class="eyebrow">نفس الموظف يجمع بين تقرير سريع ومحادثة مباشرة مبنية على بيانات Railway.</p></section>
-      <section class="panel orders-list-panel">
+      <section class="panel ai-panel" id="aiModelPanel" data-module-panel="dashboard reports admin"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">نموذج الذكاء الاصطناعي لـ 2B</p><h2>موظف ذكي لتحليل التشغيل والرد على أسئلتك من قاعدة البيانات</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><div class="ai-question-row"><input id="aiQuestionInput" type="text" placeholder="اسأل الموظف الذكي: إيه الطلبات الواقفة في المصبغة؟ مين أقدم عميل واقف؟"><button class="mini-btn gold" id="askAiBtn" type="button">اسأل</button></div><p id="aiStatusText" class="eyebrow">نفس الموظف يجمع بين تقرير سريع ومحادثة مباشرة مبنية على بيانات Railway.</p></section>
+      <section class="panel orders-list-panel" data-module-panel="dashboard sales weaving dyehouse warehouse reports">
         <div class="section-head stacked-on-mobile"><div><p class="eyebrow">الطلبات الرئيسية</p><h2>الطلبات الرئيسية</h2></div><div class="filters-row"><input id="searchInput" type="search" placeholder="بحث بالعميل، رقم الطلب، رقم إذن النسيج، المصبغة..."><select id="customerFilter"><option value="all">كل العملاء</option></select><select id="dyehouseFilter"><option value="all">كل المصابغ</option></select><select id="fabricFilter"><option value="all">كل الأصناف</option></select><select id="orderStatusFilter"><option value="all">كل الطلبات المفتوحة</option><option value="stage:weaving">واقف في النسيج</option><option value="stage:color-planning">بانتظار توزيع الألوان</option><option value="stage:ready-to-dyehouse">خام جاهز للمصبغة</option><option value="stage:gluing">واقف في دمج الخامات</option><option value="stage:glued-ready">منتج مدمج جاهز للتسليم</option><option value="stage:dyehouse">واقف في المصبغة</option><option value="stage:warehouse">واقف في المخزن</option><option value="stage:delivery">جاهز للتسليم</option><option value="completed">مكتمل</option><option value="closed">مغلق تشغيليًا</option><option value="pending">بانتظار الاستلام</option><option value="in-progress">قيد التشغيل</option></select><button class="mini-btn gold" id="printFilteredOrdersBtn" type="button">طباعة الفلترة</button></div></div>
         <div class="table-wrap"><table class="mobile-card-table orders-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>خام مطلوب</th><th>مرسل للمصبغة</th><th>مجهز مستلم</th><th>رصيد المخزن</th><th>المرحلة</th><th>واقف من</th><th>إجراءات</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       </section>
-      <section class="workspace-grid"><section class="panel" id="orderDetailsPanel"><div class="empty-state">اختر طلبًا لعرض التفاصيل.</div></section><section class="panel side-panel"><div class="section-head"><h2>المستندات التشغيلية</h2></div><div id="documentsPanel" class="document-actions empty-state">اختر طلبًا لتوليد المستندات.</div></section></section>
+      <section class="workspace-grid" data-module-panel="sales weaving dyehouse warehouse reports"><section class="panel" id="orderDetailsPanel"><div class="empty-state">اختر طلبًا لعرض التفاصيل.</div></section><section class="panel side-panel"><div class="section-head"><h2>المستندات التشغيلية</h2></div><div id="documentsPanel" class="document-actions empty-state">اختر طلبًا لتوليد المستندات.</div></section></section>
     </main>
+    </div>
   </div>
 
 
