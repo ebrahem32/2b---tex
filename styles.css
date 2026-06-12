@@ -119,6 +119,20 @@
 .order-focus-mode .workspace-grid{display:grid!important;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
 .order-focus-mode .side-panel{display:block!important;position:sticky;top:12px}
 .order-focus-mode #orderDetailsPanel{margin-top:0}
+.ai-focus-mode .app-shell{display:block;max-width:1120px;padding:18px}
+.ai-focus-mode .app-sidebar,
+.ai-focus-mode .mobile-menu-toggle,
+.ai-focus-mode .sidebar-backdrop,
+.ai-focus-mode .hero-header,
+.ai-focus-mode .start-gate,
+.ai-focus-mode .pricing-panel,
+.ai-focus-mode .stats-grid,
+.ai-focus-mode .operation-follow-panel,
+.ai-focus-mode .orders-list-panel,
+.ai-focus-mode .workspace-grid{display:none!important}
+.ai-focus-mode #aiModelPanel{display:block!important;max-width:1040px;margin:0 auto 16px}
+.ai-focus-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:12px;border:1px solid var(--line);border-radius:16px;background:#0d141b}
+.ai-focus-toolbar strong{display:block;font-size:18px}
 .report-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 18px;padding-bottom:12px;border-bottom:2px solid #071527}
 .report-title h2{margin:0}
 .report-title span{color:#6b7280;font-size:13px}

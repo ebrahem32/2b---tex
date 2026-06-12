@@ -1196,8 +1196,9 @@ function normalizeAiSearchText(value = '') {
 function aiQuestionKeywords(question = '') {
   const stopWords = new Set([
     '\u0639\u0646', '\u0639\u0644\u0649', '\u0639\u0644\u064a', '\u0641\u064a', '\u0645\u0646', '\u0627\u0644\u0649', '\u0627\u0644\u064a', '\u0643\u0644', '\u0627\u064a\u0647', '\u0627\u064a', '\u0647\u0648', '\u0647\u064a', '\u0645\u0627', '\u0645\u0627\u0630\u0627', '\u062f\u0647', '\u062f\u064a', '\u062f\u0627',
+    '\u0627\u0644\u0644\u064a', '\u0627\u0644\u0630\u064a', '\u0627\u0644\u062a\u064a', '\u0645\u064a\u0646', '\u0641\u064a\u0646', '\u0643\u0627\u0645',
     '\u0639\u0627\u064a\u0632', '\u0639\u0627\u0648\u0632', '\u0627\u0631\u064a\u062f', '\u0639\u0627\u064a\u0632\u0647', '\u0631\u0627\u062c\u0639', '\u0634\u0648\u0641', '\u0642\u0648\u0644', '\u0642\u0648\u0644\u064a', '\u0627\u0639\u0631\u0641', '\u0647\u0627\u062a', '\u0627\u0638\u0647\u0631', '\u0628\u064a\u0646', '\u0627\u0639\u0645\u0644',
-    '\u062d\u0644\u0644', '\u062a\u062d\u0644\u064a\u0644', '\u062d\u0644\u0644\u064a', '\u062d\u0644\u0644\u0644\u064a', '\u0645\u062a\u0627\u0628\u0639\u0647', '\u0645\u062a\u0627\u0628\u0639\u0629', '\u062a\u0642\u0631\u064a\u0631', '\u062a\u0642\u0627\u0631\u064a\u0631', '\u062d\u0627\u0644\u0647', '\u062d\u0627\u0644\u0629', '\u0648\u0636\u0639', '\u062a\u0641\u0627\u0635\u064a\u0644',
+    '\u062d\u0644\u0644', '\u062a\u062d\u0644\u064a\u0644', '\u062d\u0644\u0644\u064a', '\u062d\u0644\u0644\u0644\u064a', '\u0645\u062a\u0627\u0628\u0639\u0647', '\u0645\u062a\u0627\u0628\u0639\u0629', '\u062a\u0642\u0631\u064a\u0631', '\u062a\u0642\u0627\u0631\u064a\u0631', '\u062d\u0627\u0644\u0647', '\u062d\u0627\u0644\u0629', '\u0648\u0636\u0639', '\u0645\u0648\u0642\u0641', '\u062a\u0641\u0627\u0635\u064a\u0644',
     '\u0627\u0648\u0631\u062f\u0631', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a\u0647', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a\u0647\u0627', '\u0627\u0648\u0631\u062f\u0631\u0627\u062a\u0647\u0645', '\u0637\u0644\u0628', '\u0637\u0644\u0628\u0627\u062a', '\u0627\u0644\u0637\u0644\u0628', '\u0627\u0644\u0627\u0648\u0627\u0645\u0631', '\u0627\u0645\u0631', '\u0627\u0648\u0627\u0645\u0631',
     '\u0627\u0644\u062a\u0634\u063a\u064a\u0644', '\u0639\u0627\u0645', '\u0639\u0627\u0645\u0647', '\u0627\u0644\u0639\u0627\u0645\u0629', '\u0627\u0644\u0646\u0638\u0627\u0645', '\u0627\u0644\u0633\u064a\u0633\u062a\u0645', '2b', '\u062a\u0648', '\u0628\u064a'
   ].map(normalizeAiSearchText));
@@ -1209,11 +1210,63 @@ function aiQuestionKeywords(question = '') {
   return Array.from(new Set(customerLike.concat(keywords.filter((word) => !/^\d+$/.test(word) || joined.includes(word)))));
 }
 
+function aiQuestionIntent(question = '') {
+  const text = normalizeAiSearchText(question);
+  const hasAny = (words) => words.some((word) => text.includes(normalizeAiSearchText(word)));
+  return {
+    dyehouse: hasAny(['مصبغة', 'المصبغة', 'المصابغ', 'الصباغة', 'الصباغه', 'داخل المصبغة', 'واقف في المصبغة']),
+    delivery: hasAny(['جاهز للتسليم', 'تسليم', 'تسليمه', 'المخزن', 'رصيد المخزن', 'مخزن']),
+    weaving: hasAny(['النسيج', 'خام لم يستلم', 'استلام خام', 'واقف في النسيج']),
+    rawReady: hasAny(['خام جاهز', 'لم يرسل', 'لم يتبعت', 'ارسال للمصبغة', 'إرسال للمصبغة']),
+    delayed: hasAny(['متاخر', 'متأخر', 'متاخره', 'متأخرة', 'واقف بقاله', 'واقف من زمان', 'اقدم', 'أقدم']),
+    waste: hasAny(['هالك', 'الهالك', 'فاقد', 'فرق الكمية']),
+    open: hasAny(['مفتوح', 'تحت التشغيل', 'شغال']),
+    closed: hasAny(['مغلق', 'مكتمل', 'اتقفل', 'مقفل']),
+  };
+}
+
+function aiIntentKeywordStopWords() {
+  return new Set([
+    'مصبغة', 'المصبغة', 'المصابغ', 'الصباغة', 'الصباغه', 'داخل', 'واقف', 'واقفه',
+    'جاهز', 'جاهزه', 'للتسليم', 'تسليم', 'مخزن', 'المخزن', 'النسيج', 'خام',
+    'متاخر', 'متأخر', 'متاخره', 'متأخرة', 'اقدم', 'أقدم', 'هالك', 'الهالك',
+    'مفتوح', 'مغلق', 'مكتمل', 'شغال', 'الطلبات'
+  ].map(normalizeAiSearchText));
+}
+
+function isAiIntentKeyword(value = '', intentStopWords = aiIntentKeywordStopWords()) {
+  const words = normalizeAiSearchText(value).split(/\s+/).filter(Boolean);
+  if (!words.length) return false;
+  return words.some((word) => {
+    const stripped = word.startsWith('ال') ? word.slice(2) : word;
+    return intentStopWords.has(word) || intentStopWords.has(stripped);
+  });
+}
+
+function orderMatchesAiIntent(order = {}, intent = {}) {
+  const stageKey = String(order.stage?.key || '');
+  const stageLabel = normalizeAiSearchText(order.stage?.label || '');
+  const quantities = order.quantities || {};
+  const checks = [];
+  if (intent.dyehouse) checks.push(stageKey === 'dyehouse' || Number(quantities.remainingAtDyehouse || 0) > 0 || stageLabel.includes('مصبغه'));
+  if (intent.delivery) checks.push(stageKey === 'delivery' || stageLabel.includes('تسليم'));
+  if (intent.weaving) checks.push(stageKey === 'weaving' || Number(quantities.remainingRawToReceive || 0) > 0 || stageLabel.includes('نسيج'));
+  if (intent.rawReady) checks.push(stageKey === 'ready-to-dyehouse' || Number(quantities.remainingNotSentToDyehouse || 0) > 0);
+  if (intent.delayed) checks.push(Number(order.stage?.days || 0) >= 7);
+  if (intent.waste) checks.push(Number(quantities.totalWaste || 0) > 0 || Number(quantities.expectedWasteQuantity || 0) > 0);
+  if (intent.open) checks.push(!order.isClosed && !['completed', 'closed'].includes(String(order.status || '')));
+  if (intent.closed) checks.push(order.isClosed || ['completed', 'closed'].includes(String(order.status || '')));
+  return checks.length ? checks.some(Boolean) : true;
+}
+
 function buildAiQuestionFocus(question = '', orders = []) {
   const keywords = aiQuestionKeywords(question);
+  const intent = aiQuestionIntent(question);
+  const hasIntent = Object.values(intent).some(Boolean);
+  const intentStopWords = aiIntentKeywordStopWords();
   const numericKeywords = keywords.filter((word) => /^\d+$/.test(word));
-  const textKeywords = keywords.filter((word) => !/^\d+$/.test(word));
-  if (!keywords.length) return { active: false, keywords: [], matches: [] };
+  const textKeywords = keywords.filter((word) => !/^\d+$/.test(word) && !isAiIntentKeyword(word, intentStopWords));
+  if (!keywords.length && !hasIntent) return { active: false, keywords: [], matches: [], intent };
   const matches = (orders || []).filter((order) => {
     const fields = [
       order.orderNumber,
@@ -1229,9 +1282,10 @@ function buildAiQuestionFocus(question = '', orders = []) {
     const orderNumber = normalizeAiSearchText(order.orderNumber || '');
     const numericMatch = numericKeywords.length ? numericKeywords.some((word) => orderNumber.includes(word) || haystack.includes(word)) : true;
     const textMatch = textKeywords.length ? textKeywords.some((word) => haystack.includes(word)) : true;
-    return numericMatch && textMatch;
+    const intentMatch = orderMatchesAiIntent(order, intent);
+    return numericMatch && textMatch && intentMatch;
   });
-  return { active: true, keywords, matches };
+  return { active: true, keywords, intent, matches };
 }
 
 function focusedOrderLine(order = {}) {
@@ -1241,9 +1295,30 @@ function focusedOrderLine(order = {}) {
   return `${order.orderNumber || '-'} - ${order.customer || '-'} - ${order.fabricType || '-'} - ${order.stage?.label || '-'} منذ ${Number(order.stage?.days || 0)} يوم - ${order.stage?.reason || '-'} - خام ${quantity} كجم - مجهز ${finished} كجم - رصيد مخزن ${balance} كجم`;
 }
 
+function focusedOrderPriority(order = {}, intent = {}) {
+  const quantities = order.quantities || {};
+  const stageKey = String(order.stage?.key || '');
+  if (intent.dyehouse) return [stageKey === 'dyehouse' ? 1 : 0, Number(quantities.remainingAtDyehouse || 0), Number(order.stage?.days || 0)];
+  if (intent.delivery) return [stageKey === 'delivery' ? 1 : 0, Number(quantities.warehouseBalance || 0), Number(order.stage?.days || 0)];
+  if (intent.delayed) return [Number(order.stage?.days || 0), Number(quantities.totalRequestedQuantity || 0), Number(quantities.remainingAtDyehouse || 0)];
+  return [Number(order.stage?.days || 0), Number(quantities.totalRequestedQuantity || 0), Number(quantities.remainingAtDyehouse || 0)];
+}
+
+function compareFocusedOrders(a = {}, b = {}, intent = {}) {
+  const left = focusedOrderPriority(a, intent);
+  const right = focusedOrderPriority(b, intent);
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const diff = Number(right[index] || 0) - Number(left[index] || 0);
+    if (diff) return diff;
+  }
+  return String(a.orderNumber || '').localeCompare(String(b.orderNumber || ''), 'ar');
+}
+
 function buildFocusedEmployeeReport(data = {}) {
   const focus = data.questionFocus || {};
+  const intent = focus.intent || {};
   const matches = normalizeAiArray(focus.orders);
+  const sortedMatches = matches.slice().sort((a, b) => compareFocusedOrders(a, b, intent));
   const keywords = normalizeAiArray(focus.keywords).join(' ');
   if (!matches.length) {
     return {
@@ -1270,9 +1345,7 @@ function buildFocusedEmployeeReport(data = {}) {
     .sort((a, b) => b.oldestDays - a.oldestDays)
     .map((stage) => `${stage.label}: ${stage.count} طلب / ${Math.round(stage.quantity).toLocaleString('en-US')} كجم / أقدم وقوف ${stage.oldestDays} يوم`)
     .join('، ');
-  const watch = matches
-    .slice()
-    .sort((a, b) => (Number(b.stage?.days || 0) - Number(a.stage?.days || 0)) || (Number(b.quantities?.totalRequestedQuantity || 0) - Number(a.quantities?.totalRequestedQuantity || 0)))
+  const watch = sortedMatches
     .slice(0, 12)
     .map((order) => ({
       orderNumber: order.orderNumber || '-',
@@ -1289,7 +1362,7 @@ function buildFocusedEmployeeReport(data = {}) {
   return {
     source: 'railway-focused-rules',
     executiveSummary: `وجدت ${matches.length} أمر مطابق للسؤال. التوزيع الحالي: ${stageSummary || 'غير محدد'}.`,
-    keyFindings: matches.slice(0, 10).map(focusedOrderLine),
+    keyFindings: sortedMatches.slice(0, 10).map(focusedOrderLine),
     ordersToWatch: watch,
     risks: [
       matches.some((order) => Number(order.stage?.days || 0) >= 7) ? 'يوجد أوامر مطابقة واقفة أكثر من 7 أيام وتحتاج متابعة مباشرة.' : 'لا يظهر تأخير كبير في الأوامر المطابقة من مدة الوقوف الحالية.',
@@ -1344,8 +1417,9 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
     questionFocus: {
       active: questionFocus.active,
       keywords: questionFocus.keywords,
+      intent: questionFocus.intent,
       matchesCount: questionFocus.matches.length,
-      orders: questionFocus.matches.slice(0, 40),
+      orders: questionFocus.matches.slice(0, 120),
     },
     focusInstruction: questionFocus.active
       ? (questionFocus.matches.length
