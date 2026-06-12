@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.12.22';
-const APP_BUILD_TIME = '2026-06-12 22:41';
+const APP_VERSION = 'v2026.06.12.23';
+const APP_BUILD_TIME = '2026-06-12 23:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2252,7 +2252,7 @@ function numericPart(value) {
 }
 function nextPricingNumber() {
   const maxNumber = Math.max(
-    1000,
+    10000,
     ...pricings.map((pricing)=>numericPart(pricing.pricingNumber)),
     ...orders.map((order)=>numericPart(order.orderNumber))
   );
@@ -2600,12 +2600,12 @@ function editPricing(id) {
   refs.pricingDialog.showModal();
 }
 function nextOrderPricingNumber(order) {
-  const base = `Q-${String(order?.orderNumber || '').trim() || nextPricingNumber().replace(/^Q-/, '')}`;
+  const base = nextPricingNumber();
   const used = new Set(pricings.map((pricing)=>String(pricing.pricingNumber || '').trim()).filter(Boolean));
   if (!used.has(base)) return base;
   let index = 2;
-  while (used.has(`${base}-${index}`)) index += 1;
-  return `${base}-${index}`;
+  while (used.has(String(Number(base) + index - 1))) index += 1;
+  return String(Number(base) + index - 1);
 }
 function pricingDraftFromOrder(order) {
   const calculated = calculateOrder(order);
@@ -3399,6 +3399,14 @@ function stockFlowCell(clothQuantity, accessoryParts = []) {
     .split(' - ')
     .map((part)=>`<span class="stock-flow-line">${escapeHtml(part)}</span>`)
     .join('');
+}
+function reportOrderItemsCell(order) {
+  const parts = [`قماش ${formatNumber(order?.totalRawOrdered || order?.totalRawQuantity || 0)} كجم`];
+  (order?.accessoryLines || []).forEach((line) => {
+    const quantity = Number(line.quantity || line.quantityManual || 0);
+    if (quantity) parts.push(`${accessoryLineName(line, order)} ${formatNumber(quantity)} كجم`);
+  });
+  return parts.map((part, index)=>`<span class="report-flow-line ${index ? 'report-flow-accessory' : 'report-flow-body'}">${escapeHtml(part)}</span>`).join('');
 }
 function accessoryDocumentSection(order, fmt, safe) {
   const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
@@ -5017,31 +5025,20 @@ function openOrdersReport(sourceList = null, title = 'تقرير متابعة ا
     return acc;
   }, { raw:0, received:0, sent:0, finished:0, delivered:0, balance:0, waste:0, accessoryRequired:0, accessorySent:0, accessoryReceived:0, accessoryDelivered:0, accessoryBalance:0 });
   const hasAccessory = ['accessoryRequired','accessorySent','accessoryReceived','accessoryDelivered','accessoryBalance'].some((key)=>Number(totals[key] || 0) !== 0);
-  const summaryAccessoryRow = hasAccessory ? `<tr><th>إكسسوار مطلوب</th><td>${fmt(totals.accessoryRequired)}</td><th>إكسسوار مستلم</th><td>${fmt(totals.accessoryReceived)}</td><th>رصيد الإكسسوار</th><td>${fmt(totals.accessoryBalance)}</td></tr>` : '';
+  const summaryAccessoryRow = hasAccessory ? `<tr><th>إجمالي الإكسسوار المطلوب</th><td>${fmt(totals.accessoryRequired)}</td><th>إكسسوار مستلم</th><td>${fmt(totals.accessoryReceived)}</td><th>رصيد الإكسسوار</th><td>${fmt(totals.accessoryBalance)}</td></tr>` : '';
   const summary = `<section class="report-section"><h3>ملخص الكميات</h3><table class="summary-table compact-summary"><tbody><tr><th>عدد الطلبات</th><td>${list.length}</td><th>إجمالي الخام المطلوب</th><td>${fmt(totals.raw)}</td><th>مرسل للمصبغة</th><td>${fmt(totals.sent)}</td></tr><tr><th>دخل المخزن</th><td>${fmt(totals.finished)}</td><th>رصيد المخزن</th><td>${fmt(totals.balance)}</td><th>تسليم العميل</th><td>${fmt(totals.delivered)}</td></tr>${summaryAccessoryRow}</tbody></table></section>`;
   const columns = [
     ['رقم الطلب', (order)=>order.orderNumber || '-'],
     ['العميل', (order)=>order.customer || '-'],
-    ['الصنف', (order)=>order.fabricType || '-'],
+    ['الصنف والكميات', (order)=>`<strong class="report-item-title">${escapeHtml(order.fabricType || '-')}</strong>${reportOrderItemsCell(order)}`],
     ['المصبغة', (order)=>order.dyehouse || '-'],
     ['المرحلة', (order)=>cleanOperationalStage(getOperationalStage(order))],
-    ['مطلوب', (order)=>fmt(order.totalRawOrdered)],
     ['مرسل', (order)=>fmt(order.totalSentToDyehouse)],
     ['مخزن', (order)=>fmt(order.totalFinishedReceived)],
     ['رصيد', (order)=>fmt(order.warehouseBalance)],
     ['تسليم', (order)=>fmt(order.totalDeliveredToCustomer)],
     ['هالك', (order)=>`${fmt(order.totalWaste)} (${formatNumber(order.totalWastePercent || 0, 1)}%)`],
   ];
-  if (hasAccessory) {
-    columns.push(
-      ['نوع الملحق', (order)=>order.accessoryLines?.length ? accessoryTypesLabel(order) : '-'],
-      ['إكس مطلوب', (order)=>fmt(order.accessoryRequired || 0)],
-      ['إكس مرسل', (order)=>fmt(order.accessorySent || 0)],
-      ['إكس مستلم', (order)=>fmt(order.accessoryReceived || 0)],
-      ['إكس مسلم', (order)=>fmt(order.accessoryDelivered || 0)],
-      ['رصيد إكس', (order)=>fmt(order.accessoryBalance || 0)],
-    );
-  }
   const rows = list.map((order)=>`<tr>${columns.map(([, getter])=>`<td>${getter(order)}</td>`).join('')}</tr>`).join('');
   const table = `<section class="report-section"><h3>تفاصيل الطلبات</h3><table class="follow-table filtered-follow-table"><thead><tr>${columns.map(([label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${rows || emptyRow(columns.length, 'لا توجد طلبات مسجلة.')}</tbody></table></section>`;
   showManagementReport(title, subtitle, `${summary}${table}`, reportKey);
@@ -5510,7 +5507,7 @@ async function confirmWeavingSlip(event) {
     sourceDocument: pendingWeavingSlipImage ? { type:type === 'deltexIssue' ? 'raw-issue-review-image' : `${type}-review-image`, image:pendingWeavingSlipImage } : null,
   };
   if (type === 'pricing') {
-    refs.pricingNumber.value = `Q-${order.orderNumber || ''}`;
+    refs.pricingNumber.value = nextPricingNumber();
     refs.pricingCustomer.value = order.customer || '';
     refs.pricingDate.value = refs.weavingSlipDate.value;
     refs.pricingFabricType.value = order.fabricType || '';
@@ -5620,7 +5617,7 @@ installGroupedOrderUi();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
-refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
+refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;

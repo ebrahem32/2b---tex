@@ -564,6 +564,7 @@
 .stock-flow-table{min-width:760px}
 .stock-flow-table td{white-space:normal;line-height:1.7;vertical-align:top}
 .stock-flow-table strong{color:var(--accent2)}
+.report-item-title{display:block;margin-bottom:4px;color:#071527;font-weight:900}
 
 .app-shell{max-width:none;display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
 .app-content{min-width:0;max-width:1500px;width:100%;margin:0 auto}
