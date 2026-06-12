@@ -1594,6 +1594,31 @@ crudRoutes('customers', 'customers');
 crudRoutes('pricings', 'pricings');
 crudRoutes('orders', 'orders');
 
+app.post('/api/orders/bulk', requireRole('manager'), asyncHandler(async (req, res) => {
+  const items = Array.isArray(req.body?.orders) ? req.body.orders : [];
+  if (!items.length) return res.status(400).json({ error: 'orders array is required' });
+  const seen = new Set();
+  for (const item of items) {
+    const key = [item.order_number || '', item.customer_id || '', String(item.fabric_type || '').trim()].join('|');
+    if (seen.has(key)) return res.status(409).json({ error: `Duplicate order item: ${item.order_number || '-'} / ${item.fabric_type || '-'}` });
+    seen.add(key);
+    const existing = await existingUniqueBusinessRow('orders', item);
+    if (existing) return res.status(409).json({ error: `Duplicate order item: ${item.order_number || '-'} / ${item.fabric_type || '-'}` });
+  }
+  const saved = await transaction(async (tx) => {
+    const output = [];
+    for (const item of items) {
+      const query = insertSql('orders', item || {});
+      tx.run(query.sql, query.values);
+      const row = await tx.get('SELECT * FROM orders WHERE id = ?', [query.id]);
+      output.push(row);
+    }
+    return output;
+  });
+  for (const row of saved) await auditMutation('create', 'orders', row.id, null, row, 'POST /api/orders/bulk');
+  res.status(201).json(saved);
+}));
+
 app.get('/api/orders/:id', asyncHandler(async (req, res) => {
   const order = await get('SELECT * FROM orders WHERE id = ?', [req.params.id]);
   if (!order) return res.status(404).json({ error: 'Order not found' });

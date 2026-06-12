@@ -2447,8 +2447,64 @@ function syncWidthModeUi() {
   const multiple = refs.widthMode.value === 'multiple';
   refs.widthLinesBox.classList.toggle('active', multiple);
   refs.inchWidth.required = !multiple;
+  syncGroupedOrderUi();
 }
 const statusLabel = (status) => ({ pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا' }[status]);
+function groupedOrderRowHtml(item = {}, isPrimary = false) {
+  return `<div class="grouped-order-row${isPrimary ? ' primary' : ''}" data-grouped-order-row><input data-grouped-field="fabricType" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="totalRawQuantity" type="number" step="0.01" placeholder="الكمية" value="${item.totalRawQuantity || ''}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="inchWidth" placeholder="البوصة" value="${item.inchWidth || ''}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="kiloPrice" type="number" step="0.01" placeholder="سعر الكيلو" value="${item.kiloPrice || ''}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="expectedWastePercent" type="number" step="0.01" placeholder="الهالك %" value="${item.expectedWastePercent || ''}" ${isPrimary ? 'readonly' : ''}><button type="button" class="mini-btn danger" data-remove-grouped-order ${isPrimary ? 'disabled' : ''}>حذف</button></div>`;
+}
+function groupedOrderPrimaryItem() {
+  return { fabricType:refs.fabricType?.value || '', totalRawQuantity:refs.totalRawQuantity?.value || '', inchWidth:refs.inchWidth?.value || '', kiloPrice:refs.kiloPrice?.value || '', expectedWastePercent:refs.expectedWastePercent?.value || '' };
+}
+function syncGroupedOrderPrimaryRow() {
+  const rows = document.getElementById('groupedOrderRows');
+  if (!rows) return;
+  const primary = rows.querySelector('[data-grouped-order-row].primary');
+  if (!primary) { rows.insertAdjacentHTML('afterbegin', groupedOrderRowHtml(groupedOrderPrimaryItem(), true)); return; }
+  const item = groupedOrderPrimaryItem();
+  Object.entries(item).forEach(([key, value]) => {
+    const input = primary.querySelector(`[data-grouped-field="${key}"]`);
+    if (input) input.value = value;
+  });
+}
+function syncGroupedOrderUi() {
+  const box = document.getElementById('groupedOrderBox');
+  if (!box) return;
+  box.hidden = Boolean(editingOrderId) || refs.widthMode?.value === 'multiple';
+  syncGroupedOrderPrimaryRow();
+}
+function resetGroupedOrderRows() {
+  const rows = document.getElementById('groupedOrderRows');
+  if (!rows) return;
+  rows.innerHTML = groupedOrderRowHtml(groupedOrderPrimaryItem(), true);
+  syncGroupedOrderUi();
+}
+function readGroupedOrderItems() {
+  return [...document.querySelectorAll('#groupedOrderRows [data-grouped-order-row]')].map((row)=>({
+    fabricType: row.querySelector('[data-grouped-field="fabricType"]')?.value.trim() || '',
+    totalRawQuantity: Number(row.querySelector('[data-grouped-field="totalRawQuantity"]')?.value || 0),
+    inchWidth: row.querySelector('[data-grouped-field="inchWidth"]')?.value.trim() || '',
+    kiloPrice: Number(row.querySelector('[data-grouped-field="kiloPrice"]')?.value || 0),
+    expectedWastePercent: Number(row.querySelector('[data-grouped-field="expectedWastePercent"]')?.value || 0),
+  })).filter((item)=>item.fabricType || item.totalRawQuantity > 0 || item.inchWidth || item.kiloPrice > 0);
+}
+function installGroupedOrderUi() {
+  if (!refs.orderForm || document.getElementById('groupedOrderBox')) return;
+  const anchor = refs.totalRawQuantity?.closest('label') || refs.fabricType?.closest('label');
+  if (!anchor) return;
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box" id="groupedOrderBox"><div class="subsection-head"><div><span>أصناف داخل نفس الطلب</span><p class="eyebrow">كل صنف يحفظ كأمر تشغيل مستقل بنفس رقم الطلب والعميل حتى تظل مراحل النسيج والصباغة والتسليم منفصلة وآمنة.</p></div><button type="button" class="mini-btn" id="addGroupedOrderItemBtn">+ إضافة صنف</button></div><div class="grouped-order-head"><span>الصنف</span><span>الكمية</span><span>البوصة</span><span>سعر الكيلو</span><span>الهالك %</span><span></span></div><div id="groupedOrderRows"></div></div>`);
+  document.getElementById('addGroupedOrderItemBtn')?.addEventListener('click', () => document.getElementById('groupedOrderRows')?.insertAdjacentHTML('beforeend', groupedOrderRowHtml()));
+  document.getElementById('groupedOrderRows')?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-remove-grouped-order]');
+    if (!button || button.disabled) return;
+    button.closest('[data-grouped-order-row]')?.remove();
+  });
+  [refs.fabricType, refs.totalRawQuantity, refs.inchWidth, refs.kiloPrice, refs.expectedWastePercent].filter(Boolean).forEach((input) => {
+    input.addEventListener('input', syncGroupedOrderPrimaryRow);
+    input.addEventListener('change', syncGroupedOrderPrimaryRow);
+  });
+  resetGroupedOrderRows();
+}
 const orderDomain = window.TwoBTexOrders.createOrderDomain({
   buildItemCode,
   orderRawCost,
@@ -3970,6 +4026,7 @@ function fillOrderForm(order) {
   refs.inchWidth.value = order.inchWidth || '';
   renderWidthLinesEditor(order.widthLines || []);
   syncWidthModeUi();
+  resetGroupedOrderRows();
   refs.kiloPrice.value = order.kiloPrice || '';
   setPaymentFields(refs.paymentMode, refs.paymentDetails, refs.paymentTerms, order.paymentTerms || '');
   refs.dyehouse.value = order.dyehouse || '';
@@ -3978,6 +4035,7 @@ function fillOrderForm(order) {
   refs.accessoryPercent.value = order.accessoryPercent || 0;
   renderAccessoryLinesEditor(orderAccessoryConfig(order));
   refs.orderNotes.value = order.notes || '';
+  resetGroupedOrderRows();
 }
 async function addOrder(event) {
   event.preventDefault();
@@ -3989,6 +4047,13 @@ async function addOrder(event) {
   const paymentTerms = composePaymentTerms(refs.paymentMode?.value, refs.paymentDetails?.value);
   if (refs.paymentTerms) refs.paymentTerms.value = paymentTerms;
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
+  const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple' ? readGroupedOrderItems() : [];
+  const hasGroupedOrderItems = groupedItems.length > 1;
+  if (hasGroupedOrderItems && payload.pricingId) { alert('الطلب المحول من تسعيرة يحفظ كصنف واحد. احفظ الأصناف الإضافية كطلب مجمع مستقل.'); return; }
+  if (hasGroupedOrderItems) {
+    const incomplete = groupedItems.find((item)=>!item.fabricType || !(item.totalRawQuantity > 0));
+    if (incomplete) { alert('راجع أصناف الطلب المجمع: كل صنف يجب أن يحتوي على اسم صنف وكمية.'); return; }
+  }
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   const backendCustomer = await ensureBackendCustomer(payload.customer);
@@ -4027,6 +4092,29 @@ async function addOrder(event) {
     }
     selectedOrderId = editingOrderId;
   } else {
+    if (hasGroupedOrderItems) {
+      const groupedOrders = groupedItems.map((item)=> {
+        const groupedPayload = { ...payload, pricingId:'', fabricType:item.fabricType, totalRawQuantity:item.totalRawQuantity, expectedWastePercent:item.expectedWastePercent || payload.expectedWastePercent, inchWidth:item.inchWidth || payload.inchWidth, kiloPrice:item.kiloPrice || payload.kiloPrice, widthMode:'single', widthLines:[], productCode:buildItemCode(payload.orderNumber) };
+        return { id:uid(), status:'pending', ...groupedPayload };
+      });
+      let savedGroupedOrders = null;
+      try {
+        savedGroupedOrders = await postBackendStrict('/orders/bulk', { orders: groupedOrders.map((order)=>orderToApi(order, backendCustomer)) });
+      } catch (error) {
+        alert(error.message || 'تعذر حفظ الطلب المجمع.');
+        return;
+      }
+      if (backendSaveRequired && (!Array.isArray(savedGroupedOrders) || savedGroupedOrders.length !== groupedOrders.length)) {
+        await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب المجمع بالكامل في قاعدة البيانات. لم يتم اعتماد التسجيل.');
+        return;
+      }
+      selectedOrderId = savedGroupedOrders[0]?.id || groupedOrders[0]?.id || null;
+      editingOrderId = null;
+      pendingConvertedPricingId = null;
+      await loadBackendData();
+      refs.orderDialog.close();
+      return;
+    }
     const newOrder = { id:uid(), status:'pending', ...payload };
     const savedOrder = await postBackend('/orders', orderToApi(newOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
@@ -5318,10 +5406,11 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
 if (refs.weavingSlipDialog) installAmalReviewUi();
 applyPricingMaterialOptions();
 applyPricingDyehouseOptions();
+installGroupedOrderUi();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
-refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
+refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
