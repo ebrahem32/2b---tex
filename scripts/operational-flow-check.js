@@ -270,6 +270,12 @@ function checkDyeingDocumentShowsPhysicalRawBalance() {
   assert(html.includes('175.6'), 'document: dyeing order raw balance must show physical sent balance above planned quantity');
 }
 
+function checkWarehouseTabKeepsInventorySection() {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(source.includes('const inventorySection = `<div class="subsection stock-flow-section">'), 'ui: inventory section must be routed to warehouse tab');
+  assert(!source.includes('section.remove();'), 'ui: warehouse inventory section must not be removed while consolidating order details');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -283,6 +289,7 @@ checkFrontendBackendParity();
 checkMultiColorOperationalEntry();
 checkOversentFinishedOrderKeepsExtraAtDyehouse();
 checkDyeingDocumentShowsPhysicalRawBalance();
+checkWarehouseTabKeepsInventorySection();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');
