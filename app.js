@@ -2995,15 +2995,30 @@ async function copyAiWhatsappMessage() {
 
 function renderOrders() {
   const list = filteredOrders();
+  syncFilteredListMode();
   renderStats(list);
   refs.ordersTableBody.innerHTML = list.map((order) => {
     const stage = orderStageInfo(order);
-    return `<tr><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="رصيد المخزن">${order.warehouseBalance}</td><td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span></td><td data-label="واقف من">${stage.startDate || '-'}${stage.startDate ? ` / ${stage.days} يوم` : ''}</td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-order="${order.id}">حذف</button>` : ''}</div></td></tr>`;
-  }).join('');
+    return `<tr class="order-result-row" data-order-row="${order.id}"><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="رصيد المخزن">${order.warehouseBalance}</td><td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span></td><td data-label="واقف من">${stage.startDate || '-'}${stage.startDate ? ` / ${stage.days} يوم` : ''}</td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-order="${order.id}">حذف</button>` : ''}</div></td></tr>`;
+  }).join('') || '<tr><td colspan="10">لا توجد طلبات مطابقة للفلتر الحالي.</td></tr>';
 }
 
 function syncOrderFocusMode() {
   document.body.classList.toggle('order-focus-mode', orderFocusMode);
+}
+
+function hasActiveOrderFilter() {
+  return Boolean(
+    String(refs.searchInput?.value || '').trim()
+    || (refs.orderStatusFilter?.value && refs.orderStatusFilter.value !== 'all')
+    || (refs.customerFilter?.value && refs.customerFilter.value !== 'all')
+    || (refs.dyehouseFilter?.value && refs.dyehouseFilter.value !== 'all')
+    || (refs.fabricFilter?.value && refs.fabricFilter.value !== 'all')
+  );
+}
+
+function syncFilteredListMode() {
+  document.body.classList.toggle('filtered-list-mode', hasActiveOrderFilter() && !orderFocusMode);
 }
 
 function decorateOrderFocusHeader(order) {
@@ -3021,6 +3036,7 @@ function decorateOrderFocusHeader(order) {
 function closeOrderFocusMode() {
   orderFocusMode = false;
   syncOrderFocusMode();
+  syncFilteredListMode();
   document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
@@ -3028,6 +3044,7 @@ function openOrderFocusMode(orderId) {
   selectedOrderId = orderId;
   orderFocusMode = true;
   syncOrderFocusMode();
+  syncFilteredListMode();
   renderDetails();
   refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
@@ -5280,7 +5297,11 @@ refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.
 refs.pricingTableBody.onclick = (event) => { if (event.target.dataset.pricingQuote) openPricingQuotation(event.target.dataset.pricingQuote); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); if (event.target.dataset.editPricing) editPricing(event.target.dataset.editPricing); if (event.target.dataset.deletePricing) deletePricing(event.target.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 refs.ordersTableBody.onclick = (event) => {
   const button = event.target.closest('button');
-  if (!button) return;
+  if (!button) {
+    const row = event.target.closest('[data-order-row]');
+    if (row?.dataset.orderRow) openOrderFocusMode(row.dataset.orderRow);
+    return;
+  }
   if (button.dataset.view) {
     try {
       openOrderFocusMode(button.dataset.view);

@@ -110,6 +110,13 @@
 .order-focus-mode .stats-grid,
 .order-focus-mode .operation-follow-panel,
 .order-focus-mode .side-panel{display:none!important}
+.filtered-list-mode .pricing-panel,
+.filtered-list-mode .stats-grid,
+.filtered-list-mode .operation-follow-panel,
+.filtered-list-mode .ai-panel,
+.filtered-list-mode .workspace-grid{display:none!important}
+.order-result-row{cursor:pointer}
+.order-result-row:hover{background:rgba(200,165,106,.08)}
 .order-focus-mode .workspace-grid{display:block!important}
 .order-focus-mode #orderDetailsPanel{margin-top:0}
 .report-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 18px;padding-bottom:12px;border-bottom:2px solid #071527}
