@@ -265,7 +265,7 @@
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
       const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
-      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام'] });
+      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
     }
 
     function buildDyeingSummaryDocument(order) {
