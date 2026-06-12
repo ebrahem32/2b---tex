@@ -17,6 +17,10 @@ function remainingWithTolerance(target, actual) {
   return remaining <= toleranceFor(target) ? 0 : remaining;
 }
 
+function remainingPhysical(target, actual) {
+  return round(Math.max(Number(target || 0) - Number(actual || 0), 0));
+}
+
 function gluingKey(batch = {}) {
   return String(batch.note_number || batch.noteNumber || batch.partner_fabric || batch.partnerFabric || batch.id || '').trim();
 }
@@ -89,7 +93,7 @@ function calculateOrderSummary(order, data = {}) {
   const gluingBalance = gluingMetrics.balance;
   const gluedProductBalance = 0;
   const requested = Number(order?.total_raw_quantity || order?.totalRawQuantity || 0);
-  const dyehouseTarget = sentToDyehouse && requested ? Math.min(sentToDyehouse, requested) : sentToDyehouse;
+  const dyehouseTarget = sentToDyehouse;
   const rawToleranceQuantity = toleranceFor(requested);
   const isClosed = Boolean(order?.is_closed || order?.operationClosed);
   const wasteQuantity = isClosed ? Math.max(sentToDyehouse - finishedReceived - rawReturned, 0) : 0;
@@ -97,7 +101,7 @@ function calculateOrderSummary(order, data = {}) {
   const estimatedWaste = requested * Number(order?.expected_waste_percent || order?.expectedWastePercent || 0) / 100;
   const remainingRawToReceive = remainingWithTolerance(requested, rawReceived);
   const remainingNotSentToDyehouse = remainingWithTolerance(rawReceived, sentToDyehouse);
-  const remainingAtDyehouse = remainingWithTolerance(dyehouseTarget, finishedReceived + rawReturned + wasteQuantity);
+  const remainingAtDyehouse = remainingPhysical(dyehouseTarget, finishedReceived + rawReturned + wasteQuantity);
   const customerRemainingQuantity = remainingWithTolerance(requested, customerDelivered);
   const warehouseBalance = remainingWithTolerance(finishedReceived + returnedFromGluing, customerDelivered + sentToGluing);
   const operationallyComplete = sentToDyehouse > 0

@@ -179,6 +179,9 @@ function checkBackendFlow() {
   assertClose(partialDelivery.remainingAtDyehouse, 8, 'backend: customer delivery must not change dyehouse balance');
   assertClose(partialDelivery.warehouseBalance, 42, 'backend: customer delivery reduces warehouse only');
 
+  const oversent = backendSummary({ rawReceived: 103.55, sent: 103.55, finished: 100 });
+  assertClose(oversent.remainingAtDyehouse, 3.55, 'backend: extra raw sent remains visible at dyehouse');
+
   const closed = backendSummary({ rawReceived: 100, sent: 100, finished: 92, delivered: 50, closed: true });
   assertClose(closed.wasteQuantity, 8, 'backend: closed order turns missing finished into actual waste');
   assertClose(closed.remainingAtDyehouse, 0, 'backend: closed order clears dyehouse balance through actual waste');
@@ -220,10 +223,10 @@ function checkMultiColorOperationalEntry() {
   assertClose(frontend.warehouseBalance, 42, 'multi-color: warehouse balance after partial delivery');
 }
 
-function checkOversentFinishedOrderDoesNotStayAtDyehouse() {
+function checkOversentFinishedOrderKeepsExtraAtDyehouse() {
   const frontend = frontendOversentFinishedSummary();
-  assertClose(frontend.remainingAtDyehouse, 0, 'oversent: finished requested quantity clears dyehouse balance');
-  assertClose(frontend.rawAtDyehouseAvailable, 0, 'oversent: extra raw sent does not keep order at dyehouse');
+  assertClose(frontend.remainingAtDyehouse, 35.5, 'oversent: extra raw sent remains visible at dyehouse');
+  assertClose(frontend.rawAtDyehouseAvailable, 35.5, 'oversent: extra raw sent remains in dyehouse balance');
   assertClose(frontend.warehouseBalance, 1000, 'oversent: warehouse balance follows finished receipt');
 }
 
@@ -238,7 +241,7 @@ checkBackendFlow();
 checkFrontendFlow();
 checkFrontendBackendParity();
 checkMultiColorOperationalEntry();
-checkOversentFinishedOrderDoesNotStayAtDyehouse();
+checkOversentFinishedOrderKeepsExtraAtDyehouse();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');
