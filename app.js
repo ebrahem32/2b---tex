@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.08';
-const APP_BUILD_TIME = '2026-06-13 03:35';
+const APP_VERSION = 'v2026.06.13.09';
+const APP_BUILD_TIME = '2026-06-13 04:00';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -263,6 +263,11 @@ let openDyehouseBalancesReport;
 let stockFlowText;
 let accessoryBalancePartsForOrder;
 let stockFlowCell;
+let ordersListHeadingForCurrentFilter;
+let updateOrdersListHeading;
+let renderOrders;
+let hasActiveOrderFilter;
+let syncFilteredListMode;
 
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
@@ -3059,101 +3064,24 @@ function renderErpCockpit(list = []) {
   getReportTypeLabels: () => reportTypeLabels,
 }));
 
-function ordersListHeadingForCurrentFilter(list = []) {
-  const status = refs.orderStatusFilter?.value || 'all';
-  const stageHeadings = {
-    'stage:weaving': {
-      eyebrow: '\u0631\u0635\u064a\u062f \u0627\u0644\u0646\u0633\u064a\u062c',
-      title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0646\u0633\u064a\u062c',
-      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0645\u0627 \u0632\u0627\u0644\u062a \u0648\u0627\u0642\u0641\u0629 \u0641\u064a \u0627\u0644\u0646\u0633\u064a\u062c \u0623\u0648 \u0644\u0645 \u064a\u0643\u062a\u0645\u0644 \u0627\u0633\u062a\u0644\u0627\u0645 \u062e\u0627\u0645\u0647\u0627.'
-    },
-    'stage:dyehouse': {
-      eyebrow: '\u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u0635\u0628\u063a\u0629',
-      title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u0635\u0628\u063a\u0629',
-      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u062a\u0645 \u062a\u0633\u0644\u064a\u0645 \u0642\u0645\u0627\u0634 \u0645\u0646\u0647\u0627 \u0644\u0644\u0645\u0635\u0628\u063a\u0629 \u0648\u0644\u0645 \u064a\u0643\u062a\u0645\u0644 \u0627\u0633\u062a\u0644\u0627\u0645 \u0627\u0644\u0645\u062c\u0647\u0632.'
-    },
-    'stage:warehouse': {
-      eyebrow: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646',
-      title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646 / \u062c\u0627\u0647\u0632 \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
-      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u0645\u062c\u0647\u0632 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062e\u0632\u0646\u060c \u0648\u0647\u0630\u0627 \u0647\u0648 \u0646\u0641\u0633\u0647 \u0627\u0644\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062a\u0627\u062d \u0644\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0639\u0645\u064a\u0644.'
-    },
-  };
-  const heading = stageHeadings[status];
-  if (heading) return { ...heading, count: list.length };
-  if (hasActiveOrderFilter()) return {
-    eyebrow: '\u0646\u062a\u0627\u0626\u062c \u0627\u0644\u0641\u0644\u062a\u0631\u0629',
-    title: '\u0642\u0627\u0626\u0645\u0629 \u0645\u0641\u0644\u062a\u0631\u0629',
-    subtitle: activeOrderFilterSummary(),
-    count: list.length
-  };
-  return {
-    eyebrow: '\u0627\u0644\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629',
-    title: '\u0627\u0644\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629',
-    subtitle: '',
-    count: list.length
-  };
-}
-
-function updateOrdersListHeading(list = []) {
-  const panel = document.querySelector('.orders-list-panel');
-  const head = panel?.querySelector('.section-head > div');
-  if (!head) return;
-  const heading = ordersListHeadingForCurrentFilter(list);
-  let note = head.querySelector('[data-orders-list-note]');
-  if (!note) {
-    note = document.createElement('p');
-    note.className = 'orders-list-note';
-    note.dataset.ordersListNote = 'true';
-    head.appendChild(note);
-  }
-  const eyebrow = head.querySelector('.eyebrow');
-  const title = head.querySelector('h2');
-  if (eyebrow) eyebrow.textContent = heading.eyebrow;
-  if (title) title.textContent = `${heading.title} (${heading.count})`;
-  note.textContent = heading.subtitle || '';
-  note.hidden = !heading.subtitle;
-}
-
-function renderOrders() {
-  const list = filteredOrders();
-  syncFilteredListMode();
-  renderStats(list);
-  renderErpCockpit(list);
-  updateOrdersListHeading(list);
-  refs.ordersTableBody.innerHTML = list.map((order) => {
-    const stage = orderStageInfo(order);
-    const waitingText = stage.startDate ? `${stage.startDate} / ${stage.days} يوم` : '-';
-    return `<tr class="order-result-row" data-order-row="${order.id}">
-      <td data-label="رقم الطلب"><strong class="order-number-cell">${escapeHtml(order.orderNumber || '-')}</strong></td>
-      <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
-      <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
-      <td data-label="الأرصدة">
-        <div class="order-balance-stack" aria-label="أرصدة الطلب">
-          <span><em>خام</em><strong>${formatNumber(order.totalRawOrdered || 0)}</strong></span>
-          <span><em>مصبغة</em><strong>${formatNumber(order.totalSentToDyehouse || 0)}</strong></span>
-          <span class="emphasis"><em>مخزن</em><strong>${formatNumber(order.warehouseBalance || 0)}</strong></span>
-        </div>
-      </td>
-      <td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span><small class="order-stage-age">${escapeHtml(waitingText)}</small></td>
-      <td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-order="${order.id}">حذف</button>` : ''}</div></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6">لا توجد طلبات مطابقة للفلتر الحالي.</td></tr>';
-}
-
-function hasActiveOrderFilter() {
-  return Boolean(
-    String(refs.searchInput?.value || '').trim()
-    || (refs.orderStatusFilter?.value && refs.orderStatusFilter.value !== 'all')
-    || (refs.customerFilter?.value && refs.customerFilter.value !== 'all')
-    || (refs.dyehouseFilter?.value && refs.dyehouseFilter.value !== 'all')
-    || (refs.fabricFilter?.value && refs.fabricFilter.value !== 'all')
-  );
-}
-
-function syncFilteredListMode() {
-  document.body.classList.toggle('filtered-list-mode', hasActiveOrderFilter() && !orderFocusMode);
-}
-
+({
+  ordersListHeadingForCurrentFilter,
+  updateOrdersListHeading,
+  renderOrders,
+  hasActiveOrderFilter,
+  syncFilteredListMode,
+} = window.createOrdersUi({
+  refs,
+  filteredOrders,
+  renderStats,
+  renderErpCockpit,
+  orderStageInfo,
+  formatNumber,
+  escapeHtml,
+  canDeleteRecords,
+  activeOrderFilterSummary: () => activeOrderFilterSummary(),
+  getOrderFocusMode: () => orderFocusMode,
+}));
 function documentFooter() {
   const printedAt = new Date().toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' });
   return `<div class="document-footer"><span>${printedAt}</span><strong>Manager : Ibrahim Assem</strong></div>`;
