@@ -75,10 +75,22 @@ This file records important system changes. New entries should follow `CHANGE_TE
 ### Complete Frontend UI Module Extraction
 
 - Date: 2026-06-13
-- Commit: pending commit `Complete frontend UI module extraction`.
+- Commit: `3d4dacf Complete frontend UI module extraction`.
 - Goal: continue Phase 1.4 by extracting additional frontend UI-only areas from `app.js`.
 - Files added: `modules/auditUi.js`, `modules/usersUi.js`, `modules/settingsUi.js`, `modules/formsUi.js`, `modules/pricingUi.js`.
 - Files changed: `app.js`, `index.html`, `package.json`, `project-memory/CURRENT_STATUS.md`, `project-memory/DEVELOPMENT_LOG.md`.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite, schema, waste logic, stock logic, AI backend, WhatsApp service, A5 service.
 - Deferred: `operationsUi.js`, `transfersUi.js`, and deeper `accessoriesUi.js` movement handlers remain in `app.js` because they are coupled to backend writes, operational validations, and stock movement safety.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Extract Frontend Backend Client
+
+- Date: 2026-06-13
+- Commit: `Extract frontend backend client`.
+- Goal: start Phase 2.1 by extracting only the generic frontend backend request/client layer.
+- Files added: `modules/backendClient.js`.
+- Files changed: `app.js`, `index.html`, `package.json`, `project-memory/CURRENT_STATUS.md`, `project-memory/DEVELOPMENT_LOG.md`.
+- Moved: generic API URL building, fetch wrapper, JSON parsing, HTTP error extraction, and raw GET/POST/PUT/DELETE client helpers.
+- Not moved: write guards, rollback, persistence verification, operational save flows, order/batch/customer/pricing business logic.
+- Not touched: `backend/server.js`, `backend/calculations.js`, SQLite, schema, waste logic, stock logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.

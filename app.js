@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.10';
-const APP_BUILD_TIME = '2026-06-13 04:35';
+const APP_VERSION = 'v2026.06.13.11';
+const APP_BUILD_TIME = '2026-06-13 05:15';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -363,26 +363,14 @@ function captureLocalStorageSnapshot() {
 const WHATSAPP_SERVICE_URL = '/whatsapp';
 const AI_SERVICE_URL = '';
 const A5_SERVICE_URL = 'http://127.0.0.1:3041';
-const BACKEND_API_URL = '/api';
+const backendClient = window.createBackendClient({ baseUrl: '/api' });
 let backendAvailable = false;
 let backendDataLoading = false;
 let currentUser = null;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function backendRequest(path, options = {}) {
-  const response = await fetch(`${BACKEND_API_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-  });
-  if (!response.ok) {
-    let message = `Backend ${response.status}`;
-    try {
-      const data = await response.json();
-      message = data.error || data.message || message;
-    } catch {}
-    throw new Error(message);
-  }
-  return response.json();
+  return backendClient.request(path, options);
 }
 
 async function loadCurrentUser() {

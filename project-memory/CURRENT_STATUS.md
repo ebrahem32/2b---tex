@@ -2,16 +2,20 @@
 
 ## Current Version
 
-`v2026.06.13.10`
+`v2026.06.13.11`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
+## Latest Commit Message
+
+`Extract frontend backend client`
+
 ## Current Phase
 
 ```text
-Phase 1 - Frontend Modular Refactor
+Phase 2.1 - Frontend Backend Client Extraction
 ```
 
 ## Completed Frontend Modules
@@ -28,20 +32,22 @@ Phase 1 - Frontend Modular Refactor
 - `modules/settingsUi.js`
 - `modules/formsUi.js`
 - `modules/pricingUi.js`
+- `modules/backendClient.js`
 
 ## Current `app.js` Direction
 
 `app.js` is being reduced from a large all-in-one file into an application orchestrator.
 
-Current known line count after Phase 1.2:
+Current known line count after Phase 2.1:
 
 ```text
-app.js: about 5538 lines
+app.js: 4989 lines
 ```
 
 ## Next Frontend Refactor Targets
 
 - Keep `operations`, `transfers`, and deeper accessory movement handlers inside `app.js` until a safer write-flow refactor, because they are tightly coupled to backend writes, stock movements, and operational validations.
+- Keep write guards, rollback, persistence verification, and operational save flows inside `app.js` until a dedicated write-flow refactor.
 
 ## Not Allowed Currently
 
@@ -53,24 +59,9 @@ app.js: about 5538 lines
 
 ## Last Verification
 
-For Phase 1.4 local verification before commit:
+For Phase 2.1 local verification before commit:
 
 - `npm run check`: passed.
 - Operational flow check: passed.
 - GitHub Actions: verify after push.
 - Railway: verify after push.
-
-## This Documentation Task
-
-Goal:
-
-- Add `project-memory/` to GitHub as the persistent project memory.
-
-Required after creation:
-
-```bash
-npm run check
-git add project-memory
-git commit -m "Add project memory documentation"
-git push origin main
-```
