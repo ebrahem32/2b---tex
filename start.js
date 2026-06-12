@@ -7,9 +7,17 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const BACKEND_PORT = process.env.BACKEND_PORT || '3050';
 const FRONTEND_PORT = process.env.PORT || '3000';
-const WHATSAPP_PORT = process.env.WHATSAPP_PORT || '3020';
+function internalPort(value, fallback, reserved = []) {
+  const cleanValue = String(value || '').trim();
+  const cleanFallback = String(fallback || '').trim();
+  if (cleanValue && !reserved.includes(cleanValue)) return cleanValue;
+  let candidate = Number(cleanFallback || 3050);
+  while (reserved.includes(String(candidate))) candidate += 1;
+  return String(candidate);
+}
+const BACKEND_PORT = internalPort(process.env.BACKEND_PORT, '3050', [FRONTEND_PORT]);
+const WHATSAPP_PORT = internalPort(process.env.WHATSAPP_PORT, '3020', [FRONTEND_PORT, BACKEND_PORT]);
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'backend', 'data', '2btex.sqlite');
 const SEED_PATH = path.join(__dirname, 'backend', 'data', '2btex.sqlite');
 const IS_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_SERVICE_ID);

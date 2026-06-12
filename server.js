@@ -204,6 +204,11 @@ function requestLogin(res) {
 }
 
 function proxyApi(req, res) {
+  if (apiTarget.port === port) {
+    res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: false, error: 'إعداد منفذ قاعدة البيانات غير صحيح. راجع BACKEND_PORT.' }));
+    return;
+  }
   const options = {
     hostname: apiTarget.host,
     port: apiTarget.port,
