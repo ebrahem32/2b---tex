@@ -3128,11 +3128,6 @@ function ordersListHeadingForCurrentFilter(list = []) {
       title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0646\u0633\u064a\u062c',
       subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0645\u0627 \u0632\u0627\u0644\u062a \u0648\u0627\u0642\u0641\u0629 \u0641\u064a \u0627\u0644\u0646\u0633\u064a\u062c \u0623\u0648 \u0644\u0645 \u064a\u0643\u062a\u0645\u0644 \u0627\u0633\u062a\u0644\u0627\u0645 \u062e\u0627\u0645\u0647\u0627.'
     },
-    'stage:ready-to-dyehouse': {
-      eyebrow: '\u062e\u0627\u0645 \u062c\u0627\u0647\u0632 \u0644\u0644\u0645\u0635\u0628\u063a\u0629',
-      title: '\u062e\u0627\u0645 \u062c\u0627\u0647\u0632 \u0644\u0644\u0645\u0635\u0628\u063a\u0629',
-      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u062e\u0627\u0645 \u0645\u062a\u0627\u062d \u0644\u0644\u0625\u0631\u0633\u0627\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629.'
-    },
     'stage:dyehouse': {
       eyebrow: '\u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u0635\u0628\u063a\u0629',
       title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u0635\u0628\u063a\u0629',
@@ -3597,6 +3592,7 @@ function normalizeReportAction(type = '') {
 }
 function applyStageShortcut(stageValue) {
   if (!stageValue || !refs.orderStatusFilter) return;
+  if (stageValue === 'stage:ready-to-dyehouse') stageValue = 'stage:dyehouse';
   openMainWorkspace();
   closeDashboardFocusMode();
   closeAiFocusMode();
@@ -4733,12 +4729,13 @@ function orderStageInfo(order) {
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:ready-to-dyehouse':'خام جاهز للمصبغة', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'رصيد متاح للتسليم' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'رصيد متاح للتسليم' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
   const select = refs.orderStatusFilter;
   if (!select) return;
+  [...select.options].filter((option)=>option.value === 'stage:ready-to-dyehouse').forEach((option)=>option.remove());
   const deliveryOption = [...select.options].find((option)=>option.value === 'stage:delivery');
   if (deliveryOption) deliveryOption.textContent = 'رصيد متاح للتسليم';
   const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');

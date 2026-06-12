@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>2B Tex | نظام التشغيل</title>
-  <link rel="stylesheet" href="./styles.css?v=20260612-order360" />
+  <link rel="stylesheet" href="./styles.css?v=20260612-dyehouse-flow" />
   <script>
     (function () {
       function showStartupError(message) {
@@ -64,7 +64,6 @@
         <section>
           <h3>النسيج</h3>
           <button type="button" data-module-action="weaving" data-stage-shortcut="stage:weaving">رصيد النسيج</button>
-          <button type="button" data-module-action="weaving" data-stage-shortcut="stage:ready-to-dyehouse">خام جاهز للمصبغة</button>
           <button type="button" data-module-action="weaving" data-doc-menu="weaving">أوامر تشغيل النسيج</button>
           <button type="button" data-module-action="weaving" data-nav-action="orderDetails">استلام الخام</button>
           <button type="button" data-module-action="weaving" data-stage-shortcut="stage:weaving">متابعة الخام</button>
@@ -168,11 +167,10 @@
           <button type="button" class="erp-flow-step" data-nav-action="pricingNew"><span>1</span><strong>عرض سعر</strong><small>تجهيز سعر أو عقد للعميل قبل أو أثناء دورة الطلب.</small></button>
           <button type="button" class="erp-flow-step" data-nav-action="orderNew"><span>2</span><strong>طلب عميل</strong><small>تسجيل الطلب أو طلب مجمع بنفس رقم التشغيل.</small></button>
           <button type="button" class="erp-flow-step" data-module-action="weaving" data-stage-shortcut="stage:weaving"><span>3</span><strong>النسيج</strong><small>متابعة الخام المطلوب والواقف في مرحلة النسيج.</small></button>
-          <button type="button" class="erp-flow-step" data-module-action="weaving" data-stage-shortcut="stage:ready-to-dyehouse"><span>4</span><strong>خام جاهز</strong><small>رصيد خام متاح فعليًا للإرسال إلى المصبغة.</small></button>
-          <button type="button" class="erp-flow-step" data-module-action="dyehouse" data-stage-shortcut="stage:dyehouse"><span>5</span><strong>داخل المصبغة</strong><small>كل ما خرج للمصبغة ولم يرجع مجهزًا بالكامل.</small></button>
-          <button type="button" class="erp-flow-step" data-module-action="warehouse" data-stage-shortcut="stage:warehouse"><span>6</span><strong>مخزن المجهز</strong><small>رصيد المنتج المجهز الموجود في المخزن.</small></button>
-          <button type="button" class="erp-flow-step" data-module-action="warehouse" data-stage-shortcut="stage:delivery"><span>7</span><strong>جاهز للتسليم</strong><small>الكميات المتاحة فعليًا للإرسال للعميل.</small></button>
-          <button type="button" class="erp-flow-step" data-nav-action="managementReports"><span>8</span><strong>التقارير</strong><small>التقرير الكامل، الهالك، المصبغة، الخام، والعملاء.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="dyehouse" data-stage-shortcut="stage:dyehouse"><span>4</span><strong>داخل المصبغة</strong><small>أي خام يتم تجهيزه يسجل مباشرة كرصيد داخل المصبغة.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="warehouse" data-stage-shortcut="stage:warehouse"><span>5</span><strong>مخزن المجهز</strong><small>رصيد المنتج المجهز الموجود في المخزن.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="warehouse" data-stage-shortcut="stage:delivery"><span>6</span><strong>جاهز للتسليم</strong><small>الكميات المتاحة فعليًا للإرسال للعميل.</small></button>
+          <button type="button" class="erp-flow-step" data-nav-action="managementReports"><span>7</span><strong>التقارير</strong><small>التقرير الكامل، الهالك، المصبغة، الخام، والعملاء.</small></button>
         </div>
       </div>
     </section>
@@ -194,7 +192,7 @@
       </section>
       <section class="panel ai-panel" id="aiModelPanel" data-module-panel="dashboard reports admin"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">نموذج الذكاء الاصطناعي لـ 2B</p><h2>موظف ذكي لتحليل التشغيل والرد على أسئلتك من قاعدة البيانات</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><div class="ai-question-row"><input id="aiQuestionInput" type="text" placeholder="اسأل الموظف الذكي: إيه الطلبات الواقفة في المصبغة؟ مين أقدم عميل واقف؟"><button class="mini-btn gold" id="askAiBtn" type="button">اسأل</button></div><p id="aiStatusText" class="eyebrow">نفس الموظف يجمع بين تقرير سريع ومحادثة مباشرة مبنية على بيانات Railway.</p></section>
       <section class="panel orders-list-panel" data-module-panel="dashboard sales weaving dyehouse warehouse reports">
-        <div class="section-head stacked-on-mobile"><div><p class="eyebrow">الطلبات الرئيسية</p><h2>الطلبات الرئيسية</h2></div><div class="filters-row"><input id="searchInput" type="search" placeholder="بحث بالعميل، رقم الطلب، رقم إذن النسيج، المصبغة..."><select id="customerFilter"><option value="all">كل العملاء</option></select><select id="dyehouseFilter"><option value="all">كل المصابغ</option></select><select id="fabricFilter"><option value="all">كل الأصناف</option></select><select id="orderStatusFilter"><option value="all">كل الطلبات المفتوحة</option><option value="stage:weaving">واقف في النسيج</option><option value="stage:color-planning">بانتظار توزيع الألوان</option><option value="stage:ready-to-dyehouse">خام جاهز للمصبغة</option><option value="stage:gluing">واقف في دمج الخامات</option><option value="stage:glued-ready">منتج مدمج جاهز للتسليم</option><option value="stage:dyehouse">واقف في المصبغة</option><option value="stage:warehouse">واقف في المخزن</option><option value="stage:delivery">جاهز للتسليم</option><option value="completed">مكتمل</option><option value="closed">مغلق تشغيليًا</option><option value="pending">بانتظار الاستلام</option><option value="in-progress">قيد التشغيل</option></select><button class="mini-btn gold" id="printFilteredOrdersBtn" type="button">طباعة الفلترة</button></div></div>
+        <div class="section-head stacked-on-mobile"><div><p class="eyebrow">الطلبات الرئيسية</p><h2>الطلبات الرئيسية</h2></div><div class="filters-row"><input id="searchInput" type="search" placeholder="بحث بالعميل، رقم الطلب، رقم إذن النسيج، المصبغة..."><select id="customerFilter"><option value="all">كل العملاء</option></select><select id="dyehouseFilter"><option value="all">كل المصابغ</option></select><select id="fabricFilter"><option value="all">كل الأصناف</option></select><select id="orderStatusFilter"><option value="all">كل الطلبات المفتوحة</option><option value="stage:weaving">واقف في النسيج</option><option value="stage:color-planning">بانتظار توزيع الألوان</option><option value="stage:gluing">واقف في دمج الخامات</option><option value="stage:glued-ready">منتج مدمج جاهز للتسليم</option><option value="stage:dyehouse">واقف في المصبغة</option><option value="stage:warehouse">واقف في المخزن</option><option value="stage:delivery">جاهز للتسليم</option><option value="completed">مكتمل</option><option value="closed">مغلق تشغيليًا</option><option value="pending">بانتظار الاستلام</option><option value="in-progress">قيد التشغيل</option></select><button class="mini-btn gold" id="printFilteredOrdersBtn" type="button">طباعة الفلترة</button></div></div>
         <div class="table-wrap"><table class="mobile-card-table orders-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>خام مطلوب</th><th>مرسل للمصبغة</th><th>مجهز مستلم</th><th>رصيد المخزن</th><th>المرحلة</th><th>واقف من</th><th>إجراءات</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       </section>
       <section class="workspace-grid" data-module-panel="sales weaving dyehouse warehouse reports"><section class="panel" id="orderDetailsPanel"><div class="empty-state">اختر طلبًا لعرض التفاصيل.</div></section><section class="panel side-panel"><div class="section-head"><h2>المستندات التشغيلية</h2></div><div id="documentsPanel" class="document-actions empty-state">اختر طلبًا لتوليد المستندات.</div></section></section>
@@ -212,6 +210,6 @@
   <script charset="UTF-8" src="./documents.js?v=20260609-03"></script>
   <script charset="UTF-8" src="./compat/pricing.js?v=20260606-06"></script>
   <script charset="UTF-8" src="./orders.js?v=20260607-20"></script>
-  <script charset="UTF-8" src="./app.js?v=20260612-order360"></script>
+  <script charset="UTF-8" src="./app.js?v=20260612-dyehouse-flow"></script>
 </body>
 </html>
