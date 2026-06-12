@@ -6986,7 +6986,7 @@ function orderStageInfo(order) {
     reason = 'دخل مجهز إلى المخزن ولم يكتمل تسليمه للعميل.';
   } else if (Number(order.totalDeliveredToCustomer || 0) < Number(order.totalAllocated || 0)) {
     key = 'delivery';
-    label = 'جاهز للتسليم';
+    label = 'تسليم العميل';
     startDate = finishedDate || order.orderDate || '';
     reason = 'التسليم للعميل لم يكتمل.';
   }
