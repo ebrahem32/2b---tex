@@ -258,10 +258,7 @@
       const wasteInRows = sum(rows.map((allocation) => ({ quantity: Number(allocation.wasteQuantity || allocation.actualWasteQuantity || 0) })));
       const operationalBalance = roundNumber(sum(rows.map((allocation) => ({ quantity: Number(allocation.remainingAtDyehouse || 0) }))));
       const movementBalance = roundNumber(Math.max(sentToDyehouse - receivedFromDyehouse - returnedFromDyehouse - wasteInRows, 0));
-      const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
-      const plannedOpen = roundNumber(Math.max(plannedTotal - receivedFromDyehouse - returnedFromDyehouse - wasteInRows, 0));
-      const calculatedBalance = Math.max(operationalBalance, movementBalance);
-      return roundNumber(Math.min(calculatedBalance, plannedOpen || calculatedBalance));
+      return roundNumber(Math.max(operationalBalance, movementBalance));
     }
 
     function todayIsoDate() {

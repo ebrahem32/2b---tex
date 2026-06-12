@@ -26,6 +26,27 @@ function createFrontendDomain(state) {
   });
 }
 
+function createDocumentBuilders() {
+  const sandbox = { window: {}, Date };
+  const source = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
+  vm.runInNewContext(source, sandbox, { filename: 'documents.js' });
+  return sandbox.window.TwoBTexDocuments.createBuilders({
+    documentFooter: () => '',
+    documentHeader: () => '',
+    documentLogo: () => '',
+    emptyRow: (cols, text) => `<tr><td colspan="${cols}">${text}</td></tr>`,
+    escapeHtml: (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch])),
+    formatNumber: (value, digits = 3) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: digits }),
+    orderRawCost: () => 0,
+    rawPermitImagesSection: () => '',
+    reportOperationNotes: () => '',
+    uniqueNonEmpty: (items) => [...new Set((items || []).map((item) => String(item || '').trim()).filter(Boolean))],
+    sum,
+    roundNumber,
+    stockFlowText: () => '-',
+  });
+}
+
 function assertClose(actual, expected, label) {
   assert.equal(roundNumber(actual), roundNumber(expected), label);
 }
@@ -230,6 +251,25 @@ function checkOversentFinishedOrderKeepsExtraAtDyehouse() {
   assertClose(frontend.warehouseBalance, 1000, 'oversent: warehouse balance follows finished receipt');
 }
 
+function checkDyeingDocumentShowsPhysicalRawBalance() {
+  const builders = createDocumentBuilders();
+  const html = builders.buildDyeingOrderDocument({
+    id: 'order-document-balance',
+    orderNumber: 'DOC-1',
+    orderDate: '2026-06-10',
+    customer: 'Test',
+    fabricType: 'Fabric',
+    dyehouse: 'D',
+    totalRawOrdered: 150,
+    allocations: [{ id: 'alloc-document-balance', orderId: 'order-document-balance', color: 'main', plannedQuantity: 150, dyehouse: 'D', remainingAtDyehouse: 175.6 }],
+    rawBatches: [{ orderId: 'order-document-balance', allocationId: 'alloc-document-balance', date: '2026-06-10', quantity: 175.6, noteNumber: '53645' }],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [],
+  }, 'D');
+  assert(html.includes('175.6'), 'document: dyeing order raw balance must show physical sent balance above planned quantity');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -242,6 +282,7 @@ checkFrontendFlow();
 checkFrontendBackendParity();
 checkMultiColorOperationalEntry();
 checkOversentFinishedOrderKeepsExtraAtDyehouse();
+checkDyeingDocumentShowsPhysicalRawBalance();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');
