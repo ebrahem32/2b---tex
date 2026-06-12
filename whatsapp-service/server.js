@@ -61,6 +61,8 @@ let attempts = readJson(ATTEMPTS_FILE, []);
 let whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
 let clientReady = false;
 let isProcessing = false;
+let client = null;
+let reconnectTimer = null;
 
 cleanupChromiumLocks(path.join(DATA_DIR, 'sessions'));
 
@@ -256,40 +258,78 @@ async function processNextReport() {
   }
 }
 
-const client = new Client({
-  authStrategy: new LocalAuth({ clientId: '2b-tex-ops', dataPath: path.join(DATA_DIR, 'sessions') }),
-  puppeteer: {
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+function scheduleReconnect(reason = '') {
+  clientReady = false;
+  whatsapp = { status: 'reconnecting', updatedAt: nowIso(), errorMessage: reason || 'إعادة محاولة الاتصال بواتساب', qr: '', qrDataUrl: '' };
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    initializeWhatsappClient().catch((error) => {
+      console.error('WhatsApp reconnect failed:', error.message);
+      scheduleReconnect(error.message);
+    });
+  }, 30000);
+}
+
+function createWhatsappClient() {
+  const nextClient = new Client({
+    authStrategy: new LocalAuth({ clientId: '2b-tex-ops', dataPath: path.join(DATA_DIR, 'sessions') }),
+    puppeteer: {
+      headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    }
+  });
+  nextClient.on('qr', async (qr) => {
+    let qrDataUrl = '';
+    try {
+      qrDataUrl = await QRCode.toDataURL(qr, { margin: 1, width: 280 });
+    } catch {}
+    whatsapp = { status: 'waiting_for_qr', updatedAt: nowIso(), errorMessage: '', qr, qrDataUrl };
+    console.log('\nامسح QR التالي من واتساب أول مرة فقط:\n');
+    qrcode.generate(qr, { small: true });
+  });
+  nextClient.on('ready', () => {
+    clientReady = true;
+    whatsapp = { status: 'connected', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
+    console.log('WhatsApp connected');
+  });
+  nextClient.on('authenticated', () => console.log('WhatsApp authenticated'));
+  nextClient.on('auth_failure', (msg) => scheduleReconnect(msg || 'فشل تسجيل الدخول'));
+  nextClient.on('disconnected', (reason) => scheduleReconnect(reason || 'انقطع الاتصال'));
+  return nextClient;
+}
+
+async function initializeWhatsappClient() {
+  clientReady = false;
+  if (client) {
+    try { await client.destroy(); } catch {}
   }
-});
-client.on('qr', async (qr) => {
-  let qrDataUrl = '';
+  cleanupChromiumLocks(path.join(DATA_DIR, 'sessions'));
+  client = createWhatsappClient();
+  whatsapp = { status: 'starting', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
   try {
-    qrDataUrl = await QRCode.toDataURL(qr, { margin: 1, width: 280 });
-  } catch {}
-  whatsapp = { status: 'waiting_for_qr', updatedAt: nowIso(), errorMessage: '', qr, qrDataUrl };
-  console.log('\nامسح QR التالي من واتساب أول مرة فقط:\n');
-  qrcode.generate(qr, { small: true });
+    await client.initialize();
+  } catch (error) {
+    whatsapp = { status: 'reconnecting', updatedAt: nowIso(), errorMessage: error.message || String(error), qr: '', qrDataUrl: '' };
+    throw error;
+  }
+}
+
+process.on('unhandledRejection', (error) => {
+  console.error('WhatsApp unhandled rejection:', error?.message || error);
+  scheduleReconnect(error?.message || String(error || 'Unhandled rejection'));
 });
-client.on('ready', () => {
-  clientReady = true;
-  whatsapp = { status: 'connected', updatedAt: nowIso(), errorMessage: '', qr: '', qrDataUrl: '' };
-  console.log('WhatsApp connected');
-});
-client.on('authenticated', () => console.log('WhatsApp authenticated'));
-client.on('auth_failure', (msg) => {
-  clientReady = false;
-  whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: msg || 'فشل تسجيل الدخول', qr: '', qrDataUrl: '' };
-});
-client.on('disconnected', (reason) => {
-  clientReady = false;
-  whatsapp = { status: 'disconnected', updatedAt: nowIso(), errorMessage: reason || 'انقطع الاتصال', qr: '', qrDataUrl: '' };
+process.on('uncaughtException', (error) => {
+  console.error('WhatsApp uncaught exception:', error?.message || error);
+  scheduleReconnect(error?.message || String(error || 'Uncaught exception'));
 });
 
 app.listen(PORT, () => {
   console.log(`2B Tex WhatsApp service running on http://127.0.0.1:${PORT}`);
-  client.initialize();
+  initializeWhatsappClient().catch((error) => {
+    console.error('WhatsApp initialize failed:', error.message);
+    scheduleReconnect(error.message);
+  });
   setInterval(processNextReport, 7000);
 });

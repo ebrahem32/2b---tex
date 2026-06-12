@@ -61,6 +61,7 @@ console.log('==========================================');
 
 function launch(name, args, cwd, env = {}, options = {}) {
   const critical = options.critical !== false;
+  const restartDelayMs = Number(options.restartDelayMs || 15000);
   const proc = spawn('node', args, {
     cwd,
     env: { ...process.env, ...env },
@@ -73,6 +74,8 @@ function launch(name, args, cwd, env = {}, options = {}) {
   proc.on('exit', (code, signal) => {
     console.error(`[${name}] Exited â€” code=${code}, signal=${signal}`);
     if (critical) process.exit(code || 1);
+    console.error(`[${name}] Restarting in ${Math.round(restartDelayMs / 1000)}s`);
+    setTimeout(() => launch(name, args, cwd, env, options), restartDelayMs);
   });
   return proc;
 }
@@ -89,7 +92,7 @@ launch('whatsapp', ['server.js'], path.join(__dirname, 'whatsapp-service'), {
   DATA_DIR: WHATSAPP_DATA_DIR,
   REPORTS_DIR: path.join(WHATSAPP_DATA_DIR, 'reports'),
   PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-}, { critical: false });
+}, { critical: false, restartDelayMs: 30000 });
 
 // طھط´ط؛ظٹظ„ ط§ظ„ظ€ frontend ط¨ط¹ط¯ 3 ط«ظˆط§ظ†ظٹ ظ„ظ„طھط£ظƒط¯ ط£ظ† ط§ظ„ظ€ backend ط¬ط§ظ‡ط²
 setTimeout(() => {
