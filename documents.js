@@ -264,6 +264,19 @@
       return roundNumber(Math.min(calculatedBalance, plannedOpen || calculatedBalance));
     }
 
+    function todayIsoDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function firstDyehouseOperationDate(dates) {
+      const cleanDates = uniqueNonEmpty(dates).sort((a, b) => String(a).localeCompare(String(b)));
+      return cleanDates[0] || todayIsoDate();
+    }
+
     function buildDyeingOrderDocument(order, dyehouseName) {
       const name = clean(dyehouseName || order?.dyehouse);
       const originalDyehouse = clean(order?.dyehouse);
@@ -277,7 +290,7 @@
       const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
       const rawTotal = dyehouseDocumentBalance(order, rows, name, isOriginalDyehouse, transfersToDyehouse);
       const dates = isOriginalDyehouse ? rawBatchesFor(order).map((batch) => batch.date) : transfersToDyehouse.map((transfer) => transfer.transferDate || transfer.date);
-      const reportDate = uniqueNonEmpty(dates).join('، ') || order?.orderDate || '-';
+      const reportDate = firstDyehouseOperationDate(dates);
       const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
