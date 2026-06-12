@@ -73,6 +73,29 @@
 .document-brand strong,.document-brand span{display:block}
 .document-brand strong{font-size:20px;color:#071527}
 .document-brand span{color:#6b7280;font-size:13px;margin-top:4px}
+.customer-ledger-sheet,.customer-account-sheet{direction:rtl;color:#071527;background:#fff}
+.customer-ledger-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;padding-bottom:14px;border-bottom:3px solid #071527}
+.customer-ledger-header h2{margin:0;color:#071527;font-size:30px;font-weight:900;line-height:1.35}
+.customer-ledger-header .muted,.customer-ledger-header span,.customer-ledger-note{color:#516070;line-height:1.7}
+.customer-ledger-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 26px}
+.customer-account-sheet .customer-ledger-summary{grid-template-columns:repeat(5,minmax(0,1fr))}
+.customer-ledger-summary div{padding:16px;border:1px solid #d7dee8;border-radius:10px;background:#f8fafc;text-align:right;min-height:86px}
+.customer-ledger-summary span{display:block;color:#516070;font-size:13px;margin-bottom:8px}
+.customer-ledger-summary strong{display:block;color:#071527;font-size:24px;font-weight:900;line-height:1.2}
+.customer-ledger-summary .emphasis{background:#fbf7ef;border-color:#dcc48f}
+.customer-ledger-summary .emphasis strong{color:#0b1724}
+.customer-ledger-sheet .report-section,.customer-account-sheet .report-section{margin-top:24px}
+.customer-ledger-sheet .report-section h3,.customer-account-sheet .report-section h3{background:#f3f4f6;border-right:4px solid #071527;padding:11px 14px;margin:0 0 12px;color:#071527;font-size:22px;font-weight:900}
+.ledger-edit-section .summary-grid{grid-template-columns:minmax(220px,1fr) auto;align-items:end}
+.ledger-edit-section + .ledger-edit-section .summary-grid{grid-template-columns:repeat(4,minmax(150px,1fr)) auto}
+.ledger-edit-section input,.ledger-edit-section label input{background:#f8fafc!important;color:#071527!important;border:1px solid #cfd8e3!important;border-radius:10px!important;min-height:46px}
+.ledger-edit-section .primary-btn{min-height:46px;border-radius:10px}
+.customer-ledger-table{border:1px solid #d7dee8;border-collapse:collapse!important;min-width:0!important}
+.customer-ledger-table th{background:#f3f4f6;color:#071527;font-weight:900}
+.customer-ledger-table th,.customer-ledger-table td{padding:11px 10px;border:1px solid #d7dee8!important;color:#111827!important;white-space:normal}
+.customer-ledger-table tbody tr:nth-child(even) td{background:#fbfcfe}
+@media(max-width:900px){.customer-ledger-summary,.customer-account-sheet .customer-ledger-summary{grid-template-columns:1fr 1fr}.ledger-edit-section .summary-grid,.ledger-edit-section + .ledger-edit-section .summary-grid{grid-template-columns:1fr}.customer-ledger-header{flex-direction:column}.customer-ledger-header h2{font-size:24px}}
+@media print{.customer-ledger-sheet,.customer-account-sheet{font-size:11px!important}.customer-ledger-header{margin-bottom:12px!important;padding-bottom:8px!important;border-bottom-width:2px!important}.customer-ledger-header h2{font-size:22px!important}.customer-ledger-header .muted,.customer-ledger-header span,.customer-ledger-note{font-size:10px!important}.customer-ledger-summary,.customer-account-sheet .customer-ledger-summary{grid-template-columns:repeat(4,1fr)!important;gap:6px!important;margin:10px 0 14px!important}.customer-account-sheet .customer-ledger-summary{grid-template-columns:repeat(5,1fr)!important}.customer-ledger-summary div{padding:7px 8px!important;min-height:0!important;border-radius:4px!important;background:#fff!important}.customer-ledger-summary .emphasis{background:#fff8e8!important}.customer-ledger-summary span{font-size:8.5px!important;margin-bottom:3px!important}.customer-ledger-summary strong{font-size:14px!important}.customer-ledger-sheet .report-section,.customer-account-sheet .report-section{margin-top:12px!important}.customer-ledger-sheet .report-section h3,.customer-account-sheet .report-section h3{font-size:14px!important;padding:6px 8px!important;margin-bottom:6px!important;background:#f3f4f6!important}.customer-ledger-table th,.customer-ledger-table td{font-size:9px!important;padding:5px 4px!important}.customer-ledger-table .no-print{display:none!important}}
 .two-b-report{direction:rtl;color:#071527}
 .two-b-report .document-brand{border-bottom:3px solid #071527;margin-bottom:22px;padding-bottom:18px}
 .two-b-report .document-brand img{width:148px}

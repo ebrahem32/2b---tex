@@ -1476,13 +1476,30 @@ function knownAccountCustomers() {
 function renderCustomerAccountsDialog() {
   ensureRuntimeCollections();
   knownAccountCustomers().forEach(ensureCustomerAccount);
-  const rows = knownAccountCustomers().map(customerAccountSummary).map((item)=>`<tr><td>${escapeHtml(item.customerName)}</td><td>${formatNumber(item.openingBalance)}</td><td>${formatNumber(item.invoiceTotal)}</td><td>${formatNumber(item.paymentTotal)}</td><td>${formatNumber(item.balance)}</td><td><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(item.customerName)}">عرض الحساب</button></td></tr>`).join('');
+  const summaries = knownAccountCustomers().map(customerAccountSummary);
+  const totals = summaries.reduce((acc, item)=>{
+    acc.opening += Number(item.openingBalance || 0);
+    acc.invoices += Number(item.invoiceTotal || 0);
+    acc.payments += Number(item.paymentTotal || 0);
+    acc.balance += Number(item.balance || 0);
+    return acc;
+  }, { opening:0, invoices:0, payments:0, balance:0 });
+  const rows = summaries.map((item)=>`<tr><td>${escapeHtml(item.customerName)}</td><td>${formatNumber(item.openingBalance)}</td><td>${formatNumber(item.invoiceTotal)}</td><td>${formatNumber(item.paymentTotal)}</td><td><strong>${formatNumber(item.balance)}</strong></td><td class="no-print"><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(item.customerName)}">عرض الحساب</button></td></tr>`).join('');
   refs.documentTitle.textContent = 'حسابات العملاء';
   refs.documentBody.dataset.documentType = 'customer-accounts';
-  refs.documentBody.innerHTML = `<div class="document-sheet">
-    <h2>حسابات العملاء</h2>
-    <p class="muted">الرصيد الحالي = الرصيد الافتتاحي + مستحقات الطلبات - المدفوعات. هذه القراءة داخل نظام المتابعة فقط ولا تعدل أرصدة A5.</p>
-    <table><thead><tr><th>العميل</th><th>رصيد افتتاحي</th><th>مبيعات / مستحقات</th><th>مدفوعات</th><th>الرصيد الحالي</th><th>إجراء</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد حسابات عملاء متاحة.</td></tr>'}</tbody></table>
+  refs.documentBody.innerHTML = `<div class="document-sheet customer-account-sheet">
+    <div class="customer-ledger-header">
+      <div><p class="muted">نظام 2B Tex</p><h2>حسابات العملاء</h2><span>ملخص أرصدة العملاء داخل نظام المتابعة.</span></div>
+    </div>
+    <div class="customer-ledger-summary">
+      <div><span>عدد العملاء</span><strong>${summaries.length}</strong></div>
+      <div><span>رصيد افتتاحي</span><strong>${formatNumber(totals.opening)}</strong></div>
+      <div><span>مبيعات / مستحقات</span><strong>${formatNumber(totals.invoices)}</strong></div>
+      <div><span>مدفوعات</span><strong>${formatNumber(totals.payments)}</strong></div>
+      <div class="emphasis"><span>إجمالي الرصيد</span><strong>${formatNumber(totals.balance)}</strong></div>
+    </div>
+    <p class="muted customer-ledger-note">الرصيد الحالي = الرصيد الافتتاحي + مستحقات الطلبات - المدفوعات. هذه القراءة داخل نظام المتابعة فقط ولا تعدل أرصدة A5.</p>
+    <table class="customer-ledger-table"><thead><tr><th>العميل</th><th>رصيد افتتاحي</th><th>مبيعات / مستحقات</th><th>مدفوعات</th><th>الرصيد الحالي</th><th class="no-print">إجراء</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد حسابات عملاء متاحة.</td></tr>'}</tbody></table>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
@@ -1490,27 +1507,30 @@ function renderCustomerAccountsDialog() {
 function renderCustomerLedgerDialog(customerName) {
   const summary = customerAccountSummary(customerName);
   const invoiceRows = summary.invoices.map((item)=>`<tr><td>${item.orderNumber || '-'}</td><td>${item.date || '-'}</td><td>${item.item || '-'}</td><td>${formatNumber(item.quantity)}</td><td>${formatNumber(item.unitPrice)}</td><td>${formatNumber(item.amount)}</td><td>${item.status}</td></tr>`).join('');
-  const paymentRows = summary.payments.map((item)=>`<tr><td>${item.date || '-'}</td><td>${formatNumber(item.amount)}</td><td>${item.method || '-'}</td><td>${item.notes || '-'}</td><td><button class="mini-btn danger" type="button" data-delete-customer-payment="${item.id}" data-customer-name="${escapeHtml(summary.customerName)}">حذف</button></td></tr>`).join('');
+  const paymentRows = summary.payments.map((item)=>`<tr><td>${item.date || '-'}</td><td>${formatNumber(item.amount)}</td><td>${item.method || '-'}</td><td>${item.notes || '-'}</td><td class="no-print"><button class="mini-btn danger" type="button" data-delete-customer-payment="${item.id}" data-customer-name="${escapeHtml(summary.customerName)}">حذف</button></td></tr>`).join('');
   refs.documentTitle.textContent = `كشف حساب العميل ${summary.customerName}`;
   refs.documentBody.dataset.documentType = 'customer-ledger';
-  refs.documentBody.innerHTML = `<div class="document-sheet">
-    <div class="subsection-head"><h2>كشف حساب العميل ${escapeHtml(summary.customerName)}</h2><button class="mini-btn" type="button" data-back-customer-accounts>رجوع</button></div>
-    <div class="summary-grid">
-      <div class="metric"><span>رصيد افتتاحي</span><strong>${formatNumber(summary.openingBalance)}</strong></div>
-      <div class="metric"><span>مبيعات / مستحقات</span><strong>${formatNumber(summary.invoiceTotal)}</strong></div>
-      <div class="metric"><span>مدفوعات</span><strong>${formatNumber(summary.paymentTotal)}</strong></div>
-      <div class="metric emphasis"><span>الرصيد الحالي</span><strong>${formatNumber(summary.balance)}</strong></div>
+  refs.documentBody.innerHTML = `<div class="document-sheet customer-ledger-sheet">
+    <div class="customer-ledger-header">
+      <button class="mini-btn no-print" type="button" data-back-customer-accounts>رجوع</button>
+      <div><p class="muted">كشف حساب عميل</p><h2>${escapeHtml(summary.customerName)}</h2><span>حركات العميل من فواتير الطلبات والمدفوعات المسجلة.</span></div>
     </div>
-    <section class="report-section">
+    <div class="customer-ledger-summary">
+      <div><span>رصيد افتتاحي</span><strong>${formatNumber(summary.openingBalance)}</strong></div>
+      <div><span>مبيعات / مستحقات</span><strong>${formatNumber(summary.invoiceTotal)}</strong></div>
+      <div><span>مدفوعات</span><strong>${formatNumber(summary.paymentTotal)}</strong></div>
+      <div class="emphasis"><span>الرصيد الحالي</span><strong>${formatNumber(summary.balance)}</strong></div>
+    </div>
+    <section class="report-section ledger-edit-section no-print">
       <h3>تعديل الرصيد الافتتاحي</h3>
       <div class="summary-grid"><label><span>الرصيد الافتتاحي</span><input type="number" step="0.01" data-opening-balance value="${summary.openingBalance}"></label><button class="primary-btn" type="button" data-save-opening-balance="${escapeHtml(summary.customerName)}">حفظ الرصيد</button></div>
     </section>
-    <section class="report-section">
+    <section class="report-section ledger-edit-section no-print">
       <h3>إضافة دفعة</h3>
       <div class="summary-grid"><input type="date" data-payment-date value="${new Date().toISOString().slice(0,10)}"><input type="number" step="0.01" data-payment-amount placeholder="المبلغ"><input data-payment-method placeholder="طريقة الدفع"><input data-payment-notes placeholder="ملاحظات"><button class="primary-btn" type="button" data-add-customer-payment="${escapeHtml(summary.customerName)}">إضافة دفعة</button></div>
     </section>
-    <section class="report-section"><h3>فواتير الطلبات</h3><table><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>البند</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${invoiceRows || '<tr><td colspan="7">لا توجد فواتير مسجلة لهذا العميل.</td></tr>'}</tbody></table></section>
-    <section class="report-section"><h3>المدفوعات</h3><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody>${paymentRows || '<tr><td colspan="5">لا توجد مدفوعات مسجلة لهذا العميل.</td></tr>'}</tbody></table></section>
+    <section class="report-section"><h3>فواتير الطلبات</h3><table class="customer-ledger-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>البند</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${invoiceRows || '<tr><td colspan="7">لا توجد فواتير مسجلة لهذا العميل.</td></tr>'}</tbody></table></section>
+    <section class="report-section"><h3>المدفوعات</h3><table class="customer-ledger-table"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th><th class="no-print">إجراء</th></tr></thead><tbody>${paymentRows || '<tr><td colspan="5">لا توجد مدفوعات مسجلة لهذا العميل.</td></tr>'}</tbody></table></section>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
