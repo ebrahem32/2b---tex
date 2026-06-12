@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.12.21';
-const APP_BUILD_TIME = '2026-06-12 20:25';
+const APP_VERSION = 'v2026.06.12.22';
+const APP_BUILD_TIME = '2026-06-12 22:41';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3233,8 +3233,22 @@ function renderOrders() {
   updateOrdersListHeading(list);
   refs.ordersTableBody.innerHTML = list.map((order) => {
     const stage = orderStageInfo(order);
-    return `<tr class="order-result-row" data-order-row="${order.id}"><td data-label="رقم الطلب">${order.orderNumber}</td><td data-label="العميل">${order.customer}</td><td data-label="الصنف">${order.fabricType}</td><td data-label="خام مطلوب">${order.totalRawOrdered}</td><td data-label="مرسل للمصبغة">${order.totalSentToDyehouse}</td><td data-label="مجهز مستلم">${order.totalFinishedReceived}</td><td data-label="رصيد المخزن">${order.warehouseBalance}</td><td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span></td><td data-label="واقف من">${stage.startDate || '-'}${stage.startDate ? ` / ${stage.days} يوم` : ''}</td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-order="${order.id}">حذف</button>` : ''}</div></td></tr>`;
-  }).join('') || '<tr><td colspan="10">لا توجد طلبات مطابقة للفلتر الحالي.</td></tr>';
+    const waitingText = stage.startDate ? `${stage.startDate} / ${stage.days} يوم` : '-';
+    return `<tr class="order-result-row" data-order-row="${order.id}">
+      <td data-label="رقم الطلب"><strong class="order-number-cell">${escapeHtml(order.orderNumber || '-')}</strong></td>
+      <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
+      <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
+      <td data-label="الأرصدة">
+        <div class="order-balance-stack" aria-label="أرصدة الطلب">
+          <span><em>خام</em><strong>${formatNumber(order.totalRawOrdered || 0)}</strong></span>
+          <span><em>مصبغة</em><strong>${formatNumber(order.totalSentToDyehouse || 0)}</strong></span>
+          <span class="emphasis"><em>مخزن</em><strong>${formatNumber(order.warehouseBalance || 0)}</strong></span>
+        </div>
+      </td>
+      <td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span><small class="order-stage-age">${escapeHtml(waitingText)}</small></td>
+      <td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-order="${order.id}">حذف</button>` : ''}</div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6">لا توجد طلبات مطابقة للفلتر الحالي.</td></tr>';
 }
 
 function syncOrderFocusMode() {
