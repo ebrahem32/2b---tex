@@ -245,6 +245,25 @@
         .filter((note) => !outgoingTransferNotes.has(clean(note)));
     }
 
+    function dyehouseDocumentBalance(order, rows, dyehouseName, isOriginalDyehouse, transfersToDyehouse) {
+      const name = clean(dyehouseName);
+      const rowAllocationIds = new Set(rows.map((allocation) => allocation.id).filter(Boolean));
+      const rowBatchSum = (items) => sum((Array.isArray(items) ? items : []).filter((batch) => rowAllocationIds.has(batch.allocationId)));
+      const transferredOut = sum((order?.dyehouseTransfers || []).filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
+      const sentToDyehouse = isOriginalDyehouse
+        ? roundNumber(Math.max(sum(rawBatchesFor(order)) - transferredOut, 0))
+        : roundNumber(sum(transfersToDyehouse));
+      const receivedFromDyehouse = rowBatchSum(order?.productionBatches || order?.finishedBatches);
+      const returnedFromDyehouse = rowBatchSum(order?.rawReturns);
+      const wasteInRows = sum(rows.map((allocation) => ({ quantity: Number(allocation.wasteQuantity || allocation.actualWasteQuantity || 0) })));
+      const operationalBalance = roundNumber(sum(rows.map((allocation) => ({ quantity: Number(allocation.remainingAtDyehouse || 0) }))));
+      const movementBalance = roundNumber(Math.max(sentToDyehouse - receivedFromDyehouse - returnedFromDyehouse - wasteInRows, 0));
+      const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
+      const plannedOpen = roundNumber(Math.max(plannedTotal - receivedFromDyehouse - returnedFromDyehouse - wasteInRows, 0));
+      const calculatedBalance = Math.max(operationalBalance, movementBalance);
+      return roundNumber(Math.min(calculatedBalance, plannedOpen || calculatedBalance));
+    }
+
     function buildDyeingOrderDocument(order, dyehouseName) {
       const name = clean(dyehouseName || order?.dyehouse);
       const originalDyehouse = clean(order?.dyehouse);
@@ -256,9 +275,7 @@
         return allocationDyehouse === name && transfersToDyehouse.some((transfer) => transfer.newAllocationId === allocation.id || transfer.allocationId === allocation.id || clean(transfer.color) === clean(allocation.color || allocation.pantoneCode));
       });
       const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
-      const rawTotal = isOriginalDyehouse
-        ? roundNumber(Math.max(sum(rawBatchesFor(order)) - sum((order?.dyehouseTransfers || []).filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name)), 0))
-        : roundNumber(sum(transfersToDyehouse));
+      const rawTotal = dyehouseDocumentBalance(order, rows, name, isOriginalDyehouse, transfersToDyehouse);
       const dates = isOriginalDyehouse ? rawBatchesFor(order).map((batch) => batch.date) : transfersToDyehouse.map((transfer) => transfer.transferDate || transfer.date);
       const reportDate = uniqueNonEmpty(dates).join('، ') || order?.orderDate || '-';
       const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));

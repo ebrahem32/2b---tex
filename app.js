@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.12.24';
-const APP_BUILD_TIME = '2026-06-12 23:18';
+const APP_VERSION = 'v2026.06.12.25';
+const APP_BUILD_TIME = '2026-06-12 23:27';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -5176,6 +5176,9 @@ async function openDyeingDocumentForDyehouse(dyehouseName) {
   refs.documentBody.innerHTML = `<div class="document-sheet dyeing-document">${withDocumentFooter(buildDyeingOrderDocument({
     ...reportOrder,
     rawBatches,
+    productionBatches,
+    finishedBatches,
+    rawReturns,
     dyehouseTransfers,
   }, name, fmt))}</div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
