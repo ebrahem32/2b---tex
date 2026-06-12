@@ -7009,7 +7009,6 @@ function orderFilterLabel(value) {
     'stage:color-planning': 'بانتظار توزيع الألوان',
     'stage:dyehouse': 'واقف في المصبغة',
     'stage:warehouse': 'واقف في المخزن',
-    'stage:delivery': 'جاهز للتسليم'
   };
   return labels[value] || statusLabel(value) || value || '-';
 }

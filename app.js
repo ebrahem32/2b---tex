@@ -2843,15 +2843,13 @@ function orderSearchText(order) {
 }
 function filteredOrders() {
   const query = normalizeDigits(refs.searchInput.value.trim().toLowerCase());
-  const status = refs.orderStatusFilter.value;
+  const status = refs.orderStatusFilter.value === 'stage:delivery' ? 'stage:warehouse' : refs.orderStatusFilter.value;
   const customer = refs.customerFilter.value;
   const dyehouse = refs.dyehouseFilter.value;
   const fabric = refs.fabricFilter.value;
   return allOrders().filter((order) => {
     const stage = orderStageInfo(order);
-    const statusMatch = status === 'stage:delivery'
-      ? Number(order.warehouseBalance || 0) > 0
-      : status.startsWith('stage:')
+    const statusMatch = status.startsWith('stage:')
       ? stage.key === status.slice('stage:'.length)
       : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? order.status !== 'closed' : order.status === status));
     return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
@@ -2898,13 +2896,12 @@ function renderErpCockpit(list = []) {
   const lanes = [
     { label:'النسيج', filter:'stage:weaving', count:countWhere((order)=>stageOf(order).key === 'weaving'), qty:sum(source, (order)=>Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)), sub:'خام مطلوب لم يخرج بعد' },
     { label:'المصبغة', filter:'stage:dyehouse', count:countWhere((order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0), qty:sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)), sub:'رصيد فعلي داخل المصبغة' },
-    { label:'المخزن', filter:'stage:warehouse', count:countWhere((order)=>Number(order.warehouseBalance || 0) > 0), qty:sum(source, (order)=>order.warehouseBalance), sub:'مجهز موجود بالمخزن' },
-    { label:'جاهز للتسليم', filter:'stage:delivery', count:countWhere((order)=>Number(order.warehouseBalance || 0) > 0), qty:sum(source, (order)=>order.warehouseBalance), sub:'متاح للإرسال للعميل' },
+    { label:'المخزن / جاهز للتسليم', filter:'stage:warehouse', count:countWhere((order)=>Number(order.warehouseBalance || 0) > 0), qty:sum(source, (order)=>order.warehouseBalance), sub:'مجهز موجود ومتاح للتسليم' },
   ];
   const cards = [
     ['طلبات مفتوحة', active.length, `${source.length} إجمالي الطلبات`],
     ['داخل المصبغة', fmt(sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0))), `${lanes[1].count} أوردر`],
-    ['جاهز للتسليم', fmt(sum(source, (order)=>order.warehouseBalance)), `${lanes[3].count} أوردر`],
+    ['رصيد المخزن الجاهز', fmt(sum(source, (order)=>order.warehouseBalance)), `${lanes[2].count} أوردر`],
     ['أولوية متابعة', lateOrders.length + wasteWatch.length, 'وقوف طويل أو هالك مرتفع'],
   ];
   panel.innerHTML = `
@@ -3135,14 +3132,9 @@ function ordersListHeadingForCurrentFilter(list = []) {
     },
     'stage:warehouse': {
       eyebrow: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646',
-      title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646',
-      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u0645\u062c\u0647\u0632 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062e\u0632\u0646 \u0648\u0644\u0645 \u064a\u0643\u062a\u0645\u0644 \u062a\u0633\u0644\u064a\u0645\u0647 \u0644\u0644\u0639\u0645\u064a\u0644.'
+      title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646 / \u062c\u0627\u0647\u0632 \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
+      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u0645\u062c\u0647\u0632 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062e\u0632\u0646\u060c \u0648\u0647\u0630\u0627 \u0647\u0648 \u0646\u0641\u0633\u0647 \u0627\u0644\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062a\u0627\u062d \u0644\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0639\u0645\u064a\u0644.'
     },
-    'stage:delivery': {
-      eyebrow: '\u062c\u0627\u0647\u0632 \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
-      title: '\u0631\u0635\u064a\u062f \u0645\u062a\u0627\u062d \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
-      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u0631\u0635\u064a\u062f \u0645\u062e\u0632\u0646 \u0641\u0639\u0644\u064a \u0645\u0648\u062c\u0648\u062f \u0648\u0642\u0627\u0628\u0644 \u0644\u0644\u0625\u0631\u0633\u0627\u0644 \u0644\u0644\u0639\u0645\u064a\u0644.'
-    }
   };
   const heading = stageHeadings[status];
   if (heading) return { ...heading, count: list.length };
@@ -3593,6 +3585,7 @@ function normalizeReportAction(type = '') {
 function applyStageShortcut(stageValue) {
   if (!stageValue || !refs.orderStatusFilter) return;
   if (stageValue === 'stage:ready-to-dyehouse') stageValue = 'stage:dyehouse';
+  if (stageValue === 'stage:delivery') stageValue = 'stage:warehouse';
   openMainWorkspace();
   closeDashboardFocusMode();
   closeAiFocusMode();
@@ -3949,7 +3942,7 @@ function order360Alerts(order, stage) {
   if (Number(stage.days || 0) >= 7 && !['completed','closed'].includes(stage.key)) alerts.push(`واقف ${stage.days} يوم في مرحلة ${stage.label}`);
   if (actualWaste > 0 && actualWaste >= Math.max(8, expectedWaste + 2)) alerts.push(`الهالك الفعلي ${formatNumber(actualWaste, 1)}% أعلى من المتوقع ${formatNumber(expectedWaste, 1)}%`);
   if (Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0) alerts.push(`داخل المصبغة ${formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم لم يرجع مجهزًا`);
-  if (Number(order.warehouseBalance || 0) > 0) alerts.push(`جاهز للتسليم ${formatNumber(order.warehouseBalance)} كجم في المخزن`);
+  if (Number(order.warehouseBalance || 0) > 0) alerts.push(`رصيد مخزن متاح للتسليم ${formatNumber(order.warehouseBalance)} كجم`);
   if (order.allocationExceedsRaw) alerts.push('كمية خطة الألوان أكبر من الخام المتاح');
   return alerts;
 }
@@ -4724,20 +4717,19 @@ function orderStageInfo(order) {
   } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
     key = 'warehouse'; label = 'واقف في المخزن'; startDate = finishedDate || order.orderDate || ''; reason = 'دخل مجهز إلى المخزن ولم يكتمل تسليمه للعميل.';
   } else if (Number(order.totalDeliveredToCustomer || 0) < Number(order.totalAllocated || 0)) {
-    key = 'delivery'; label = 'جاهز للتسليم'; startDate = finishedDate || order.orderDate || ''; reason = 'التسليم للعميل لم يكتمل.';
+    key = 'delivery'; label = 'تسليم العميل'; startDate = finishedDate || order.orderDate || ''; reason = 'التسليم للعميل لم يكتمل.';
   }
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'رصيد متاح للتسليم' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
   const select = refs.orderStatusFilter;
   if (!select) return;
   [...select.options].filter((option)=>option.value === 'stage:ready-to-dyehouse').forEach((option)=>option.remove());
-  const deliveryOption = [...select.options].find((option)=>option.value === 'stage:delivery');
-  if (deliveryOption) deliveryOption.textContent = 'رصيد متاح للتسليم';
+  [...select.options].filter((option)=>option.value === 'stage:delivery').forEach((option)=>option.remove());
   const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');
   if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('واقف في دمج الخامات', 'stage:gluing'), before || null);
   if (![...select.options].some((option)=>option.value === 'stage:glued-ready')) select.add(new Option('منتج مدمج جاهز للتسليم', 'stage:glued-ready'), before || null);
