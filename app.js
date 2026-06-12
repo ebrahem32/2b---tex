@@ -206,6 +206,7 @@ let editingOrderId = null;
 let editingPricingId = null;
 let currentDocumentType = null;
 let pendingConvertedPricingId = null;
+let pendingPricingOrderId = null;
 let initialLocalStorageSnapshot = null;
 let orderFocusMode = false;
 
@@ -1843,6 +1844,7 @@ function applyPermissionVisibility() {
       '[data-nav-action="orderNew"]',
       '[data-nav-action="pricingNew"]',
       '[data-nav-action="dyehousePrices"]',
+      '[data-order-pricing]',
       '[data-convert-pricing]',
       '[data-edit-pricing]',
       '[data-edit-pricing-doc]',
@@ -2513,10 +2515,68 @@ function editPricing(id) {
   const pricing = pricings.find((item)=>item.id===id);
   if (!pricing) return;
   editingPricingId = id;
+  pendingPricingOrderId = null;
   if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'inline-flex';
   fillPricingForm(pricing);
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.pricingDialog.showModal();
+}
+function nextOrderPricingNumber(order) {
+  const base = `Q-${String(order?.orderNumber || '').trim() || nextPricingNumber().replace(/^Q-/, '')}`;
+  const used = new Set(pricings.map((pricing)=>String(pricing.pricingNumber || '').trim()).filter(Boolean));
+  if (!used.has(base)) return base;
+  let index = 2;
+  while (used.has(`${base}-${index}`)) index += 1;
+  return `${base}-${index}`;
+}
+function pricingDraftFromOrder(order) {
+  const calculated = calculateOrder(order);
+  const linkedPricing = calculated?.pricingId ? pricings.find((pricing)=>pricing.id === calculated.pricingId) : null;
+  if (linkedPricing) return linkedPricing;
+  const matchedPricing = pricingForOrder(calculated);
+  if (matchedPricing) return matchedPricing;
+  return {
+    pricingNumber: nextOrderPricingNumber(calculated),
+    productCode: calculated.productCode || buildItemCode(calculated.orderNumber),
+    customer: calculated.customer || '',
+    pricingDate: new Date().toISOString().slice(0, 10),
+    fabricType: calculated.fabricType || '',
+    quantity: calculated.totalRawOrdered || calculated.totalRawQuantity || '',
+    inchWidth: calculated.inchWidth || '',
+    finishedWeight: calculated.allocations?.[0]?.targetFinishedWeight || '',
+    rawCost: calculated.rawCost || orderRawCost(calculated) || '',
+    dyehouse: calculated.dyehouse || calculated.allocations?.[0]?.dyehouse || '',
+    wastePercent: calculated.expectedWastePercent || '',
+    profitPerKg: Number(calculated.kiloPrice || 0) ? Math.max(0, Number(calculated.kiloPrice || 0) - Number(calculated.rawCost || orderRawCost(calculated) || 0)) : '',
+    paymentTerms: calculated.paymentTerms || '',
+    notes: calculated.notes || '',
+  };
+}
+function openPricingForOrder(orderId = selectedOrderId) {
+  const order = orders.find((item)=>item.id === orderId);
+  if (!order) { alert('اختر طلبًا أولًا.'); return; }
+  const draft = pricingDraftFromOrder(order);
+  const existingId = draft.id || '';
+  editingPricingId = existingId || null;
+  pendingPricingOrderId = existingId && order.pricingId === existingId ? null : order.id;
+  if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = existingId ? 'inline-flex' : 'none';
+  refs.pricingForm.reset();
+  fillPricingForm(draft);
+  if (refs.documentDialog.open) refs.documentDialog.close();
+  refs.pricingDialog.showModal();
+}
+async function attachPricingToOrder(orderId, pricingId) {
+  const order = orders.find((item)=>item.id === orderId);
+  if (!order || !pricingId) return true;
+  const before = clone(order);
+  const updatedOrder = { ...order, pricingId };
+  const backendCustomer = await ensureBackendCustomer(updatedOrder.customer);
+  const savedOrder = await putBackend(`/orders/${updatedOrder.id}`, orderToApi(updatedOrder, backendCustomer));
+  if (!savedOrder) return false;
+  if (!(await verifyOrderPersisted(updatedOrder.id, updatedOrder))) return false;
+  recordAudit('update', 'order', updatedOrder.id, before, updatedOrder, `ربط الطلب رقم ${updatedOrder.orderNumber || ''} بالتسعيرة`);
+  await persistAuditLog();
+  return true;
 }
 async function deletePricing(id) {
   const pricing = pricings.find((item)=>item.id===id);
@@ -2554,6 +2614,13 @@ async function addPricing(event) {
         await rollbackAfterBackendWriteFailure('تم إرسال تعديل التسعيرة لكن لم يرجع من قاعدة Railway. لم يتم اعتماد التعديل.');
         return;
       }
+      if (pendingPricingOrderId) {
+        const linked = await attachPricingToOrder(pendingPricingOrderId, editingPricingId);
+        if (!linked) {
+          await rollbackAfterBackendWriteFailure('تم حفظ تعديل التسعيرة لكن تعذر ربطها بالطلب الحالي. راجع الاتصال ثم حاول من تفاصيل الطلب مرة أخرى.');
+          return;
+        }
+      }
       recordAudit('update', 'pricing', editingPricingId, before, updatedPricing, `تعديل التسعيرة رقم ${updatedPricing.pricingNumber || ''}`);
       await persistAuditLog();
     }
@@ -2570,10 +2637,18 @@ async function addPricing(event) {
       await rollbackAfterBackendWriteFailure('تم إرسال التسعيرة لكن لم ترجع من قاعدة Railway. لم يتم اعتماد التسعيرة.');
       return;
     }
+    if (pendingPricingOrderId) {
+      const linked = await attachPricingToOrder(pendingPricingOrderId, savedPricing.id || createdPricing.id);
+      if (!linked) {
+        await rollbackAfterBackendWriteFailure('تم حفظ التسعيرة لكن تعذر ربطها بالطلب الحالي. راجع الاتصال ثم حاول من تفاصيل الطلب مرة أخرى.');
+        return;
+      }
+    }
     recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `إنشاء التسعيرة رقم ${createdPricing.pricingNumber || ''}`);
     await persistAuditLog();
   }
   await loadBackendData();
+  pendingPricingOrderId = null;
   refs.pricingDialog.close();
 }
 function convertPricingToOrder(id) {
@@ -3194,9 +3269,14 @@ function orderDetailsHasActiveDraft() {
 }
 
 function renderDocuments() {
+  const currentOrder = orders.find((item)=>item.id === selectedOrderId);
+  const linkedPricing = currentOrder?.pricingId ? pricings.find((pricing)=>pricing.id === currentOrder.pricingId) : null;
+  const orderPricing = currentOrder ? (linkedPricing || pricingForOrder(currentOrder)) : null;
+  const pricingActionLabel = orderPricing ? 'تعديل التسعيرة المرتبطة' : 'إنشاء تسعيرة من الطلب';
   refs.documentsPanel.innerHTML = `
     <div class="document-action-group">
       <h3>عرض العميل</h3>
+      <button class="mini-btn gold" data-order-pricing>${pricingActionLabel}</button>
       <button class="mini-btn gold" data-doc="quotation">إنشاء عرض سعر</button>
     </div>
     <div class="document-action-group">
@@ -5063,7 +5143,7 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
 if (refs.weavingSlipDialog) installAmalReviewUi();
 applyPricingMaterialOptions();
 applyPricingDyehouseOptions();
-refs.openPricingFormBtn.onclick = () => { editingPricingId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
+refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
 refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); refs.orderDialog.showModal(); };
@@ -5182,7 +5262,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (event.target.closest('[data-save-bulk-batches]')) saveBulkBatchesFromDialog().catch((error)=>{ console.error('bulk-batches-save-error', error); alert(error.message || 'تعذر حفظ الإدخال الجماعي.'); });
 });
 
-refs.closePricingFormBtn.onclick = () => refs.pricingDialog.close();
+refs.closePricingFormBtn.onclick = () => { pendingPricingOrderId = null; refs.pricingDialog.close(); };
 refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; refs.orderDialog.close(); };
 refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 refs.pricingNumber.readOnly = true;
@@ -5324,7 +5404,17 @@ function printCurrentDocument(stickerId = null) {
   setTimeout(cleanup, 4000);
 }
 refs.documentBody.addEventListener('click', (event) => { if (event.target.dataset.printSticker) printCurrentDocument(event.target.dataset.printSticker); if (event.target.dataset.editPricingDoc) editPricing(event.target.dataset.editPricingDoc); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); });
-refs.documentsPanel.onclick = (event) => { const type = event.target.dataset.doc; if (!type) return; if (type === 'print') { safeOpenDocument('dyeing'); setTimeout(()=>printCurrentDocument(),150); return; } safeOpenDocument(type); };
+refs.documentsPanel.onclick = (event) => {
+  const orderPricingButton = event.target.closest('[data-order-pricing]');
+  if (orderPricingButton) {
+    openPricingForOrder();
+    return;
+  }
+  const type = event.target.dataset.doc;
+  if (!type) return;
+  if (type === 'print') { safeOpenDocument('dyeing'); setTimeout(()=>printCurrentDocument(),150); return; }
+  safeOpenDocument(type);
+};
 refs.closeDocumentBtn.onclick = () => refs.documentDialog.close();
 refs.documentDialog.addEventListener('close', stopWhatsappSettingsAutoRefresh);
 if (refs.weavingSlipDialog) {
