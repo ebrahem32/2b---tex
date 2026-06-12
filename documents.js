@@ -308,8 +308,11 @@
     }
 
     function buildQuotationDocument(order) {
-      const total = roundNumber(orderAllocations(order).reduce((sum, line) => sum + (Number(line.plannedQuantity || 0) * Number(order?.kiloPrice || 0)), 0));
-      const rows = orderAllocations(order).map((line) => `<tr><td>${safeText(order?.fabricType)}</td><td>${safeText(line.color || line.pantoneCode)}</td><td>${fmt(line.plannedQuantity)}</td><td>${safeText(line.rawInch || order?.inchWidth)}</td><td>${fmt(order?.kiloPrice)}</td><td>${fmt(Number(line.plannedQuantity || 0) * Number(order?.kiloPrice || 0))}</td></tr>`).join('');
+      const sourceRows = orderAllocations(order);
+      const fallbackQuantity = Number(order?.totalRawOrdered || order?.totalRawQuantity || 0);
+      const offerRows = sourceRows.length ? sourceRows : [{ color:'-', plannedQuantity:fallbackQuantity, rawInch:order?.inchWidth }];
+      const total = roundNumber(offerRows.reduce((sum, line) => sum + (Number(line.plannedQuantity || 0) * Number(order?.kiloPrice || 0)), 0));
+      const rows = offerRows.map((line) => `<tr><td>${safeText(order?.fabricType)}</td><td>${safeText(line.color || line.pantoneCode || '-')}</td><td>${fmt(line.plannedQuantity)}</td><td>${safeText(line.rawInch || order?.inchWidth)}</td><td>${fmt(order?.kiloPrice)}</td><td>${fmt(Number(line.plannedQuantity || 0) * Number(order?.kiloPrice || 0))}</td></tr>`).join('');
       const table = `<section class="report-section"><h3>بنود العرض</h3><table><thead><tr><th>الصنف</th><th>اللون</th><th>الكمية</th><th>البوصة</th><th>سعر الكيلو</th><th>الإجمالي</th></tr></thead><tbody>${rows || emptyRow(6, 'لا توجد بنود عرض.')}</tbody></table></section>`;
       const summary = `<section class="report-section quotation-summary"><h3>ملخص العرض</h3><table class="summary-table"><tbody><tr><th>إجمالي العقد</th><td>${fmt(total)} جنيه</td><th>طريقة السداد</th><td>${safeText(order?.paymentTerms || 'كاش')}</td></tr></tbody></table></section>`;
       return reportShell('عرض سعر', order, `${summary}${table}${notesSection(order)}`, { subtitle:'عرض تجاري للعميل حسب بيانات الطلب الحالية.', omitBasicFields:['المصبغة'] });
