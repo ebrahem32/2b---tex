@@ -3063,6 +3063,60 @@ function renderAiAnalysis(result, title = 'الملخص التنفيذي') {
   refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><p class="eyebrow">${sourceLabel}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(safe.executiveSummary || '-')}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>الطلبات التي تحتاج متابعة</h3>${asListHtml(safe.ordersToWatch)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>أولويات اليوم</h3>${asListHtml(safe.priorityActions)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${escapeHtml(safe.whatsappMessage || '-')}</div></section>`;
   refs.aiAnalysisDialog.showModal();
 }
+function buildLocalAiEmployeeResponse(question = '') {
+  const q = String(question || '').toLowerCase();
+  const list = orders.map((order)=>calculateOrder(order));
+  const withStage = list.map((order)=>({ order, stage:orderStageInfo(order) }));
+  let scope = withStage.filter(({ stage })=>!['completed','closed'].includes(stage.key));
+  let reportTitle = 'ملخص تشغيلي محلي';
+  if (q.includes('مصبغ') || q.includes('dye')) {
+    reportTitle = 'داخل المصبغة';
+    scope = withStage.filter(({ order, stage })=>stage.key === 'dyehouse' || Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0);
+  } else if (q.includes('مخزن') || q.includes('جاهز') || q.includes('تسليم')) {
+    reportTitle = 'رصيد المخزن / جاهز للتسليم';
+    scope = withStage.filter(({ order })=>Number(order.warehouseBalance || 0) > 0);
+  } else if (q.includes('نسيج') || q.includes('weav')) {
+    reportTitle = 'رصيد النسيج';
+    scope = withStage.filter(({ stage })=>stage.key === 'weaving');
+  } else if (q.includes('هالك') || q.includes('waste')) {
+    reportTitle = 'تحليل الهالك';
+    scope = withStage.filter(({ order })=>Number(order.totalWaste || 0) > 0 || Number(order.totalWastePercent || 0) > 0);
+  } else if (q.includes('أقدم') || q.includes('متأخر') || q.includes('واقف')) {
+    reportTitle = 'الطلبات الواقفة';
+    scope = withStage.filter(({ stage })=>!['completed','closed'].includes(stage.key));
+  }
+  const sorted = scope.sort((a,b)=>Number(b.stage.days || 0) - Number(a.stage.days || 0)).slice(0, 8);
+  const totalRaw = sum(sorted.map(({ order })=>Number(order.totalRawOrdered || 0)));
+  const totalDyehouse = sum(sorted.map(({ order })=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)));
+  const totalWarehouse = sum(sorted.map(({ order })=>Number(order.warehouseBalance || 0)));
+  const executiveSummary = sorted.length
+    ? `${reportTitle}: ${sorted.length} طلب / خام ${formatNumber(totalRaw)} كجم / داخل المصبغة ${formatNumber(totalDyehouse)} / رصيد مخزن ${formatNumber(totalWarehouse)}.`
+    : `${reportTitle}: لا توجد طلبات مطابقة حاليًا.`;
+  const ordersToWatch = sorted.map(({ order, stage })=>({
+    orderNumber: order.orderNumber,
+    customer: order.customer,
+    fabricType: order.fabricType,
+    dyehouse: order.dyehouse,
+    stage: stage.label,
+    daysInStage: stage.days,
+    reason: `مصبغة ${formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)} / مخزن ${formatNumber(order.warehouseBalance || 0)}`
+  }));
+  const risks = sorted.filter(({ order, stage })=>Number(stage.days || 0) >= 7 || Number(order.totalWastePercent || 0) >= 8).map(({ order, stage })=>`طلب ${order.orderNumber} - ${order.customer}: ${stage.label} من ${stage.days} يوم / هالك ${formatNumber(order.totalWastePercent || 0, 1)}%`);
+  return {
+    source: 'local',
+    executiveSummary,
+    keyFindings: [
+      `عدد الطلبات: ${sorted.length}`,
+      `إجمالي داخل المصبغة: ${formatNumber(totalDyehouse)}`,
+      `إجمالي رصيد المخزن: ${formatNumber(totalWarehouse)}`,
+    ],
+    ordersToWatch,
+    risks,
+    recommendations: sorted.length ? ['ابدأ بأقدم طلب واقف قبل أي تشغيل جديد.', 'راجع أي رصيد مخزن متاح وحدد موعد تسليمه للعميل.'] : ['لا توجد أولوية عاجلة في هذا النطاق.'],
+    priorityActions: ordersToWatch.slice(0, 3).map((item)=>`متابعة طلب ${item.orderNumber} - ${item.customer} - ${item.stage}`),
+    whatsappMessage: `${executiveSummary}\n${ordersToWatch.slice(0, 5).map((item)=>`- ${item.orderNumber} / ${item.customer} / ${item.stage} / ${item.daysInStage} يوم`).join('\n') || 'لا توجد طلبات للعرض.'}`,
+  };
+}
 async function requestAiEmployee(question, triggerButton, title = 'الملخص التنفيذي') {
   if (!triggerButton) return;
   const oldText = triggerButton.textContent;
@@ -3083,10 +3137,9 @@ async function requestAiEmployee(question, triggerButton, title = 'الملخص 
     renderAiAnalysis(data, title);
     if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير الموظف الذكي من بيانات Railway.';
   } catch (error) {
-    const message = error.message === 'لم يتم ضبط مفتاح OpenAI API داخل السيرفر' ? error.message : (error.message || 'خدمة مساعد 2B الذكي غير متصلة حاليًا');
-    if (refs.aiStatusText) refs.aiStatusText.textContent = message;
-    refs.aiAnalysisBody.innerHTML = `<div class="empty-state">${message}</div>`;
-    refs.aiAnalysisDialog.showModal();
+    console.warn('ai-service-fallback', error);
+    renderAiAnalysis(buildLocalAiEmployeeResponse(question), title);
+    if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم الرد محليًا من بيانات النظام لأن خدمة AI غير متاحة.';
   } finally {
     triggerButton.disabled = false;
     triggerButton.textContent = oldText;
@@ -4019,6 +4072,67 @@ function consolidateOrderDetailView(order) {
   });
 }
 
+function setOrderDetailTab(tabId = 'overview') {
+  const root = refs.orderDetailsPanel;
+  if (!root) return;
+  const nextTab = root.querySelector(`[data-order-tab-panel="${tabId}"]`) ? tabId : 'overview';
+  root.querySelectorAll('[data-order-tab]').forEach((button) => {
+    const active = button.dataset.orderTab === nextTab;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  root.querySelectorAll('[data-order-tab-panel]').forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.orderTabPanel === nextTab);
+  });
+}
+
+function orderDetailSectionForNode(node) {
+  if (!node || node.nodeType !== 1) return 'overview';
+  if (node.classList.contains('batch-grid')) return 'movements';
+  if (node.classList.contains('report-send-status')) return 'documents';
+  if (node.classList.contains('order-360') || node.classList.contains('summary-grid')) return 'overview';
+  if (node.matches('h3')) return 'overview';
+  if (node.classList.contains('subsection')) {
+    const text = node.textContent || '';
+    if (node.querySelector('#addAllocationBtn') || text.includes('\u0627\u0644\u0623\u0644\u0648\u0627\u0646') || text.includes('\u0627\u0644\u0639\u0631\u0648\u0636')) return 'colors';
+    if (node.classList.contains('stock-flow-section') || text.includes('\u0627\u0644\u0645\u062e\u0632\u0646') || text.includes('\u0627\u0644\u0631\u0635\u064a\u062f')) return 'warehouse';
+  }
+  return 'overview';
+}
+
+function organizeOrderDetailsTabs() {
+  const root = refs.orderDetailsPanel;
+  if (!root || root.querySelector('.order-detail-tabs')) return;
+  const head = root.querySelector('.section-head');
+  if (!head) return;
+  const tabs = [
+    ['overview', '\u0627\u0644\u0645\u0644\u062e\u0635'],
+    ['colors', '\u0627\u0644\u0623\u0644\u0648\u0627\u0646 \u0648\u0627\u0644\u0631\u0635\u064a\u062f'],
+    ['movements', '\u0627\u0644\u062d\u0631\u0643\u0627\u062a'],
+    ['warehouse', '\u0627\u0644\u0645\u062e\u0632\u0646'],
+    ['documents', '\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a'],
+  ];
+  const nav = document.createElement('div');
+  nav.className = 'order-detail-tabs';
+  nav.setAttribute('role', 'tablist');
+  nav.innerHTML = tabs.map(([id, label], index) => `<button type="button" class="mini-btn ${index === 0 ? 'active' : ''}" role="tab" aria-selected="${index === 0 ? 'true' : 'false'}" data-order-tab="${id}">${label}</button>`).join('');
+  const panels = document.createElement('div');
+  panels.className = 'order-detail-tab-panels';
+  panels.innerHTML = tabs.map(([id, label], index) => `<section class="order-detail-tab-panel ${index === 0 ? 'active' : ''}" data-order-tab-panel="${id}" aria-label="${label}"></section>`).join('');
+  head.insertAdjacentElement('afterend', nav);
+  nav.insertAdjacentElement('afterend', panels);
+  const panelMap = Object.fromEntries([...panels.querySelectorAll('[data-order-tab-panel]')].map((panel) => [panel.dataset.orderTabPanel, panel]));
+  [...root.children].forEach((node) => {
+    if (node === head || node === nav || node === panels) return;
+    const sectionId = orderDetailSectionForNode(node);
+    panelMap[sectionId]?.appendChild(node);
+  });
+  Object.values(panelMap).forEach((panel) => {
+    if (!panel.children.length) panel.innerHTML = '<div class="empty-state">\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a \u0641\u064a \u0647\u0630\u0627 \u0627\u0644\u0642\u0633\u0645 \u062d\u0627\u0644\u064a\u064b\u0627.</div>';
+  });
+  setOrderDetailTab('overview');
+}
+
 function renderDetails() {
   ensureRuntimeCollections();
   if (!refs.orderDetailsPanel) return;
@@ -4059,6 +4173,7 @@ function renderDetails() {
   }
   consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
+  organizeOrderDetailsTabs();
   refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach((form) => {
     ensureRawDispatchSelect(form, order);
     updateRawMovementVisibility(form);
@@ -5700,6 +5815,11 @@ refs.orderDetailsPanel.addEventListener('change', (event) => {
 refs.orderDetailsPanel.addEventListener('click', (event) => {
   const target = event.target.closest('button');
   if (!target) return;
+  if (target.dataset.orderTab) {
+    event.preventDefault();
+    setOrderDetailTab(target.dataset.orderTab);
+    return;
+  }
   if (target.id === 'backToOrdersBtn') { closeOrderFocusMode(); return; }
   if (target.id === 'focusEditOrderBtn') {
     editingOrderId = selectedOrderId;
