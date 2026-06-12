@@ -210,6 +210,7 @@ let pendingPricingOrderId = null;
 let initialLocalStorageSnapshot = null;
 let orderFocusMode = false;
 let aiFocusMode = false;
+let dashboardFocusMode = false;
 
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
@@ -3047,6 +3048,7 @@ function closeOrderFocusMode() {
 
 function openOrderFocusMode(orderId) {
   selectedOrderId = orderId;
+  closeDashboardFocusMode();
   orderFocusMode = true;
   syncOrderFocusMode();
   syncFilteredListMode();
@@ -3349,6 +3351,33 @@ function setWorkspaceModule(moduleKey = 'dashboard') {
 function syncAiFocusMode() {
   document.body.classList.toggle('ai-focus-mode', aiFocusMode);
 }
+function syncDashboardFocusMode() {
+  document.body.classList.toggle('dashboard-focus-mode', dashboardFocusMode);
+}
+function decorateDashboardFocusHeader() {
+  const stats = document.getElementById('statsGrid');
+  if (!stats || document.querySelector('[data-dashboard-focus-toolbar]')) return;
+  stats.insertAdjacentHTML('beforebegin', '<div class="dashboard-focus-toolbar" data-dashboard-focus-toolbar><button class="mini-btn gold" type="button" id="backFromDashboardBtn">رجوع للنظام</button><div><span class="eyebrow">لوحة مستقلة</span><strong>ملخص الطلبات والمتابعة فقط</strong></div></div>');
+}
+function closeDashboardFocusMode() {
+  const wasFocused = dashboardFocusMode;
+  dashboardFocusMode = false;
+  syncDashboardFocusMode();
+  document.querySelector('[data-dashboard-focus-toolbar]')?.remove();
+  if (wasFocused) document.getElementById('mainWorkspace')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function openDashboardFocusMode() {
+  openMainWorkspace();
+  closeAiFocusMode();
+  closeOrderFocusMode();
+  closeSidebar();
+  setWorkspaceModule('dashboard');
+  dashboardFocusMode = true;
+  syncDashboardFocusMode();
+  decorateDashboardFocusHeader();
+  renderOperationFollowPanel();
+  document.getElementById('statsGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 function decorateAiFocusHeader() {
   const panel = document.getElementById('aiModelPanel');
   if (!panel || panel.querySelector('[data-ai-focus-toolbar]')) return;
@@ -3363,6 +3392,7 @@ function closeAiFocusMode() {
 }
 function openAiFocusMode() {
   openMainWorkspace();
+  closeDashboardFocusMode();
   closeOrderFocusMode();
   closeSidebar();
   aiFocusMode = true;
@@ -3380,6 +3410,7 @@ function normalizeReportAction(type = '') {
 function applyStageShortcut(stageValue) {
   if (!stageValue || !refs.orderStatusFilter) return;
   openMainWorkspace();
+  closeDashboardFocusMode();
   closeAiFocusMode();
   closeOrderFocusMode();
   refs.orderStatusFilter.value = stageValue;
@@ -3391,11 +3422,11 @@ function handleNavMenuAction(action) {
   openMainWorkspace();
   closeOpenErpMenus();
   if (action === 'workspaceHome') {
-    closeAiFocusMode();
-    document.getElementById('mainWorkspace')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    openDashboardFocusMode();
     return;
   }
   if (action === 'ordersList') {
+    closeDashboardFocusMode();
     closeAiFocusMode();
     closeOrderFocusMode();
     return;
@@ -3412,6 +3443,7 @@ function handleNavMenuAction(action) {
     return;
   }
   if (action === 'operationalFollow') {
+    closeDashboardFocusMode();
     closeAiFocusMode();
     document.getElementById('operationFollowPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     refreshOperationFollowPanel();
@@ -3431,9 +3463,9 @@ function handleNavMenuAction(action) {
   if (action === 'users') openUsersDialog();
   if (action === 'systemStatus') openSystemStatusDialog();
   if (action === 'dyehousePrices') renderDyehousePricesDialog();
-  if (action === 'pricingList') { closeAiFocusMode(); document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-  if (action === 'ordersList') { closeAiFocusMode(); refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-  if (action === 'orderDetails') { closeAiFocusMode(); refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+  if (action === 'pricingList') { closeDashboardFocusMode(); closeAiFocusMode(); document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+  if (action === 'ordersList') { closeDashboardFocusMode(); closeAiFocusMode(); refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+  if (action === 'orderDetails') { closeDashboardFocusMode(); closeAiFocusMode(); refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' }); }
 }
 
 function gluingOperationKey(batch = {}) {
@@ -5205,6 +5237,11 @@ if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilte
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
 document.addEventListener('click', (event) => {
+  if (event.target.closest('#backFromDashboardBtn')) {
+    event.preventDefault();
+    closeDashboardFocusMode();
+    return;
+  }
   if (event.target.closest('#backFromAiBtn')) {
     event.preventDefault();
     closeAiFocusMode();
