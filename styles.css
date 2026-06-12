@@ -225,11 +225,21 @@
 .start-card strong{display:block;font-size:18px;margin-bottom:8px}
 .start-card span{display:block;color:var(--muted);line-height:1.7}
 .start-card:hover,.start-card:focus-visible{border-color:rgba(200,165,106,.65);color:var(--accent2);outline:0}
+.erp-flow-map{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.erp-flow-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:12px}
+.erp-flow-head h3{margin:0;font-size:20px;line-height:1.4}
+.erp-flow-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.erp-flow-step{display:block;min-height:116px;padding:13px;border:1px solid var(--line);border-radius:16px;background:#0d141b;color:var(--text);text-align:right;cursor:pointer}
+.erp-flow-step span{display:inline-grid;place-items:center;width:28px;height:28px;margin-left:8px;border-radius:999px;background:rgba(200,165,106,.16);color:var(--accent2);font-weight:800;font-size:13px}
+.erp-flow-step strong{display:block;margin-top:9px;font-size:16px;line-height:1.35}
+.erp-flow-step small{display:block;margin-top:7px;color:var(--muted);font-size:13px;line-height:1.55}
+.erp-flow-step:hover,.erp-flow-step:focus-visible{border-color:rgba(200,165,106,.65);color:var(--accent2);outline:0}
 .main-workspace{display:none}
 .workspace-open .main-workspace{display:block}
 .action-bridge{display:none!important}
+@media(max-width:1100px){.erp-flow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.start-actions{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.start-gate{padding:14px}.start-actions{grid-template-columns:1fr}.start-card{min-height:92px}}
+@media(max-width:600px){.start-gate{padding:14px}.start-actions,.erp-flow-steps{grid-template-columns:1fr}.start-card{min-height:92px}.erp-flow-head{display:block}.erp-flow-step{min-height:96px}}
 .metric.emphasis{background:rgba(200,165,106,.12);border:1px solid rgba(200,165,106,.22)}
 .flow-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 18px}
 .flow-strip div{padding:14px;border-radius:16px;background:#0d141b;border:1px solid var(--line)}

@@ -159,6 +159,22 @@
         <button type="button" class="start-card" data-nav-action="managementReports"><strong>التقارير</strong><span>متابعة التشغيل والحسابات والتحليلات.</span></button>
         <button type="button" class="start-card" data-nav-action="aiModel"><strong>نموذج الذكاء الاصطناعي</strong><span>قراءة النظام وتحليل الوقوف والمخاطر.</span></button>
       </div>
+      <div class="erp-flow-map" aria-label="خريطة تشغيل ERP">
+        <div class="erp-flow-head">
+          <p class="eyebrow">خريطة تشغيل ERP</p>
+          <h3>تابع الكيلو من التسعير حتى التسليم</h3>
+        </div>
+        <div class="erp-flow-steps">
+          <button type="button" class="erp-flow-step" data-nav-action="pricingNew"><span>1</span><strong>عرض سعر</strong><small>تجهيز سعر أو عقد للعميل قبل أو أثناء دورة الطلب.</small></button>
+          <button type="button" class="erp-flow-step" data-nav-action="orderNew"><span>2</span><strong>طلب عميل</strong><small>تسجيل الطلب أو طلب مجمع بنفس رقم التشغيل.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="weaving" data-stage-shortcut="stage:weaving"><span>3</span><strong>النسيج</strong><small>متابعة الخام المطلوب والواقف في مرحلة النسيج.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="weaving" data-stage-shortcut="stage:ready-to-dyehouse"><span>4</span><strong>خام جاهز</strong><small>رصيد خام متاح فعليًا للإرسال إلى المصبغة.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="dyehouse" data-stage-shortcut="stage:dyehouse"><span>5</span><strong>داخل المصبغة</strong><small>كل ما خرج للمصبغة ولم يرجع مجهزًا بالكامل.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="warehouse" data-stage-shortcut="stage:warehouse"><span>6</span><strong>مخزن المجهز</strong><small>رصيد المنتج المجهز الموجود في المخزن.</small></button>
+          <button type="button" class="erp-flow-step" data-module-action="warehouse" data-stage-shortcut="stage:delivery"><span>7</span><strong>جاهز للتسليم</strong><small>الكميات المتاحة فعليًا للإرسال للعميل.</small></button>
+          <button type="button" class="erp-flow-step" data-nav-action="managementReports"><span>8</span><strong>التقارير</strong><small>التقرير الكامل، الهالك، المصبغة، الخام، والعملاء.</small></button>
+        </div>
+      </div>
     </section>
     <div class="action-bridge" aria-hidden="true">
       <button type="button" id="openOrderFormBtn">طلب جديد</button>
