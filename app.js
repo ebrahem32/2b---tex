@@ -2773,7 +2773,9 @@ function filteredOrders() {
   const fabric = refs.fabricFilter.value;
   return allOrders().filter((order) => {
     const stage = orderStageInfo(order);
-    const statusMatch = status.startsWith('stage:')
+    const statusMatch = status === 'stage:delivery'
+      ? Number(order.warehouseBalance || 0) > 0
+      : status.startsWith('stage:')
       ? stage.key === status.slice('stage:'.length)
       : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? order.status !== 'closed' : order.status === status));
     return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
@@ -3021,6 +3023,11 @@ function ordersListHeadingForCurrentFilter(list = []) {
       eyebrow: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646',
       title: '\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646',
       subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u0645\u062c\u0647\u0632 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062e\u0632\u0646 \u0648\u0644\u0645 \u064a\u0643\u062a\u0645\u0644 \u062a\u0633\u0644\u064a\u0645\u0647 \u0644\u0644\u0639\u0645\u064a\u0644.'
+    },
+    'stage:delivery': {
+      eyebrow: '\u062c\u0627\u0647\u0632 \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
+      title: '\u0631\u0635\u064a\u062f \u0645\u062a\u0627\u062d \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
+      subtitle: '\u0623\u0648\u0627\u0645\u0631 \u0628\u0647\u0627 \u0631\u0635\u064a\u062f \u0645\u062e\u0632\u0646 \u0641\u0639\u0644\u064a \u0645\u0648\u062c\u0648\u062f \u0648\u0642\u0627\u0628\u0644 \u0644\u0644\u0625\u0631\u0633\u0627\u0644 \u0644\u0644\u0639\u0645\u064a\u0644.'
     }
   };
   const heading = stageHeadings[status];
@@ -4526,12 +4533,14 @@ function orderStageInfo(order) {
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:ready-to-dyehouse':'خام جاهز للمصبغة', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'جاهز للتسليم' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:ready-to-dyehouse':'خام جاهز للمصبغة', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن', 'stage:delivery':'رصيد متاح للتسليم' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
   const select = refs.orderStatusFilter;
   if (!select) return;
+  const deliveryOption = [...select.options].find((option)=>option.value === 'stage:delivery');
+  if (deliveryOption) deliveryOption.textContent = 'رصيد متاح للتسليم';
   const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');
   if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('واقف في دمج الخامات', 'stage:gluing'), before || null);
   if (![...select.options].some((option)=>option.value === 'stage:glued-ready')) select.add(new Option('منتج مدمج جاهز للتسليم', 'stage:glued-ready'), before || null);
