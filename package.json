@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node start.js",
     "check": "npm run check:app && npm run check:server && npm run check:backend && npm run check:start && npm run check:operations",
-    "check:app": "node --check app.js && node --check modules/navigation.js && node --check modules/focusViews.js && node --check modules/aiUi.js && node --check modules/documentsUi.js && node --check modules/reportsUi.js",
+    "check:app": "node --check app.js && node --check modules/navigation.js && node --check modules/focusViews.js && node --check modules/aiUi.js && node --check modules/documentsUi.js && node --check modules/reportsUi.js && node --check modules/warehouseUi.js",
     "check:server": "node --check server.js",
     "check:backend": "node --check backend/server.js && node --check backend/calculations.js && node --check backend/tools/import-localstorage.js",
     "check:start": "node --check start.js",
