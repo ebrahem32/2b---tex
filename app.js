@@ -2879,6 +2879,49 @@ function renderStats(list) {
   ];
   refs.statsGrid.innerHTML = values.map(([label,value]) => `<article class="stat-card"><span>${label}</span><strong>${fmt(value)}</strong></article>`).join('');
 }
+function renderErpCockpit(list = []) {
+  const panel = document.getElementById('erpCockpit');
+  if (!panel) return;
+  const fmt = (value) => roundNumber(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
+  const source = allOrders();
+  const active = source.filter((order)=>!['completed','closed'].includes(order.status));
+  const stageOf = (order) => orderStageInfo(order);
+  const countWhere = (predicate) => source.filter(predicate).length;
+  const sum = (items, selector) => roundNumber(items.reduce((total, item)=>total + Number(selector(item) || 0), 0));
+  const lateOrders = source.map((order)=>({ order, stage:stageOf(order) }))
+    .filter(({ order, stage })=>!['completed','closed'].includes(order.status) && Number(stage.days || 0) >= 7)
+    .sort((a,b)=>Number(b.stage.days || 0) - Number(a.stage.days || 0));
+  const wasteWatch = source.filter((order)=>Number(order.totalWastePercent || 0) > 0 && Number(order.totalWastePercent || 0) >= Math.max(8, Number(order.expectedWastePercent || 0) + 2));
+  const priorityRows = [...lateOrders.map((item)=>item.order), ...wasteWatch]
+    .filter((order, index, arr)=>arr.findIndex((item)=>item.id === order.id) === index)
+    .slice(0, 5);
+  const lanes = [
+    { label:'النسيج', filter:'stage:weaving', count:countWhere((order)=>stageOf(order).key === 'weaving'), qty:sum(source, (order)=>Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)), sub:'خام مطلوب لم يخرج بعد' },
+    { label:'المصبغة', filter:'stage:dyehouse', count:countWhere((order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0), qty:sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)), sub:'رصيد فعلي داخل المصبغة' },
+    { label:'المخزن', filter:'stage:warehouse', count:countWhere((order)=>Number(order.warehouseBalance || 0) > 0), qty:sum(source, (order)=>order.warehouseBalance), sub:'مجهز موجود بالمخزن' },
+    { label:'جاهز للتسليم', filter:'stage:delivery', count:countWhere((order)=>Number(order.warehouseBalance || 0) > 0), qty:sum(source, (order)=>order.warehouseBalance), sub:'متاح للإرسال للعميل' },
+  ];
+  const cards = [
+    ['طلبات مفتوحة', active.length, `${source.length} إجمالي الطلبات`],
+    ['داخل المصبغة', fmt(sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0))), `${lanes[1].count} أوردر`],
+    ['جاهز للتسليم', fmt(sum(source, (order)=>order.warehouseBalance)), `${lanes[3].count} أوردر`],
+    ['أولوية متابعة', lateOrders.length + wasteWatch.length, 'وقوف طويل أو هالك مرتفع'],
+  ];
+  panel.innerHTML = `
+    <div class="section-head stacked-on-mobile">
+      <div><p class="eyebrow">ERP Command Center</p><h2>غرفة عمليات المصنع</h2><p class="orders-list-note">قراءة تنفيذية لحركة القماش من النسيج إلى المصبغة والمخزن والتسليم، مبنية على نفس بيانات التشغيل الحالية.</p></div>
+      <div class="actions"><button class="mini-btn gold" type="button" data-nav-action="ordersList">فتح كل الطلبات</button><button class="mini-btn" type="button" data-nav-action="managementReports">التقارير</button></div>
+    </div>
+    <div class="erp-cockpit-cards">${cards.map(([label, value, sub])=>`<article><span>${label}</span><strong>${value}</strong><small>${sub}</small></article>`).join('')}</div>
+    <div class="erp-pipeline">${lanes.map((lane, index)=>`<button type="button" data-stage-shortcut="${lane.filter}"><span>${index + 1}</span><strong>${lane.label}</strong><em>${fmt(lane.qty)} كجم</em><small>${lane.count} أوردر - ${lane.sub}</small></button>`).join('')}</div>
+    <div class="erp-priority-board">
+      <div><h3>أولويات المتابعة</h3><p class="eyebrow">الأقدم وقوفًا أو الأعلى هالكًا يظهر هنا أولًا.</p></div>
+      <div class="erp-priority-list">${priorityRows.length ? priorityRows.map((order)=>{
+        const stage = stageOf(order);
+        return `<button type="button" data-view="${escapeHtml(order.id)}"><strong>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</strong><span>${escapeHtml(order.fabricType || '-')}</span><small>${escapeHtml(stage.label)} / ${Number(stage.days || 0)} يوم / هالك ${fmt(order.totalWastePercent || 0)}%</small></button>`;
+      }).join('') : '<div class="empty-state">لا توجد أولويات حرجة حاليًا.</div>'}</div>
+    </div>`;
+}
 function buildAiSummaryStats(list = allOrders()) {
   const openOrders = list.filter((order)=>!['completed','closed'].includes(order.status));
   const pendingReports = reportOutbox.filter((item)=>['pending','failed'].includes(item.status));
@@ -3146,6 +3189,7 @@ function renderOrders() {
   const list = filteredOrders();
   syncFilteredListMode();
   renderStats(list);
+  renderErpCockpit(list);
   updateOrdersListHeading(list);
   refs.ordersTableBody.innerHTML = list.map((order) => {
     const stage = orderStageInfo(order);
@@ -5580,6 +5624,10 @@ refs.ordersTableBody.onclick = (event) => {
   if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
 };
 document.getElementById('refreshOperationFollowBtn')?.addEventListener('click', refreshOperationFollowPanel);
+document.getElementById('erpCockpit')?.addEventListener('click', (event) => {
+  const viewButton = event.target.closest('[data-view]');
+  if (viewButton?.dataset.view) openOrderFocusMode(viewButton.dataset.view);
+});
 document.getElementById('operationFollowPanel')?.addEventListener('click', (event) => {
   const stageCard = event.target.closest('[data-stage-filter]');
   if (stageCard) {
