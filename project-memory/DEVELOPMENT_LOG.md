@@ -72,3 +72,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Not touched: `backend/server.js`, `backend/calculations.js`, `documents.js`, database, schema, waste logic, stock logic.
 - Test: `npm run check`, GitHub Actions, Railway Online.
 
+### Complete Frontend UI Module Extraction
+
+- Date: 2026-06-13
+- Commit: pending commit `Complete frontend UI module extraction`.
+- Goal: continue Phase 1.4 by extracting additional frontend UI-only areas from `app.js`.
+- Files added: `modules/auditUi.js`, `modules/usersUi.js`, `modules/settingsUi.js`, `modules/formsUi.js`, `modules/pricingUi.js`.
+- Files changed: `app.js`, `index.html`, `package.json`, `project-memory/CURRENT_STATUS.md`, `project-memory/DEVELOPMENT_LOG.md`.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite, schema, waste logic, stock logic, AI backend, WhatsApp service, A5 service.
+- Deferred: `operationsUi.js`, `transfersUi.js`, and deeper `accessoriesUi.js` movement handlers remain in `app.js` because they are coupled to backend writes, operational validations, and stock movement safety.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

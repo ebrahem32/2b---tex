@@ -2,11 +2,11 @@
 
 ## Current Version
 
-`v2026.06.13.06`
+`v2026.06.13.10`
 
 ## Last Known Commit Before Project Memory
 
-`918ce4b Extract AI and documents UI modules`
+`282d516 Extract orders UI module`
 
 ## Current Phase
 
@@ -20,6 +20,14 @@ Phase 1 - Frontend Modular Refactor
 - `modules/focusViews.js`
 - `modules/aiUi.js`
 - `modules/documentsUi.js`
+- `modules/reportsUi.js`
+- `modules/warehouseUi.js`
+- `modules/ordersUi.js`
+- `modules/auditUi.js`
+- `modules/usersUi.js`
+- `modules/settingsUi.js`
+- `modules/formsUi.js`
+- `modules/pricingUi.js`
 
 ## Current `app.js` Direction
 
@@ -33,9 +41,7 @@ app.js: about 5538 lines
 
 ## Next Frontend Refactor Targets
 
-- `modules/reportsUi.js`
-- `modules/ordersUi.js`
-- `modules/warehouseUi.js`
+- Keep `operations`, `transfers`, and deeper accessory movement handlers inside `app.js` until a safer write-flow refactor, because they are tightly coupled to backend writes, stock movements, and operational validations.
 
 ## Not Allowed Currently
 
@@ -47,12 +53,12 @@ app.js: about 5538 lines
 
 ## Last Verification
 
-For commit `918ce4b`:
+For Phase 1.4 local verification before commit:
 
 - `npm run check`: passed.
 - Operational flow check: passed.
-- GitHub Actions: passed.
-- Railway: Online.
+- GitHub Actions: verify after push.
+- Railway: verify after push.
 
 ## This Documentation Task
 
@@ -68,4 +74,3 @@ git add project-memory
 git commit -m "Add project memory documentation"
 git push origin main
 ```
-
