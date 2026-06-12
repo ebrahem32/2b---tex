@@ -94,3 +94,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Not moved: write guards, rollback, persistence verification, operational save flows, order/batch/customer/pricing business logic.
 - Not touched: `backend/server.js`, `backend/calculations.js`, SQLite, schema, waste logic, stock logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Operational AI Manager Dashboard
+
+- Date: 2026-06-13
+- Commit: `Add operational AI manager dashboard`.
+- Goal: start Phase 3.0 by adding a read-only operational AI dashboard inside the existing AI workspace.
+- Files added: `modules/operationalAiManager.js`.
+- Files changed: `app.js`, `modules/aiUi.js`, `index.html`, `styles.css`, `package.json`, `project-memory/CURRENT_STATUS.md`, `project-memory/DEVELOPMENT_LOG.md`.
+- Added: daily operating summary, delayed orders, dyehouse balance watch, ready-to-deliver watch, high waste watch, and read-only recommendations.
+- Added: Order 360 read-only movement dates based on existing movement data.
+- Not touched: `backend/server.js`, `backend/calculations.js`, SQLite, schema, endpoints, waste logic, stock logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.11';
-const APP_BUILD_TIME = '2026-06-13 05:15';
+const APP_VERSION = 'v2026.06.13.12';
+const APP_BUILD_TIME = '2026-06-13 06:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -243,6 +243,7 @@ let analyzeReportWithAi;
 let askAiEmployee;
 let copyAiWhatsappMessage;
 let installAiUiHandlers;
+let renderOperationalAiDashboard;
 let renderDocuments;
 let openDyeingDocumentForDyehouse;
 let openDocument;
@@ -318,7 +319,7 @@ let pricingDraftFromOrder;
 let openPricingForOrder;
 
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
@@ -2650,6 +2651,7 @@ function renderErpCockpit(list = []) {
   analyzeReportWithAi,
   askAiEmployee,
   copyAiWhatsappMessage,
+  renderOperationalAiDashboard,
   installAiUiHandlers,
 } = window.createAiUi({
   refs,
@@ -2658,9 +2660,11 @@ function renderErpCockpit(list = []) {
   roundNumber,
   sum,
   formatNumber,
+  createOperationalAiManager: window.createOperationalAiManager,
   allOrders,
   orderStageInfo,
   calculateOrder,
+  openOrderFocusMode: (orderId) => openOrderFocusMode?.(orderId),
   getOrders: () => orders,
   getAllocations: () => allocations,
   getRawBatches: () => rawBatches,
@@ -3352,13 +3356,14 @@ function order360Alerts(order, stage) {
 }
 function order360Html(order) {
   const stage = orderStageInfo(order);
+  const movementDates = orderMovementDates(order);
   const dyehouseBalance = Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0);
   const steps = [
-    { key:'order', label:'طلب العميل', value:formatNumber(order.totalRawOrdered || 0), sub:'خام مطلوب', done:true },
-    { key:'weaving', label:'النسيج', value:formatNumber(order.totalRawReceived || 0), sub:'خام خرج للمصبغة', done:Number(order.totalRawReceived || 0) > 0, active:stage.key === 'weaving' },
-    { key:'dyehouse', label:'المصبغة', value:formatNumber(dyehouseBalance), sub:'متبقي داخل المصبغة', done:Number(order.totalFinishedReceived || 0) > 0 || dyehouseBalance === 0, active:stage.key === 'dyehouse' },
-    { key:'warehouse', label:'المخزن', value:formatNumber(order.warehouseBalance || 0), sub:'رصيد مجهز', done:Number(order.totalFinishedReceived || 0) > 0, active:stage.key === 'warehouse' },
-    { key:'delivery', label:'التسليم', value:formatNumber(order.totalDeliveredToCustomer || 0), sub:'مسلم للعميل', done:Number(order.remainingToCustomer || 0) === 0 && Number(order.totalDeliveredToCustomer || 0) > 0, active:stage.key === 'delivery' },
+    { key:'order', label:'طلب العميل', value:formatNumber(order.totalRawOrdered || 0), sub:`خام مطلوب / ${movementDates.orderDate}`, done:true },
+    { key:'weaving', label:'النسيج', value:formatNumber(order.totalRawReceived || 0), sub:`خام خرج للمصبغة / ${movementDates.weavingDate}`, done:Number(order.totalRawReceived || 0) > 0, active:stage.key === 'weaving' },
+    { key:'dyehouse', label:'المصبغة', value:formatNumber(dyehouseBalance), sub:`متبقي داخل المصبغة / ${movementDates.weavingDate}`, done:Number(order.totalFinishedReceived || 0) > 0 || dyehouseBalance === 0, active:stage.key === 'dyehouse' },
+    { key:'warehouse', label:'المخزن', value:formatNumber(order.warehouseBalance || 0), sub:`رصيد مجهز / ${movementDates.dyehouseDate}`, done:Number(order.totalFinishedReceived || 0) > 0, active:stage.key === 'warehouse' },
+    { key:'delivery', label:'التسليم', value:formatNumber(order.totalDeliveredToCustomer || 0), sub:`مسلم للعميل / ${movementDates.customerDate}`, done:Number(order.remainingToCustomer || 0) === 0 && Number(order.totalDeliveredToCustomer || 0) > 0, active:stage.key === 'delivery' },
     { key:'close', label:'الإغلاق', value:stage.key === 'closed' ? 'مغلق' : (stage.key === 'completed' ? 'مكتمل' : 'مفتوح'), sub:'حالة التشغيل', done:['completed','closed'].includes(stage.key), active:stage.key === 'closed' },
   ];
   const alerts = order360Alerts(order, stage);
@@ -4487,7 +4492,7 @@ function repairGlobalArabicText() {
   });
 }
 
-function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderOperationFollowPanel(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
+function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderOperationFollowPanel(); renderOperationalAiDashboard?.(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
 let pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {
   return new Promise((resolve, reject) => {

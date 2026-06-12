@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.11`
+`v2026.06.13.12`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,12 +10,12 @@
 
 ## Latest Commit Message
 
-`Extract frontend backend client`
+`Add operational AI manager dashboard`
 
 ## Current Phase
 
 ```text
-Phase 2.1 - Frontend Backend Client Extraction
+Phase 3.0 - Operational AI Manager Read Only
 ```
 
 ## Completed Frontend Modules
@@ -33,21 +33,23 @@ Phase 2.1 - Frontend Backend Client Extraction
 - `modules/formsUi.js`
 - `modules/pricingUi.js`
 - `modules/backendClient.js`
+- `modules/operationalAiManager.js`
 
 ## Current `app.js` Direction
 
 `app.js` is being reduced from a large all-in-one file into an application orchestrator.
 
-Current known line count after Phase 2.1:
+Current known line count after Phase 3.0 read-only AI manager:
 
 ```text
-app.js: 4989 lines
+app.js: 4927 lines
 ```
 
 ## Next Frontend Refactor Targets
 
 - Keep `operations`, `transfers`, and deeper accessory movement handlers inside `app.js` until a safer write-flow refactor, because they are tightly coupled to backend writes, stock movements, and operational validations.
 - Keep write guards, rollback, persistence verification, and operational save flows inside `app.js` until a dedicated write-flow refactor.
+- Operational AI Manager is read-only and must stay based on calculated frontend state unless a dedicated AI backend phase is approved.
 
 ## Not Allowed Currently
 
@@ -59,7 +61,7 @@ app.js: 4989 lines
 
 ## Last Verification
 
-For Phase 2.1 local verification before commit:
+For Phase 3.0 local verification before commit:
 
 - `npm run check`: passed.
 - Operational flow check: passed.

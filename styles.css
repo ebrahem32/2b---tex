@@ -159,6 +159,27 @@
 .ai-focus-mode #aiModelPanel{display:block!important;max-width:1040px;margin:0 auto 16px}
 .ai-focus-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:12px;border:1px solid var(--line);border-radius:16px;background:#0d141b}
 .ai-focus-toolbar strong{display:block;font-size:18px}
+.operational-ai-dashboard{margin:16px 0}
+.operational-ai-manager{display:grid;gap:14px}
+.operational-ai-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid rgba(200,165,106,.22);border-radius:18px;background:linear-gradient(135deg,rgba(200,165,106,.12),rgba(13,20,27,.96))}
+.operational-ai-hero h3{margin-bottom:6px;font-size:22px}
+.operational-ai-hero p:last-child{margin-bottom:0;color:#c9d6df;line-height:1.7}
+.operational-ai-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.operational-ai-cards article{padding:14px;border:1px solid var(--line);border-radius:16px;background:#0d141b}
+.operational-ai-cards span,.operational-ai-cards small{display:block;color:var(--muted)}
+.operational-ai-cards strong{display:block;margin:8px 0 4px;font-size:26px;color:#fff}
+.operational-ai-action{display:grid;gap:8px;padding:14px;border-radius:16px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.22)}
+.operational-ai-action span{color:var(--accent2);font-weight:800}
+.operational-ai-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.operational-ai-grid section{padding:14px;border:1px solid var(--line);border-radius:16px;background:#0d141b}
+.operational-ai-grid h4,.operational-ai-recommendations h4{margin-bottom:10px}
+.operational-ai-row{width:100%;display:grid;gap:4px;text-align:right;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);padding:10px 0;cursor:pointer}
+.operational-ai-row:last-child{border-bottom:0}
+.operational-ai-row:hover strong{color:var(--accent2)}
+.operational-ai-row span,.operational-ai-row small{color:var(--muted)}
+.operational-ai-recommendations{padding:14px;border:1px solid var(--line);border-radius:16px;background:#0d141b}
+.operational-ai-recommendations ul{margin:0;padding:0 18px 0 0;line-height:1.8;color:#c9d6df}
+@media(max-width:900px){.operational-ai-hero{display:grid}.operational-ai-cards,.operational-ai-grid{grid-template-columns:1fr}}
 .dashboard-focus-mode .app-shell{display:block;max-width:1200px;padding:18px}
 .dashboard-focus-mode .app-sidebar,
 .dashboard-focus-mode .mobile-menu-toggle,

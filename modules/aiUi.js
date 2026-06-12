@@ -1,5 +1,13 @@
 (function () {
   function createAiUi(deps) {
+    const operationalAiManager = deps.createOperationalAiManager ? deps.createOperationalAiManager({
+      escapeHtml: deps.escapeHtml,
+      formatNumber: deps.formatNumber,
+      roundNumber: deps.roundNumber,
+      orderStageInfo: deps.orderStageInfo,
+      getCalculatedOrders: () => deps.getOrders().map((order) => deps.calculateOrder(order)),
+    }) : null;
+
     function buildAiSummaryStats(list = deps.allOrders()) {
       const reportOutbox = deps.getReportOutbox();
       const openOrders = list.filter((order)=>!['completed','closed'].includes(order.status));
@@ -191,6 +199,11 @@
       }
     }
 
+    function renderOperationalAiDashboard() {
+      if (!operationalAiManager) return null;
+      return operationalAiManager.render(deps.refs.operationalAiDashboard || document.getElementById('operationalAiDashboard'));
+    }
+
     function installAiUiHandlers() {
       const refs = deps.refs;
       if (refs.analyzeReportBtn) refs.analyzeReportBtn.onclick = analyzeReportWithAi;
@@ -203,6 +216,22 @@
       });
       if (refs.closeAiAnalysisBtn) refs.closeAiAnalysisBtn.onclick = () => refs.aiAnalysisDialog.close();
       if (refs.copyAiWhatsappBtn) refs.copyAiWhatsappBtn.onclick = copyAiWhatsappMessage;
+      if (refs.operationalAiDashboard) {
+        refs.operationalAiDashboard.addEventListener('click', (event) => {
+          const refreshButton = event.target.closest('[data-refresh-operational-ai]');
+          if (refreshButton) {
+            renderOperationalAiDashboard();
+            if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم تحديث مدير التشغيل الذكي من بيانات الشاشة الحالية.';
+            return;
+          }
+          const orderButton = event.target.closest('[data-ai-open-order]');
+          if (orderButton) {
+            const orderId = orderButton.dataset.aiOpenOrder;
+            if (orderId && typeof deps.openOrderFocusMode === 'function') deps.openOrderFocusMode(orderId);
+          }
+        });
+      }
+      renderOperationalAiDashboard();
     }
 
     return {
@@ -215,6 +244,7 @@
       analyzeReportWithAi,
       askAiEmployee,
       copyAiWhatsappMessage,
+      renderOperationalAiDashboard,
       installAiUiHandlers,
     };
   }
