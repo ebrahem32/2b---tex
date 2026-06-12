@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.03';
-const APP_BUILD_TIME = '2026-06-13 00:17';
+const APP_VERSION = 'v2026.06.13.04';
+const APP_BUILD_TIME = '2026-06-13 01:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -212,6 +212,27 @@ let orderFocusMode = false;
 let aiFocusMode = false;
 let dashboardFocusMode = false;
 const orderDetailTabsByOrder = {};
+let syncOrderFocusMode;
+let decorateOrderFocusHeader;
+let closeOrderFocusMode;
+let openOrderFocusMode;
+let syncAiFocusMode;
+let syncDashboardFocusMode;
+let decorateDashboardFocusHeader;
+let closeDashboardFocusMode;
+let openDashboardFocusMode;
+let decorateAiFocusHeader;
+let closeAiFocusMode;
+let openAiFocusMode;
+let openMainWorkspace;
+let closeOpenErpMenus;
+let closeSidebar;
+let toggleSidebar;
+let setActiveSidebarButton;
+let setWorkspaceModule;
+let normalizeReportAction;
+let applyStageShortcut;
+let handleNavMenuAction;
 
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
@@ -3252,10 +3273,6 @@ function renderOrders() {
   }).join('') || '<tr><td colspan="6">لا توجد طلبات مطابقة للفلتر الحالي.</td></tr>';
 }
 
-function syncOrderFocusMode() {
-  document.body.classList.toggle('order-focus-mode', orderFocusMode);
-}
-
 function hasActiveOrderFilter() {
   return Boolean(
     String(refs.searchInput?.value || '').trim()
@@ -3268,35 +3285,6 @@ function hasActiveOrderFilter() {
 
 function syncFilteredListMode() {
   document.body.classList.toggle('filtered-list-mode', hasActiveOrderFilter() && !orderFocusMode);
-}
-
-function decorateOrderFocusHeader(order) {
-  if (!orderFocusMode || !refs.orderDetailsPanel || refs.orderDetailsPanel.querySelector('.order-focus-toolbar')) return;
-  const details = [
-    ['الصنف', order?.fabricType || '-'],
-    ['المصبغة', order?.dyehouse || '-'],
-    ['مصدر النسيج', order?.weavingSource || '-'],
-    ['تاريخ الطلب', order?.orderDate || '-'],
-  ];
-  const detailsHtml = details.map(([label, value])=>`<div class="order-focus-detail"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
-  refs.orderDetailsPanel.insertAdjacentHTML('afterbegin', `<div class="order-focus-toolbar"><button class="mini-btn gold" id="backToOrdersBtn" type="button">رجوع لقائمة الطلبات</button><div class="order-focus-title"><span class="eyebrow">عرض الطلب وأدواته</span><strong>${escapeHtml(order?.orderNumber || '-')} - ${escapeHtml(order?.customer || '-')}</strong></div><div class="batch-actions"><button class="mini-btn" id="focusEditOrderBtn" type="button">تعديل الطلب</button>${canDeleteRecords() ? '<button class="mini-btn danger" id="focusDeleteOrderBtn" type="button">حذف الطلب</button>' : ''}</div></div><div class="order-focus-details">${detailsHtml}</div>`);
-}
-
-function closeOrderFocusMode() {
-  orderFocusMode = false;
-  syncOrderFocusMode();
-  syncFilteredListMode();
-  document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-
-function openOrderFocusMode(orderId) {
-  selectedOrderId = orderId;
-  closeDashboardFocusMode();
-  orderFocusMode = true;
-  syncOrderFocusMode();
-  syncFilteredListMode();
-  renderDetails();
-  refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function documentFooter() {
@@ -3569,157 +3557,74 @@ function renderDocuments() {
       <button class="mini-btn" disabled>تصدير PDF لاحقًا</button>
     </div>`;
 }
-function openMainWorkspace() {
-  document.body.classList.add('workspace-open');
-  document.getElementById('mainWorkspace')?.removeAttribute('aria-hidden');
-}
-function closeOpenErpMenus(except = null) {
-  document.querySelectorAll('.erp-menu.open').forEach((menu) => {
-    if (menu !== except) menu.classList.remove('open');
-  });
-}
-function closeSidebar() {
-  document.body.classList.remove('sidebar-open');
-  document.querySelector('[data-sidebar-toggle]')?.setAttribute('aria-expanded', 'false');
-}
-function toggleSidebar() {
-  const opened = !document.body.classList.contains('sidebar-open');
-  document.body.classList.toggle('sidebar-open', opened);
-  document.querySelector('[data-sidebar-toggle]')?.setAttribute('aria-expanded', opened ? 'true' : 'false');
-}
-function setActiveSidebarButton(button = null) {
-  document.querySelectorAll('.sidebar-nav button.active').forEach((item) => item.classList.remove('active'));
-  if (button) button.classList.add('active');
-}
-function setWorkspaceModule(moduleKey = 'dashboard') {
-  const key = String(moduleKey || 'dashboard').trim();
-  document.body.dataset.activeModule = key;
-  document.querySelectorAll('[data-module-panel]').forEach((panel) => {
-    const modules = String(panel.dataset.modulePanel || '').split(/\s+/).filter(Boolean);
-    panel.classList.toggle('module-hidden', modules.length > 0 && !modules.includes(key));
-  });
-}
-function syncAiFocusMode() {
-  document.body.classList.toggle('ai-focus-mode', aiFocusMode);
-}
-function syncDashboardFocusMode() {
-  document.body.classList.toggle('dashboard-focus-mode', dashboardFocusMode);
-}
-function decorateDashboardFocusHeader() {
-  const stats = document.getElementById('statsGrid');
-  if (!stats || document.querySelector('[data-dashboard-focus-toolbar]')) return;
-  stats.insertAdjacentHTML('beforebegin', '<div class="dashboard-focus-toolbar" data-dashboard-focus-toolbar><button class="mini-btn gold" type="button" id="backFromDashboardBtn">رجوع للنظام</button><div><span class="eyebrow">لوحة مستقلة</span><strong>ملخص الطلبات والمتابعة فقط</strong></div></div>');
-}
-function closeDashboardFocusMode() {
-  const wasFocused = dashboardFocusMode;
-  dashboardFocusMode = false;
-  syncDashboardFocusMode();
-  document.querySelector('[data-dashboard-focus-toolbar]')?.remove();
-  if (wasFocused) document.getElementById('mainWorkspace')?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function openDashboardFocusMode() {
-  openMainWorkspace();
-  closeAiFocusMode();
-  closeOrderFocusMode();
-  closeSidebar();
-  setWorkspaceModule('dashboard');
-  dashboardFocusMode = true;
-  syncDashboardFocusMode();
-  decorateDashboardFocusHeader();
-  renderOperationFollowPanel();
-  document.getElementById('statsGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function decorateAiFocusHeader() {
-  const panel = document.getElementById('aiModelPanel');
-  if (!panel || panel.querySelector('[data-ai-focus-toolbar]')) return;
-  panel.insertAdjacentHTML('afterbegin', '<div class="ai-focus-toolbar" data-ai-focus-toolbar><button class="mini-btn gold" type="button" id="backFromAiBtn">رجوع للنظام</button><div><span class="eyebrow">لوحة مستقلة</span><strong>الموظف الذكي وذكاء التشغيل فقط</strong></div></div>');
-}
-function closeAiFocusMode() {
-  const wasFocused = aiFocusMode;
-  aiFocusMode = false;
-  syncAiFocusMode();
-  document.querySelector('[data-ai-focus-toolbar]')?.remove();
-  if (wasFocused) document.getElementById('mainWorkspace')?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function openAiFocusMode() {
-  openMainWorkspace();
-  closeDashboardFocusMode();
-  closeOrderFocusMode();
-  closeSidebar();
-  aiFocusMode = true;
-  syncAiFocusMode();
-  decorateAiFocusHeader();
-  document.getElementById('aiModelPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function normalizeReportAction(type = '') {
-  return ({
-    'raw-available': 'inventory',
-    customer: 'customer-account',
-    'dyehouse-performance': 'dyehouse-balances',
-  })[type] || type;
-}
-function applyStageShortcut(stageValue) {
-  if (!stageValue || !refs.orderStatusFilter) return;
-  if (stageValue === 'stage:ready-to-dyehouse') stageValue = 'stage:dyehouse';
-  if (stageValue === 'stage:delivery') stageValue = 'stage:warehouse';
-  openMainWorkspace();
-  closeDashboardFocusMode();
-  closeAiFocusMode();
-  closeOrderFocusMode();
-  refs.orderStatusFilter.value = stageValue;
-  renderOrders();
-  document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function handleNavMenuAction(action) {
-  if (!action) return;
-  openMainWorkspace();
-  closeOpenErpMenus();
-  if (action === 'workspaceHome') {
-    openDashboardFocusMode();
-    return;
-  }
-  if (action === 'ordersList') {
-    closeDashboardFocusMode();
-    closeAiFocusMode();
-    closeOrderFocusMode();
-    return;
-  }
-  if (action === 'pricingNew') refs.openPricingFormBtn?.click();
-  if (action === 'orderNew') refs.openOrderFormBtn?.click();
-  if (action === 'managementReports') refs.openManagementReportsBtn?.click();
-  if (action.startsWith('report:')) {
-    openManagementReport(normalizeReportAction(action.slice('report:'.length)));
-    return;
-  }
-  if (action === 'aiModel') {
-    openAiFocusMode();
-    return;
-  }
-  if (action === 'operationalFollow') {
-    closeDashboardFocusMode();
-    closeAiFocusMode();
-    document.getElementById('operationFollowPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-    refreshOperationFollowPanel();
-  }
-  if (action === 'aiAnalyze') {
-    openAiFocusMode();
-    refs.analyzeReportBtn?.click();
-  }
-  if (action === 'printFilteredOrders') refs.printFilteredOrdersBtn?.click();
-  if (action === 'gluingQueue') openGluingQueueDialog();
-  if (action === 'customerAccounts') renderCustomerAccountsDialog();
-  if (action === 'a5Accounts') renderA5AccountsDialog();
-  if (action === 'a5Export') renderA5ExportDialog();
-  if (action === 'whatsappSettings') openWhatsappSettingsDialog().catch((error)=>{ console.error('whatsapp-settings-open-error', error); renderWhatsappSettingsDialog([]); });
-  if (action === 'outbox') openOutboxDialog();
-  if (action === 'auditLog') openAuditLogDialog().catch(console.error);
-  if (action === 'users') openUsersDialog();
-  if (action === 'systemStatus') openSystemStatusDialog();
-  if (action === 'dyehousePrices') renderDyehousePricesDialog();
-  if (action === 'pricingList') { closeDashboardFocusMode(); closeAiFocusMode(); document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-  if (action === 'ordersList') { closeDashboardFocusMode(); closeAiFocusMode(); refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-  if (action === 'orderDetails') { closeDashboardFocusMode(); closeAiFocusMode(); refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-}
+
+({
+  openMainWorkspace,
+  closeOpenErpMenus,
+  closeSidebar,
+  toggleSidebar,
+  setActiveSidebarButton,
+  setWorkspaceModule,
+  normalizeReportAction,
+  applyStageShortcut,
+  handleNavMenuAction,
+} = window.createNavigation({
+  refs,
+  closeDashboardFocusMode: () => closeDashboardFocusMode(),
+  closeAiFocusMode: () => closeAiFocusMode(),
+  closeOrderFocusMode: () => closeOrderFocusMode(),
+  openDashboardFocusMode: () => openDashboardFocusMode(),
+  openAiFocusMode: () => openAiFocusMode(),
+  renderOrders,
+  openManagementReport,
+  refreshOperationFollowPanel,
+  openGluingQueueDialog,
+  renderCustomerAccountsDialog,
+  renderA5AccountsDialog,
+  renderA5ExportDialog,
+  openWhatsappSettingsDialog,
+  renderWhatsappSettingsDialog,
+  openOutboxDialog,
+  openAuditLogDialog,
+  openUsersDialog,
+  openSystemStatusDialog,
+  renderDyehousePricesDialog,
+}));
+
+({
+  syncOrderFocusMode,
+  decorateOrderFocusHeader,
+  closeOrderFocusMode,
+  openOrderFocusMode,
+  syncAiFocusMode,
+  syncDashboardFocusMode,
+  decorateDashboardFocusHeader,
+  closeDashboardFocusMode,
+  openDashboardFocusMode,
+  decorateAiFocusHeader,
+  closeAiFocusMode,
+  openAiFocusMode,
+} = window.createFocusViews({
+  refs,
+  escapeHtml,
+  canDeleteRecords,
+  getOrderFocusMode: () => orderFocusMode,
+  setOrderFocusMode: (value) => { orderFocusMode = value; },
+  getAiFocusMode: () => aiFocusMode,
+  setAiFocusMode: (value) => { aiFocusMode = value; },
+  getDashboardFocusMode: () => dashboardFocusMode,
+  setDashboardFocusMode: (value) => { dashboardFocusMode = value; },
+  setSelectedOrderId: (value) => { selectedOrderId = value; },
+  syncFilteredListMode,
+  renderDetails,
+  renderOperationFollowPanel,
+  openMainWorkspace: () => openMainWorkspace(),
+  closeSidebar: () => closeSidebar(),
+  setWorkspaceModule: (moduleKey) => setWorkspaceModule(moduleKey),
+  closeOrderFocusMode: () => closeOrderFocusMode(),
+  closeAiFocusMode: () => closeAiFocusMode(),
+  closeDashboardFocusMode: () => closeDashboardFocusMode(),
+}));
 
 function gluingOperationKey(batch = {}) {
   return String(batch.noteNumber || batch.partnerFabric || '').trim();
