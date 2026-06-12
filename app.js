@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.04';
-const APP_BUILD_TIME = '2026-06-13 01:05';
+const APP_VERSION = 'v2026.06.13.06';
+const APP_BUILD_TIME = '2026-06-13 02:08';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -233,6 +233,26 @@ let setWorkspaceModule;
 let normalizeReportAction;
 let applyStageShortcut;
 let handleNavMenuAction;
+let buildAiSummaryStats;
+let collectAiReportPayload;
+let formatAiItem;
+let renderAiAnalysis;
+let buildLocalAiEmployeeResponse;
+let requestAiEmployee;
+let analyzeReportWithAi;
+let askAiEmployee;
+let copyAiWhatsappMessage;
+let installAiUiHandlers;
+let renderDocuments;
+let openDyeingDocumentForDyehouse;
+let openDocument;
+let safeOpenDocument;
+let printCurrentDocument;
+let currentReportTypeFromDocument;
+let currentShareReportPayload;
+let shareCurrentReportPdf;
+let shareCurrentReportPngManual;
+let installDocumentsUiHandlers;
 
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','analyzeReportBtn','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
@@ -2941,256 +2961,93 @@ function renderErpCockpit(list = []) {
       }).join('') : '<div class="empty-state">لا توجد أولويات حرجة حاليًا.</div>'}</div>
     </div>`;
 }
-function buildAiSummaryStats(list = allOrders()) {
-  const openOrders = list.filter((order)=>!['completed','closed'].includes(order.status));
-  const pendingReports = reportOutbox.filter((item)=>['pending','failed'].includes(item.status));
-  return {
-    ordersCount: list.length,
-    openOrdersCount: openOrders.length,
-    pendingOrdersCount: list.filter((order)=>order.status === 'pending').length,
-    inProgressOrdersCount: list.filter((order)=>order.status === 'in-progress').length,
-    completedOrdersCount: list.filter((order)=>order.status === 'completed').length,
-    closedOrdersCount: list.filter((order)=>order.status === 'closed').length,
-    totalRawOrdered: roundNumber(list.reduce((total, order)=>total + Number(order.totalRawOrdered || 0), 0)),
-    totalSentToDyehouse: roundNumber(list.reduce((total, order)=>total + Number(order.totalSentToDyehouse || 0), 0)),
-    totalGluingBalance: roundNumber(list.reduce((total, order)=>total + Number(order.gluingBalance || 0), 0)),
-    totalGluedProductBalance: roundNumber(list.reduce((total, order)=>total + Number(order.gluedProductBalance || 0), 0)),
-    totalFinishedReceived: roundNumber(list.reduce((total, order)=>total + Number(order.totalFinishedReceived || 0), 0)),
-    totalRemainingAtDyehouse: roundNumber(list.reduce((total, order)=>total + Number(order.rawAtDyehouseAvailable || 0), 0)),
-    totalWarehouseBalance: roundNumber(list.reduce((total, order)=>total + Number(order.warehouseBalance || 0), 0)),
-    totalDeliveredToCustomer: roundNumber(list.reduce((total, order)=>total + Number(order.totalDeliveredToCustomer || 0), 0)),
-    finalWasteOnClosedOrders: roundNumber(list.filter((order)=>['completed','closed'].includes(order.status)).reduce((total, order)=>total + Number(order.totalWaste || 0), 0)),
-    reportsNeedAttention: pendingReports.length,
-  };
-}
+({
+  buildAiSummaryStats,
+  collectAiReportPayload,
+  formatAiItem,
+  renderAiAnalysis,
+  buildLocalAiEmployeeResponse,
+  requestAiEmployee,
+  analyzeReportWithAi,
+  askAiEmployee,
+  copyAiWhatsappMessage,
+  installAiUiHandlers,
+} = window.createAiUi({
+  refs,
+  AI_SERVICE_URL,
+  escapeHtml,
+  roundNumber,
+  sum,
+  formatNumber,
+  allOrders,
+  orderStageInfo,
+  calculateOrder,
+  getOrders: () => orders,
+  getAllocations: () => allocations,
+  getRawBatches: () => rawBatches,
+  getProductionBatches: () => productionBatches,
+  getCustomerBatches: () => customerBatches,
+  getAccessoryBatches: () => accessoryBatches,
+  getRawReturns: () => rawReturns,
+  getGluingBatches: () => gluingBatches,
+  getDyehouseTransfers: () => dyehouseTransfers,
+  getReportOutbox: () => reportOutbox,
+}));
 
-let operationFollowLoading = false;
-
-function operationStageSummaryHtml(groups = []) {
-  if (!groups.length) return '<div class="empty-state">لا توجد طلبات واقفة حاليًا.</div>';
-  return groups.map((stage) => `
-    <article class="operation-stage-card" data-stage-filter="${escapeHtml(stage.key || '')}">
-      <span>${escapeHtml(stage.label || '-')}</span>
-      <strong>${Number(stage.count || 0).toLocaleString('en-US')}</strong>
-      <em>${Number(stage.quantity || 0).toLocaleString('en-US')} كجم</em>
-      <small>أقدم وقوف: ${Number(stage.oldestDays || 0).toLocaleString('en-US')} يوم</small>
-    </article>
-  `).join('');
-}
-
-function operationFollowRowHtml(order = {}) {
-  const stage = order.stage || {};
-  return `<tr>
-    <td data-label="رقم الطلب">${escapeHtml(order.orderNumber || '-')}</td>
-    <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
-    <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
-    <td data-label="المرحلة"><span class="status ${escapeHtml(order.status || 'in-progress')}" title="${escapeHtml(stage.reason || '')}">${escapeHtml(stage.label || '-')}</span></td>
-    <td data-label="واقف من">${escapeHtml(String(stage.since || '-').slice(0, 10))}</td>
-    <td data-label="الأيام">${Number(stage.days || 0).toLocaleString('en-US')}</td>
-    <td data-label="السبب">${escapeHtml(stage.reason || '-')}</td>
-    <td data-label="إجراء"><button class="mini-btn" type="button" data-view="${escapeHtml(order.id || '')}">عرض الطلب</button></td>
-  </tr>`;
-}
-
-function renderOperationFollowData(context = {}) {
-  const summary = document.getElementById('operationFollowSummary');
-  const body = document.getElementById('operationFollowBody');
-  if (!summary || !body) return;
-  const groups = Array.isArray(context.stageGroups) ? context.stageGroups : [];
-  const ordersToWatch = Array.isArray(context.priorityOrders) ? context.priorityOrders : [];
-  summary.innerHTML = operationStageSummaryHtml(groups);
-  body.innerHTML = ordersToWatch.length
-    ? ordersToWatch.slice(0, 12).map(operationFollowRowHtml).join('')
-    : '<tr><td colspan="8">لا توجد طلبات تحتاج متابعة حاليًا.</td></tr>';
-}
-
-function renderOperationFollowFallback(message = 'تعذر تحميل متابعة التشغيل من Railway.') {
-  const summary = document.getElementById('operationFollowSummary');
-  const body = document.getElementById('operationFollowBody');
-  if (summary) summary.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
-  if (body) body.innerHTML = '<tr><td colspan="8">راجع اتصال قاعدة البيانات ثم اضغط تحديث المتابعة.</td></tr>';
-}
-
-async function refreshOperationFollowPanel() {
-  if (operationFollowLoading) return;
-  const summary = document.getElementById('operationFollowSummary');
-  if (!summary) return;
-  operationFollowLoading = true;
-  summary.innerHTML = '<div class="empty-state">جاري قراءة متابعة التشغيل من Railway...</div>';
-  try {
-    const context = await backendRequest('/ai/employee-context', { cache:'no-store' });
-    renderOperationFollowData(context);
-  } catch (error) {
-    console.warn('operation-follow-load-failed', error);
-    renderOperationFollowFallback();
-  } finally {
-    operationFollowLoading = false;
-  }
-}
-
-function renderOperationFollowPanel() {
-  const summary = document.getElementById('operationFollowSummary');
-  if (!summary || summary.dataset.loaded === 'true') return;
-  summary.dataset.loaded = 'true';
-  refreshOperationFollowPanel();
-}
-
-function collectAiReportPayload() {
-  const calculatedOrders = allOrders().map((order)=>({
-    ...order,
-    stageInfo: orderStageInfo(order),
-    rawNoteNumbers: rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber).filter(Boolean),
-  }));
-  return {
-    orders: calculatedOrders,
-    weavingOrders: orders,
-    dyeingPlans: allocations,
-    batches: {
-      rawBatches,
-      productionBatches,
-      customerBatches,
-      accessoryBatches,
-      rawReturns,
-      gluingBatches,
-      dyehouseTransfers,
-    },
-    reportOutbox,
-    summaryStats: buildAiSummaryStats(calculatedOrders),
-  };
-}
-function asListHtml(items) {
-  const rows = Array.isArray(items) ? items : [];
-  return rows.length ? `<ul>${rows.map((item)=>`<li>${escapeHtml(formatAiItem(item))}</li>`).join('')}</ul>` : '<p class="empty-state">لا توجد بيانات كافية للعرض.</p>';
-}
-function formatAiItem(item) {
-  if (item == null) return '-';
-  if (typeof item !== 'object') return String(item);
-  const parts = [];
-  if (item.orderNumber || item.orderId) parts.push(`طلب ${item.orderNumber || item.orderId}`);
-  if (item.customer) parts.push(`العميل ${item.customer}`);
-  if (item.status) parts.push(item.status);
-  if (typeof item.stage === 'string') parts.push(item.stage);
-  if (item.stage?.label) parts.push(item.stage.label);
-  if (item.daysInStatus != null) parts.push(`واقف ${item.daysInStatus} يوم`);
-  if (item.daysInStage != null) parts.push(`واقف ${item.daysInStage} يوم`);
-  if (item.stage?.days != null) parts.push(`واقف ${item.stage.days} يوم`);
-  if (item.fabricType) parts.push(`الصنف ${item.fabricType}`);
-  if (item.dyehouse) parts.push(`المصبغة ${item.dyehouse}`);
-  if (item.reason || item.notes) parts.push(item.reason || item.notes);
-  return parts.length ? parts.join(' - ') : JSON.stringify(item);
-}
-function renderAiAnalysis(result, title = 'الملخص التنفيذي') {
-  const safe = result || {};
-  const sourceLabel = safe.source === 'gemini' ? 'موظف 2B الذكي - Gemini' : (safe.source === 'openai' ? 'موظف 2B الذكي - OpenAI' : 'تحليل تشغيلي من قواعد 2B');
-  refs.aiAnalysisBody.innerHTML = `<section class="ai-result-section"><p class="eyebrow">${sourceLabel}</p><h3>${escapeHtml(title)}</h3><p>${escapeHtml(safe.executiveSummary || '-')}</p></section><section class="ai-result-section"><h3>أهم الملاحظات</h3>${asListHtml(safe.keyFindings)}</section><section class="ai-result-section"><h3>الطلبات التي تحتاج متابعة</h3>${asListHtml(safe.ordersToWatch)}</section><section class="ai-result-section"><h3>المخاطر</h3>${asListHtml(safe.risks)}</section><section class="ai-result-section"><h3>التوصيات</h3>${asListHtml(safe.recommendations)}</section><section class="ai-result-section"><h3>أولويات اليوم</h3>${asListHtml(safe.priorityActions)}</section><section class="ai-result-section"><h3>رسالة واتساب للإدارة</h3><div class="ai-whatsapp-message" id="aiWhatsappMessage">${escapeHtml(safe.whatsappMessage || '-')}</div></section>`;
-  refs.aiAnalysisDialog.showModal();
-}
-function buildLocalAiEmployeeResponse(question = '') {
-  const q = String(question || '').toLowerCase();
-  const list = orders.map((order)=>calculateOrder(order));
-  const withStage = list.map((order)=>({ order, stage:orderStageInfo(order) }));
-  let scope = withStage.filter(({ stage })=>!['completed','closed'].includes(stage.key));
-  let reportTitle = 'ملخص تشغيلي محلي';
-  if (q.includes('مصبغ') || q.includes('dye')) {
-    reportTitle = 'داخل المصبغة';
-    scope = withStage.filter(({ order, stage })=>stage.key === 'dyehouse' || Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0);
-  } else if (q.includes('مخزن') || q.includes('جاهز') || q.includes('تسليم')) {
-    reportTitle = 'رصيد المخزن / جاهز للتسليم';
-    scope = withStage.filter(({ order })=>Number(order.warehouseBalance || 0) > 0);
-  } else if (q.includes('نسيج') || q.includes('weav')) {
-    reportTitle = 'رصيد النسيج';
-    scope = withStage.filter(({ stage })=>stage.key === 'weaving');
-  } else if (q.includes('هالك') || q.includes('waste')) {
-    reportTitle = 'تحليل الهالك';
-    scope = withStage.filter(({ order })=>Number(order.totalWaste || 0) > 0 || Number(order.totalWastePercent || 0) > 0);
-  } else if (q.includes('أقدم') || q.includes('متأخر') || q.includes('واقف')) {
-    reportTitle = 'الطلبات الواقفة';
-    scope = withStage.filter(({ stage })=>!['completed','closed'].includes(stage.key));
-  }
-  const sorted = scope.sort((a,b)=>Number(b.stage.days || 0) - Number(a.stage.days || 0)).slice(0, 8);
-  const totalRaw = sum(sorted.map(({ order })=>Number(order.totalRawOrdered || 0)));
-  const totalDyehouse = sum(sorted.map(({ order })=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)));
-  const totalWarehouse = sum(sorted.map(({ order })=>Number(order.warehouseBalance || 0)));
-  const executiveSummary = sorted.length
-    ? `${reportTitle}: ${sorted.length} طلب / خام ${formatNumber(totalRaw)} كجم / داخل المصبغة ${formatNumber(totalDyehouse)} / رصيد مخزن ${formatNumber(totalWarehouse)}.`
-    : `${reportTitle}: لا توجد طلبات مطابقة حاليًا.`;
-  const ordersToWatch = sorted.map(({ order, stage })=>({
-    orderNumber: order.orderNumber,
-    customer: order.customer,
-    fabricType: order.fabricType,
-    dyehouse: order.dyehouse,
-    stage: stage.label,
-    daysInStage: stage.days,
-    reason: `مصبغة ${formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)} / مخزن ${formatNumber(order.warehouseBalance || 0)}`
-  }));
-  const risks = sorted.filter(({ order, stage })=>Number(stage.days || 0) >= 7 || Number(order.totalWastePercent || 0) >= 8).map(({ order, stage })=>`طلب ${order.orderNumber} - ${order.customer}: ${stage.label} من ${stage.days} يوم / هالك ${formatNumber(order.totalWastePercent || 0, 1)}%`);
-  return {
-    source: 'local',
-    executiveSummary,
-    keyFindings: [
-      `عدد الطلبات: ${sorted.length}`,
-      `إجمالي داخل المصبغة: ${formatNumber(totalDyehouse)}`,
-      `إجمالي رصيد المخزن: ${formatNumber(totalWarehouse)}`,
-    ],
-    ordersToWatch,
-    risks,
-    recommendations: sorted.length ? ['ابدأ بأقدم طلب واقف قبل أي تشغيل جديد.', 'راجع أي رصيد مخزن متاح وحدد موعد تسليمه للعميل.'] : ['لا توجد أولوية عاجلة في هذا النطاق.'],
-    priorityActions: ordersToWatch.slice(0, 3).map((item)=>`متابعة طلب ${item.orderNumber} - ${item.customer} - ${item.stage}`),
-    whatsappMessage: `${executiveSummary}\n${ordersToWatch.slice(0, 5).map((item)=>`- ${item.orderNumber} / ${item.customer} / ${item.stage} / ${item.daysInStage} يوم`).join('\n') || 'لا توجد طلبات للعرض.'}`,
-  };
-}
-async function requestAiEmployee(question, triggerButton, title = 'الملخص التنفيذي') {
-  if (!triggerButton) return;
-  const oldText = triggerButton.textContent;
-  triggerButton.disabled = true;
-  triggerButton.textContent = 'جاري التحليل...';
-  if (refs.aiStatusText) refs.aiStatusText.textContent = 'موظف 2B الذكي يقرأ قاعدة البيانات من Railway الآن.';
-  try {
-    const response = await fetch(`${AI_SERVICE_URL}/api/ai/employee-report`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
-    });
-    const data = await response.json().catch(()=>({}));
-    if (!response.ok) {
-      if (data.error === 'MISSING_OPENAI_API_KEY') throw new Error('لم يتم ضبط مفتاح OpenAI API داخل السيرفر');
-      throw new Error(data.message || 'تعذر تحليل التقرير من خدمة مساعد 2B الذكي');
-    }
-    renderAiAnalysis(data, title);
-    if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير الموظف الذكي من بيانات Railway.';
-  } catch (error) {
-    console.warn('ai-service-fallback', error);
-    renderAiAnalysis(buildLocalAiEmployeeResponse(question), title);
-    if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم الرد محليًا من بيانات النظام لأن خدمة AI غير متاحة.';
-  } finally {
-    triggerButton.disabled = false;
-    triggerButton.textContent = oldText;
-  }
-}
-async function analyzeReportWithAi() {
-  await requestAiEmployee('حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟', refs.analyzeReportBtn, 'تقرير الموظف الذكي');
-}
-async function askAiEmployee() {
-  const question = String(refs.aiQuestionInput?.value || '').trim();
-  if (!question) { alert('اكتب سؤالك للموظف الذكي أولًا.'); return; }
-  await requestAiEmployee(question, refs.askAiBtn, 'رد الموظف الذكي');
-}
-async function copyAiWhatsappMessage() {
-  const text = document.getElementById('aiWhatsappMessage')?.textContent?.trim() || '';
-  if (!text || text === '-') { alert('لا توجد رسالة جاهزة للنسخ.'); return; }
-  try {
-    await navigator.clipboard.writeText(text);
-    alert('تم نسخ الرسالة.');
-  } catch {
-    const area = document.createElement('textarea');
-    area.value = text;
-    document.body.appendChild(area);
-    area.select();
-    document.execCommand('copy');
-    area.remove();
-    alert('  .');
-  }
-}
+({
+  renderDocuments,
+  openDyeingDocumentForDyehouse,
+  openDocument,
+  safeOpenDocument,
+  printCurrentDocument,
+  currentReportTypeFromDocument,
+  currentShareReportPayload,
+  shareCurrentReportPdf,
+  shareCurrentReportPngManual,
+  installDocumentsUiHandlers,
+} = window.createDocumentsUi({
+  refs,
+  escapeHtml,
+  formatNumber,
+  roundNumber,
+  calculateOrder,
+  pricingForOrder,
+  documentHeader,
+  documentFooter,
+  withDocumentFooter,
+  combinedOperationNotes,
+  dyehouseNamesForOrder,
+  renderDyehouseDocumentPicker,
+  promptOperationNotes,
+  loadBackendData,
+  buildQuotationDocument,
+  buildWeavingOrderDocument,
+  buildDyeingSummaryDocument,
+  buildDyeingOrderDocument,
+  buildWasteReportDocument,
+  buildCompactFullReportDocument,
+  buildLabSamplesDocument,
+  buildStickersDocument,
+  queueDocumentReport,
+  reportToPngBlob,
+  cleanCodePart,
+  editPricing,
+  convertPricingToOrder,
+  openPricingForOrder,
+  stopWhatsappSettingsAutoRefresh,
+  isBackendAvailable: () => backendAvailable,
+  getOrders: () => orders,
+  getPricings: () => pricings,
+  getRawBatches: () => rawBatches,
+  getProductionBatches: () => productionBatches,
+  getFinishedBatches: () => finishedBatches,
+  getRawReturns: () => rawReturns,
+  getDyehouseTransfers: () => dyehouseTransfers,
+  getSelectedOrderId: () => selectedOrderId,
+  getCurrentDocumentType: () => currentDocumentType,
+  setCurrentDocumentType: (value) => { currentDocumentType = value; },
+  getReportTypeLabels: () => reportTypeLabels,
+}));
 
 function ordersListHeadingForCurrentFilter(list = []) {
   const status = refs.orderStatusFilter?.value || 'all';
@@ -3529,33 +3386,6 @@ function orderDetailsHasActiveDraft() {
   const active = document.activeElement;
   if (active?.closest?.('#orderDetailsPanel .batch-form')) return true;
   return !!refs.orderDetailsPanel?.querySelector('.batch-form[data-dirty="true"]');
-}
-
-function renderDocuments() {
-  const currentOrder = orders.find((item)=>item.id === selectedOrderId);
-  const linkedPricing = currentOrder?.pricingId ? pricings.find((pricing)=>pricing.id === currentOrder.pricingId) : null;
-  const orderPricing = currentOrder ? (linkedPricing || pricingForOrder(currentOrder)) : null;
-  const pricingActionLabel = orderPricing ? 'تعديل التسعيرة المرتبطة' : 'إنشاء تسعيرة من الطلب';
-  refs.documentsPanel.innerHTML = `
-    <div class="document-action-group">
-      <h3>عرض العميل</h3>
-      <button class="mini-btn gold" data-order-pricing>${pricingActionLabel}</button>
-      <button class="mini-btn gold" data-doc="quotation">إنشاء عرض سعر</button>
-    </div>
-    <div class="document-action-group">
-      <h3>أوامر التشغيل</h3>
-      <button class="mini-btn gold" data-doc="weaving">أمر تشغيل نسيج</button>
-      <button class="mini-btn gold" data-doc="dyeing">أمر تشغيل صباغة</button>
-      <button class="mini-btn gold" data-doc="labSamples">عينات معمل</button>
-      <button class="mini-btn gold" data-doc="stickers">استيكرات التشغيل</button>
-    </div>
-    <div class="document-action-group">
-      <h3>التقارير والكشوفات</h3>
-      <button class="mini-btn" data-doc="waste">تقرير الهالك</button>
-      <button class="mini-btn gold" data-doc="fullreport">التقرير التفصيلي</button>
-      <button class="mini-btn" data-doc="print">طباعة التقرير الحالي</button>
-      <button class="mini-btn" disabled>تصدير PDF لاحقًا</button>
-    </div>`;
 }
 
 ({
@@ -5061,86 +4891,6 @@ const {
 });
 
 
-async function openDyeingDocumentForDyehouse(dyehouseName) {
-  if (backendAvailable) await loadBackendData();
-  const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
-  if (!sourceOrder) return;
-  const name = String(dyehouseName || '').trim();
-  const operationNoteText = await promptOperationNotes(sourceOrder, 'dyeing', name);
-  if (operationNoteText === null) return;
-  const refreshedSourceOrder = orders.find((item)=>item.id===selectedOrderId) || sourceOrder;
-  const order = calculateOrder(refreshedSourceOrder);
-  const fmt = (value) => roundNumber(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
-  const reportOrder = { ...order, operationNoteText, whatsappDyehouseName:name };
-  currentDocumentType = 'dyeing';
-  refs.documentTitle.textContent = `أمر صباغة - ${name || '-'}`;
-  refs.documentBody.dataset.documentType = 'dyeing';
-  refs.documentBody.dataset.dyehouseName = name;
-  refs.documentBody.innerHTML = `<div class="document-sheet dyeing-document">${withDocumentFooter(buildDyeingOrderDocument({
-    ...reportOrder,
-    rawBatches,
-    productionBatches,
-    finishedBatches,
-    rawReturns,
-    dyehouseTransfers,
-  }, name, fmt))}</div>`;
-  if (refs.documentDialog.open) refs.documentDialog.close();
-  refs.documentDialog.showModal();
-  queueDocumentReport('dyeing', reportOrder);
-}
-async function openDocument(type) {
-  if (backendAvailable) await loadBackendData();
-  const sourceOrder = orders.find((item)=>item.id === selectedOrderId);
-  if (!sourceOrder) { alert('اختر طلبًا أولًا.'); return; }
-  let order = calculateOrder(sourceOrder);
-  if (type === 'dyeing') {
-    const names = dyehouseNamesForOrder(order);
-    if (names.length > 1) {
-      renderDyehouseDocumentPicker(order);
-    } else {
-      await openDyeingDocumentForDyehouse(names[0] || order.dyehouse || '');
-    }
-    return;
-  }
-  const fmt = (value) => formatNumber(Number(value || 0));
-  const safe = (value) => escapeHtml(value || '-');
-  const titleMap = { quotation:'عرض سعر', weaving:'أمر تشغيل نسيج', dyeing:'أمر تشغيل صباغة', waste:'تقرير الهالك', fullreport:'التقرير التفصيلي للطلب', labSamples:'عينات معمل', stickers:'استيكرات التشغيل' };
-  const title = titleMap[type] || 'مستند تشغيلي';
-  currentDocumentType = type;
-  refs.documentTitle.textContent = title;
-  refs.documentBody.dataset.documentType = type;
-  refs.documentBody.dataset.reportTitle = title;
-  refs.documentBody.dataset.reportSubtitle = `رقم الطلب: ${order.orderNumber || '-'} - العميل: ${order.customer || '-'}`;
-  if (type === 'dyeing') refs.documentBody.dataset.dyehouseName = order.dyehouse || '';
-  let body = '';
-  let alreadyWrapped = false;
-  if (type === 'quotation') {
-    body = buildQuotationDocument(order, fmt, safe);
-  } else if (type === 'weaving') {
-    const operationNoteText = await promptOperationNotes(sourceOrder, 'weaving');
-    if (operationNoteText === null) return;
-    const refreshedSourceOrder = orders.find((item)=>item.id === selectedOrderId) || sourceOrder;
-    order = calculateOrder(refreshedSourceOrder);
-    body = buildWeavingOrderDocument({ ...order, operationNoteText, rawBatches, dyehouseTransfers }, fmt, safe);
-  } else if (type === 'dyeing') {
-    body = buildDyeingSummaryDocument(order, fmt, safe);
-  } else if (type === 'waste') {
-    body = buildWasteReportDocument({ ...order, reportNotesText:combinedOperationNotes(order) }, fmt, safe);
-  } else if (type === 'fullreport') {
-    body = buildCompactFullReportDocument({ ...order, reportNotesText:combinedOperationNotes(order) }, fmt, safe);
-  } else if (type === 'labSamples') {
-    body = buildLabSamplesDocument(order, fmt, safe);
-    alreadyWrapped = true;
-  } else if (type === 'stickers') {
-    body = buildStickersDocument(order, fmt, safe);
-    alreadyWrapped = true;
-  } else {
-    body = `${documentHeader()}<div class="report-title"><h2>${title}</h2></div><div class="document-meta"><div><span>رقم الطلب</span>${safe(order.orderNumber)}</div><div><span>العميل</span>${safe(order.customer)}</div><div><span>التاريخ</span>${safe(order.orderDate)}</div><div><span>الصنف</span>${safe(order.fabricType)}</div><div><span>إجمالي الخام</span>${fmt(order.totalRawOrdered)}</div><div><span>المصبغة</span>${safe(order.dyehouse)}</div></div>${documentFooter()}`;
-  }
-  refs.documentBody.innerHTML = alreadyWrapped ? body : `<div class="document-sheet">${body}</div>`;
-  if (refs.documentDialog.open) refs.documentDialog.close();
-  refs.documentDialog.showModal();
-}
 function installAmalReviewUi() {
   refs.weavingSlipType.innerHTML = '<option value="weaving">إذن خام رايح للمصبغة</option>';
   document.getElementById('amalReviewBox')?.remove();
@@ -5764,59 +5514,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
   if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-edit-error', error); alert('تعذر تعديل الحركة.'); });
   if (target.dataset.retryOutbox) retryOutbox(target.dataset.retryOutbox);
 });
-async function safeOpenDocument(type) {
-  try {
-    await openDocument(type === 'labsamples' ? 'labSamples' : type);
-  } catch (error) {
-    console.error('document-open-error', error);
-    alert('تعذر فتح المستند حاليًا. راجع بيانات الطلب ثم حاول مرة أخرى.');
-  }
-}
-function printCurrentDocument(stickerId = null) {
-  const isSticker = currentDocumentType === 'stickers' || !!refs.documentBody.querySelector('.sticker-sheet');
-  const isOrdersFollowReport = !isSticker && !!refs.documentBody.querySelector('.orders-follow-report');
-  let stickerPrintStyle = null;
-  let reportPrintStyle = null;
-  const cleanup = () => {
-    document.body.classList.remove('printing-stickers');
-    document.body.classList.remove('printing-orders-follow');
-    if (stickerPrintStyle) stickerPrintStyle.remove();
-    if (reportPrintStyle) reportPrintStyle.remove();
-  };
-  if (isSticker) {
-    const cards = [...refs.documentBody.querySelectorAll('.sticker-card')];
-    if (stickerId || cards.length === 1) {
-      const selectedId = stickerId || cards[0]?.dataset.stickerId || '';
-      document.body.classList.add('printing-stickers');
-      stickerPrintStyle = document.createElement('style');
-      stickerPrintStyle.textContent = `@media print { @page { size: 55mm 40mm; margin: 0; } body.printing-stickers .sticker-item:not(:has(.sticker-card[data-sticker-id="${selectedId}"])) { display:none!important; } body.printing-stickers .sticker-card:not([data-sticker-id="${selectedId}"]) { display:none!important; } }`;
-      document.head.appendChild(stickerPrintStyle);
-    }
-  }
-  if (isOrdersFollowReport) {
-    document.body.classList.add('printing-orders-follow');
-    reportPrintStyle = document.createElement('style');
-    reportPrintStyle.textContent = '@media print { @page { size: A4 landscape; margin: 7mm; } }';
-    document.head.appendChild(reportPrintStyle);
-  }
-  window.addEventListener('afterprint', cleanup, { once:true });
-  setTimeout(() => window.print(), 80);
-  setTimeout(cleanup, 4000);
-}
-refs.documentBody.addEventListener('click', (event) => { if (event.target.dataset.printSticker) printCurrentDocument(event.target.dataset.printSticker); if (event.target.dataset.editPricingDoc) editPricing(event.target.dataset.editPricingDoc); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); });
-refs.documentsPanel.onclick = (event) => {
-  const orderPricingButton = event.target.closest('[data-order-pricing]');
-  if (orderPricingButton) {
-    openPricingForOrder();
-    return;
-  }
-  const type = event.target.dataset.doc;
-  if (!type) return;
-  if (type === 'print') { safeOpenDocument('dyeing'); setTimeout(()=>printCurrentDocument(),150); return; }
-  safeOpenDocument(type);
-};
-refs.closeDocumentBtn.onclick = () => refs.documentDialog.close();
-refs.documentDialog.addEventListener('close', stopWhatsappSettingsAutoRefresh);
+installDocumentsUiHandlers();
 if (refs.weavingSlipDialog) {
   refs.closeWeavingSlipBtn.onclick = () => refs.weavingSlipDialog.close();
   refs.weavingSlipType.onchange = () => { updateDocumentReviewFields(); if ((refs.weavingSlipType.value === 'amalOrder' || refs.weavingSlipType.value === 'deltexIssue') && refs.weavingSlipFile.files?.[0]) applyAmalSuggestionFromFile(refs.weavingSlipFile.files[0]); };
@@ -5825,108 +5523,10 @@ if (refs.weavingSlipDialog) {
   refs.weavingSlipFile.onchange = () => handleWeavingSlipFile().catch(()=>alert('تعذر قراءة صورة المستند. جرّب صورة أوضح أو ملفًا آخر.'));
 refs.weavingSlipForm.onsubmit = (event) => confirmWeavingSlip(event).catch((error)=>{ console.error('document-review-save-error', error); alert('تعذر تسجيل المستند.'); });
 }
-refs.printDocumentBtn.onclick = () => printCurrentDocument();
 refs.documentBody?.addEventListener('click', (event) => {
   if (event.target.closest('[data-create-backup]')) createBackupFromStatusDialog();
 });
-if (refs.analyzeReportBtn) refs.analyzeReportBtn.onclick = analyzeReportWithAi;
-if (refs.askAiBtn) refs.askAiBtn.onclick = askAiEmployee;
-if (refs.aiQuestionInput) refs.aiQuestionInput.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    askAiEmployee();
-  }
-});
-if (refs.closeAiAnalysisBtn) refs.closeAiAnalysisBtn.onclick = () => refs.aiAnalysisDialog.close();
-if (refs.copyAiWhatsappBtn) refs.copyAiWhatsappBtn.onclick = copyAiWhatsappMessage;
-function currentReportTypeFromDocument() {
-  const documentType = refs.documentBody?.dataset.documentType || currentDocumentType;
-  const directTypes = {
-    weaving:'weaving_production_order',
-    dyeing:'dyeing_production_order',
-    fullreport:'dyehouses_report',
-    'orders-follow':'orders_follow_report',
-    'dyehouse-balances':'dyehouse_balances_report',
-  };
-  if (directTypes[documentType]) return directTypes[documentType];
-  if (documentType === 'management-report') return `management_${cleanCodePart(refs.documentBody.dataset.reportKey || refs.documentTitle.textContent || 'report')}`;
-  if (['quotation','waste','rawreport','productionreport','customerreport'].includes(documentType)) return `${documentType}_pdf_report`;
-  return '';
-}
-function currentShareReportPayload(reportType) {
-  const documentType = refs.documentBody?.dataset.documentType || currentDocumentType;
-  const sourceOrder = orders.find((item)=>item.id===selectedOrderId);
-  if (sourceOrder && ['weaving','dyeing','fullreport','quotation','waste','rawreport','productionreport','customerreport'].includes(documentType)) {
-    const order = calculateOrder(sourceOrder);
-    if (documentType === 'dyeing') {
-      const dyehouseName = String(refs.documentBody?.dataset.dyehouseName || '').trim();
-      return dyehouseName ? { ...order, whatsappDyehouseName:dyehouseName } : order;
-    }
-    if (['weaving','fullreport'].includes(documentType)) return order;
-    const titleMap = { quotation:'عرض سعر', waste:'تقرير الهالك', rawreport:'تقرير الخام', productionreport:'تقرير الإنتاج', customerreport:'تقرير تسليم العميل' };
-    const title = titleMap[documentType] || refs.documentTitle?.textContent || 'تقرير PDF';
-    reportTypeLabels[reportType] = title;
-    return { ...order, isStandaloneReport:true, reportTitle:title, reportSubtitle:`رقم الطلب: ${order.orderNumber || '-'} - العميل: ${order.customer || '-'}` };
-  }
-  const title = refs.documentBody?.dataset.reportTitle || refs.documentTitle?.textContent || 'تقرير PDF';
-  const subtitle = refs.documentBody?.dataset.reportSubtitle || 'تقرير PDF من نظام 2B Tex';
-  reportTypeLabels[reportType] = title;
-  return { id:reportType, orderNumber:title, customer:'تقرير', reportTitle:title, reportSubtitle:subtitle, isStandaloneReport:true };
-}
-async function shareCurrentReportPdf() {
-  const reportType = currentReportTypeFromDocument();
-  const order = reportType ? currentShareReportPayload(reportType) : null;
-  if (!reportType || !order) {
-    alert('لا يوجد تقرير مفتوح جاهز للمشاركة.');
-    return;
-  }
-  const oldText = refs.shareWhatsAppBtn.textContent;
-  refs.shareWhatsAppBtn.disabled = true;
-  refs.shareWhatsAppBtn.textContent = 'جاري تجهيز PNG...';
-  try {
-    const blob = await reportToPngBlob();
-    const fileName = `${cleanCodePart(reportTypeLabels[reportType] || refs.documentTitle?.textContent || '2B-Tex')}-${cleanCodePart(order.orderNumber || 'report')}.png`;
-    const file = new File([blob], fileName, { type:'image/png' });
-    if (navigator.canShare && navigator.canShare({ files:[file] }) && navigator.share) {
-      await navigator.share({ title:reportTypeLabels[reportType] || refs.documentTitle?.textContent || '2B Tex', files:[file] });
-      alert('تم فتح المشاركة اليدوية بصورة PNG عالية الدقة.');
-      return;
-    }
-    if (navigator.clipboard && window.ClipboardItem) {
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        alert('تم نسخ صورة التقرير للحافظة. افتح واتساب والصق الصورة يدويًا.');
-        return;
-      } catch (clipboardError) {
-        console.warn('share-png-clipboard-skipped', clipboardError);
-      }
-    }
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 1500);
-    alert('تم تجهيز صورة PNG عالية الدقة وتنزيلها. أرسلها يدويًا من واتساب.');
-  } catch (error) {
-    console.error('share-png-error', error);
-    alert('تعذر تجهيز صورة المشاركة. جرّب الطباعة PDF أو أعد فتح التقرير مرة أخرى.');
-  } finally {
-    refs.shareWhatsAppBtn.disabled = false;
-    refs.shareWhatsAppBtn.textContent = oldText;
-  }
-}
-async function shareCurrentReportPngManual() {
-  return await shareCurrentReportPdf();
-}
-window.shareCurrentReportPngManual = shareCurrentReportPngManual;
-if (refs.shareWhatsAppBtn) {
-  refs.shareWhatsAppBtn.textContent = 'مشاركة PNG';
-  refs.shareWhatsAppBtn.onclick = shareCurrentReportPngManual;
-}
-
+installAiUiHandlers();
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
 loadCurrentUser().finally(() => {
   installAutomationUi();
