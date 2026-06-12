@@ -280,6 +280,7 @@
   border-radius:12px;
   font-size:14px;
 }
+.orders-list-note{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
 .stats-grid .stat-card{padding:14px 16px}.stats-grid .stat-card span{margin-bottom:6px}.stats-grid .stat-card strong{font-size:22px}
 @media(max-width:900px){.section-head .filters-row{grid-template-columns:1fr 1fr}.section-head .filters-row input{grid-column:1/-1}}
 

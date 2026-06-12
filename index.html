@@ -46,7 +46,9 @@
         <section>
           <h3>Dashboard</h3>
           <button type="button" data-module-action="dashboard" data-nav-action="workspaceHome">ملخص الطلبات</button>
-          <button type="button" data-module-action="dashboard" data-nav-action="operationalFollow">داخل المصبغة</button>
+          <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:dyehouse">رصيد المصبغة</button>
+          <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:weaving">رصيد النسيج</button>
+          <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:warehouse">رصيد المخزن</button>
           <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:delivery">جاهز للتسليم</button>
           <button type="button" data-module-action="reports" data-nav-action="report:waste-analysis">الهالك</button>
           <button type="button" data-module-action="reports" data-nav-action="report:orders-follow">الطلبات المتأخرة</button>
@@ -61,6 +63,8 @@
         </section>
         <section>
           <h3>النسيج</h3>
+          <button type="button" data-module-action="weaving" data-stage-shortcut="stage:weaving">رصيد النسيج</button>
+          <button type="button" data-module-action="weaving" data-stage-shortcut="stage:ready-to-dyehouse">خام جاهز للمصبغة</button>
           <button type="button" data-module-action="weaving" data-doc-menu="weaving">أوامر تشغيل النسيج</button>
           <button type="button" data-module-action="weaving" data-nav-action="orderDetails">استلام الخام</button>
           <button type="button" data-module-action="weaving" data-stage-shortcut="stage:weaving">متابعة الخام</button>
@@ -70,6 +74,8 @@
         </section>
         <section>
           <h3>المصبغة</h3>
+          <button type="button" data-module-action="dyehouse" data-stage-shortcut="stage:dyehouse">رصيد المصبغة</button>
+          <button type="button" data-module-action="dyehouse" data-stage-shortcut="stage:dyehouse">داخل المصبغة</button>
           <button type="button" data-module-action="dyehouse" data-doc-menu="dyeing">أوامر تشغيل الصباغة</button>
           <button type="button" data-module-action="dyehouse" data-nav-action="dyehousePrices">أسعار المصابغ</button>
           <button type="button" data-module-action="dyehouse" data-nav-action="orderDetails">إرسال للمصبغة</button>
@@ -80,6 +86,7 @@
         </section>
         <section>
           <h3>المخزن والتسليم</h3>
+          <button type="button" data-module-action="warehouse" data-stage-shortcut="stage:warehouse">رصيد المخزن</button>
           <button type="button" data-module-action="warehouse" data-nav-action="report:raw-available">رصيد الخام</button>
           <button type="button" data-module-action="warehouse" data-nav-action="report:inventory">رصيد المجهز</button>
           <button type="button" data-module-action="warehouse" data-stage-shortcut="stage:warehouse">تسليمات العملاء</button>
