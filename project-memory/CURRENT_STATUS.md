@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.18`
+`v2026.06.13.19`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Show over-delivery stock warning`
+`Show negative warehouse balance`
 
 ## Current Phase
 

@@ -172,6 +172,11 @@
       return remaining <= toleranceFor(target) ? 0 : remaining;
     }
 
+    function signedBalanceWithTolerance(target, actual) {
+      const balance = Number(target || 0) - Number(actual || 0);
+      return Math.abs(balance) <= toleranceFor(target) ? 0 : roundNumber(balance);
+    }
+
     function remainingPhysical(target, actual) {
       return roundNumber(Math.max(Number(target || 0) - Number(actual || 0), 0));
     }
@@ -251,7 +256,7 @@
         expectedWasteQuantity: isClosed ? expectedWasteFor(order, totalRawOrdered) : 0,
         totalFinishedReceived: roundNumber(warehouseReceived),
         gluedProductBalance: 0,
-        warehouseBalance: roundNumber(remainingWithTolerance(warehouseReceived + returnedFromGluing, deliveredToCustomer + sentToGluing)),
+        warehouseBalance: signedBalanceWithTolerance(warehouseReceived + returnedFromGluing, deliveredToCustomer + sentToGluing),
         totalDeliveredToCustomer: roundNumber(deliveredToCustomer),
         remainingToCustomer: roundNumber(remainingToCustomer),
         remainingAtDyehouse: remainingPhysical(dyehouseTarget || operated, warehouseReceived + rawReturnedToWeaving + waste),

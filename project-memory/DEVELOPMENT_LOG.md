@@ -178,3 +178,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: added an Order 360 alert showing over-delivery quantity and the finished/delivered comparison.
 - Not touched: calculations, database, schema, stock logic, waste logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Show Negative Warehouse Balance
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.19`
+- Goal: keep over-delivery issues visible until corrected instead of hiding them as zero warehouse balance.
+- Change: frontend order calculation now shows warehouse balance as a signed value when customer delivery exceeds finished stock.
+- Not touched: backend calculations, database, schema, waste logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`; `node --check orders.js` passed.
