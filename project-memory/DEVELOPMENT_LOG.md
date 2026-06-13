@@ -308,3 +308,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: made the task menu more compact, added a subtle command-panel treatment, tightened task cards, and visually aligned the KPI cards below it.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Document UI Organization Memory
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.31`
+- Goal: preserve the latest agreed UI organization decisions inside project memory.
+- Change: added `UI_ORGANIZATION.md` and linked it from README, overview, architecture, and current status.
+- Notes: documented that `Order 360` means a full operational order view, not an order number or database ID.
+- Not touched: application code, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

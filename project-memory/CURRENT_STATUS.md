@@ -145,3 +145,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.31`.
 - Refined the home task menu into a more compact command panel.
 - KPI cards under the home entry now use a tighter visual style so the start screen feels like one organized view.
+
+## Latest Project Memory Update
+
+- Added `project-memory/UI_ORGANIZATION.md`.
+- Documented the current no-duplicate UI organization principle.
+- Documented that `Order 360` is a full operational order view concept, not an order number and not a database ID.

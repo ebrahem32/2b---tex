@@ -34,3 +34,8 @@ Do not touch calculations, database schema, waste logic, or stock logic unless t
 
 Do not delete data, backups, environment files, or local project folders.
 
+## UI Organization Memory
+
+Read `UI_ORGANIZATION.md` before changing navigation, Dashboard, sidebar entries, order focus views, reports menu, AI follow-up screens, or the `Order 360` / full-order-view concept.
+
+The current UI rule is: no duplicated operational meaning in the same screen.

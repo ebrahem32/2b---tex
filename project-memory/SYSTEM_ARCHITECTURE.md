@@ -23,6 +23,17 @@ Frontend direction:
 - Keep plain JavaScript.
 - Do not migrate to React, Vue, Next, or another framework unless explicitly requested.
 - Continue reducing `app.js` until it becomes an application orchestrator instead of `Everything.js`.
+- Follow `project-memory/UI_ORGANIZATION.md` before changing navigation, Dashboard, sidebar entries, reports menu, smart follow-up, or order focus views.
+
+## Current UI Organization
+
+The interface is organized as an operations room:
+
+- Dashboard is a high-level entry point, not a duplicate of every module.
+- Weaving, dyehouse, and warehouse balances live inside their own modules.
+- Smart follow-up is one combined center, not separate manager/employee copies.
+- The order focus view is the single place to review one order and its tools.
+- `Order 360` is a full-order-view concept, not an order number or database ID.
 
 ## Backend
 
@@ -63,4 +74,3 @@ Important AI endpoints:
 
 - GitHub is the official source of code.
 - Railway is the external runtime.
-
