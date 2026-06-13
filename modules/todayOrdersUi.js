@@ -45,7 +45,11 @@
         .map((order) => row(order, `داخل المصبغة ${fmt(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم`, 'warning')));
       const ready = sortRows(active
         .filter((order) => number(order.warehouseBalance) > 0)
-        .map((order) => row(order, `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم`, 'success')));
+        .map((order) => {
+          const dyehouseBalance = number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse);
+          const mixedNote = dyehouseBalance > 0 ? ` / مع متبقي بالمصبغة ${fmt(dyehouseBalance)} كجم` : '';
+          return row(order, `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم${mixedNote}`, 'success');
+        }));
       const highWaste = sortRows(orders
         .filter((order) => number(order.totalWastePercent) >= Math.max(8, number(order.expectedWastePercent) + 2))
         .map((order) => row(order, `هالك ${fmt(order.totalWastePercent, 1)}% / ${fmt(order.totalWaste)} كجم`, 'danger')));

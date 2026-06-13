@@ -148,3 +148,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Version: `v2026.06.13.15`.
 - Not touched: calculations, database, schema, stock logic, waste logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Clarify Mixed AI Order Status
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.16`
+- Goal: make Operational AI and Today's Orders explain orders that are both partially ready in warehouse and partially still inside the dyehouse.
+- Change: kept warehouse-ready orders visible when `warehouseBalance > 0`, kept dyehouse orders visible when dyehouse balance exists, and added mixed-status wording to ready rows when dyehouse balance also exists.
+- Not touched: calculations, database, schema, stock logic, waste logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

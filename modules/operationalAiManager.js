@@ -16,6 +16,15 @@
       return order && !['completed', 'closed'].includes(String(order.status || ''));
     }
 
+    function isDyehouseStage(order) {
+      const stage = deps.orderStageInfo(order);
+      return stage.key === 'dyehouse' && number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse) > 0;
+    }
+
+    function isReadyStage(order) {
+      return number(order.warehouseBalance) > 0;
+    }
+
     function item(order, extra = {}) {
       const stage = deps.orderStageInfo(order);
       return {
@@ -52,18 +61,20 @@
           reason: `${stage.label} منذ ${stage.days} يوم`,
         })));
       const dyehouse = sortByRisk(active
-        .filter((order) => number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse) > 0)
+        .filter(isDyehouseStage)
         .map((order) => item(order, {
           quantity: number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse),
           reason: `داخل المصبغة ${fmt(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم`,
         })));
       const ready = sortByRisk(active
-        .filter((order) => number(order.warehouseBalance) > 0)
+        .filter(isReadyStage)
         .map((order) => {
           const stage = deps.orderStageInfo(order);
+          const dyehouseBalance = number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse);
+          const mixedNote = dyehouseBalance > 0 ? ` / مع متبقي بالمصبغة ${fmt(dyehouseBalance)} كجم` : '';
           return item(order, {
             quantity: number(order.warehouseBalance),
-            reason: `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم منذ ${stage.days} يوم`,
+            reason: `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم منذ ${stage.days} يوم${mixedNote}`,
           });
         }))
         .filter((row) => row.days >= readyDays || row.quantity > 0);
@@ -73,7 +84,14 @@
           quantity: number(order.totalWaste),
           reason: `هالك ${fmt(order.totalWastePercent, 1)}% / ${fmt(order.totalWaste)} كجم`,
         })));
-      const priority = sortByRisk([...delayed, ...dyehouse.slice(0, 3), ...ready.slice(0, 3), ...highWaste]).slice(0, 8);
+      const seenPriority = new Set();
+      const priority = sortByRisk([...delayed, ...dyehouse.slice(0, 3), ...ready.slice(0, 3), ...highWaste])
+        .filter((row) => {
+          if (seenPriority.has(row.id)) return false;
+          seenPriority.add(row.id);
+          return true;
+        })
+        .slice(0, 8);
       const topAction = priority[0]
         ? `متابعة أوردر ${priority[0].orderNumber} - ${priority[0].customer}: ${priority[0].reason}`
         : 'لا توجد أولوية حرجة الآن. راجع التشغيل الدوري فقط.';
