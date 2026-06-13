@@ -188,3 +188,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: frontend order calculation now shows warehouse balance as a signed value when customer delivery exceeds finished stock.
 - Not touched: backend calculations, database, schema, waste logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`; `node --check orders.js` passed.
+
+### Consolidate Operational Stage Filters
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.20`
+- Goal: remove duplicate operational stage splits in the order lists and make warehouse/dyehouse/weaving filters reflect real operational balances.
+- Change: warehouse filter now includes every non-zero warehouse balance, weaving groups color-planning and weaving, gluing groups all gluing variants as `دمج`, and dyehouse uses the real dyehouse balance.
+- Not touched: backend calculations, database, schema, waste logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

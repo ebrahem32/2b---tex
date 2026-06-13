@@ -18,7 +18,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.19';
+const APP_VERSION = 'v2026.06.13.20';
 const APP_BUILD_TIME = '2026-06-13 09:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
@@ -2574,16 +2574,33 @@ function orderSearchText(order) {
   ]);
   return normalizeDigits([order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode, ...noteAliases].filter(Boolean).join(' ').toLowerCase());
 }
+function orderMatchesStageFilter(order, stageKey, stage = orderStageInfo(order)) {
+  const warehouseBalance = Number(order.warehouseBalance || 0);
+  const dyehouseBalance = Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0);
+  const gluingBalance = Number(order.gluingBalance || 0);
+  const gluedProductBalance = Number(order.gluedProductBalance || 0);
+  if (stageKey === 'warehouse') return warehouseBalance !== 0;
+  if (stageKey === 'dyehouse') return dyehouseBalance > 0;
+  if (stageKey === 'weaving') return stage.key === 'weaving' || stage.key === 'color-planning';
+  if (stageKey === 'gluing') return stage.key === 'gluing' || stage.key === 'glued-ready' || gluingBalance > 0 || gluedProductBalance > 0;
+  return stage.key === stageKey;
+}
 function filteredOrders() {
   const query = normalizeDigits(refs.searchInput.value.trim().toLowerCase());
-  const status = refs.orderStatusFilter.value === 'stage:delivery' ? 'stage:warehouse' : refs.orderStatusFilter.value;
+  const rawStatus = refs.orderStatusFilter.value;
+  const legacyStageMap = {
+    'stage:delivery': 'stage:warehouse',
+    'stage:color-planning': 'stage:weaving',
+    'stage:glued-ready': 'stage:gluing',
+  };
+  const status = legacyStageMap[rawStatus] || rawStatus;
   const customer = refs.customerFilter.value;
   const dyehouse = refs.dyehouseFilter.value;
   const fabric = refs.fabricFilter.value;
   return allOrders().filter((order) => {
     const stage = orderStageInfo(order);
     const statusMatch = status.startsWith('stage:')
-      ? stage.key === status.slice('stage:'.length)
+      ? orderMatchesStageFilter(order, status.slice('stage:'.length), stage)
       : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? order.status !== 'closed' : order.status === status));
     return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
   });
@@ -2627,9 +2644,9 @@ function renderErpCockpit(list = []) {
     .filter((order, index, arr)=>arr.findIndex((item)=>item.id === order.id) === index)
     .slice(0, 5);
   const lanes = [
-    { label:'النسيج', filter:'stage:weaving', count:countWhere((order)=>stageOf(order).key === 'weaving'), qty:sum(source, (order)=>Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)), sub:'خام مطلوب لم يخرج بعد' },
-    { label:'المصبغة', filter:'stage:dyehouse', count:countWhere((order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0), qty:sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)), sub:'رصيد فعلي داخل المصبغة' },
-    { label:'المخزن / جاهز للتسليم', filter:'stage:warehouse', count:countWhere((order)=>Number(order.warehouseBalance || 0) > 0), qty:sum(source, (order)=>order.warehouseBalance), sub:'مجهز موجود ومتاح للتسليم' },
+    { label:'النسيج', filter:'stage:weaving', count:countWhere((order)=>orderMatchesStageFilter(order, 'weaving', stageOf(order))), qty:sum(source, (order)=>Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)), sub:'خام مطلوب لم يخرج بعد' },
+    { label:'المصبغة', filter:'stage:dyehouse', count:countWhere((order)=>orderMatchesStageFilter(order, 'dyehouse', stageOf(order))), qty:sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)), sub:'رصيد فعلي داخل المصبغة' },
+    { label:'المخزن / جاهز للتسليم', filter:'stage:warehouse', count:countWhere((order)=>orderMatchesStageFilter(order, 'warehouse', stageOf(order))), qty:sum(source, (order)=>order.warehouseBalance), sub:'مجهز موجود ومتاح للتسليم' },
   ];
   const cards = [
     ['طلبات مفتوحة', active.length, `${source.length} إجمالي الطلبات`],
@@ -4212,17 +4229,17 @@ function operationStagePlace(order, stage = orderStageInfo(order)) {
   return stage.label || '-';
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن' };
+  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'النسيج', 'stage:color-planning':'النسيج', 'stage:gluing':'دمج', 'stage:glued-ready':'دمج', 'stage:dyehouse':'المصبغة', 'stage:warehouse':'المخزن' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
   const select = refs.orderStatusFilter;
   if (!select) return;
-  [...select.options].filter((option)=>option.value === 'stage:ready-to-dyehouse').forEach((option)=>option.remove());
-  [...select.options].filter((option)=>option.value === 'stage:delivery').forEach((option)=>option.remove());
+  [...select.options]
+    .filter((option)=>['stage:ready-to-dyehouse', 'stage:delivery', 'stage:color-planning', 'stage:glued-ready'].includes(option.value))
+    .forEach((option)=>option.remove());
   const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');
-  if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('واقف في دمج الخامات', 'stage:gluing'), before || null);
-  if (![...select.options].some((option)=>option.value === 'stage:glued-ready')) select.add(new Option('منتج مدمج جاهز للتسليم', 'stage:glued-ready'), before || null);
+  if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('دمج', 'stage:gluing'), before || null);
 }
 function dateRangeLabel(items) {
   const dates = items.map((item)=>item.date).filter(Boolean).sort();

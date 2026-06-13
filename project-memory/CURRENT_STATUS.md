@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.19`
+`v2026.06.13.20`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Show negative warehouse balance`
+`Consolidate operational stage filters`
 
 ## Current Phase
 
@@ -70,3 +70,11 @@ For Phase 3.1 local verification before commit:
 - `npm run test:operational-full`: passed on Railway with order `تيست-mqbmb12s`.
 - GitHub Actions: verify after push.
 - Railway: verify after push.
+
+## Latest UI Stage Consolidation
+
+- Version: `v2026.06.13.20`.
+- Warehouse filter now shows every order with a non-zero real warehouse balance, including operationally closed orders and negative balances that need review.
+- Weaving filter groups weaving and color-planning under one operational view.
+- Gluing filter groups all gluing variants under one `دمج` view.
+- Dyehouse filter is based on real dyehouse balance.
