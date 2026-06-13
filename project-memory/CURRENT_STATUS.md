@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.30`
+`v2026.06.13.31`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Open AI dashboard orders from rows`
+`Refresh home task menu styling`
 
 ## Current Phase
 
@@ -139,3 +139,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.30`.
 - Smart follow-up rows now open the selected order details directly for review.
 - Opening an order from the smart follow-up center closes AI focus mode first so the order focus screen is visible immediately.
+
+## Latest Home Task Menu Styling
+
+- Version: `v2026.06.13.31`.
+- Refined the home task menu into a more compact command panel.
+- KPI cards under the home entry now use a tighter visual style so the start screen feels like one organized view.

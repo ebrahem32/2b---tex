@@ -298,3 +298,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: smart follow-up rows now carry the normal order-open hook, AI row click handling accepts both AI and order row hooks, and order focus closes AI focus before rendering details.
 - Not touched: AI backend, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Refresh Home Task Menu Styling
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.31`
+- Goal: improve the home task menu shape without reintroducing duplicate navigation.
+- Change: made the task menu more compact, added a subtle command-panel treatment, tightened task cards, and visually aligned the KPI cards below it.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
