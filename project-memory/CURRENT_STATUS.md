@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.27`
+`v2026.06.13.28`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Merge manager and smart employee screens`
+`Show all orders in all-orders filter`
 
 ## Current Phase
 
@@ -121,3 +121,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.27`.
 - Merged the manager daily screen and smart employee entry under one name: `مركز المتابعة الذكي`.
 - Removed duplicate AI shortcuts from the reports and top menus.
+
+## Latest Orders Filter Fix
+
+- Version: `v2026.06.13.28`.
+- Renamed `كل الطلبات المفتوحة` to `كل الطلبات`.
+- The `all` filter now displays every order, including operationally closed orders.

@@ -18,7 +18,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.27';
+const APP_VERSION = 'v2026.06.13.28';
 const APP_BUILD_TIME = '2026-06-13 09:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
@@ -2514,7 +2514,7 @@ function filteredOrders() {
     const stage = orderStageInfo(order);
     const statusMatch = status.startsWith('stage:')
       ? orderMatchesStageFilter(order, status.slice('stage:'.length), stage)
-      : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? order.status !== 'closed' : order.status === status));
+      : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? true : order.status === status));
     return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
   });
 }
@@ -4141,7 +4141,7 @@ function operationStagePlace(order, stage = orderStageInfo(order)) {
   return stage.label || '-';
 }
 function orderFilterLabel(value) {
-  const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'النسيج', 'stage:color-planning':'النسيج', 'stage:gluing':'دمج', 'stage:glued-ready':'دمج', 'stage:dyehouse':'المصبغة', 'stage:warehouse':'المخزن' };
+  const labels = { all:'كل الطلبات', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'النسيج', 'stage:color-planning':'النسيج', 'stage:gluing':'دمج', 'stage:glued-ready':'دمج', 'stage:dyehouse':'المصبغة', 'stage:warehouse':'المخزن' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {

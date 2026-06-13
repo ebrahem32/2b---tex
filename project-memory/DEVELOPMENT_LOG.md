@@ -268,3 +268,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: renamed the combined entry to `مركز المتابعة الذكي`, removed duplicate AI shortcuts from reports/top menus, and hid the old daily manager panel from normal module navigation.
 - Not touched: AI backend, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Show All Orders In All-Orders Filter
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.28`
+- Goal: make the orders filter label and behavior match exactly.
+- Change: renamed `كل الطلبات المفتوحة` to `كل الطلبات` and changed the `all` filter to include closed orders too.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
