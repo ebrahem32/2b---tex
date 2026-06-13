@@ -218,3 +218,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: combined inside/send/receive dyehouse actions into `رصيد / حركة المصبغة` and removed the unused dyehouse transfers shortcut from the sidebar.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data, transfer data model.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Remove Raw Stock Shortcut From Warehouse Menu
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.23`
+- Goal: align the warehouse sidebar with the real factory process where raw fabric does not have a separate warehouse balance.
+- Change: removed `رصيد الخام` from the warehouse menu and kept warehouse focused on finished stock.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

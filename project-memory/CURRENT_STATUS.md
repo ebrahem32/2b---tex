@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.22`
+`v2026.06.13.23`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Simplify dyehouse sidebar menu`
+`Remove raw stock shortcut from warehouse menu`
 
 ## Current Phase
 
@@ -91,3 +91,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.22`.
 - Dyehouse menu now combines inside/send/receive into one `رصيد / حركة المصبغة` entry.
 - Empty/unused dyehouse transfer shortcut was removed from the sidebar only.
+
+## Latest Warehouse Menu Simplification
+
+- Version: `v2026.06.13.23`.
+- Removed `رصيد الخام` from the warehouse sidebar because the factory does not operate a separate raw-stock warehouse.
+- Warehouse menu now focuses on finished stock and related warehouse actions.
