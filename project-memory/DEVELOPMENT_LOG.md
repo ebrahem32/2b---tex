@@ -278,3 +278,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: renamed `كل الطلبات المفتوحة` to `كل الطلبات` and changed the `all` filter to include closed orders too.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Remove Duplicate Home ERP Map
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.29`
+- Goal: remove the feeling of a system built on top of another system on the home screen.
+- Change: removed the duplicate ERP flow-map navigation layer and kept the main task cards as the single home entry point.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

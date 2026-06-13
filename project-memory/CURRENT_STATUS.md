@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.28`
+`v2026.06.13.29`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Show all orders in all-orders filter`
+`Remove duplicate home ERP map`
 
 ## Current Phase
 
@@ -127,3 +127,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.28`.
 - Renamed `كل الطلبات المفتوحة` to `كل الطلبات`.
 - The `all` filter now displays every order, including operationally closed orders.
+
+## Latest Home Screen Simplification
+
+- Version: `v2026.06.13.29`.
+- Removed the duplicated ERP flow map from the home screen.
+- Home now keeps one task-entry layer instead of two overlapping navigation systems.
