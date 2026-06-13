@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.24`
+`v2026.06.13.25`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Remove duplicated reports from sidebar`
+`Remove A5 export flow`
 
 ## Current Phase
 
@@ -103,3 +103,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.24`.
 - Removed duplicated sidebar report shortcuts: `كل التقارير`, `تقرير الخام المتاح`, `تقرير الطلبات المتأخرة`, and `تقرير المصبغة`.
 - Kept `تقرير داخل المصبغة` as the single dyehouse report entry.
+
+## Latest A5 Simplification
+
+- Version: `v2026.06.13.25`.
+- Removed the A5 movement export shortcut and frontend CSV export flow.
+- A5 is now explicitly read-only: customer balances and customer ledgers only.

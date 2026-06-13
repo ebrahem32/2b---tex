@@ -108,7 +108,6 @@
       if (action === 'gluingQueue') deps.openGluingQueueDialog();
       if (action === 'customerAccounts') deps.renderCustomerAccountsDialog();
       if (action === 'a5Accounts') deps.renderA5AccountsDialog();
-      if (action === 'a5Export') deps.renderA5ExportDialog();
       if (action === 'whatsappSettings') deps.openWhatsappSettingsDialog().catch((error)=>{ console.error('whatsapp-settings-open-error', error); deps.renderWhatsappSettingsDialog([]); });
       if (action === 'outbox') deps.openOutboxDialog();
       if (action === 'auditLog') deps.openAuditLogDialog().catch(console.error);

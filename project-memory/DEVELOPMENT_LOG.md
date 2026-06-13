@@ -238,3 +238,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: removed duplicated sidebar shortcuts for `كل التقارير`, `تقرير الخام المتاح`, `تقرير الطلبات المتأخرة`, and `تقرير المصبغة`; kept `تقرير داخل المصبغة` as the dyehouse report entry.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data, report generation functions.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Remove A5 Export Flow
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.25`
+- Goal: enforce that A5 is a read-only accounting reference for customer balances and ledger review only.
+- Change: removed A5 movement export shortcuts and deleted the frontend CSV export flow.
+- Not touched: A5 read endpoints, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

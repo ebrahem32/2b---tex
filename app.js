@@ -18,7 +18,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.24';
+const APP_VERSION = 'v2026.06.13.25';
 const APP_BUILD_TIME = '2026-06-13 09:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
@@ -1400,93 +1400,6 @@ async function saveDyehousePricesFromDialog() {
   updateSuggestedDyeCost();
   renderDyehousePricesDialog();
   alert('تم حفظ أسعار المصابغ بنجاح.');
-}
-function csvCell(value) {
-  const text = String(value ?? '').replace(/"/g, '""');
-  return `"${text}"`;
-}
-function downloadTextFile(fileName, content, type = 'text/csv;charset=utf-8') {
-  const blob = new Blob(['\ufeff', content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 1000);
-}
-function buildA5ExportRows() {
-  const rows = [];
-  pricings.filter((pricing)=>!pricing.convertedOrderId).map(calculatePricing).forEach((pricing)=>{
-    rows.push({
-      type:'عرض سعر',
-      number:pricing.pricingNumber,
-      date:pricing.pricingDate,
-      customer:pricing.customer,
-      item:pricing.fabricType,
-      quantity:pricing.quantity,
-      unitPrice:pricing.sellPrice,
-      total:pricing.totalOffer,
-      paymentTerms:pricing.paymentTerms,
-      source:'2B Tex - التسعير',
-      notes:pricing.notes || '',
-    });
-  });
-  orders.map(calculateOrder).forEach((order)=>{
-    const deliveredQuantity = Number(order.totalDeliveredToCustomer || 0);
-    const contractQuantity = Number(order.totalRawQuantity || order.totalRawOrdered || 0);
-    const quantity = deliveredQuantity || contractQuantity;
-    const unitPrice = Number(order.kiloPrice || 0);
-    rows.push({
-      type: deliveredQuantity ? 'فاتورة تسليم عميل' : 'طلب تشغيل',
-      number: order.orderNumber,
-      date: order.orderDate,
-      customer: order.customer,
-      item: order.fabricType,
-      quantity,
-      unitPrice,
-      total: roundNumber(quantity * unitPrice),
-      paymentTerms: order.paymentTerms,
-      source:'2B Tex - المتابعة',
-      notes: order.notes || '',
-    });
-  });
-  return rows;
-}
-function exportA5AccountingCsv() {
-  const headers = ['نوع الحركة','رقم المستند','التاريخ','العميل','البند','الكمية','سعر الوحدة','الإجمالي','شروط السداد','المصدر','ملاحظات'];
-  const rows = buildA5ExportRows();
-  const body = rows.map((row)=>[
-    row.type,
-    row.number,
-    row.date,
-    row.customer,
-    row.item,
-    row.quantity,
-    row.unitPrice,
-    row.total,
-    row.paymentTerms,
-    row.source,
-    row.notes,
-  ].map(csvCell).join(',')).join('\r\n');
-  const fileName = `2B-A5-export-${new Date().toISOString().slice(0,10)}.csv`;
-  downloadTextFile(fileName, `${headers.map(csvCell).join(',')}\r\n${body}`);
-  alert(`تم تجهيز ملف A5 بعدد ${rows.length} حركة. افتح الملف في Excel ثم راجعه قبل رفعه إلى A5.`);
-}
-function renderA5ExportDialog() {
-  const rows = buildA5ExportRows();
-  const preview = rows.slice(0, 20).map((row)=>`<tr><td>${row.type}</td><td>${row.number}</td><td>${row.date || '-'}</td><td>${row.customer || '-'}</td><td>${row.item || '-'}</td><td>${formatNumber(row.quantity || 0)}</td><td>${formatNumber(row.total || 0)}</td></tr>`).join('');
-  refs.documentTitle.textContent = 'تصدير حركات A5';
-  refs.documentBody.dataset.documentType = 'a5-export';
-  refs.documentBody.innerHTML = `<div class="document-sheet">
-    <h2>تصدير حركات A5</h2>
-    <p class="muted">هذه شاشة تجهيز ملف CSV للقراءة والمراجعة قبل الرفع إلى برنامج A5. لا يتم تعديل أرصدة A5 من داخل نظام المتابعة.</p>
-    <div class="document-actions no-print"><button class="primary-btn" type="button" data-export-a5-csv>تحميل ملف A5 CSV</button></div>
-    <table><thead><tr><th>النوع</th><th>رقم المستند</th><th>التاريخ</th><th>العميل</th><th>البند</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${preview || '<tr><td colspan="7">لا توجد حركات جاهزة للتصدير.</td></tr>'}</tbody></table>
-  </div>`;
-  if (refs.documentDialog.open) refs.documentDialog.close();
-  refs.documentDialog.showModal();
 }
 function ensureCustomerAccount(customerName) {
   const name = String(customerName || '').trim();
@@ -3038,7 +2951,6 @@ async function refreshOperationFollowPanel() {
   openGluingQueueDialog,
   renderCustomerAccountsDialog,
   renderA5AccountsDialog,
-  renderA5ExportDialog,
   openWhatsappSettingsDialog,
   renderWhatsappSettingsDialog,
   openOutboxDialog,
@@ -4925,7 +4837,6 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   const a5LedgerButton = event.target.closest('[data-a5-ledger]');
   if (a5LedgerButton) renderA5LedgerDialog(a5LedgerButton.dataset.a5Ledger);
   if (event.target.closest('[data-back-a5-accounts]')) renderA5AccountsDialog();
-  if (event.target.closest('[data-export-a5-csv]')) exportA5AccountingCsv();
   const ledgerButton = event.target.closest('[data-customer-ledger]');
   if (ledgerButton) renderCustomerLedgerDialog(ledgerButton.dataset.customerLedger);
   if (event.target.closest('[data-back-customer-accounts]')) renderCustomerAccountsDialog();

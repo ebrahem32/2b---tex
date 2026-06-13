@@ -545,7 +545,7 @@ The system has a clear safety pattern for orders and pricings. Batch/movement fl
   - `GET http://127.0.0.1:3041/api/a5/customers`.
   - `GET http://127.0.0.1:3041/api/a5/customer-ledger?customerName=...`.
 - Export:
-  - `exportA5AccountingCsv()` creates a local CSV from system data.
+  - Removed. A5 is read-only in 2B Tex and is used only for customer balances and customer ledger review.
 - Write action:
   - No write back to A5 was found in the reviewed code.
 - Risk:
@@ -698,4 +698,3 @@ Before moving more code:
    - document import,
    - converted pricing to order,
    - grouped order registration.
-
