@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.25`
+`v2026.06.13.26`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Remove A5 export flow`
+`Simplify dashboard sidebar menu`
 
 ## Current Phase
 
@@ -109,3 +109,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.25`.
 - Removed the A5 movement export shortcut and frontend CSV export flow.
 - A5 is now explicitly read-only: customer balances and customer ledgers only.
+
+## Latest Dashboard Menu Simplification
+
+- Version: `v2026.06.13.26`.
+- Merged `ملخص الطلبات` and `أوامر اليوم` into one `متابعة اليوم` entry.
+- Removed warehouse, dyehouse, and weaving balance shortcuts from Dashboard because each balance is available in its own module.

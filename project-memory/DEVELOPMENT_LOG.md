@@ -248,3 +248,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: removed A5 movement export shortcuts and deleted the frontend CSV export flow.
 - Not touched: A5 read endpoints, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Simplify Dashboard Sidebar Menu
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.26`
+- Goal: keep Dashboard as a high-level daily follow-up entry and remove shortcuts duplicated in operational modules.
+- Change: merged `ملخص الطلبات` and `أوامر اليوم` into `متابعة اليوم`, and removed warehouse/dyehouse/weaving balance shortcuts from Dashboard.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
