@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.26`
+`v2026.06.13.27`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Simplify dashboard sidebar menu`
+`Merge manager and smart employee screens`
 
 ## Current Phase
 
@@ -115,3 +115,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.26`.
 - Merged `ملخص الطلبات` and `أوامر اليوم` into one `متابعة اليوم` entry.
 - Removed warehouse, dyehouse, and weaving balance shortcuts from Dashboard because each balance is available in its own module.
+
+## Latest Smart Follow-Up Consolidation
+
+- Version: `v2026.06.13.27`.
+- Merged the manager daily screen and smart employee entry under one name: `مركز المتابعة الذكي`.
+- Removed duplicate AI shortcuts from the reports and top menus.

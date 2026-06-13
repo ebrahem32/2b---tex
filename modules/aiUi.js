@@ -175,7 +175,7 @@
           throw new Error(data.message || 'تعذر تحليل التقرير من خدمة مساعد 2B الذكي');
         }
         renderAiAnalysis(data, title);
-        if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير الموظف الذكي من بيانات Railway.';
+        if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم إنشاء تقرير مركز المتابعة الذكي من بيانات Railway.';
       } catch (error) {
         console.warn('ai-service-fallback', error);
         renderAiAnalysis(buildLocalAiEmployeeResponse(question), title);
@@ -187,13 +187,13 @@
     }
 
     async function analyzeReportWithAi() {
-      await requestAiEmployee('حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟', deps.refs.analyzeReportBtn, 'تقرير الموظف الذكي');
+      await requestAiEmployee('حلل تشغيل 2B الآن: ما الذي واقف، لماذا، وما أولويات اليوم؟', deps.refs.analyzeReportBtn, 'تقرير مركز المتابعة الذكي');
     }
 
     async function askAiEmployee() {
       const question = String(deps.refs.aiQuestionInput?.value || '').trim();
       if (!question) { alert('اكتب سؤالك للموظف الذكي أولا.'); return; }
-      await requestAiEmployee(question, deps.refs.askAiBtn, 'رد الموظف الذكي');
+      await requestAiEmployee(question, deps.refs.askAiBtn, 'رد مركز المتابعة الذكي');
     }
 
     async function copyAiWhatsappMessage() {

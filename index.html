@@ -45,7 +45,7 @@
       <nav class="sidebar-nav">
         <section>
           <h3>Dashboard</h3>
-          <button type="button" data-module-action="dashboard" data-nav-action="todayOrders">متابعة اليوم</button>
+          <button type="button" data-module-action="dashboard" data-nav-action="aiModel">مركز المتابعة الذكي</button>
           <button type="button" data-module-action="reports" data-nav-action="report:waste-analysis">الهالك</button>
           <button type="button" data-module-action="reports" data-nav-action="report:orders-follow">الطلبات المتأخرة</button>
         </section>
@@ -83,8 +83,6 @@
           <button type="button" data-module-action="reports" data-doc-menu="waste">تقرير الهالك</button>
           <button type="button" data-module-action="reports" data-nav-action="report:dyehouse-balances">تقرير داخل المصبغة</button>
           <button type="button" data-module-action="reports" data-nav-action="report:customer">تقرير العميل</button>
-          <button type="button" data-module-action="reports" data-nav-action="aiModel">لوحة الذكاء الاصطناعي</button>
-          <button type="button" data-module-action="reports" data-nav-action="aiAnalyze">تحليل التشغيل الحالي</button>
         </section>
         <section>
           <h3>واتساب والإرسال</h3>
@@ -106,9 +104,8 @@
       <div class="erp-menu"><button type="button">الطلبات</button><div class="erp-menu-list"><span class="erp-menu-section">إدارة الطلبات</span><button type="button" data-nav-action="orderNew">طلب جديد</button><button type="button" data-nav-action="ordersList">قائمة الطلبات</button><button type="button" data-nav-action="orderDetails">تفاصيل الطلب الحالي</button><button type="button" data-nav-action="printFilteredOrders">طباعة الفلترة الحالية</button></div></div>
       <div class="erp-menu"><button type="button">التشغيل</button><div class="erp-menu-list"><span class="erp-menu-section">حركات التشغيل</span><button type="button" data-nav-action="orderDetails">استلام وصرف وتسليم</button><button type="button" data-nav-action="gluingQueue">دمج خامات</button><button type="button" data-nav-action="ordersList">بحث الطلبات</button><span class="erp-menu-section">متابعة التشغيل</span><button type="button" data-nav-action="report:inventory">رصيد المخزن</button><button type="button" data-nav-action="report:dyehouse-balances">أرصدة المصابغ</button><button type="button" data-nav-action="report:raw-returns">مرتجعات الخام</button></div></div>
       <div class="erp-menu"><button type="button">أوامر التشغيل</button><div class="erp-menu-list"><span class="erp-menu-section">حسب الطلب المحدد</span><button type="button" data-doc-menu="weaving">أمر تشغيل نسيج</button><button type="button" data-doc-menu="dyeing">أمر تشغيل صباغة</button><button type="button" data-doc-menu="labSamples">عينات معمل</button><button type="button" data-doc-menu="stickers">استيكرات التشغيل</button></div></div>
-      <div class="erp-menu"><button type="button">التقارير</button><div class="erp-menu-list"><span class="erp-menu-section">تقارير عامة</span><button type="button" data-nav-action="operationalFollow">متابعة التشغيل</button><button type="button" data-nav-action="managementReports">كل التقارير</button><button type="button" data-nav-action="report:orders-follow">متابعة الطلبات</button><button type="button" data-nav-action="report:waste-analysis">تحليل الهالك</button><span class="erp-menu-section">تقارير الطلب المحدد</span><button type="button" data-doc-menu="fullreport">التقرير التفصيلي</button><button type="button" data-doc-menu="waste">تقرير الهالك</button><button type="button" data-nav-action="aiModel">تقرير الذكاء الاصطناعي</button></div></div>
+      <div class="erp-menu"><button type="button">التقارير</button><div class="erp-menu-list"><span class="erp-menu-section">تقارير عامة</span><button type="button" data-nav-action="operationalFollow">متابعة التشغيل</button><button type="button" data-nav-action="managementReports">كل التقارير</button><button type="button" data-nav-action="report:orders-follow">متابعة الطلبات</button><button type="button" data-nav-action="report:waste-analysis">تحليل الهالك</button><span class="erp-menu-section">تقارير الطلب المحدد</span><button type="button" data-doc-menu="fullreport">التقرير التفصيلي</button><button type="button" data-doc-menu="waste">تقرير الهالك</button></div></div>
       <div class="erp-menu"><button type="button">الحسابات</button><div class="erp-menu-list"><span class="erp-menu-section">العملاء</span><button type="button" data-nav-action="customerAccounts">حسابات العملاء</button><button type="button" data-nav-action="a5Accounts">كشوفات A5</button></div></div>
-      <div class="erp-menu"><button type="button">نموذج الذكاء الاصطناعي</button><div class="erp-menu-list"><span class="erp-menu-section">تحليل 2B</span><button type="button" data-nav-action="aiModel">لوحة النموذج</button><button type="button" data-nav-action="aiAnalyze">تحليل التشغيل الحالي</button><button type="button" data-nav-action="managementReports">مصادر التقارير</button></div></div>
       <div class="erp-menu"><button type="button">واتساب</button><div class="erp-menu-list"><span class="erp-menu-section">الإرسال</span><button type="button" data-nav-action="whatsappSettings">إعدادات واتساب</button><button type="button" data-nav-action="outbox">قائمة الإرسال</button></div></div>
       <div class="erp-menu"><button type="button">الإعدادات</button><div class="erp-menu-list"><span class="erp-menu-section">النظام</span><button type="button" data-nav-action="systemStatus">حالة النظام</button><button type="button" data-nav-action="users">المستخدمين</button><button type="button" data-nav-action="auditLog">سجل التعديلات</button></div></div>
     </nav>
@@ -135,7 +132,7 @@
         <button type="button" class="start-card" data-nav-action="pricingNew"><strong>تسعيرة جديدة</strong><span>عرض سعر قبل التشغيل.</span></button>
         <button type="button" class="start-card" data-nav-action="ordersList"><strong>بحث الطلبات</strong><span>الوصول لطلب موجود أو فلترة الحالة.</span></button>
         <button type="button" class="start-card" data-nav-action="managementReports"><strong>التقارير</strong><span>متابعة التشغيل والحسابات والتحليلات.</span></button>
-        <button type="button" class="start-card" data-nav-action="aiModel"><strong>نموذج الذكاء الاصطناعي</strong><span>قراءة النظام وتحليل الوقوف والمخاطر.</span></button>
+        <button type="button" class="start-card" data-nav-action="aiModel"><strong>مركز المتابعة الذكي</strong><span>قراءة المتابعة اليومية والأسئلة الذكية في شاشة واحدة.</span></button>
       </div>
       <div class="erp-flow-map" aria-label="خريطة تشغيل ERP">
         <div class="erp-flow-head">
@@ -160,7 +157,7 @@
     <main id="mainWorkspace" class="main-workspace">
       <section class="panel pricing-panel" data-module-panel="sales reports"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">تسعير</p><h2>التسعيرات</h2></div></div><div class="table-wrap"><table class="mobile-card-table pricing-table"><thead><tr><th>رقم التسعيرة</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>إجمالي العقد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="pricingTableBody"></tbody></table></div></section><section class="stats-grid" id="statsGrid" data-module-panel="dashboard reports"></section>
       <section class="panel erp-cockpit" id="erpCockpit" data-module-panel="dashboard reports"></section>
-      <section class="panel today-orders-panel" id="todayOrdersPanel" data-module-panel="dashboard reports"></section>
+      <section class="panel today-orders-panel" id="todayOrdersPanel" data-module-panel="daily-smart-center" hidden></section>
       <section class="panel operation-follow-panel" id="operationFollowPanel" data-module-panel="dashboard dyehouse reports">
         <div class="section-head stacked-on-mobile">
           <div><p class="eyebrow">متابعة التشغيل</p><h2>الطلبات الواقفة حسب الحركة الفعلية</h2></div>
@@ -169,7 +166,7 @@
         <div class="operation-follow-summary" id="operationFollowSummary"><div class="empty-state">جاري قراءة متابعة التشغيل من Railway...</div></div>
         <div class="table-wrap"><table class="mobile-card-table operation-follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المرحلة</th><th>واقف من</th><th>الأيام</th><th>السبب</th><th>إجراء</th></tr></thead><tbody id="operationFollowBody"></tbody></table></div>
       </section>
-      <section class="panel ai-panel" id="aiModelPanel" data-module-panel="dashboard reports admin"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">نموذج الذكاء الاصطناعي لـ 2B</p><h2>موظف ذكي لتحليل التشغيل والرد على أسئلتك من قاعدة البيانات</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><div id="operationalAiDashboard" class="operational-ai-dashboard"></div><div class="ai-question-row"><input id="aiQuestionInput" type="text" placeholder="اسأل الموظف الذكي: إيه الطلبات الواقفة في المصبغة؟ مين أقدم عميل واقف؟"><button class="mini-btn gold" id="askAiBtn" type="button">اسأل</button></div><p id="aiStatusText" class="eyebrow">نفس الموظف يجمع بين تقرير سريع ومحادثة مباشرة مبنية على بيانات Railway.</p></section>
+      <section class="panel ai-panel" id="aiModelPanel" data-module-panel="dashboard reports admin"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">مركز المتابعة الذكي</p><h2>قراءة المتابعة اليومية والأسئلة الذكية في مكان واحد</h2></div><button class="primary-btn" id="analyzeReportBtn" type="button">تحليل التشغيل الحالي</button></div><div id="operationalAiDashboard" class="operational-ai-dashboard"></div><div class="ai-question-row"><input id="aiQuestionInput" type="text" placeholder="اسأل مركز المتابعة: إيه الطلبات الواقفة في المصبغة؟ مين أقدم عميل واقف؟"><button class="mini-btn gold" id="askAiBtn" type="button">اسأل</button></div><p id="aiStatusText" class="eyebrow">شاشة واحدة تجمع قراءة التشغيل اليومية مع الرد الذكي على أسئلة المصنع.</p></section>
       <section class="panel orders-list-panel" data-module-panel="dashboard sales weaving dyehouse warehouse reports">
         <div class="section-head stacked-on-mobile"><div><p class="eyebrow">الطلبات الرئيسية</p><h2>الطلبات الرئيسية</h2></div><div class="filters-row"><input id="searchInput" type="search" placeholder="بحث بالعميل، رقم الطلب، رقم إذن النسيج، المصبغة..."><select id="customerFilter"><option value="all">كل العملاء</option></select><select id="dyehouseFilter"><option value="all">كل المصابغ</option></select><select id="fabricFilter"><option value="all">كل الأصناف</option></select><select id="orderStatusFilter"><option value="all">كل الطلبات المفتوحة</option><option value="stage:weaving">النسيج</option><option value="stage:gluing">دمج</option><option value="stage:dyehouse">المصبغة</option><option value="stage:warehouse">المخزن</option><option value="completed">مكتمل</option><option value="closed">مغلق تشغيليًا</option><option value="pending">بانتظار الاستلام</option><option value="in-progress">قيد التشغيل</option></select><button class="mini-btn gold" id="printFilteredOrdersBtn" type="button">طباعة الفلترة</button></div></div>
         <div class="table-wrap"><table class="mobile-card-table orders-table orders-table-compact"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>الأرصدة</th><th>المرحلة</th><th>إجراءات</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
@@ -190,10 +187,10 @@
   <script charset="UTF-8" src="./compat/pricing.js?v=20260606-06"></script>
   <script charset="UTF-8" src="./orders.js?v=20260613-19"></script>
   <script charset="UTF-8" src="./modules/navigation.js?v=20260613-25"></script>
-  <script charset="UTF-8" src="./modules/focusViews.js?v=20260613-04"></script>
+  <script charset="UTF-8" src="./modules/focusViews.js?v=20260613-27"></script>
   <script charset="UTF-8" src="./modules/operationalAiManager.js?v=20260613-17"></script>
-  <script charset="UTF-8" src="./modules/todayOrdersUi.js?v=20260613-17"></script>
-  <script charset="UTF-8" src="./modules/aiUi.js?v=20260613-12"></script>
+  <script charset="UTF-8" src="./modules/todayOrdersUi.js?v=20260613-27"></script>
+  <script charset="UTF-8" src="./modules/aiUi.js?v=20260613-27"></script>
   <script charset="UTF-8" src="./modules/documentsUi.js?v=20260613-06"></script>
   <script charset="UTF-8" src="./modules/reportsUi.js?v=20260613-07"></script>
   <script charset="UTF-8" src="./modules/warehouseUi.js?v=20260613-08"></script>
@@ -204,6 +201,6 @@
   <script charset="UTF-8" src="./modules/formsUi.js?v=20260613-10"></script>
   <script charset="UTF-8" src="./modules/pricingUi.js?v=20260613-10"></script>
   <script charset="UTF-8" src="./modules/backendClient.js?v=20260613-11"></script>
-  <script charset="UTF-8" src="./app.js?v=20260613-26"></script>
+  <script charset="UTF-8" src="./app.js?v=20260613-27"></script>
 </body>
 </html>

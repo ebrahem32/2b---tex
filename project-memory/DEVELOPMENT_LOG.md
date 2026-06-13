@@ -258,3 +258,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: merged `ملخص الطلبات` and `أوامر اليوم` into `متابعة اليوم`, and removed warehouse/dyehouse/weaving balance shortcuts from Dashboard.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Merge Manager And Smart Employee Screens
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.27`
+- Goal: remove duplicate manager/smart-employee navigation and keep one smart follow-up center.
+- Change: renamed the combined entry to `مركز المتابعة الذكي`, removed duplicate AI shortcuts from reports/top menus, and hid the old daily manager panel from normal module navigation.
+- Not touched: AI backend, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

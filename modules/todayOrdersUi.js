@@ -99,8 +99,8 @@
       const data = build();
       const top = data.decisions[0];
       panel.innerHTML = `<div class="section-head stacked-on-mobile">
-        <div><p class="eyebrow">أوامر اليوم</p><h2>شاشة المدير اليومية</h2><p class="orders-list-note">قراءة واحدة مختصرة لما يحتاج حركة اليوم: المصبغة، المخزن، التأخير، والهالك.</p></div>
-        <div class="actions"><button class="mini-btn gold" type="button" data-refresh-today-orders>تحديث</button><button class="mini-btn" type="button" data-nav-action="aiModel">الموظف الذكي</button></div>
+        <div><p class="eyebrow">مركز المتابعة الذكي</p><h2>متابعة اليوم</h2><p class="orders-list-note">قراءة واحدة مختصرة لما يحتاج حركة اليوم: المصبغة، المخزن، التأخير، والهالك.</p></div>
+        <div class="actions"><button class="mini-btn gold" type="button" data-refresh-today-orders>تحديث</button></div>
       </div>
       <div class="today-orders-kpis">
         <article><span>طلبات مفتوحة</span><strong>${data.active.length}</strong></article>

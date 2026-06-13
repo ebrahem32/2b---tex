@@ -72,7 +72,7 @@
     function decorateAiFocusHeader() {
       const panel = document.getElementById('aiModelPanel');
       if (!panel || panel.querySelector('[data-ai-focus-toolbar]')) return;
-      panel.insertAdjacentHTML('afterbegin', '<div class="ai-focus-toolbar" data-ai-focus-toolbar><button class="mini-btn gold" type="button" id="backFromAiBtn">رجوع للنظام</button><div><span class="eyebrow">لوحة مستقلة</span><strong>الموظف الذكي وذكاء التشغيل فقط</strong></div></div>');
+      panel.insertAdjacentHTML('afterbegin', '<div class="ai-focus-toolbar" data-ai-focus-toolbar><button class="mini-btn gold" type="button" id="backFromAiBtn">رجوع للنظام</button><div><span class="eyebrow">لوحة مستقلة</span><strong>مركز المتابعة الذكي</strong></div></div>');
     }
 
     function closeAiFocusMode() {
