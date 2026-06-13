@@ -198,3 +198,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: warehouse filter now includes every non-zero warehouse balance, weaving groups color-planning and weaving, gluing groups all gluing variants as `دمج`, and dyehouse uses the real dyehouse balance.
 - Not touched: backend calculations, database, schema, waste logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Reorganize Sidebar Operational Menus
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.21`
+- Goal: remove confusing duplicate menu entries and place each operational document under its real department.
+- Change: weaving now shows `رصيد / استلام الخام` as one item, lab samples and raw gluing moved under dyehouse, and operation stickers moved under warehouse.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
