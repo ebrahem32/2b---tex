@@ -120,3 +120,12 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Not touched: `backend/calculations.js`, SQLite, schema, waste calculation logic, stock calculation logic, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
 - Full test: `npm run test:operational-full` passed on Railway with order `تيست-mqbmb12s`.
+
+### Hotfix Document UI Initialization Order
+
+- Date: 2026-06-13
+- Commit: `Fix document UI initialization order`.
+- Goal: fix startup error `Cannot access 'buildQuotationDocument' before initialization`.
+- Change: moved `createDocumentsUi()` initialization until after `window.TwoBTexDocuments.createBuilders()` defines document builder functions.
+- Not touched: calculations, database, schema, stock logic, waste logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
