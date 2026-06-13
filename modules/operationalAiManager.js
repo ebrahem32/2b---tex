@@ -25,6 +25,14 @@
       return number(order.warehouseBalance) > 0;
     }
 
+    function stagePlace(order, stage = deps.orderStageInfo(order)) {
+      if (stage.key === 'weaving') return order.weavingSource || 'النسيج';
+      if (stage.key === 'dyehouse') return order.dyehouse || 'المصبغة';
+      if (stage.key === 'warehouse') return 'المخزن';
+      if (stage.key === 'delivery') return order.customer || 'التسليم';
+      return stage.label || '-';
+    }
+
     function item(order, extra = {}) {
       const stage = deps.orderStageInfo(order);
       return {
@@ -34,7 +42,7 @@
         fabricType: order.fabricType || '-',
         dyehouse: order.dyehouse || '-',
         stageKey: stage.key,
-        stageLabel: stage.label,
+        stageLabel: extra.stageLabel || stagePlace(order, stage),
         days: number(stage.days),
         quantity: number(extra.quantity),
         wastePercent: number(order.totalWastePercent),
@@ -50,6 +58,15 @@
       ));
     }
 
+    function sortDesc(rows, primary) {
+      return rows.slice().sort((a, b) => (
+        number(primary(b)) - number(primary(a))
+        || number(b.quantity) - number(a.quantity)
+        || number(b.days) - number(a.days)
+        || String(a.orderNumber).localeCompare(String(b.orderNumber), 'ar')
+      ));
+    }
+
     function analyze() {
       const orders = deps.getCalculatedOrders();
       const active = orders.filter(openOrder);
@@ -58,32 +75,36 @@
         .filter(({ stage }) => number(stage.days) >= delayDays)
         .map(({ order, stage }) => item(order, {
           quantity: number(order.rawAtDyehouseAvailable || order.warehouseBalance || order.remainingToCustomer),
-          reason: `${stage.label} منذ ${stage.days} يوم`,
+          stageLabel: stagePlace(order, stage),
+          reason: `${stagePlace(order, stage)} منذ ${stage.days} يوم`,
         })));
-      const dyehouse = sortByRisk(active
+      const dyehouse = sortDesc(active
         .filter(isDyehouseStage)
         .map((order) => item(order, {
           quantity: number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse),
-          reason: `داخل المصبغة ${fmt(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم`,
-        })));
-      const ready = sortByRisk(active
+          stageLabel: stagePlace(order),
+          reason: `${stagePlace(order)}: داخل المصبغة ${fmt(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم`,
+        })), (row) => row.quantity);
+      const ready = sortDesc(active
         .filter(isReadyStage)
         .map((order) => {
           const stage = deps.orderStageInfo(order);
           const dyehouseBalance = number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse);
-          const mixedNote = dyehouseBalance > 0 ? ` / مع متبقي بالمصبغة ${fmt(dyehouseBalance)} كجم` : '';
+          const mixedNote = dyehouseBalance > 0 ? ` / مع متبقي في ${stagePlace(order, { key:'dyehouse', label:'المصبغة' })} ${fmt(dyehouseBalance)} كجم` : '';
           return item(order, {
             quantity: number(order.warehouseBalance),
+            stageLabel: stagePlace(order, stage),
             reason: `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم منذ ${stage.days} يوم${mixedNote}`,
           });
-        }))
-        .filter((row) => row.days >= readyDays || row.quantity > 0);
-      const highWaste = sortByRisk(orders
+        })
+        .filter((row) => row.days >= readyDays || row.quantity > 0), (row) => row.quantity);
+      const highWaste = sortDesc(orders
         .filter((order) => number(order.totalWastePercent) >= Math.max(wastePercent, number(order.expectedWastePercent) + 2))
         .map((order) => item(order, {
           quantity: number(order.totalWaste),
+          stageLabel: stagePlace(order),
           reason: `هالك ${fmt(order.totalWastePercent, 1)}% / ${fmt(order.totalWaste)} كجم`,
-        })));
+        })), (row) => row.wastePercent);
       const seenPriority = new Set();
       const priority = sortByRisk([...delayed, ...dyehouse.slice(0, 3), ...ready.slice(0, 3), ...highWaste])
         .filter((row) => {

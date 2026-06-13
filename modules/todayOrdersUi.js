@@ -12,6 +12,14 @@
       return order && !['completed', 'closed'].includes(String(order.status || '').toLowerCase());
     }
 
+    function stagePlace(order, stage = deps.orderStageInfo(order)) {
+      if (stage.key === 'weaving') return order.weavingSource || 'النسيج';
+      if (stage.key === 'dyehouse') return order.dyehouse || 'المصبغة';
+      if (stage.key === 'warehouse') return 'المخزن';
+      if (stage.key === 'delivery') return order.customer || 'التسليم';
+      return stage.label || '-';
+    }
+
     function row(order, reason, tone = '') {
       const stage = deps.orderStageInfo(order);
       return {
@@ -20,16 +28,21 @@
         customer: order.customer || '-',
         fabricType: order.fabricType || '-',
         dyehouse: order.dyehouse || '-',
-        stage: stage.label || '-',
+        stage: stagePlace(order, stage),
         days: number(stage.days),
+        quantity: number(order.rawAtDyehouseAvailable || order.warehouseBalance || order.totalWaste || 0),
+        wastePercent: number(order.totalWastePercent),
         reason,
         tone,
       };
     }
 
-    function sortRows(rows) {
+    function sortRows(rows, primary = (row) => row.days) {
       return rows.slice().sort((a, b) => (
-        number(b.days) - number(a.days)
+        number(primary(b)) - number(primary(a))
+        || number(b.quantity) - number(a.quantity)
+        || number(b.wastePercent) - number(a.wastePercent)
+        || number(b.days) - number(a.days)
         || String(a.orderNumber).localeCompare(String(b.orderNumber), 'ar')
       ));
     }
@@ -39,20 +52,30 @@
       const active = orders.filter(activeOrder);
       const delayed = sortRows(active
         .filter((order) => number(deps.orderStageInfo(order).days) >= 7)
-        .map((order) => row(order, `واقف ${deps.orderStageInfo(order).days} يوم في ${deps.orderStageInfo(order).label}`, 'danger')));
+        .map((order) => row(order, `واقف ${deps.orderStageInfo(order).days} يوم في ${stagePlace(order)}`, 'danger')));
       const dyehouse = sortRows(active
         .filter((order) => number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse) > 0)
-        .map((order) => row(order, `داخل المصبغة ${fmt(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم`, 'warning')));
+        .map((order) => {
+          const item = row(order, `${stagePlace(order, { key:'dyehouse', label:'المصبغة' })}: داخل المصبغة ${fmt(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم`, 'warning');
+          item.quantity = number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse);
+          return item;
+        }), (item) => item.quantity);
       const ready = sortRows(active
         .filter((order) => number(order.warehouseBalance) > 0)
         .map((order) => {
           const dyehouseBalance = number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse);
-          const mixedNote = dyehouseBalance > 0 ? ` / مع متبقي بالمصبغة ${fmt(dyehouseBalance)} كجم` : '';
-          return row(order, `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم${mixedNote}`, 'success');
-        }));
+          const mixedNote = dyehouseBalance > 0 ? ` / مع متبقي في ${stagePlace(order, { key:'dyehouse', label:'المصبغة' })} ${fmt(dyehouseBalance)} كجم` : '';
+          const item = row(order, `جاهز للتسليم ${fmt(order.warehouseBalance)} كجم${mixedNote}`, 'success');
+          item.quantity = number(order.warehouseBalance);
+          return item;
+        }), (item) => item.quantity);
       const highWaste = sortRows(orders
         .filter((order) => number(order.totalWastePercent) >= Math.max(8, number(order.expectedWastePercent) + 2))
-        .map((order) => row(order, `هالك ${fmt(order.totalWastePercent, 1)}% / ${fmt(order.totalWaste)} كجم`, 'danger')));
+        .map((order) => {
+          const item = row(order, `هالك ${fmt(order.totalWastePercent, 1)}% / ${fmt(order.totalWaste)} كجم`, 'danger');
+          item.quantity = number(order.totalWaste);
+          return item;
+        }), (item) => item.wastePercent);
       const decisions = [
         ...delayed,
         ...dyehouse.filter((item) => !delayed.some((late) => late.id === item.id)),

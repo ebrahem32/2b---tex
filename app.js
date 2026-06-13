@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.16';
-const APP_BUILD_TIME = '2026-06-13 08:25';
+const APP_VERSION = 'v2026.06.13.17';
+const APP_BUILD_TIME = '2026-06-13 08:45';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2648,7 +2648,7 @@ function renderErpCockpit(list = []) {
       <div><h3>أولويات المتابعة</h3><p class="eyebrow">الأقدم وقوفًا أو الأعلى هالكًا يظهر هنا أولًا.</p></div>
       <div class="erp-priority-list">${priorityRows.length ? priorityRows.map((order)=>{
         const stage = stageOf(order);
-        return `<button type="button" data-view="${escapeHtml(order.id)}"><strong>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</strong><span>${escapeHtml(order.fabricType || '-')}</span><small>${escapeHtml(stage.label)} / ${Number(stage.days || 0)} يوم / هالك ${fmt(order.totalWastePercent || 0)}%</small></button>`;
+        return `<button type="button" data-view="${escapeHtml(order.id)}"><strong>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</strong><span>${escapeHtml(order.fabricType || '-')}</span><small>${escapeHtml(operationStagePlace(order, stage))} / ${Number(stage.days || 0)} يوم / هالك ${fmt(order.totalWastePercent || 0)}%</small></button>`;
       }).join('') : '<div class="empty-state">لا توجد أولويات حرجة حاليًا.</div>'}</div>
     </div>`;
 }
@@ -2983,7 +2983,7 @@ function renderOperationFollowPanel() {
       <td data-label="رقم الطلب">${escapeHtml(order.orderNumber || '-')}</td>
       <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
       <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
-      <td data-label="المرحلة"><span class="status in-progress">${escapeHtml(stage.label || '-')}</span></td>
+      <td data-label="المرحلة"><span class="status in-progress">${escapeHtml(operationStagePlace(order, stage))}</span></td>
       <td data-label="واقف من">${escapeHtml(stage.startDate || '-')}</td>
       <td data-label="الأيام">${Number(stage.days || 0).toLocaleString('en-US')}</td>
       <td data-label="السبب">${escapeHtml(stage.reason || '-')}</td>
@@ -4201,6 +4201,13 @@ function orderStageInfo(order) {
     key = 'delivery'; label = 'تسليم العميل'; startDate = finishedDate || order.orderDate || ''; reason = 'التسليم للعميل لم يكتمل.';
   }
   return { key, label, startDate, days:daysSince(startDate), reason };
+}
+function operationStagePlace(order, stage = orderStageInfo(order)) {
+  if (stage.key === 'weaving') return order.weavingSource || 'النسيج';
+  if (stage.key === 'dyehouse') return order.dyehouse || 'المصبغة';
+  if (stage.key === 'warehouse') return 'المخزن';
+  if (stage.key === 'delivery') return order.customer || 'التسليم';
+  return stage.label || '-';
 }
 function orderFilterLabel(value) {
   const labels = { all:'كل الطلبات المفتوحة', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'واقف في النسيج', 'stage:color-planning':'بانتظار توزيع الألوان', 'stage:gluing':'واقف في دمج الخامات', 'stage:glued-ready':'منتج مدمج جاهز للتسليم', 'stage:dyehouse':'واقف في المصبغة', 'stage:warehouse':'واقف في المخزن' };

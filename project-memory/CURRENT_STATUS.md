@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.16`
+`v2026.06.13.17`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Clarify mixed AI order status`
+`Sort operational AI lists and show stopped company`
 
 ## Current Phase
 

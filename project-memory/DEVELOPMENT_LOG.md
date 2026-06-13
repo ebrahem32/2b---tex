@@ -158,3 +158,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: kept warehouse-ready orders visible when `warehouseBalance > 0`, kept dyehouse orders visible when dyehouse balance exists, and added mixed-status wording to ready rows when dyehouse balance also exists.
 - Not touched: calculations, database, schema, stock logic, waste logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Sort Operational AI Lists And Show Stopped Company
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.17`
+- Goal: make operational lists easier to scan by ordering from highest to lowest and naming the actual stopped company/location.
+- Change: delayed lists sort by days, dyehouse and ready lists by quantity, waste lists by waste percent, and stage labels now show weaving source or dyehouse name where applicable.
+- Not touched: calculations, database, schema, stock logic, waste logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
