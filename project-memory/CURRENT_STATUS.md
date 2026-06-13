@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.21`
+`v2026.06.13.22`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Reorganize sidebar operational menus`
+`Simplify dyehouse sidebar menu`
 
 ## Current Phase
 
@@ -85,3 +85,9 @@ For Phase 3.1 local verification before commit:
 - Weaving menu now keeps only weaving-specific entries and combines `رصيد / استلام الخام`.
 - Lab samples and raw gluing moved to the dyehouse menu.
 - Operation stickers moved to the warehouse menu.
+
+## Latest Dyehouse Menu Simplification
+
+- Version: `v2026.06.13.22`.
+- Dyehouse menu now combines inside/send/receive into one `رصيد / حركة المصبغة` entry.
+- Empty/unused dyehouse transfer shortcut was removed from the sidebar only.

@@ -208,3 +208,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: weaving now shows `رصيد / استلام الخام` as one item, lab samples and raw gluing moved under dyehouse, and operation stickers moved under warehouse.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Simplify Dyehouse Sidebar Menu
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.22`
+- Goal: remove duplicate dyehouse menu actions that opened the same operational screen.
+- Change: combined inside/send/receive dyehouse actions into `رصيد / حركة المصبغة` and removed the unused dyehouse transfers shortcut from the sidebar.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data, transfer data model.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
