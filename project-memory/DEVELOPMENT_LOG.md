@@ -288,3 +288,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: removed the duplicate ERP flow-map navigation layer and kept the main task cards as the single home entry point.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Open AI Dashboard Orders From Rows
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.30`
+- Goal: allow reviewing order details directly from smart follow-up lists.
+- Change: smart follow-up rows now carry the normal order-open hook, AI row click handling accepts both AI and order row hooks, and order focus closes AI focus before rendering details.
+- Not touched: AI backend, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

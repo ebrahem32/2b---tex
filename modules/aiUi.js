@@ -238,9 +238,9 @@
             if (refs.aiStatusText) refs.aiStatusText.textContent = 'تم تحديث مدير التشغيل الذكي من بيانات الشاشة الحالية.';
             return;
           }
-          const orderButton = event.target.closest('[data-ai-open-order]');
+          const orderButton = event.target.closest('[data-ai-open-order], [data-view]');
           if (orderButton) {
-            const orderId = orderButton.dataset.aiOpenOrder;
+            const orderId = orderButton.dataset.aiOpenOrder || orderButton.dataset.view;
             if (orderId && typeof deps.openOrderFocusMode === 'function') deps.openOrderFocusMode(orderId);
           }
         });

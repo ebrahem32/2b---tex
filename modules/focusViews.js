@@ -27,6 +27,7 @@
     function openOrderFocusMode(orderId) {
       deps.setSelectedOrderId(orderId);
       deps.closeDashboardFocusMode();
+      deps.closeAiFocusMode();
       deps.setOrderFocusMode(true);
       syncOrderFocusMode();
       deps.syncFilteredListMode();

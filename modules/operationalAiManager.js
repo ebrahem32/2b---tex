@@ -142,7 +142,7 @@
     function renderList(rows, emptyText) {
       const safeRows = rows.slice(0, 6);
       if (!safeRows.length) return `<div class="empty-state">${deps.escapeHtml(emptyText)}</div>`;
-      return safeRows.map((row) => `<button type="button" class="operational-ai-row" data-ai-open-order="${deps.escapeHtml(row.id)}">
+      return safeRows.map((row) => `<button type="button" class="operational-ai-row" data-ai-open-order="${deps.escapeHtml(row.id)}" data-view="${deps.escapeHtml(row.id)}" title="فتح تفاصيل الطلب">
         <strong>${deps.escapeHtml(row.orderNumber)} - ${deps.escapeHtml(row.customer)}</strong>
         <span>${deps.escapeHtml(row.fabricType)} / ${deps.escapeHtml(row.stageLabel)}</span>
         <small>${deps.escapeHtml(row.reason)}</small>

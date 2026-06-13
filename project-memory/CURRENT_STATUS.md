@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.29`
+`v2026.06.13.30`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Remove duplicate home ERP map`
+`Open AI dashboard orders from rows`
 
 ## Current Phase
 
@@ -133,3 +133,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.29`.
 - Removed the duplicated ERP flow map from the home screen.
 - Home now keeps one task-entry layer instead of two overlapping navigation systems.
+
+## Latest Smart Follow-Up Order Review
+
+- Version: `v2026.06.13.30`.
+- Smart follow-up rows now open the selected order details directly for review.
+- Opening an order from the smart follow-up center closes AI focus mode first so the order focus screen is visible immediately.
