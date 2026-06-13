@@ -228,3 +228,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: removed `رصيد الخام` from the warehouse menu and kept warehouse focused on finished stock.
 - Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Remove Duplicated Reports From Sidebar
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.24`
+- Goal: reduce report menu clutter and keep one clear entry for each report purpose.
+- Change: removed duplicated sidebar shortcuts for `كل التقارير`, `تقرير الخام المتاح`, `تقرير الطلبات المتأخرة`, and `تقرير المصبغة`; kept `تقرير داخل المصبغة` as the dyehouse report entry.
+- Not touched: backend calculations, database, schema, waste logic, stock logic, persisted movement data, report generation functions.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

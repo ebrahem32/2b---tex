@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.23`
+`v2026.06.13.24`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Remove raw stock shortcut from warehouse menu`
+`Remove duplicated reports from sidebar`
 
 ## Current Phase
 
@@ -97,3 +97,9 @@ For Phase 3.1 local verification before commit:
 - Version: `v2026.06.13.23`.
 - Removed `رصيد الخام` from the warehouse sidebar because the factory does not operate a separate raw-stock warehouse.
 - Warehouse menu now focuses on finished stock and related warehouse actions.
+
+## Latest Reports Menu Simplification
+
+- Version: `v2026.06.13.24`.
+- Removed duplicated sidebar report shortcuts: `كل التقارير`, `تقرير الخام المتاح`, `تقرير الطلبات المتأخرة`, and `تقرير المصبغة`.
+- Kept `تقرير داخل المصبغة` as the single dyehouse report entry.
