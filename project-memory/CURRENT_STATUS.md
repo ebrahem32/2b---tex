@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.14`
+`v2026.06.13.15`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Bump app cache version after document UI hotfix`
+`Fix document builder initialization guard`
 
 ## Current Phase
 

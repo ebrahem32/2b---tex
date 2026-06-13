@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.14';
-const APP_BUILD_TIME = '2026-06-13 07:15';
+const APP_VERSION = 'v2026.06.13.15';
+const APP_BUILD_TIME = '2026-06-13 07:45';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -257,6 +257,14 @@ let currentShareReportPayload;
 let shareCurrentReportPdf;
 let shareCurrentReportPngManual;
 let installDocumentsUiHandlers;
+let buildCompactFullReportDocument;
+let buildDyeingOrderDocument;
+let buildDyeingSummaryDocument;
+let buildLabSamplesDocument;
+let buildQuotationDocument;
+let buildStickersDocument;
+let buildWasteReportDocument;
+let buildWeavingOrderDocument;
 let openManagementReportsMenu;
 let showManagementReport;
 let openManagementReport;
@@ -2946,6 +2954,49 @@ function orderDetailsHasActiveDraft() {
   return !!refs.orderDetailsPanel?.querySelector('.batch-form[data-dirty="true"]');
 }
 
+function operationFollowRows() {
+  return allOrders()
+    .map((order) => ({ order, stage:orderStageInfo(order) }))
+    .filter(({ stage }) => !['completed', 'closed'].includes(stage.key))
+    .sort((left, right) => Number(right.stage.days || 0) - Number(left.stage.days || 0));
+}
+
+function renderOperationFollowPanel() {
+  const summaryBox = document.getElementById('operationFollowSummary');
+  const body = document.getElementById('operationFollowBody');
+  if (!summaryBox || !body) return;
+  const rows = operationFollowRows();
+  const totals = rows.reduce((acc, { order, stage }) => {
+    acc[stage.key] = (acc[stage.key] || 0) + 1;
+    acc.quantity += Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || order.warehouseBalance || 0);
+    return acc;
+  }, { quantity:0 });
+  const cards = [
+    ['النسيج', totals.weaving || 0],
+    ['المصبغة', totals.dyehouse || 0],
+    ['المخزن', totals.warehouse || 0],
+    ['التسليم', totals.delivery || 0],
+  ];
+  summaryBox.innerHTML = cards.map(([label, value]) => `<button type="button" data-stage-filter="${escapeHtml(label === 'النسيج' ? 'weaving' : label === 'المصبغة' ? 'dyehouse' : label === 'المخزن' ? 'warehouse' : 'delivery')}"><span>${escapeHtml(label)}</span><strong>${Number(value || 0).toLocaleString('en-US')}</strong></button>`).join('');
+  body.innerHTML = rows.length ? rows.map(({ order, stage }) => `
+    <tr>
+      <td data-label="رقم الطلب">${escapeHtml(order.orderNumber || '-')}</td>
+      <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
+      <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
+      <td data-label="المرحلة"><span class="status in-progress">${escapeHtml(stage.label || '-')}</span></td>
+      <td data-label="واقف من">${escapeHtml(stage.startDate || '-')}</td>
+      <td data-label="الأيام">${Number(stage.days || 0).toLocaleString('en-US')}</td>
+      <td data-label="السبب">${escapeHtml(stage.reason || '-')}</td>
+      <td data-label="إجراء"><button type="button" class="mini-btn" data-view="${escapeHtml(order.id)}">فتح</button></td>
+    </tr>
+  `).join('') : '<tr><td colspan="8"><div class="empty-state">لا توجد طلبات تحتاج متابعة تشغيل حالياً.</div></td></tr>';
+}
+
+async function refreshOperationFollowPanel() {
+  await loadBackendData({ silentFailure:true });
+  renderOperationFollowPanel();
+}
+
 ({
   openMainWorkspace,
   closeOpenErpMenus,
@@ -4274,7 +4325,7 @@ function reportOperationNotes(order) {
   if (order.operationNoteText !== undefined) return String(order.operationNoteText || '').trim() || '-';
   return order.notes || '-';
 }
-const {
+({
   buildCompactFullReportDocument,
   buildDyeingOrderDocument,
   buildDyeingSummaryDocument,
@@ -4306,7 +4357,7 @@ const {
   accessoryFlowPartsForOrder,
   accessoryBalancePartsForOrder,
   stockFlowText,
-});
+}));
 
 ({
   renderDocuments,

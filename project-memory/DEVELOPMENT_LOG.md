@@ -137,4 +137,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Goal: force browsers to reload the corrected `app.js` after the document UI initialization hotfix.
 - Change: bumped app version to `v2026.06.13.14` and changed `index.html` script query to `app.js?v=20260613-14`.
 - Not touched: calculations, database, schema, stock logic, waste logic.
-- Test: pending final run in this hotfix.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Fix Document Builder Initialization Guard
+
+- Date: 2026-06-13
+- Commit: pending.
+- Goal: remove the root startup risk behind `Cannot access 'buildQuotationDocument' before initialization`.
+- Change: declared document builder references early in `app.js` and assigned them after `window.TwoBTexDocuments.createBuilders()`, so document-related references cannot hit the temporal-dead-zone during startup.
+- Version: `v2026.06.13.15`.
+- Not touched: calculations, database, schema, stock logic, waste logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
