@@ -168,3 +168,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: delayed lists sort by days, dyehouse and ready lists by quantity, waste lists by waste percent, and stage labels now show weaving source or dyehouse name where applicable.
 - Not touched: calculations, database, schema, stock logic, waste logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Show Over-Delivery Stock Warning
+
+- Date: 2026-06-13
+- Commit: pending.
+- Version: `v2026.06.13.18`
+- Goal: explain cases where finished quantity exists but warehouse balance is zero because customer delivery records exceed finished receiving.
+- Change: added an Order 360 alert showing over-delivery quantity and the finished/delivered comparison.
+- Not touched: calculations, database, schema, stock logic, waste logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.17`
+`v2026.06.13.18`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Sort operational AI lists and show stopped company`
+`Show over-delivery stock warning`
 
 ## Current Phase
 

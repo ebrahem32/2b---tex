@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.17';
-const APP_BUILD_TIME = '2026-06-13 08:45';
+const APP_VERSION = 'v2026.06.13.18';
+const APP_BUILD_TIME = '2026-06-13 09:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3360,7 +3360,9 @@ function order360Alerts(order, stage) {
   const alerts = [];
   const expectedWaste = Number(order.expectedWastePercent || 0);
   const actualWaste = Number(order.totalWastePercent || 0);
+  const overDelivered = Math.max(Number(order.totalDeliveredToCustomer || 0) - Number(order.totalFinishedReceived || 0), 0);
   if (Number(stage.days || 0) >= 7 && !['completed','closed'].includes(stage.key)) alerts.push(`واقف ${stage.days} يوم في مرحلة ${stage.label}`);
+  if (overDelivered > 0) alerts.push(`تنبيه بيانات: تسليم العميل أكبر من المجهز بـ ${formatNumber(overDelivered)} كجم - المجهز ${formatNumber(order.totalFinishedReceived || 0)} كجم / المسلم ${formatNumber(order.totalDeliveredToCustomer || 0)} كجم`);
   if (actualWaste > 0 && actualWaste >= Math.max(8, expectedWaste + 2)) alerts.push(`الهالك الفعلي ${formatNumber(actualWaste, 1)}% أعلى من المتوقع ${formatNumber(expectedWaste, 1)}%`);
   if (Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0) alerts.push(`داخل المصبغة ${formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم لم يرجع مجهزًا`);
   if (Number(order.warehouseBalance || 0) > 0) alerts.push(`رصيد مخزن متاح للتسليم ${formatNumber(order.warehouseBalance)} كجم`);
