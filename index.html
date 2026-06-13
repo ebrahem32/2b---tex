@@ -46,6 +46,7 @@
         <section>
           <h3>Dashboard</h3>
           <button type="button" data-module-action="dashboard" data-nav-action="workspaceHome">ملخص الطلبات</button>
+          <button type="button" data-module-action="dashboard" data-nav-action="todayOrders">أوامر اليوم</button>
           <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:dyehouse">رصيد المصبغة</button>
           <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:weaving">رصيد النسيج</button>
           <button type="button" data-module-action="dashboard" data-stage-shortcut="stage:warehouse">رصيد المخزن</button>
@@ -173,6 +174,7 @@
     <main id="mainWorkspace" class="main-workspace">
       <section class="panel pricing-panel" data-module-panel="sales reports"><div class="section-head stacked-on-mobile"><div><p class="eyebrow">تسعير</p><h2>التسعيرات</h2></div></div><div class="table-wrap"><table class="mobile-card-table pricing-table"><thead><tr><th>رقم التسعيرة</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>إجمالي العقد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="pricingTableBody"></tbody></table></div></section><section class="stats-grid" id="statsGrid" data-module-panel="dashboard reports"></section>
       <section class="panel erp-cockpit" id="erpCockpit" data-module-panel="dashboard reports"></section>
+      <section class="panel today-orders-panel" id="todayOrdersPanel" data-module-panel="dashboard reports"></section>
       <section class="panel operation-follow-panel" id="operationFollowPanel" data-module-panel="dashboard dyehouse reports">
         <div class="section-head stacked-on-mobile">
           <div><p class="eyebrow">متابعة التشغيل</p><h2>الطلبات الواقفة حسب الحركة الفعلية</h2></div>
@@ -204,6 +206,7 @@
   <script charset="UTF-8" src="./modules/navigation.js?v=20260613-04"></script>
   <script charset="UTF-8" src="./modules/focusViews.js?v=20260613-04"></script>
   <script charset="UTF-8" src="./modules/operationalAiManager.js?v=20260613-12"></script>
+  <script charset="UTF-8" src="./modules/todayOrdersUi.js?v=20260613-13"></script>
   <script charset="UTF-8" src="./modules/aiUi.js?v=20260613-12"></script>
   <script charset="UTF-8" src="./modules/documentsUi.js?v=20260613-06"></script>
   <script charset="UTF-8" src="./modules/reportsUi.js?v=20260613-07"></script>
@@ -215,6 +218,6 @@
   <script charset="UTF-8" src="./modules/formsUi.js?v=20260613-10"></script>
   <script charset="UTF-8" src="./modules/pricingUi.js?v=20260613-10"></script>
   <script charset="UTF-8" src="./modules/backendClient.js?v=20260613-11"></script>
-  <script charset="UTF-8" src="./app.js?v=20260613-12"></script>
+  <script charset="UTF-8" src="./app.js?v=20260613-13"></script>
 </body>
 </html>

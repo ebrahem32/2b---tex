@@ -79,6 +79,17 @@
       return rows.length ? `<ul>${rows.map((item)=>`<li>${deps.escapeHtml(formatAiItem(item))}</li>`).join('')}</ul>` : '<p class="empty-state">لا توجد بيانات كافية للعرض.</p>';
     }
 
+    function operationalDecisionFor(order = {}, stage = {}) {
+      const dyehouseBalance = Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0);
+      const warehouseBalance = Number(order.warehouseBalance || 0);
+      const wastePercent = Number(order.totalWastePercent || 0);
+      if (stage.key === 'dyehouse' || dyehouseBalance > 0) return `اتصل بالمصبغة ${order.dyehouse || '-'} لمتابعة ${deps.formatNumber(dyehouseBalance)} كجم داخل المصبغة.`;
+      if (warehouseBalance > 0) return `نسق تسليم ${deps.formatNumber(warehouseBalance)} كجم للعميل قبل فتح تشغيل جديد.`;
+      if (wastePercent >= Math.max(8, Number(order.expectedWastePercent || 0) + 2)) return `راجع الهالك ${deps.formatNumber(wastePercent, 1)}% قبل اعتماد الإغلاق.`;
+      if (stage.key === 'weaving') return 'تابع خروج الخام من النسيج أو سجل الإذن الناقص.';
+      return stage.reason || 'راجع آخر حركة تشغيل وحدد الإجراء التالي.';
+    }
+
     function renderAiAnalysis(result, title = 'الملخص التنفيذي') {
       const refs = deps.refs;
       const safe = result || {};
@@ -123,12 +134,15 @@
         dyehouse: order.dyehouse,
         stage: stage.label,
         daysInStage: stage.days,
-        reason: `مصبغة ${deps.formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)} / مخزن ${deps.formatNumber(order.warehouseBalance || 0)}`
+        reason: operationalDecisionFor(order, stage)
       }));
       const risks = sorted.filter(({ order, stage })=>Number(stage.days || 0) >= 7 || Number(order.totalWastePercent || 0) >= 8).map(({ order, stage })=>`طلب ${order.orderNumber} - ${order.customer}: ${stage.label} من ${stage.days} يوم / هالك ${deps.formatNumber(order.totalWastePercent || 0, 1)}%`);
+      const topDecision = ordersToWatch[0]
+        ? `أهم إجراء: طلب ${ordersToWatch[0].orderNumber} - ${ordersToWatch[0].customer}. ${ordersToWatch[0].reason}`
+        : 'أهم إجراء: لا توجد حركة عاجلة في هذا النطاق.';
       return {
         source: 'local',
-        executiveSummary,
+        executiveSummary: `${executiveSummary} ${topDecision}`,
         keyFindings: [
           `عدد الطلبات: ${sorted.length}`,
           `إجمالي داخل المصبغة: ${deps.formatNumber(totalDyehouse)}`,
@@ -136,9 +150,9 @@
         ],
         ordersToWatch,
         risks,
-        recommendations: sorted.length ? ['ابدأ بأقدم طلب واقف قبل أي تشغيل جديد.', 'راجع أي رصيد مخزن متاح وحدد موعد تسليمه للعميل.'] : ['لا توجد أولوية عاجلة في هذا النطاق.'],
-        priorityActions: ordersToWatch.slice(0, 3).map((item)=>`متابعة طلب ${item.orderNumber} - ${item.customer} - ${item.stage}`),
-        whatsappMessage: `${executiveSummary}\n${ordersToWatch.slice(0, 5).map((item)=>`- ${item.orderNumber} / ${item.customer} / ${item.stage} / ${item.daysInStage} يوم`).join('\n') || 'لا توجد طلبات للعرض.'}`,
+        recommendations: sorted.length ? ['ابدأ بالأقدم وقوفا أو الأكبر كمية حسب القائمة الحالية.', 'لا تغلق أي طلب قبل مطابقة المرسل للمصبغة والمستلم مجهز والمرتجع والهالك.', 'أي رصيد مخزن ظاهر يعتبر جاهزا للتسليم ويحتاج موعد مع العميل.'] : ['لا توجد أولوية عاجلة في هذا النطاق.'],
+        priorityActions: ordersToWatch.slice(0, 3).map((item)=>`طلب ${item.orderNumber} - ${item.customer}: ${item.reason}`),
+        whatsappMessage: `${executiveSummary}\n${ordersToWatch.slice(0, 5).map((item)=>`- ${item.orderNumber} / ${item.customer}: ${item.reason}`).join('\n') || 'لا توجد طلبات للعرض.'}`,
       };
     }
 

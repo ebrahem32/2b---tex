@@ -67,6 +67,14 @@
         deps.openDashboardFocusMode();
         return;
       }
+      if (action === 'todayOrders') {
+        deps.closeDashboardFocusMode();
+        deps.closeAiFocusMode();
+        deps.closeOrderFocusMode();
+        deps.renderTodayOrdersPanel?.();
+        document.getElementById('todayOrdersPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+        return;
+      }
       if (action === 'ordersList') {
         deps.closeDashboardFocusMode();
         deps.closeAiFocusMode();

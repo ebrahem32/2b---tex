@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.12`
+`v2026.06.13.13`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,12 +10,12 @@
 
 ## Latest Commit Message
 
-`Add operational AI manager dashboard`
+`Add daily operations dashboard and full operational test`
 
 ## Current Phase
 
 ```text
-Phase 3.0 - Operational AI Manager Read Only
+Phase 3.1 - Daily Operations and Operational Test
 ```
 
 ## Completed Frontend Modules
@@ -34,15 +34,16 @@ Phase 3.0 - Operational AI Manager Read Only
 - `modules/pricingUi.js`
 - `modules/backendClient.js`
 - `modules/operationalAiManager.js`
+- `modules/todayOrdersUi.js`
 
 ## Current `app.js` Direction
 
 `app.js` is being reduced from a large all-in-one file into an application orchestrator.
 
-Current known line count after Phase 3.0 read-only AI manager:
+Current known line count after Phase 3.1 daily operations dashboard:
 
 ```text
-app.js: 4927 lines
+app.js: 4944 lines
 ```
 
 ## Next Frontend Refactor Targets
@@ -50,6 +51,7 @@ app.js: 4927 lines
 - Keep `operations`, `transfers`, and deeper accessory movement handlers inside `app.js` until a safer write-flow refactor, because they are tightly coupled to backend writes, stock movements, and operational validations.
 - Keep write guards, rollback, persistence verification, and operational save flows inside `app.js` until a dedicated write-flow refactor.
 - Operational AI Manager is read-only and must stay based on calculated frontend state unless a dedicated AI backend phase is approved.
+- Full operational test is available as `npm run test:operational-full`; it creates real test records on the configured target and should be run intentionally, not as part of normal CI writes.
 
 ## Not Allowed Currently
 
@@ -61,9 +63,10 @@ app.js: 4927 lines
 
 ## Last Verification
 
-For Phase 3.0 local verification before commit:
+For Phase 3.1 local verification before commit:
 
 - `npm run check`: passed.
 - Operational flow check: passed.
+- `npm run test:operational-full`: passed on Railway with order `تيست-mqbmb12s`.
 - GitHub Actions: verify after push.
 - Railway: verify after push.

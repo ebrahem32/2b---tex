@@ -106,3 +106,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Added: Order 360 read-only movement dates based on existing movement data.
 - Not touched: `backend/server.js`, `backend/calculations.js`, SQLite, schema, endpoints, waste logic, stock logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Daily Operations Dashboard and Full Operational Test
+
+- Date: 2026-06-13
+- Commit: `Add daily operations dashboard and full operational test`.
+- Goal: add a read-only daily manager screen, formalize the full operational cycle test, and make AI employee responses more action-oriented.
+- Files added: `modules/todayOrdersUi.js`, `scripts/full-operational-test.js`.
+- Files changed: `app.js`, `index.html`, `modules/navigation.js`, `modules/aiUi.js`, `backend/server.js`, `styles.css`, `package.json`, `project-memory/CURRENT_STATUS.md`, `project-memory/DEVELOPMENT_LOG.md`.
+- Added: `أوامر اليوم` dashboard for urgent orders, dyehouse balance, ready-to-deliver, delays, and high waste.
+- Added: `npm run test:operational-full` for intentional full-cycle Railway/API testing with a real `تيست-*` order.
+- Improved: AI employee local/backend fallback wording now emphasizes operational decisions and next actions.
+- Not touched: `backend/calculations.js`, SQLite, schema, waste calculation logic, stock calculation logic, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+- Full test: `npm run test:operational-full` passed on Railway with order `تيست-mqbmb12s`.

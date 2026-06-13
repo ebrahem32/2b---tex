@@ -788,18 +788,21 @@ function aiFallbackAnalysis(data) {
   const warehouse = orders.reduce((total, order) => total + Number(order.warehouseBalance || 0), 0);
   const unsentRaw = orders.reduce((total, order) => total + Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0), 0);
   const failedReports = outbox.filter((item) => item.status === 'failed' || item.status === 'pending');
-  const stuckOrders = openOrders
+  const stuckOrderItems = openOrders
     .map((order) => ({
       label: `${order.orderNumber || '-'} - ${order.customer || '-'} - ${order.stageInfo?.label || 'غير محدد'} - واقف ${Number(order.stageInfo?.days || 0)} يوم`,
       days: Number(order.stageInfo?.days || 0),
       quantity: Number(order.totalRawOrdered || 0),
+      action: Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0
+        ? `اتصل بالمصبغة ${order.dyehouse || '-'} لمتابعة ${Math.round(Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)).toLocaleString('en-US')} كجم.`
+        : (Number(order.warehouseBalance || 0) > 0 ? `نسق تسليم ${Math.round(Number(order.warehouseBalance || 0)).toLocaleString('en-US')} كجم للعميل.` : 'راجع آخر حركة تشغيل وحدد الإجراء التالي.'),
     }))
     .sort((a, b) => (b.days - a.days) || (b.quantity - a.quantity))
-    .slice(0, 8)
-    .map((item) => item.label);
+    .slice(0, 8);
+  const stuckOrders = stuckOrderItems.map((item) => item.label);
   return {
     source: process.env.OPENAI_API_KEY ? 'local-fallback-after-openai-error' : 'local-rules',
-    executiveSummary: `يوجد ${orders.length} طلب داخل النظام، منها ${openOrders.length} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، ورصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم.`,
+    executiveSummary: `يوجد ${orders.length} طلب داخل النظام، منها ${openOrders.length} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، ورصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم. أهم إجراء: ${stuckOrderItems[0] ? `${stuckOrderItems[0].label}. ${stuckOrderItems[0].action}` : 'لا توجد أولوية حرجة الآن.'}`,
     keyFindings: [
       `طلبات مفتوحة: ${openOrders.length}`,
       `خام لم يخرج للنسيج/المصبغة بعد: ${Math.round(unsentRaw).toLocaleString('en-US')} كجم`,
@@ -814,16 +817,18 @@ function aiFallbackAnalysis(data) {
       failedReports.length ? 'بعض رسائل أو تقارير واتساب لم ترسل أو ما زالت معلقة.' : 'لا توجد مشكلة واضحة في قائمة إرسال التقارير.',
     ],
     recommendations: [
-      'ابدأ بالطلبات صاحبة أكبر عدد أيام وقوف، ثم الأكبر كمية.',
+      'ابدأ بالأقدم وقوفا أو الأكبر كمية حسب القائمة الحالية.',
       'راجع أوامر المصبغة التي لها خام مرسل ولم يكتمل استلام المجهز.',
       'راجع رصيد المخزن حسب العميل لتحديد ما يمكن تسليمه اليوم.',
       'لا تغلق أي طلب قبل مطابقة الخام المرسل، المجهز المستلم، التسليم، والمرتجعات.',
     ],
-    priorityActions: [
-      'فلتر الطلبات على: واقف في المصبغة، وراجع أقدم تاريخ إرسال.',
-      'فلتر الطلبات على: واقف في المخزن، ورتب حسب العميل والتاريخ.',
-      'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
-    ],
+    priorityActions: stuckOrderItems.length
+      ? stuckOrderItems.slice(0, 3).map((item) => `${item.label}. ${item.action}`)
+      : [
+        'فلتر الطلبات على: واقف في المصبغة، وراجع أقدم تاريخ إرسال.',
+        'فلتر الطلبات على: واقف في المخزن، ورتب حسب العميل والتاريخ.',
+        'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
+      ],
     whatsappMessage: `ملخص 2B: ${orders.length} طلب، المفتوح ${openOrders.length}. رصيد المصابغ ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، رصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم، خام غير مرسل ${Math.round(unsentRaw).toLocaleString('en-US')} كجم. الأولوية: متابعة أقدم طلبات واقفة في المصبغة والمخزن.`,
   };
 }
@@ -845,14 +850,14 @@ function buildOperationalEmployeeReport(context = {}) {
       fabricType: order.fabricType || '-',
       stage: order.stage?.label || '-',
       daysInStage: Number(order.stage?.days || 0),
-      reason: order.stage?.reason || '-',
+      reason: operationalDecisionText(order),
     }));
   const failedReports = reportOutbox.filter((item) => ['pending', 'queued', 'failed'].includes(item.status));
   const dyehouseBalance = Math.round(Number(snapshot.dyehouseBalance || 0));
   const warehouseBalance = Math.round(Number(snapshot.warehouseBalance || 0));
   return {
     source: 'railway-operational-rules',
-    executiveSummary: `يوجد ${Number(snapshot.ordersCount || 0).toLocaleString('en-US')} طلب داخل النظام، منها ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم.`,
+    executiveSummary: `يوجد ${Number(snapshot.ordersCount || 0).toLocaleString('en-US')} طلب داخل النظام، منها ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم. أهم إجراء: ${watch[0] ? `طلب ${watch[0].orderNumber} - ${watch[0].customer}: ${watch[0].reason}` : 'لا توجد أولوية حرجة الآن.'}`,
     keyFindings: [
       `طلبات مفتوحة: ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')}`,
       `رصيد داخل المصابغ حسب استلام المجهز: ${dyehouseBalance.toLocaleString('en-US')} كجم`,
@@ -867,15 +872,17 @@ function buildOperationalEmployeeReport(context = {}) {
       failedReports.length ? 'بعض رسائل أو تقارير واتساب لم ترسل أو ما زالت معلقة.' : 'لا توجد مشكلة واضحة في قائمة إرسال التقارير.',
     ],
     recommendations: [
+      'ابدأ بالأقدم وقوفا أو الأكبر كمية حسب القائمة الحالية.',
       'تابع الطلبات حسب المرحلة المحسوبة من حركات التشغيل، وليس من كمية الخام المرسل فقط.',
-      'أي طلب دخل مخزنه فعليًا لا يعرض كواقف في المصبغة إلا إذا كان رصيد المصبغة الحقيقي أكبر من السماحية.',
-      'ابدأ بالطلبات صاحبة أكبر عدد أيام وقوف ثم الأكبر كمية.',
+      'لا تغلق أي طلب قبل مطابقة المرسل للمصبغة والمستلم مجهز والمرتجع والهالك.',
     ],
-    priorityActions: [
-      'راجع فلتر: واقف في المصبغة للطلبات التي لم يكتمل لها استلام مجهز فعلي.',
-      'راجع فلتر: واقف في المخزن للطلبات الجاهزة للتسليم.',
-      'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
-    ],
+    priorityActions: watch.length
+      ? watch.slice(0, 3).map((order) => `طلب ${order.orderNumber} - ${order.customer}: ${order.reason}`)
+      : [
+        'راجع فلتر: واقف في المصبغة للطلبات التي لم يكتمل لها استلام مجهز فعلي.',
+        'راجع فلتر: واقف في المخزن للطلبات الجاهزة للتسليم.',
+        'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
+      ],
     whatsappMessage: `ملخص 2B: الطلبات المفتوحة ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')}. رصيد المصابغ ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم. الأولوية حسب المرحلة المحسوبة من حركات التشغيل الفعلية.`,
   };
 }
@@ -1295,6 +1302,20 @@ function focusedOrderLine(order = {}) {
   return `${order.orderNumber || '-'} - ${order.customer || '-'} - ${order.fabricType || '-'} - ${order.stage?.label || '-'} منذ ${Number(order.stage?.days || 0)} يوم - ${order.stage?.reason || '-'} - خام ${quantity} كجم - مجهز ${finished} كجم - رصيد مخزن ${balance} كجم`;
 }
 
+function operationalDecisionText(order = {}) {
+  const quantities = order.quantities || {};
+  const stageKey = String(order.stage?.key || '');
+  const dyehouseBalance = Number(quantities.remainingAtDyehouse || quantities.rawAtDyehouseAvailable || 0);
+  const warehouseBalance = Number(quantities.warehouseBalance || 0);
+  const wastePercent = Number(quantities.totalWastePercent || order.totalWastePercent || 0);
+  const expectedWaste = Number(quantities.expectedWastePercent || order.expectedWastePercent || 0);
+  if (stageKey === 'dyehouse' || dyehouseBalance > 0) return `اتصل بالمصبغة ${order.dyehouse || '-'} لمتابعة ${Math.round(dyehouseBalance).toLocaleString('en-US')} كجم داخل المصبغة.`;
+  if (warehouseBalance > 0) return `نسق تسليم ${Math.round(warehouseBalance).toLocaleString('en-US')} كجم للعميل قبل فتح تشغيل جديد.`;
+  if (wastePercent >= Math.max(8, expectedWaste + 2)) return `راجع الهالك ${wastePercent.toLocaleString('en-US', { maximumFractionDigits: 1 })}% قبل اعتماد الإغلاق.`;
+  if (stageKey === 'weaving') return 'تابع خروج الخام من النسيج أو سجل الإذن الناقص.';
+  return order.stage?.reason || 'راجع آخر حركة تشغيل وحدد الإجراء التالي.';
+}
+
 function focusedOrderPriority(order = {}, intent = {}) {
   const quantities = order.quantities || {};
   const stageKey = String(order.stage?.key || '');
@@ -1354,14 +1375,14 @@ function buildFocusedEmployeeReport(data = {}) {
       dyehouse: order.dyehouse || '-',
       stage: order.stage?.label || '-',
       daysInStage: Number(order.stage?.days || 0),
-      reason: order.stage?.reason || '-',
+      reason: operationalDecisionText(order),
       requestedRaw: Number(order.quantities?.totalRequestedQuantity || 0),
       finishedReceived: Number(order.quantities?.totalFinishedReceived || 0),
       warehouseBalance: Number(order.quantities?.warehouseBalance || 0),
     }));
   return {
     source: 'railway-focused-rules',
-    executiveSummary: `وجدت ${matches.length} أمر مطابق للسؤال. التوزيع الحالي: ${stageSummary || 'غير محدد'}.`,
+    executiveSummary: `وجدت ${matches.length} أمر مطابق للسؤال. التوزيع الحالي: ${stageSummary || 'غير محدد'}. أهم إجراء: ${operationalDecisionText(sortedMatches[0] || {})}`,
     keyFindings: sortedMatches.slice(0, 10).map(focusedOrderLine),
     ordersToWatch: watch,
     risks: [
@@ -1369,9 +1390,9 @@ function buildFocusedEmployeeReport(data = {}) {
       matches.some((order) => Number(order.quantities?.warehouseBalance || 0) > 0) ? 'يوجد رصيد مخزن في بعض الأوامر المطابقة يحتاج خطة تسليم.' : 'لا يظهر رصيد مخزن مفتوح في الأوامر المطابقة.',
     ],
     recommendations: [
-      'راجع الأوامر المطابقة حسب أقدم مدة وقوف أولًا.',
-      'لو المطلوب عميل محدد، استخدم نفس الفلتر في شاشة الطلبات لمراجعة الحركات والتقارير.',
+      'ابدأ بالأقدم وقوفا أو الأكبر كمية حسب القائمة الحالية.',
       'طابق المرحلة مع آخر حركة تشغيل قبل اتخاذ قرار الإغلاق أو التسليم.',
+      'أي رصيد مخزن ظاهر يعتبر جاهزا للتسليم ويحتاج موعدا مع العميل.',
     ],
     priorityActions: watch.slice(0, 3).map((order) => `راجع طلب ${order.orderNumber} - ${order.customer}: ${order.reason}`),
     whatsappMessage: `متابعة ${data.userRequest || keywords}: ${matches.length} أمر مطابق. ${watch.slice(0, 3).map((order) => `${order.orderNumber} ${order.stage} ${order.daysInStage} يوم`).join(' | ')}`,
