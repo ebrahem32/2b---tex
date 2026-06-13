@@ -129,3 +129,12 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: moved `createDocumentsUi()` initialization until after `window.TwoBTexDocuments.createBuilders()` defines document builder functions.
 - Not touched: calculations, database, schema, stock logic, waste logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Bump App Cache Version After Document UI Hotfix
+
+- Date: 2026-06-13
+- Commit: `Bump app cache version after document UI hotfix`.
+- Goal: force browsers to reload the corrected `app.js` after the document UI initialization hotfix.
+- Change: bumped app version to `v2026.06.13.14` and changed `index.html` script query to `app.js?v=20260613-14`.
+- Not touched: calculations, database, schema, stock logic, waste logic.
+- Test: pending final run in this hotfix.

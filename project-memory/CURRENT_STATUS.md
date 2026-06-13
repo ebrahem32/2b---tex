@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.13`
+`v2026.06.13.14`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Add daily operations dashboard and full operational test`
+`Bump app cache version after document UI hotfix`
 
 ## Current Phase
 
