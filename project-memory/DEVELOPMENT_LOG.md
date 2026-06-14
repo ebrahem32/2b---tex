@@ -656,3 +656,19 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: legacy accessory summary fields and the duplicated primary grouped-order row are hidden as the default order form behavior.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, save endpoints, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Execute Full System Cleanup Safe Frontend Steps
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.10`
+- Goal: execute the safe cleanup items from `Full System Cleanup Plan.pdf` without touching backend, calculations, database, or operational save flows.
+- Change: removed a duplicate `weavingSource` key from pricing-to-order conversion while preserving the existing effective value order.
+- Change: replaced pricing-card row HTML `.replace(...)` injection with direct weaving-source field markup.
+- Change: expanded `npm run check` so shared frontend files are syntax-checked: `documents.js`, `orders.js`, and `pricing.js`.
+- Change: made `pricing.js` the single official frontend pricing source loaded by `index.html`.
+- Change: deleted confirmed unused legacy compatibility bundles not loaded by `index.html`: `compat/app.js`, `compat/orders.js`, and `compat/documents.js`.
+- Change: deleted duplicated pricing compatibility source `compat/pricing.js` after switching the app to load `pricing.js` directly.
+- Kept: `compat/polyfills.js` because it is still loaded by the app.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock formulas, waste formulas, persistence/rollback flows, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

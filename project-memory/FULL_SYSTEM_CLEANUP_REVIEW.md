@@ -219,3 +219,16 @@ Frontend Tiny No-op Cleanup
 ```
 
 ولا تبدأ بحذف `compat/` أو ملفات scripts أو أي شيء من backend. هذه المراجعة تؤكد أن التنظيف يجب أن يكون تدريجيًا جدًا، لأن النظام أصبح ERP تشغيليًا وليس مجرد واجهة.
+
+## Execution Update - 2026-06-15
+
+تم تنفيذ الجزء الآمن من الخطة بعد هذه المراجعة على النسخة الحالية:
+
+- `pricing.js` أصبح مصدر التسعير الرسمي المحمل في `index.html`.
+- تم حذف النسخة المكررة `compat/pricing.js` بعد إزالة الاعتماد عليها.
+- تم حذف ملفات التوافق القديمة غير المحملة:
+  - `compat/app.js`
+  - `compat/orders.js`
+  - `compat/documents.js`
+- بقي `compat/polyfills.js` فقط من ملفات التوافق لأنه لا يزال محملًا في `index.html`.
+- لم يتم لمس backend أو SQLite أو الحسابات أو خدمات AI/WhatsApp/A5.

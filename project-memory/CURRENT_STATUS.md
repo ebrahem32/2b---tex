@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.09`
+`v2026.06.15.10`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,13 +10,31 @@
 
 ## Latest Commit Message
 
-`Unify order form and pricing source flow`
+`Clean frontend compatibility files and unify pricing source`
 
 ## Current Phase
 
 ```text
 Phase 3.1 - Daily Operations and Operational Test
 ```
+
+## Latest Full System Cleanup Execution
+
+- Version: `v2026.06.15.10`.
+- Executed the safe frontend cleanup steps from `Full System Cleanup Plan.pdf` on top of the current pushed version.
+- Removed a duplicate `weavingSource` key in the pricing-card-to-order conversion object.
+- Replaced the pricing-card row `.replace(...)` markup injection with direct markup for the weaving source field.
+- Expanded `npm run check` to include shared frontend files: `documents.js`, `orders.js`, and `pricing.js`.
+- Unified pricing frontend source so `index.html` loads the official `pricing.js` directly.
+- Removed confirmed unused legacy compatibility files that are not loaded by `index.html`:
+  - `compat/app.js`
+  - `compat/orders.js`
+  - `compat/documents.js`
+- Removed duplicated pricing compatibility source:
+  - `compat/pricing.js`
+- Kept only the loaded compatibility polyfill:
+  - `compat/polyfills.js`
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock calculations, waste logic, save/rollback flows, AI backend, WhatsApp service, A5 service.
 
 ## Completed Frontend Modules
 

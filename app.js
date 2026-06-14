@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.09';
-const APP_BUILD_TIME = '2026-06-15 04:15';
+const APP_VERSION = 'v2026.06.15.10';
+const APP_BUILD_TIME = '2026-06-15 05:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2743,6 +2743,7 @@ function pricingItemRowHtml(item = {}) {
   return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
     <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف / الخامة" value="${escapeHtml(item.fabricType || item.materialType || '')}">
     <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
+    <input data-pricing-item-field="weavingSource" placeholder="مصدر النسيج" value="${escapeHtml(item.weavingSource || '')}">
     <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
     <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
     <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
@@ -2762,7 +2763,7 @@ function pricingItemRowHtml(item = {}) {
     <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل شهر" value="${item.deferredPercent || ''}">
     <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}">
     <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
-  </div>`.replace('<input data-pricing-item-field="quantity"', `<input data-pricing-item-field="weavingSource" placeholder="مصدر النسيج" value="${escapeHtml(item.weavingSource || '')}"><input data-pricing-item-field="quantity"`);
+  </div>`;
 }
 
 function pricingAccessoryTypeOptions(current = '') {
@@ -3181,7 +3182,6 @@ function convertPricingToOrder(id) {
     rawCost: primaryDraft.rawCost || primary.rawCost || pricing.rawCost || 0,
     paymentTerms: pricing.paymentTerms || '',
     dyehouse: primaryDraft.dyehouse || primary.dyehouse || pricing.dyehouse || '',
-    weavingSource: pricing.weavingSource || primaryDraft.weavingSource || 'من كرت التسعير',
     weavingSource: primaryDraft.weavingSource || pricing.weavingSource || 'من كرت التسعير',
     accessoryType: primaryDraft.accessoryType || '',
     accessoryPercent: primaryDraft.accessoryPercent || 0,
