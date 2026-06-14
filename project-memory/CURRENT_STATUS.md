@@ -307,3 +307,12 @@ For Phase 3.1 local verification before commit:
 - Each deferred month adds `3%` to the cost before profit.
 - Example: `1` month = `3%`, `2` months = `6%`, `3` months = `9%`, `4` months = `12%`.
 - No automatic filling was added to pricing-card rows; the user still controls the entered month count.
+
+## Latest Customer Quotation Output Cleanup
+
+- Version: `v2026.06.14.19`.
+- Customer-facing quotation no longer shows internal costing columns.
+- Removed: item count, raw fabric cost, dyeing-stage table, waste, deferred cost, and profit from the customer quotation.
+- Changed labels: `متوسط سعر الكيلو` to `سعر الكيلو`, `إجمالي العرض` to `إجمالي العقد`, and `الصنف / الخامة` to `الصنف`.
+- Accessories appear under the fabric name in the same item cell without internal prices.
+- Added quotation validity note: `عرض السعر ساري لمدة 7 أيام.`

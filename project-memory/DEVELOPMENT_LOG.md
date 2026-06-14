@@ -513,3 +513,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - No automatic row filling was added; the user still enters the month count manually.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Clean Customer Quotation Output
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.19`
+- Goal: keep customer quotations commercial and hide internal costing.
+- Change: removed internal cost columns from customer-facing quotation output.
+- Change: renamed quotation summary labels to `سعر الكيلو` and `إجمالي العقد`.
+- Change: renamed item header to `الصنف`.
+- Change: accessories now appear under the fabric name in the same item cell without prices.
+- Change: added quotation validity note for 7 days.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
