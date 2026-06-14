@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.05';
-const APP_BUILD_TIME = '2026-06-15 02:05';
+const APP_VERSION = 'v2026.06.15.06';
+const APP_BUILD_TIME = '2026-06-15 02:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2648,6 +2648,40 @@ function pricingOperationNotesForItem(item = {}) {
   return dyeingStages.length ? { dyeingStages } : {};
 }
 
+function pricingAccessoryLinesForOrder(item = {}) {
+  return (Array.isArray(item.accessoryLines) ? item.accessoryLines : [])
+    .map((line)=>({
+      id: line.id || uid(),
+      type: line.type || 'إكسسوار',
+      percent: Number(line.percent || 0),
+      quantityManual: line.quantityManual !== undefined && line.quantityManual !== null && line.quantityManual !== ''
+        ? Number(line.quantityManual || 0)
+        : line.quantity !== undefined && line.quantity !== null && line.quantity !== ''
+          ? Number(line.quantity || 0)
+          : '',
+    }))
+    .filter((line)=>line.type || line.percent || line.quantityManual !== '');
+}
+
+function pricingItemToOrderDraft(item = {}, pricing = {}) {
+  const calculated = calculatePricing({ ...pricing, ...item, priceItems:null });
+  const accessoryLines = pricingAccessoryLinesForOrder(item);
+  const firstAccessory = accessoryLines[0] || {};
+  return {
+    fabricType: calculated.fabricType || item.fabricType || '',
+    totalRawQuantity: calculated.quantity || item.quantity || '',
+    inchWidth: calculated.inchWidth || item.inchWidth || '',
+    kiloPrice: calculated.sellPrice || item.sellPrice || '',
+    rawCost: Number(calculated.rawCost || item.rawCost || 0),
+    expectedWastePercent: Number(calculated.wastePercent || item.wastePercent || 0),
+    dyehouse: calculated.dyehouse || item.dyehouse || '',
+    accessoryType: firstAccessory.type || '',
+    accessoryPercent: Number(firstAccessory.percent || 0),
+    accessoryLines,
+    operationNotes: pricingOperationNotesForItem(item),
+  };
+}
+
 function pricingPrimaryItemFromRefs() {
   return {
     currency: pricingCurrencyValue(),
@@ -3089,13 +3123,17 @@ function convertPricingToOrder(id) {
   if (!pricing) return;
   const sourceItems = pricingItemsFor(sourcePricing || pricing)
     .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
-  const items = sourceItems
+  const sourceOrderItems = (sourceItems.length ? sourceItems : [sourcePricing || pricing])
+    .filter((item)=>item && (item.fabricType || Number(item.quantity || 0) > 0));
+  const orderDrafts = sourceOrderItems.map((item)=>pricingItemToOrderDraft(item, pricing));
+  const items = sourceOrderItems
     .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
     .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
   const primary = items[0] || pricing;
+  const primaryDraft = orderDrafts[0] || pricingItemToOrderDraft(primary, pricing);
   const orderNumber = orderNumberFromPricing(pricing.pricingNumber);
   pendingConvertedPricingId = pricing.id;
-  pendingConvertedPricingItems = sourceItems;
+  pendingConvertedPricingItems = sourceOrderItems;
   editingOrderId = null;
   fillOrderForm({
     pricingId: pricing.id,
@@ -3103,30 +3141,32 @@ function convertPricingToOrder(id) {
     productCode: buildItemCode(orderNumber),
     customer: pricing.customer || '',
     orderDate: pricing.pricingDate || new Date().toISOString().slice(0,10),
-    fabricType: primary.fabricType || pricing.fabricType || '',
-    totalRawQuantity: primary.quantity || pricing.quantity || '',
+    fabricType: primaryDraft.fabricType || primary.fabricType || pricing.fabricType || '',
+    totalRawQuantity: primaryDraft.totalRawQuantity || primary.quantity || pricing.quantity || '',
+    expectedWastePercent: primaryDraft.expectedWastePercent || '',
     widthMode: 'single',
-    inchWidth: primary.inchWidth || pricing.inchWidth || '',
+    inchWidth: primaryDraft.inchWidth || primary.inchWidth || pricing.inchWidth || '',
     widthLines: [],
-    kiloPrice: primary.sellPrice || pricing.sellPrice || '',
-    rawCost: primary.rawCost || pricing.rawCost || 0,
+    kiloPrice: primaryDraft.kiloPrice || primary.sellPrice || pricing.sellPrice || '',
+    rawCost: primaryDraft.rawCost || primary.rawCost || pricing.rawCost || 0,
     paymentTerms: pricing.paymentTerms || '',
-    dyehouse: primary.dyehouse || pricing.dyehouse || '',
+    dyehouse: primaryDraft.dyehouse || primary.dyehouse || pricing.dyehouse || '',
     weavingSource: '',
-    accessoryType: '',
-    accessoryPercent: 0,
+    accessoryType: primaryDraft.accessoryType || '',
+    accessoryPercent: primaryDraft.accessoryPercent || 0,
+    accessoryLines: primaryDraft.accessoryLines || [],
     notes: pricing.notes || '',
-    operationNotes: pricingOperationNotesForItem(sourceItems[0] || primary)
+    operationNotes: primaryDraft.operationNotes || pricingOperationNotesForItem(sourceOrderItems[0] || primary)
   });
   if (items.length > 1) {
     const rows = document.getElementById('groupedOrderRows');
     if (rows) {
-      rows.innerHTML = items.map((item, index)=>groupedOrderRowHtml({
+      rows.innerHTML = orderDrafts.map((item, index)=>groupedOrderRowHtml({
         fabricType:item.fabricType || '',
-        totalRawQuantity:item.quantity || '',
+        totalRawQuantity:item.totalRawQuantity || '',
         inchWidth:item.inchWidth || '',
-        kiloPrice:item.sellPrice || '',
-        expectedWastePercent:item.wastePercent || '',
+        kiloPrice:item.kiloPrice || '',
+        expectedWastePercent:item.expectedWastePercent || '',
       }, index === 0)).join('');
       syncGroupedOrderUi();
     }
@@ -4606,7 +4646,28 @@ async function addOrder(event) {
   } else {
     if (hasGroupedOrderItems) {
       const groupedOrders = groupedItems.map((item, index)=> {
-        const groupedPayload = { ...payload, pricingId:index === 0 ? groupedSourcePricingId : '', fabricType:item.fabricType, totalRawQuantity:item.totalRawQuantity, expectedWastePercent:item.expectedWastePercent || payload.expectedWastePercent, inchWidth:item.inchWidth || payload.inchWidth, kiloPrice:item.kiloPrice || payload.kiloPrice, widthMode:'single', widthLines:[], productCode:buildItemCode(payload.orderNumber), operationNotes:pricingOperationNotesForItem(pendingConvertedPricingItems[index] || {}) };
+        const pricingItem = pendingConvertedPricingItems[index] || {};
+        const pricingDraft = pricingItemToOrderDraft(pricingItem, {});
+        const groupedAccessoryLines = pricingDraft.accessoryLines || [];
+        const firstGroupedAccessory = groupedAccessoryLines[0] || {};
+        const groupedPayload = {
+          ...payload,
+          pricingId:index === 0 ? groupedSourcePricingId : '',
+          fabricType:item.fabricType,
+          totalRawQuantity:item.totalRawQuantity,
+          expectedWastePercent:item.expectedWastePercent || pricingDraft.expectedWastePercent || payload.expectedWastePercent,
+          inchWidth:item.inchWidth || pricingDraft.inchWidth || payload.inchWidth,
+          kiloPrice:item.kiloPrice || pricingDraft.kiloPrice || payload.kiloPrice,
+          rawCost:pricingDraft.rawCost || payload.rawCost,
+          widthMode:'single',
+          widthLines:[],
+          productCode:buildItemCode(payload.orderNumber),
+          dyehouse:pricingDraft.dyehouse || payload.dyehouse,
+          accessoryType:firstGroupedAccessory.type || '',
+          accessoryPercent:Number(firstGroupedAccessory.percent || 0),
+          accessoryLines:groupedAccessoryLines,
+          operationNotes:pricingDraft.operationNotes || pricingOperationNotesForItem(pricingItem),
+        };
         return { id:uid(), status:'pending', ...groupedPayload };
       });
       let savedGroupedOrders = null;

@@ -605,3 +605,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: preserved the customer-facing cleanup: no raw fabric cost, dyeing-stage table, waste, deferred-payment cost, or profit in the printed offer.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Prepare Orders From Pricing Cards
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.06`
+- Goal: make `تنزيل طلب` prepare the order from the updated pricing-card data so the user only reviews and saves.
+- Change: added a frontend conversion helper from pricing-card item to order draft.
+- Change: the order form now receives accessory lines from the selected pricing item instead of opening empty accessory fields.
+- Change: grouped pricing cards now preserve per-item dyehouse, waste percent, raw cost, accessory lines, and dyeing operation stages when saved as grouped orders.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

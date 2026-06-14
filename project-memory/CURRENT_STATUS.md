@@ -378,3 +378,12 @@ For Phase 3.1 local verification before commit:
 - Fabric rows are shown as primary lines, and accessory rows appear directly underneath as separate commercial sub-lines.
 - Internal pricing details remain hidden from the customer output: raw fabric cost, dyeing-stage table, waste, deferred-payment cost, and profit.
 - The quotation print layout now uses a fixed table width and compact metadata strip to reduce horizontal scrolling and improve PDF/print readability.
+
+## Latest Pricing To Order Prefill
+
+- Version: `v2026.06.15.06`.
+- Converting a pricing card to an order now prepares the order form from the latest pricing-card structure.
+- The order form is prefilled with fabric, customer, quantity, kilo price, dyehouse, waste percent, payment terms, accessory lines, and dyeing operation stages.
+- For grouped pricing cards with more than one item, each saved order line keeps its own dyehouse, accessory lines, waste percent, raw cost, and dyeing operation stages.
+- The goal is that after pressing `تنزيل طلب`, the user only reviews the generated order data and saves it.
+- No backend endpoints, SQLite schema, or calculation logic were changed.
