@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.06';
-const APP_BUILD_TIME = '2026-06-14 17:18';
+const APP_VERSION = 'v2026.06.14.07';
+const APP_BUILD_TIME = '2026-06-14 17:28';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3037,13 +3037,7 @@ function finishedSaleFabricMatches(sourceFabric, selectedFabric) {
   if (source === selected) return true;
   const sourceKey = normalizeFabricMasterName(source);
   const selectedKey = normalizeFabricMasterName(selected);
-  if (!sourceKey || !selectedKey) return false;
-  if (sourceKey === selectedKey) return true;
-  const sourceTokens = cleanFabricDisplayName(source).toLowerCase().split(/\s+/).filter(Boolean).map(normalizeFabricMasterName);
-  const selectedTokens = cleanFabricDisplayName(selected).toLowerCase().split(/\s+/).filter(Boolean).map(normalizeFabricMasterName);
-  if (sourceTokens.includes(selectedKey) || selectedTokens.includes(sourceKey)) return true;
-  const startsWithWords = (words, prefixWords) => prefixWords.length > 0 && prefixWords.every((word, index)=>words[index] === word);
-  return startsWithWords(sourceTokens, selectedTokens) || startsWithWords(selectedTokens, sourceTokens);
+  return !!sourceKey && sourceKey === selectedKey;
 }
 function renderFinishedSaleRows() {
   const body = document.getElementById('finishedSaleRows');

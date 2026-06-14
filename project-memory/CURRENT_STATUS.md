@@ -206,3 +206,11 @@ For Phase 3.1 local verification before commit:
 - Finished-stock sale fabric filtering now matches the selected fabric against related display names such as base fabric and suffix variants.
 - Example: selecting `F3` can show stock rows saved under `F3 تجهيز` when they are part of the same finished-stock family.
 - This is a UI filtering fix only; stock calculations and movement persistence are unchanged.
+
+## Latest Finished Stock Sale Exact Fabric Filter
+
+- Version: `v2026.06.14.07`.
+- Finished-stock sale now treats `F3` and `F3 تجهيز` as separate fabrics in the sale filter.
+- The filter matches only the exact selected fabric name, allowing Arabic normalization but not suffix/prefix grouping.
+- This prevents two different stock items from appearing together in one sale selection.
+- Not touched: `backend/calculations.js`, stock calculation logic, movement persistence, SQLite schema.

@@ -383,3 +383,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: added a finished-stock sale fabric matcher that compares exact names, normalized names, token matches, and safe prefix matches for the sale filter only.
 - Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Fix Finished Stock Sale Exact Fabric Filter
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.07`
+- Goal: keep distinct finished-stock items separate when selling from stock.
+- Change: tightened the finished-stock sale fabric matcher so `F3` and `F3 تجهيز` no longer appear together; only exact or normalized-equal names match.
+- Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
