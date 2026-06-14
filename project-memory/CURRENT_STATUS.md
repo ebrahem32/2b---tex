@@ -252,3 +252,15 @@ For Phase 3.1 local verification before commit:
 - The quotation document now shows raw, dyeing, stages, waste, deferred cost, profit, unit price, and total per line.
 - Existing quotations remain compatible; missing new fields default to zero or the existing dyehouse accounting mode.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, waste movement logic, AI backend, WhatsApp service, A5 service.
+
+## Latest Pricing Card Correction
+
+- Version: `v2026.06.14.13`.
+- The pricing screen is now treated as `كرت تسعير`.
+- The old duplicated top pricing fields for fabric, dyehouse, quantity, raw cost, dyeing cost, waste, stages, and profit are hidden from the visible form.
+- The `كرت تسعير` line items are now the single visible source for customer quotation pricing.
+- Waste basis labels are corrected:
+  - `صافي`: waste is calculated on fabric/raw cost only.
+  - `قائم`: waste is calculated on fabric/raw cost + dyeing cost + dyeing additions/stages.
+- Existing saved quotations remain compatible because the hidden legacy fields and legacy columns are still populated from the first pricing-card line when saving.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.

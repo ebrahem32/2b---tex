@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.12';
-const APP_BUILD_TIME = '2026-06-14 21:20';
+const APP_VERSION = 'v2026.06.14.13';
+const APP_BUILD_TIME = '2026-06-14 21:59';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2648,44 +2648,32 @@ function pricingDeferredPercentFromPaymentDetails() {
 function pricingWasteBasisSelect(value = '', disabled = false) {
   const current = value || 'net';
   return `<select data-pricing-item-field="wasteBasis" ${disabled ? 'disabled' : ''}>
-    <option value="net" ${current === 'net' ? 'selected' : ''}>على الخام</option>
-    <option value="gross" ${current === 'gross' ? 'selected' : ''}>على القائم</option>
+    <option value="net" ${current === 'net' ? 'selected' : ''}>صافي</option>
+    <option value="gross" ${current === 'gross' ? 'selected' : ''}>قائم</option>
   </select>`;
 }
 
-function pricingItemRowHtml(item = {}, primary = false) {
-  return `<div class="grouped-order-row pricing-item-row${primary ? ' primary' : ''}" data-pricing-item-row>
-    <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="materialType" placeholder="الخامة" value="${escapeHtml(item.materialType || '')}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="colorClass" placeholder="درجة اللون" value="${escapeHtml(item.colorClass || '')}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="خام" value="${item.rawCost || ''}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="dyeCost" type="number" step="0.01" placeholder="صباغة" value="${item.dyeCost || ''}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="مراحل" value="${item.extraCost || ''}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}" ${primary ? 'readonly' : ''}>
-    ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net', primary)}
-    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل %" value="${item.deferredPercent || ''}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}" ${primary ? 'readonly' : ''}>
-    <button type="button" class="mini-btn danger" data-remove-pricing-item ${primary ? 'disabled' : ''}>حذف</button>
+function pricingItemRowHtml(item = {}) {
+  return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
+    <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}">
+    <input data-pricing-item-field="materialType" placeholder="الخامة" value="${escapeHtml(item.materialType || '')}">
+    <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
+    <input data-pricing-item-field="colorClass" placeholder="درجة اللون" value="${escapeHtml(item.colorClass || '')}">
+    <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
+    <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
+    <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
+    <input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="سعر القماش" value="${item.rawCost || ''}">
+    <input data-pricing-item-field="dyeCost" type="number" step="0.01" placeholder="الصباغة" value="${item.dyeCost || ''}">
+    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="إضافات الصباغة" value="${item.extraCost || ''}">
+    <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
+    ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
+    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل %" value="${item.deferredPercent || ''}">
+    <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}">
+    <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
   </div>`;
 }
-function syncPricingPrimaryItemRow() {
-  const rows = document.getElementById('pricingItemsRows');
-  if (!rows) return;
-  const primary = rows.querySelector('[data-pricing-item-row].primary');
-  if (!primary) {
-    rows.insertAdjacentHTML('afterbegin', pricingItemRowHtml(pricingPrimaryItemFromRefs(), true));
-    return;
-  }
-  const item = pricingPrimaryItemFromRefs();
-  Object.entries(item).forEach(([key, value])=>{
-    const input = primary.querySelector(`[data-pricing-item-field="${key}"]`);
-    if (input) input.value = value;
-  });
-}
+
+function syncPricingPrimaryItemRow() {}
 function readPricingItemsEditor() {
   const rows = [...document.querySelectorAll('#pricingItemsRows [data-pricing-item-row]')];
   if (!rows.length) return [pricingPrimaryItemFromRefs()].filter((item)=>item.fabricType || item.quantity > 0);
@@ -2713,14 +2701,38 @@ function renderPricingItemsEditor(pricing = null) {
   const rows = document.getElementById('pricingItemsRows');
   if (!rows) return;
   const items = pricing ? pricingItemsFor(pricing) : [pricingPrimaryItemFromRefs()];
-  rows.innerHTML = (items.length ? items : [pricingPrimaryItemFromRefs()]).map((item, index)=>pricingItemRowHtml(item, index === 0)).join('');
-  syncPricingPrimaryItemRow();
+  rows.innerHTML = (items.length ? items : [pricingPrimaryItemFromRefs()]).map((item)=>pricingItemRowHtml(item)).join('');
 }
+
+function markPricingCardMode() {
+  const legacyFields = [
+    refs.pricingFabricType,
+    refs.pricingMaterialType,
+    refs.pricingDyehouse,
+    refs.pricingColorClass,
+    refs.pricingQuantity,
+    refs.pricingInchWidth,
+    refs.pricingFinishedWeight,
+    refs.pricingRawCost,
+    refs.pricingDyeCost,
+    refs.pricingSuggestedDyeCost,
+    refs.pricingWastePercent,
+    refs.pricingExtraCost,
+    refs.pricingProfitPerKg,
+  ];
+  legacyFields.filter(Boolean).forEach((field) => {
+    field.required = false;
+    field.closest('label')?.classList.add('pricing-legacy-field');
+  });
+  refs.pricingDialog?.querySelector('.dialog-head h2')?.replaceChildren(document.createTextNode('كرت تسعير جديد'));
+}
+
 function ensurePricingItemsUi() {
   if (!refs.pricingForm || document.getElementById('pricingItemsBox')) return;
   const anchor = refs.pricingNotes?.closest('label') || refs.pricingForm.querySelector('.form-grid');
   if (!anchor) return;
-  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>بنود عرض السعر للعميل</span><p class="eyebrow">التسعير: خام + صباغة + مراحل + هالك، ثم الأجل قبل الربح.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف</span><span>الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>خام</span><span>صباغة</span><span>مراحل</span><span>هالك</span><span>أساس</span><span>أجل</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  markPricingCardMode();
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">التسعير يتم من هنا فقط: سعر القماش + الصباغة + إضافات الصباغة + الهالك، ثم الأجل قبل الربح.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف</span><span>الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>الصباغة</span><span>إضافات الصباغة</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
     applyFabricNameDatalist();
@@ -2733,9 +2745,10 @@ function ensurePricingItemsUi() {
     updatePricingPreview();
   });
   document.getElementById('pricingItemsRows')?.addEventListener('input', updatePricingPreview);
-  [refs.pricingFabricType, refs.pricingMaterialType, refs.pricingDyehouse, refs.pricingColorClass, refs.pricingQuantity, refs.pricingInchWidth, refs.pricingFinishedWeight, refs.pricingRawCost, refs.pricingDyeCost, refs.pricingWastePercent, refs.pricingExtraCost, refs.pricingProfitPerKg, refs.pricingPaymentDetails].filter(Boolean).forEach((input)=>{
-    input.addEventListener('input', () => { syncPricingPrimaryItemRow(); updatePricingPreview(); });
-    input.addEventListener('change', () => { syncPricingPrimaryItemRow(); updatePricingPreview(); });
+  document.getElementById('pricingItemsRows')?.addEventListener('change', updatePricingPreview);
+  [refs.pricingPaymentDetails].filter(Boolean).forEach((input)=>{
+    input.addEventListener('input', updatePricingPreview);
+    input.addEventListener('change', updatePricingPreview);
   });
   renderPricingItemsEditor();
 }
@@ -2947,6 +2960,7 @@ function openCustomerPricingQuotation(id) {
   const money = (value) => Number(value || 0).toLocaleString('en-US');
   const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
   const notes = String(pricing.notes || '').trim();
+  const wasteBasisLabel = (item) => (item.wasteBasis || item.accountingMode) === 'gross' ? 'قائم' : 'صافي';
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td>${escapeHtml(item.fabricType || '-')}</td>
     <td>${escapeHtml(item.materialType || '-')}</td>
@@ -2955,7 +2969,7 @@ function openCustomerPricingQuotation(id) {
     <td>${money(item.rawCost)}</td>
     <td>${money(item.dyeCost)}</td>
     <td>${money(item.extraCost)}</td>
-    <td>${money(item.wasteCost)} (${money(item.wastePercent)}%)</td>
+    <td>${money(item.wasteCost)} (${money(item.wastePercent)}% ${wasteBasisLabel(item)})</td>
     <td>${money(item.deferredCost)} (${money(item.deferredPercent)}%)</td>
     <td>${money(item.profitPerKg)}</td>
     <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>

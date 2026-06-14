@@ -441,3 +441,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: existing quotations still calculate because missing deferred/waste-basis fields default safely.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, dyehouse/warehouse movement logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Correct Pricing Card UI
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.13`
+- Goal: make `كرت تسعير` the single visible pricing entry surface instead of keeping duplicated pricing fields above it.
+- Change: renamed the pricing dialog title and quotation line editor concept to `كرت تسعير`.
+- Change: hidden the older duplicated top fields for item/material/dyehouse/color/quantity/costs/waste/profit from the visible pricing form.
+- Change: made pricing-card rows directly editable, including the first row.
+- Change: corrected waste basis wording to `صافي` and `قائم`.
+- Rule: `صافي` calculates waste on fabric/raw cost only; `قائم` calculates waste on fabric/raw cost + dyeing + dyeing additions/stages.
+- Compatibility: legacy pricing fields remain internally available and are filled from the first card line on save, so older reports and conversion paths stay compatible.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

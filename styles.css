@@ -395,6 +395,8 @@
 .pricing-items-box{overflow-x:auto}
 .pricing-items-head,.pricing-item-row{grid-template-columns:minmax(130px,1.3fr) minmax(86px,.8fr) minmax(100px,.9fr) minmax(105px,.9fr) minmax(82px,.7fr) minmax(76px,.65fr) minmax(76px,.65fr) minmax(82px,.7fr) minmax(82px,.7fr) minmax(82px,.7fr) minmax(76px,.65fr) minmax(90px,.75fr) minmax(76px,.65fr) minmax(76px,.65fr) minmax(64px,.55fr);min-width:1420px}
 .pricing-item-row select{min-width:90px}
+.pricing-legacy-field{display:none!important}
+.pricing-items-box .subsection-head span{font-size:18px;color:var(--accent2);font-weight:900}
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}
 .grouped-order-row{margin-bottom:8px}.grouped-order-row.primary input{opacity:.78}
 .grouped-order-row input{min-width:0!important}
