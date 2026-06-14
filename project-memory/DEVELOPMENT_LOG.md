@@ -672,3 +672,12 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Kept: `compat/polyfills.js` because it is still loaded by the app.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock formulas, waste formulas, persistence/rollback flows, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Harden Full Operational Test Coverage
+
+- Date: 2026-06-15
+- Commit: pending.
+- Goal: make the full operational test catch pricing-source regressions after unifying frontend pricing on `pricing.js`.
+- Change: `scripts/full-operational-test.js` now loads `pricing.js` directly and verifies pricing calculation, accessory total, gross waste basis, and monthly deferred-payment rule.
+- Verified locally with a real test cycle named `تيست`: customer quotation, grouped order with two items under the same order number, dyehouse dispatch, raw return, dyehouse transfer, finished receiving, customer delivery, accessory movement, close/waste calculation, and operational documents.
+- Test: local full operational test passed against `http://127.0.0.1:3050`.

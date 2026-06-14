@@ -182,6 +182,18 @@ function createDocumentBuilders() {
   });
 }
 
+function createPricingDomain() {
+  const sandbox = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(process.cwd(), 'pricing.js'), 'utf8'), sandbox, { filename: 'pricing.js' });
+  return sandbox.window.TwoBTexPricing.createPricingDomain({
+    buildItemCode: (value) => `2B-${value || ''}`,
+    clone: (value) => JSON.parse(JSON.stringify(value || {})),
+    isLegacyRecoveredText: () => false,
+    normalizeDyehousePriceLabel: (value) => String(value || '').trim(),
+    roundNumber,
+  });
+}
+
 async function login() {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
@@ -322,6 +334,27 @@ async function verifyOperationalCycle() {
   assert(order.totalWaste === 30, 'frontend-waste', { value: order.totalWaste });
   assert(order.remainingAtDyehouse === 0, 'frontend-dyehouse-closed', { value: order.remainingAtDyehouse });
   assert(order.accessoryRequired === 75 && order.accessorySent === 75, 'frontend-accessory', { required: order.accessoryRequired, sent: order.accessorySent });
+  const pricingDomain = createPricingDomain();
+  const pricingLibrary = pricingDomain.mergeDyehousePriceLibrary({});
+  const pricingCalculation = pricingDomain.calculatePricing({
+    pricingNumber: `${order.orderNumber}-pricing-domain`,
+    dyehouse: 'جيمـا'.replace('ـ', ''),
+    materialType: 'قطن',
+    colorClass: 'غوامق - مفتوح',
+    quantity: 500,
+    rawCost: 80,
+    dyeCost: 95,
+    extraCost: 0,
+    wastePercent: 8,
+    wasteBasis: 'gross',
+    deferredPercent: 2,
+    profitPerKg: 25,
+    accessoryCost: 11000,
+  }, pricingLibrary);
+  assert(pricingCalculation.sellPrice > 0, 'pricing-domain-sell-price', pricingCalculation);
+  assert(pricingCalculation.totalOffer > pricingCalculation.clothTotal, 'pricing-domain-accessory-total', pricingCalculation);
+  assert(pricingCalculation.deferredPercent === 6, 'pricing-domain-deferred-month-rule', pricingCalculation);
+  assert(pricingCalculation.wasteBasis === 'gross', 'pricing-domain-waste-basis', pricingCalculation);
   const summary = await api('GET', `/orders/${ids.orderA}/summary`);
   assert(roundNumber(summary.totalSentToDyehouse) === 500 && roundNumber(summary.warehouseBalance) === 30 && roundNumber(summary.wasteQuantity) === 30, 'backend-summary', summary);
   const builders = createDocumentBuilders();
@@ -355,6 +388,14 @@ async function verifyOperationalCycle() {
       dyehouseRemaining: order.remainingAtDyehouse,
       accessoryRequired: order.accessoryRequired,
       accessorySent: order.accessorySent,
+    },
+    pricing: {
+      sellPrice: pricingCalculation.sellPrice,
+      clothTotal: pricingCalculation.clothTotal,
+      accessoryTotal: pricingCalculation.accessoryTotal,
+      totalOffer: pricingCalculation.totalOffer,
+      deferredPercent: pricingCalculation.deferredPercent,
+      wasteBasis: pricingCalculation.wasteBasis,
     },
     backend: {
       sent: roundNumber(summary.totalSentToDyehouse),
