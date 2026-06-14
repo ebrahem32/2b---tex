@@ -527,3 +527,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: added quotation validity note for 7 days.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Update Pricing Accessory Service Rule
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.20`
+- Goal: price accessories as direct service additions inside the pricing card.
+- Change: accessory rows now use a dropdown for accessory type.
+- Change: accessory cost is now the direct service price, summed into production cost like dyeing/kastra stages.
+- Change: removed percentage-based accessory pricing from the pricing-card UI.
+- Compatibility: existing `accessoryLines` remain stored in `pricing_items_json`; no schema change was made.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

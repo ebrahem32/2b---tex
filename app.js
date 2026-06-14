@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.19';
-const APP_BUILD_TIME = '2026-06-14 23:48';
+const APP_VERSION = 'v2026.06.14.20';
+const APP_BUILD_TIME = '2026-06-14 23:59';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2710,10 +2710,14 @@ function pricingItemRowHtml(item = {}) {
   </div>`;
 }
 
+function pricingAccessoryTypeOptions(current = '') {
+  const options = uniqueNonEmpty(['ريب', 'ديربي', 'لياقات', 'أساور', 'أساور ولياقات', current]).filter(Boolean);
+  return `<option value="">اختر الإكسسوار</option>${options.map((name)=>`<option value="${escapeHtml(name)}" ${name === current ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}`;
+}
+
 function pricingAccessoryRowHtml(line = {}) {
   return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
-    <input data-pricing-accessory-type placeholder="نوع الإكسسوار" value="${escapeHtml(line.type || '')}">
-    <input data-pricing-accessory-percent type="number" step="0.01" placeholder="%" value="${line.percent || ''}">
+    <select data-pricing-accessory-type>${pricingAccessoryTypeOptions(line.type || '')}</select>
     <input data-pricing-accessory-price type="number" step="0.01" placeholder="السعر" value="${line.price || ''}">
     <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
   </div>`;
@@ -2741,13 +2745,13 @@ function pricingStagesTotal(stages = []) {
 function pricingAccessoriesFromRow(row) {
   return [...row.querySelectorAll('[data-pricing-accessory-row]')].map((accessoryRow)=>({
     type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
-    percent: Number(accessoryRow.querySelector('[data-pricing-accessory-percent]')?.value || 0),
+    percent: 0,
     price: Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0),
-  })).filter((line)=>line.type || line.percent || line.price);
+  })).filter((line)=>line.type || line.price);
 }
 
 function pricingAccessoriesTotal(lines = []) {
-  return roundNumber(lines.reduce((total, line)=>total + (Number(line.percent || 0) * Number(line.price || 0) / 100), 0));
+  return roundNumber(lines.reduce((total, line)=>total + Number(line.price || 0), 0));
 }
 
 function updatePricingStageTotals() {
@@ -3103,7 +3107,7 @@ function openCustomerPricingQuotation(id) {
     <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
   </tr>`).join('');
   const publicAccessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
-    ? item.accessoryLines.map((line)=>`${escapeHtml(line.type || 'إكسسوار')}${Number(line.percent || 0) ? ` ${money(line.percent)}%` : ''}`).join(' - ')
+    ? item.accessoryLines.map((line)=>escapeHtml(line.type || 'إكسسوار')).join(' - ')
     : '';
   const publicItemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td><strong>${escapeHtml(item.fabricType || '-')}</strong>${publicAccessoryLabel(item) ? `<br><small>إكسسوار: ${publicAccessoryLabel(item)}</small>` : ''}</td>

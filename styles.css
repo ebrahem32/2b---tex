@@ -402,7 +402,7 @@
 .pricing-items-box .subsection-head span{font-size:18px;color:var(--accent2);font-weight:900}
 .pricing-stage-card{display:grid;gap:6px;min-width:0}
 .pricing-stage-head,.pricing-stage-row{display:grid;grid-template-columns:1fr 90px auto;gap:6px;align-items:center}
-.pricing-accessory-row{grid-template-columns:1fr 70px 80px auto}
+.pricing-accessory-row{grid-template-columns:1fr 90px auto}
 .pricing-stage-head span{font-size:12px!important;color:var(--muted)!important}
 .pricing-stage-row input{min-height:36px}
 .pricing-stage-total{color:var(--muted);font-size:12px}

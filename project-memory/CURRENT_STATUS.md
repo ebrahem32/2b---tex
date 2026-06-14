@@ -316,3 +316,12 @@ For Phase 3.1 local verification before commit:
 - Changed labels: `متوسط سعر الكيلو` to `سعر الكيلو`, `إجمالي العرض` to `إجمالي العقد`, and `الصنف / الخامة` to `الصنف`.
 - Accessories appear under the fabric name in the same item cell without internal prices.
 - Added quotation validity note: `عرض السعر ساري لمدة 7 أيام.`
+
+## Latest Pricing Accessory Service Rule
+
+- Version: `v2026.06.14.20`.
+- Pricing-card accessory rows now use an accessory type dropdown.
+- Available accessory types include `ريب`, `ديربي`, `لياقات`, `أساور`, and `أساور ولياقات`.
+- Accessory pricing is now a direct service price, like dyeing/kastra/enzyme stages.
+- Accessory cost per line is the sum of accessory service prices, not `percentage * price / 100`.
+- Customer quotations continue to show accessory names only, without internal prices.
