@@ -393,10 +393,16 @@
 .grouped-order-box .subsection-head{margin-bottom:10px}.grouped-order-box .subsection-head span{font-weight:900}
 .grouped-order-head,.grouped-order-row{display:grid;grid-template-columns:1.4fr .8fr .7fr .8fr .7fr auto;gap:8px;align-items:center}
 .pricing-items-box{overflow-x:auto}
-.pricing-items-head,.pricing-item-row{grid-template-columns:minmax(130px,1.3fr) minmax(86px,.8fr) minmax(100px,.9fr) minmax(105px,.9fr) minmax(82px,.7fr) minmax(76px,.65fr) minmax(76px,.65fr) minmax(82px,.7fr) minmax(82px,.7fr) minmax(82px,.7fr) minmax(76px,.65fr) minmax(90px,.75fr) minmax(76px,.65fr) minmax(76px,.65fr) minmax(64px,.55fr);min-width:1420px}
+.pricing-items-head,.pricing-item-row{grid-template-columns:minmax(150px,1.2fr) minmax(110px,.8fr) minmax(110px,.8fr) minmax(82px,.62fr) minmax(76px,.58fr) minmax(76px,.58fr) minmax(92px,.68fr) minmax(280px,1.8fr) minmax(92px,.68fr) minmax(76px,.58fr) minmax(90px,.65fr) minmax(76px,.58fr) minmax(76px,.58fr) minmax(64px,.5fr);min-width:1560px}
 .pricing-item-row select{min-width:90px}
 .pricing-legacy-field{display:none!important}
 .pricing-items-box .subsection-head span{font-size:18px;color:var(--accent2);font-weight:900}
+.pricing-stage-card{display:grid;gap:6px;min-width:260px}
+.pricing-stage-head,.pricing-stage-row{display:grid;grid-template-columns:1fr 90px auto;gap:6px;align-items:center}
+.pricing-stage-head span{font-size:12px!important;color:var(--muted)!important}
+.pricing-stage-row input{min-height:36px}
+.pricing-stage-total{color:var(--muted);font-size:12px}
+.pricing-stage-total strong{color:var(--accent2)}
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}
 .grouped-order-row{margin-bottom:8px}.grouped-order-row.primary input{opacity:.78}
 .grouped-order-row input{min-width:0!important}

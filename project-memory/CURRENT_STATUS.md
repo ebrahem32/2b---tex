@@ -264,3 +264,14 @@ For Phase 3.1 local verification before commit:
   - `قائم`: waste is calculated on fabric/raw cost + dyeing cost + dyeing additions/stages.
 - Existing saved quotations remain compatible because the hidden legacy fields and legacy columns are still populated from the first pricing-card line when saving.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+
+## Latest Pricing Card Payment And Dyeing Stages
+
+- Version: `v2026.06.14.14`.
+- Visible pricing labels now use `كرت تسعير` / `كروت التسعير` instead of `تسعيرة`.
+- Payment methods in the pricing card are: `نقدي`, `أجل شهر`, `أجل شهرين`, `أجل 3 شهور`, `أجل 4 شهور`, and `دفعات أسبوعية`.
+- The fabric field and material field are unified in the pricing card as `الصنف / الخامة`.
+- Dyeing cost is no longer a single visible number in the pricing card; each pricing line now has a `جدول الصباغة` with stage rows.
+- Example dyeing stages: `صباغة 71`, `رام مقفول 5`, `دبل إنزيم 9`, `كسترة 3`, `فنش 5`.
+- The total dyeing cost for a pricing line is calculated from the stage table and remains stored in the existing pricing item data for compatibility.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.

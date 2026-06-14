@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.13';
-const APP_BUILD_TIME = '2026-06-14 21:59';
+const APP_VERSION = 'v2026.06.14.14';
+const APP_BUILD_TIME = '2026-06-14 22:16';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -341,19 +341,22 @@ const refs = Object.fromEntries([
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
 function composePaymentTerms(modeValue, detailsValue) {
-  const mode = String(modeValue || 'كاش').trim() || 'كاش';
+  const mode = String(modeValue || 'نقدي').trim() || 'نقدي';
   const details = String(detailsValue || '').trim();
   return details ? `${mode} - ${details}` : mode;
 }
 function parsePaymentTerms(value) {
   const text = String(value || '').trim();
-  if (!text) return { mode:'كاش', details:'' };
+  if (!text) return { mode:'نقدي', details:'' };
   const [mode, ...rest] = text.split(' - ');
-  return { mode: mode || 'كاش', details: rest.join(' - ') };
+  return { mode: mode === 'كاش' ? 'نقدي' : (mode || 'نقدي'), details: rest.join(' - ') };
 }
 function setPaymentFields(modeRef, detailsRef, hiddenRef, paymentTerms) {
   const parsed = parsePaymentTerms(paymentTerms);
-  if (modeRef) modeRef.value = [...modeRef.options].some((option)=>option.value === parsed.mode) ? parsed.mode : 'كاش';
+  if (modeRef) {
+    const fallback = [...modeRef.options].some((option)=>option.value === 'نقدي') ? 'نقدي' : ([...modeRef.options][0]?.value || '');
+    modeRef.value = [...modeRef.options].some((option)=>option.value === parsed.mode) ? parsed.mode : fallback;
+  }
   if (detailsRef) detailsRef.value = parsed.details || '';
   if (hiddenRef) hiddenRef.value = composePaymentTerms(modeRef?.value, detailsRef?.value);
 }
@@ -2587,7 +2590,7 @@ function pricingItemsFor(pricing = {}) {
   const items = Array.isArray(pricing.priceItems) ? pricing.priceItems.filter(Boolean) : [];
   if (items.length) return items.map((item)=>({
     fabricType: item.fabricType || '',
-    materialType: item.materialType || '',
+    materialType: item.materialType || item.fabricType || '',
     dyehouse: item.dyehouse || '',
     colorClass: item.colorClass || '',
     quantity: Number(item.quantity || 0),
@@ -2595,6 +2598,7 @@ function pricingItemsFor(pricing = {}) {
     finishedWeight: item.finishedWeight || '',
     rawCost: Number(item.rawCost || 0),
     dyeCost: Number(item.dyeCost || 0),
+    dyeStages: Array.isArray(item.dyeStages) ? item.dyeStages : [],
     wastePercent: Number(item.wastePercent || 0),
     wasteBasis: item.wasteBasis || item.waste_basis || '',
     deferredPercent: Number(item.deferredPercent || item.deferred_percent || 0),
@@ -2605,7 +2609,7 @@ function pricingItemsFor(pricing = {}) {
   if (!hasSingle) return [];
   return [{
     fabricType: pricing.fabricType || '',
-    materialType: pricing.materialType || '',
+    materialType: pricing.materialType || pricing.fabricType || '',
     dyehouse: pricing.dyehouse || '',
     colorClass: pricing.colorClass || '',
     quantity: Number(pricing.quantity || 0),
@@ -2613,6 +2617,7 @@ function pricingItemsFor(pricing = {}) {
     finishedWeight: pricing.finishedWeight || '',
     rawCost: Number(pricing.rawCost || 0),
     dyeCost: Number(pricing.dyeCost || 0),
+    dyeStages: [],
     wastePercent: Number(pricing.wastePercent || 0),
     wasteBasis: pricing.wasteBasis || pricing.waste_basis || '',
     deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
@@ -2623,7 +2628,7 @@ function pricingItemsFor(pricing = {}) {
 function pricingPrimaryItemFromRefs() {
   return {
     fabricType: canonicalFabricName(refs.pricingFabricType?.value),
-    materialType: refs.pricingMaterialType?.value || '',
+    materialType: canonicalFabricName(refs.pricingFabricType?.value),
     dyehouse: refs.pricingDyehouse?.value || '',
     colorClass: refs.pricingColorClass?.value || '',
     quantity: Number(refs.pricingQuantity?.value || 0),
@@ -2631,6 +2636,7 @@ function pricingPrimaryItemFromRefs() {
     finishedWeight: refs.pricingFinishedWeight?.value || '',
     rawCost: Number(refs.pricingRawCost?.value || 0),
     dyeCost: Number(refs.pricingDyeCost?.value || 0),
+    dyeStages: [],
     wastePercent: Number(refs.pricingWastePercent?.value || 0),
     wasteBasis: 'net',
     deferredPercent: pricingDeferredPercentFromPaymentDetails(),
@@ -2640,7 +2646,9 @@ function pricingPrimaryItemFromRefs() {
 }
 
 function pricingDeferredPercentFromPaymentDetails() {
-  const text = String(refs.pricingPaymentDetails?.value || refs.pricingPaymentTerms?.value || '');
+  const text = String(refs.pricingPaymentMode?.value || refs.pricingPaymentDetails?.value || refs.pricingPaymentTerms?.value || '');
+  const monthMatch = text.match(/(?:أجل|اجل)\s*(\d+)/i);
+  if (monthMatch) return Number(monthMatch[1] || 0);
   const match = text.match(/(?:أجل|اجل|نسبة)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%?/i);
   return match ? Number(match[1] || 0) : 0;
 }
@@ -2654,17 +2662,22 @@ function pricingWasteBasisSelect(value = '', disabled = false) {
 }
 
 function pricingItemRowHtml(item = {}) {
+  const stages = Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'صباغة', price:item.dyeCost || '' }];
+  const stagesHtml = stages.map((stage)=>pricingStageRowHtml(stage)).join('');
   return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
-    <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}">
-    <input data-pricing-item-field="materialType" placeholder="الخامة" value="${escapeHtml(item.materialType || '')}">
+    <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف / الخامة" value="${escapeHtml(item.fabricType || item.materialType || '')}">
     <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
     <input data-pricing-item-field="colorClass" placeholder="درجة اللون" value="${escapeHtml(item.colorClass || '')}">
     <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
     <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
     <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
     <input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="سعر القماش" value="${item.rawCost || ''}">
-    <input data-pricing-item-field="dyeCost" type="number" step="0.01" placeholder="الصباغة" value="${item.dyeCost || ''}">
-    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="إضافات الصباغة" value="${item.extraCost || ''}">
+    <div class="pricing-stage-card" data-pricing-stage-card>
+      <div class="pricing-stage-head"><span>جدول الصباغة</span><button class="mini-btn" type="button" data-add-pricing-stage>+ مرحلة</button></div>
+      <div class="pricing-stage-rows">${stagesHtml}</div>
+      <div class="pricing-stage-total">إجمالي الصباغة: <strong data-pricing-dye-total>${formatNumber(pricingStagesTotal(stages))}</strong></div>
+    </div>
+    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="إضافات أخرى" value="${item.extraCost || ''}">
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
     <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل %" value="${item.deferredPercent || ''}">
@@ -2673,20 +2686,48 @@ function pricingItemRowHtml(item = {}) {
   </div>`;
 }
 
+function pricingStageRowHtml(stage = {}) {
+  return `<div class="pricing-stage-row" data-pricing-stage-row>
+    <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(stage.name || '')}">
+    <input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${stage.price || ''}">
+    <button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>
+  </div>`;
+}
+
+function pricingStagesFromRow(row) {
+  return [...row.querySelectorAll('[data-pricing-stage-row]')].map((stageRow)=>({
+    name: stageRow.querySelector('[data-pricing-stage-name]')?.value.trim() || '',
+    price: Number(stageRow.querySelector('[data-pricing-stage-price]')?.value || 0),
+  })).filter((stage)=>stage.name || stage.price);
+}
+
+function pricingStagesTotal(stages = []) {
+  return roundNumber(stages.reduce((total, stage)=>total + Number(stage.price || 0), 0));
+}
+
+function updatePricingStageTotals() {
+  document.querySelectorAll('#pricingItemsRows [data-pricing-item-row]').forEach((row)=>{
+    const total = pricingStagesTotal(pricingStagesFromRow(row));
+    const totalEl = row.querySelector('[data-pricing-dye-total]');
+    if (totalEl) totalEl.textContent = formatNumber(total);
+  });
+}
+
 function syncPricingPrimaryItemRow() {}
 function readPricingItemsEditor() {
   const rows = [...document.querySelectorAll('#pricingItemsRows [data-pricing-item-row]')];
   if (!rows.length) return [pricingPrimaryItemFromRefs()].filter((item)=>item.fabricType || item.quantity > 0);
   return rows.map((row)=>({
     fabricType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
-    materialType: row.querySelector('[data-pricing-item-field="materialType"]')?.value.trim() || '',
+    materialType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
     colorClass: row.querySelector('[data-pricing-item-field="colorClass"]')?.value.trim() || '',
     quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
     inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
     finishedWeight: row.querySelector('[data-pricing-item-field="finishedWeight"]')?.value.trim() || '',
     rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
-    dyeCost: Number(row.querySelector('[data-pricing-item-field="dyeCost"]')?.value || 0),
+    dyeCost: pricingStagesTotal(pricingStagesFromRow(row)),
+    dyeStages: pricingStagesFromRow(row),
     wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
     wasteBasis: row.querySelector('[data-pricing-item-field="wasteBasis"]')?.value || 'net',
     deferredPercent: Number(row.querySelector('[data-pricing-item-field="deferredPercent"]')?.value || 0),
@@ -2707,7 +2748,6 @@ function renderPricingItemsEditor(pricing = null) {
 function markPricingCardMode() {
   const legacyFields = [
     refs.pricingFabricType,
-    refs.pricingMaterialType,
     refs.pricingDyehouse,
     refs.pricingColorClass,
     refs.pricingQuantity,
@@ -2732,20 +2772,34 @@ function ensurePricingItemsUi() {
   const anchor = refs.pricingNotes?.closest('label') || refs.pricingForm.querySelector('.form-grid');
   if (!anchor) return;
   markPricingCardMode();
-  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">التسعير يتم من هنا فقط: سعر القماش + الصباغة + إضافات الصباغة + الهالك، ثم الأجل قبل الربح.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف</span><span>الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>الصباغة</span><span>إضافات الصباغة</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. سعر الصباغة جدول مراحل مثل: صباغة 71، رام مقفول 5، دبل إنزيم 9، كسترة 3، فنش 5.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>إضافات أخرى</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
     applyFabricNameDatalist();
     updatePricingPreview();
   });
   document.getElementById('pricingItemsRows')?.addEventListener('click', (event)=>{
+    const addStageButton = event.target.closest('[data-add-pricing-stage]');
+    if (addStageButton) {
+      addStageButton.closest('[data-pricing-stage-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingStageRowHtml());
+      updatePricingStageTotals();
+      updatePricingPreview();
+      return;
+    }
+    const removeStageButton = event.target.closest('[data-remove-pricing-stage]');
+    if (removeStageButton) {
+      removeStageButton.closest('[data-pricing-stage-row]')?.remove();
+      updatePricingStageTotals();
+      updatePricingPreview();
+      return;
+    }
     const button = event.target.closest('[data-remove-pricing-item]');
     if (!button || button.disabled) return;
     button.closest('[data-pricing-item-row]')?.remove();
     updatePricingPreview();
   });
-  document.getElementById('pricingItemsRows')?.addEventListener('input', updatePricingPreview);
-  document.getElementById('pricingItemsRows')?.addEventListener('change', updatePricingPreview);
+  document.getElementById('pricingItemsRows')?.addEventListener('input', () => { updatePricingStageTotals(); updatePricingPreview(); });
+  document.getElementById('pricingItemsRows')?.addEventListener('change', () => { updatePricingStageTotals(); updatePricingPreview(); });
   [refs.pricingPaymentDetails].filter(Boolean).forEach((input)=>{
     input.addEventListener('input', updatePricingPreview);
     input.addEventListener('change', updatePricingPreview);
@@ -2961,13 +3015,15 @@ function openCustomerPricingQuotation(id) {
   const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
   const notes = String(pricing.notes || '').trim();
   const wasteBasisLabel = (item) => (item.wasteBasis || item.accountingMode) === 'gross' ? 'قائم' : 'صافي';
+  const dyeStagesLabel = (item) => Array.isArray(item.dyeStages) && item.dyeStages.length
+    ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)}`).join('<br>')
+    : money(item.dyeCost);
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td>${escapeHtml(item.fabricType || '-')}</td>
-    <td>${escapeHtml(item.materialType || '-')}</td>
     <td>${escapeHtml(item.colorClass || '-')}</td>
     <td>${money(item.quantity)} \u0643\u062c\u0645</td>
     <td>${money(item.rawCost)}</td>
-    <td>${money(item.dyeCost)}</td>
+    <td>${dyeStagesLabel(item)}</td>
     <td>${money(item.extraCost)}</td>
     <td>${money(item.wasteCost)} (${money(item.wastePercent)}% ${wasteBasisLabel(item)})</td>
     <td>${money(item.deferredCost)} (${money(item.deferredPercent)}%)</td>
@@ -2996,7 +3052,7 @@ function openCustomerPricingQuotation(id) {
     </section>
     <section class="report-section">
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
-      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u062f\u0631\u062c\u0629 \u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u062e\u0627\u0645</th><th>\u0635\u0628\u0627\u063a\u0629</th><th>\u0645\u0631\u0627\u062d\u0644</th><th>\u0647\u0627\u0644\u0643</th><th>\u0623\u062c\u0644</th><th>\u0631\u0628\u062d</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
+      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641 / \u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u062f\u0631\u062c\u0629 \u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0642\u0645\u0627\u0634</th><th>\u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0628\u0627\u063a\u0629</th><th>\u0625\u0636\u0627\u0641\u0627\u062a \u0623\u062e\u0631\u0649</th><th>\u0647\u0627\u0644\u0643</th><th>\u0623\u062c\u0644</th><th>\u0631\u0628\u062d</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
     </section>
     <section class="report-section"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml(notes || '\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629.')}</p></section>
     ${documentFooter()}

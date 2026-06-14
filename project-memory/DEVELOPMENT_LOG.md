@@ -456,3 +456,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: legacy pricing fields remain internally available and are filled from the first card line on save, so older reports and conversion paths stay compatible.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Pricing Card Payment And Dyeing Stage Table
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.14`
+- Goal: align the pricing card with the factory pricing method and remove duplicated material meaning.
+- Change: updated visible labels from `تسعيرة` to `كرت تسعير` / `كروت التسعير`.
+- Change: replaced pricing payment options with `نقدي`, `أجل شهر`, `أجل شهرين`, `أجل 3 شهور`, `أجل 4 شهور`, and `دفعات أسبوعية`.
+- Change: unified item and material in the pricing card as `الصنف / الخامة`; saved `materialType` follows the selected fabric name for compatibility.
+- Change: replaced the visible single dyeing-cost input inside each card line with a dyeing-stage table.
+- Rule: dyeing line cost is the sum of stage rows such as dyeing, ram, enzyme, kastra, finish, etc.
+- Compatibility: the stage table is stored inside `pricing_items_json`, while the summed dye cost still fills the existing dye-cost field for reports, conversion, and old saved rows.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
