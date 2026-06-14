@@ -214,3 +214,11 @@ For Phase 3.1 local verification before commit:
 - The filter matches only the exact selected fabric name, allowing Arabic normalization but not suffix/prefix grouping.
 - This prevents two different stock items from appearing together in one sale selection.
 - Not touched: `backend/calculations.js`, stock calculation logic, movement persistence, SQLite schema.
+
+## Latest Customer Master Delete Relaxation
+
+- Version: `v2026.06.14.09`.
+- Deleting a customer from the customer master list no longer checks quotations, orders, or delivery movements.
+- The delete action removes only the master-list name and does not delete historical orders, quotations, movements, or ledgers.
+- If the customer has opening balance or payments, the account data is kept and only a confirmation warning is shown.
+- This avoids false delete blockers caused by old imported names or near-duplicate customer spelling.

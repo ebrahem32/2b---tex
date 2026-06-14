@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.07';
-const APP_BUILD_TIME = '2026-06-14 17:28';
+const APP_VERSION = 'v2026.06.14.09';
+const APP_BUILD_TIME = '2026-06-14 17:52';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1681,39 +1681,38 @@ async function saveCustomerMasterFromDialog() {
   applyCustomerNameDatalist();
   renderCustomerAccountsDialog();
 }
-function customerMasterDeleteBlockers(customer) {
-  const wanted = normalizeCustomerMasterName(customer?.name);
-  if (!wanted) return ['اسم العميل غير واضح.'];
-  const blockers = [];
-  if (orders.some((order)=>normalizeCustomerMasterName(order.customer) === wanted)) blockers.push('له طلبات تشغيل');
-  if (pricings.some((pricing)=>normalizeCustomerMasterName(pricing.customer) === wanted)) blockers.push('له عروض سعر');
-  if (customerBatches.some((batch)=>normalizeCustomerMasterName(batch.customerName || batch.customer) === wanted)) blockers.push('له حركات تسليم/بيع مجهز');
+function customerMasterDeleteWarnings(customer) {
+  const warnings = [];
   const account = customerAccounts?.[customer.name];
-  if (account && (Number(account.openingBalance || 0) !== 0 || (account.payments || []).length)) blockers.push('له رصيد أو دفعات في حساب العميل');
-  return blockers;
+  if (account && (Number(account.openingBalance || 0) !== 0 || (account.payments || []).length)) warnings.push('له رصيد أو دفعات محفوظة في حساب العميل، وسيظل الحساب محفوظًا');
+  return warnings;
 }
 async function deleteCustomerMaster(customerId) {
   const customer = customerMasterRows().find((item)=>String(item.id) === String(customerId));
   if (!customer) return;
-  const blockers = customerMasterDeleteBlockers(customer);
-  if (blockers.length) {
-    alert(`لا يمكن حذف العميل ${customer.name} لأنه مرتبط بـ: ${blockers.join('، ')}`);
+  if (!normalizeCustomerMasterName(customer.name)) {
+    alert('اسم العميل غير واضح.');
     return;
   }
-  if (!confirm(`حذف العميل ${customer.name}؟`)) return;
+  const warnings = customerMasterDeleteWarnings(customer);
+  const warningText = warnings.length
+    ? `\n\nتنبيه: هذا الاسم مرتبط بـ: ${warnings.join('، ')}.\nسيتم حذف الاسم من قائمة العملاء فقط، ولن يتم حذف أي طلبات أو عروض أو حركات أو حسابات.`
+    : '\n\nسيتم حذف الاسم من قائمة العملاء فقط، ولن يتم حذف أي طلبات أو عروض أو حركات.';
+  if (!confirm(`حذف العميل ${customer.name} من قائمة العملاء؟${warningText}`)) return;
   if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حذف العميل.'))) return;
   const deleted = await deleteBackend(`/customers/${encodeURIComponent(customer.id)}`);
   if (!deleted?.ok) {
     await rollbackAfterBackendWriteFailure('تعذر حذف العميل من قاعدة البيانات.');
     return;
   }
-  if (customerAccounts?.[customer.name]) {
+  const account = customerAccounts?.[customer.name];
+  if (account && Number(account.openingBalance || 0) === 0 && !(account.payments || []).length) {
     const nextAccounts = clone(customerAccounts);
     delete nextAccounts[customer.name];
     await saveBackendSetting('customerAccounts', nextAccounts);
     customerAccounts = nextAccounts;
   }
-  recordAudit('delete', 'customer', customer.id, customer, null, `حذف العميل ${customer.name}`);
+  recordAudit('delete', 'customer', customer.id, customer, null, `حذف العميل ${customer.name} من قائمة العملاء`);
   await persistAuditLog();
   await loadBackendData();
   applyCustomerNameDatalist();

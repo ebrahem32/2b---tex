@@ -393,3 +393,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: tightened the finished-stock sale fabric matcher so `F3` and `F3 تجهيز` no longer appear together; only exact or normalized-equal names match.
 - Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Relax Customer Master Delete
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.09`
+- Goal: allow deleting incorrect or imported customer names from the master list without false blockers from quotations or historical records.
+- Change: customer master delete now removes only the master-list record, does not check quotations/orders/movements as blockers, and keeps account data when opening balances or payments exist.
+- Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
