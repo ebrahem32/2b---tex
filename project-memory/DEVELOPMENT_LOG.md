@@ -97,6 +97,20 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`; direct pricing-domain check confirmed accessory is outside `productionCost` and added to `totalOffer` separately.
 
+### Add Pricing Accessory Stage Selection
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.02`
+- Goal: let accessory raw items inherit selected operation-stage costs from the fabric dyeing table when needed.
+- Change: each accessory row now shows selectable stage checkboxes generated from the same pricing-card dyeing-stage rows.
+- Rule: checked stages are added to the accessory raw unit price only.
+- Rule: accessory total is `quantity * (raw unit price + selected stage prices)`.
+- Rule: selected accessory stages do not change the fabric kilo price, production cost, waste cost, or deferred-payment cost.
+- Customer quotation remains clean and does not expose internal stage costs.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+
 ### Extract Frontend Backend Client
 
 - Date: 2026-06-13

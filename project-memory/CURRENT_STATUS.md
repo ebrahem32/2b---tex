@@ -337,3 +337,14 @@ For Phase 3.1 local verification before commit:
 - Accessory total is not included in the fabric production cost, waste basis, deferred-payment cost, or fabric kilo selling price.
 - Customer quotations continue to show accessories under the fabric item without internal costing details.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+
+## Latest Pricing Accessory Stage Selection
+
+- Version: `v2026.06.15.02`.
+- Accessory remains a secondary raw/material item, not a service.
+- Each accessory row now has selectable operation-stage checkboxes generated from the same fabric dyeing-stage table.
+- Checked stages add their stage price to the accessory raw unit price only.
+- Example: rib raw price `220` + checked dyeing stage `79` = accessory unit price `299`.
+- Accessory total remains `quantity * (raw unit price + selected stage prices)`.
+- The selected accessory stages do not change the fabric kilo price, fabric production cost, fabric waste, or deferred-payment cost.
+- Customer quotation remains clean: it shows accessory under the fabric item without exposing internal stage costs.

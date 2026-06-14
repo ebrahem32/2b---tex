@@ -403,6 +403,10 @@
 .pricing-stage-card{display:grid;gap:6px;min-width:0}
 .pricing-stage-head,.pricing-stage-row{display:grid;grid-template-columns:1fr 90px auto;gap:6px;align-items:center}
 .pricing-accessory-row{grid-template-columns:1fr 90px 90px auto}
+.pricing-accessory-stage-options{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 2px}
+.pricing-accessory-stage-option{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.025);color:var(--muted);font-size:12px;white-space:nowrap}
+.pricing-accessory-stage-option input{width:auto!important;min-height:0!important;accent-color:var(--accent2)}
+.pricing-accessory-hint{grid-column:1/-1;color:var(--muted);font-size:12px}
 .pricing-stage-head span{font-size:12px!important;color:var(--muted)!important}
 .pricing-stage-row input{min-height:36px}
 .pricing-stage-total{color:var(--muted);font-size:12px}

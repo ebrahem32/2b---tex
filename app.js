@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.01';
-const APP_BUILD_TIME = '2026-06-15 00:25';
+const APP_VERSION = 'v2026.06.15.02';
+const APP_BUILD_TIME = '2026-06-15 01:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2684,7 +2684,7 @@ function pricingItemRowHtml(item = {}) {
   const stages = Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'صباغة', price:item.dyeCost || '' }];
   const stagesHtml = stages.map((stage)=>pricingStageRowHtml(stage)).join('');
   const accessories = Array.isArray(item.accessoryLines) && item.accessoryLines.length ? item.accessoryLines : [];
-  const accessoriesHtml = accessories.map((line)=>pricingAccessoryRowHtml(line)).join('');
+  const accessoriesHtml = accessories.map((line)=>pricingAccessoryRowHtml(line, stages)).join('');
   return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
     <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف / الخامة" value="${escapeHtml(item.fabricType || item.materialType || '')}">
     <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
@@ -2715,13 +2715,31 @@ function pricingAccessoryTypeOptions(current = '') {
   return `<option value="">اختر الإكسسوار</option>${options.map((name)=>`<option value="${escapeHtml(name)}" ${name === current ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}`;
 }
 
-function pricingAccessoryRowHtml(line = {}) {
+function pricingAccessorySelectedStageNames(line = {}) {
+  return Array.isArray(line.stageNames) ? line.stageNames
+    : Array.isArray(line.appliedStages) ? line.appliedStages
+    : Array.isArray(line.stages) ? line.stages
+    : [];
+}
+
+function pricingAccessoryStageOptions(line = {}, stages = []) {
+  const selected = new Set(pricingAccessorySelectedStageNames(line).map((name)=>String(name || '').trim()).filter(Boolean));
+  const validStages = (Array.isArray(stages) ? stages : []).filter((stage)=>stage.name || stage.price);
+  if (!validStages.length) return '<span class="pricing-accessory-hint">أضف مراحل الصباغة أولًا لاختيار ما ينطبق على الإكسسوار.</span>';
+  return validStages.map((stage)=>{
+    const name = String(stage.name || 'مرحلة').trim();
+    return `<label class="pricing-accessory-stage-option"><input type="checkbox" data-pricing-accessory-stage value="${escapeHtml(name)}" ${selected.has(name) ? 'checked' : ''}><span>${escapeHtml(name)} + ${formatNumber(stage.price || 0)}</span></label>`;
+  }).join('');
+}
+
+function pricingAccessoryRowHtml(line = {}, stages = []) {
   const quantity = line.quantity ?? line.quantityManual ?? line.percent ?? '';
   return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
     <select data-pricing-accessory-type>${pricingAccessoryTypeOptions(line.type || '')}</select>
     <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="الكمية" value="${quantity || ''}">
     <input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}">
     <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
+    <div class="pricing-accessory-stage-options" data-pricing-accessory-stage-options>${pricingAccessoryStageOptions(line, stages)}</div>
   </div>`;
 }
 
@@ -2745,16 +2763,48 @@ function pricingStagesTotal(stages = []) {
 }
 
 function pricingAccessoriesFromRow(row) {
-  return [...row.querySelectorAll('[data-pricing-accessory-row]')].map((accessoryRow)=>({
-    type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
-    quantity: Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0),
-    percent: Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0),
-    price: Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0),
-  })).filter((line)=>line.type || line.quantity || line.price);
+  const stages = pricingStagesFromRow(row);
+  return [...row.querySelectorAll('[data-pricing-accessory-row]')].map((accessoryRow)=>{
+    const stageNames = [...accessoryRow.querySelectorAll('[data-pricing-accessory-stage]:checked')]
+      .map((input)=>String(input.value || '').trim())
+      .filter(Boolean);
+    const stageCost = stages
+      .filter((stage)=>stageNames.includes(String(stage.name || '').trim()))
+      .reduce((total, stage)=>total + Number(stage.price || 0), 0);
+    const quantity = Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0);
+    const price = Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0);
+    const unitPrice = roundNumber(price + stageCost);
+    return {
+      type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
+      quantity,
+      percent: quantity,
+      price,
+      stageNames,
+      stageCost: roundNumber(stageCost),
+      unitPrice,
+      total: roundNumber(quantity * unitPrice),
+    };
+  }).filter((line)=>line.type || line.quantity || line.price || line.stageNames.length);
 }
 
 function pricingAccessoriesTotal(lines = []) {
-  return roundNumber(lines.reduce((total, line)=>total + Number(line.quantity ?? line.percent ?? 0) * Number(line.price || 0), 0));
+  return roundNumber(lines.reduce((total, line)=>{
+    if (line.total !== undefined && line.total !== null) return total + Number(line.total || 0);
+    const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
+    return total + Number(line.quantity ?? line.percent ?? 0) * unitPrice;
+  }, 0));
+}
+
+function refreshPricingAccessoryStageOptions(row) {
+  const stages = pricingStagesFromRow(row);
+  row.querySelectorAll('[data-pricing-accessory-row]').forEach((accessoryRow)=>{
+    const container = accessoryRow.querySelector('[data-pricing-accessory-stage-options]');
+    if (!container) return;
+    const selected = [...accessoryRow.querySelectorAll('[data-pricing-accessory-stage]:checked')]
+      .map((input)=>String(input.value || '').trim())
+      .filter(Boolean);
+    container.innerHTML = pricingAccessoryStageOptions({ stageNames:selected }, stages);
+  });
 }
 
 function updatePricingStageTotals() {
@@ -2762,6 +2812,7 @@ function updatePricingStageTotals() {
     const total = pricingStagesTotal(pricingStagesFromRow(row));
     const totalEl = row.querySelector('[data-pricing-dye-total]');
     if (totalEl) totalEl.textContent = formatNumber(total);
+    refreshPricingAccessoryStageOptions(row);
     const accessoryTotal = pricingAccessoriesTotal(pricingAccessoriesFromRow(row));
     const accessoryTotalEl = row.querySelector('[data-pricing-accessory-total]');
     if (accessoryTotalEl) accessoryTotalEl.textContent = formatNumber(accessoryTotal);
@@ -2846,7 +2897,8 @@ function ensurePricingItemsUi() {
     }
     const addAccessoryButton = event.target.closest('[data-add-pricing-accessory]');
     if (addAccessoryButton) {
-      addAccessoryButton.closest('[data-pricing-accessory-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingAccessoryRowHtml());
+      const itemRow = addAccessoryButton.closest('[data-pricing-item-row]');
+      addAccessoryButton.closest('[data-pricing-accessory-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingAccessoryRowHtml({}, pricingStagesFromRow(itemRow)));
       updatePricingStageTotals();
       updatePricingPreview();
       return;
@@ -3095,7 +3147,12 @@ function openCustomerPricingQuotation(id) {
     ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)}`).join('<br>')
     : money(item.dyeCost);
   const accessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
-    ? item.accessoryLines.map((line)=>`${escapeHtml(line.type || 'إكسسوار')} ${money(line.quantity ?? line.percent ?? 0)} كجم × ${money(line.price)} = ${money(Number(line.quantity ?? line.percent ?? 0) * Number(line.price || 0))}`).join('<br>')
+    ? item.accessoryLines.map((line)=>{
+        const quantity = Number(line.quantity ?? line.percent ?? 0);
+        const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
+        const stages = pricingAccessorySelectedStageNames(line).length ? ` + ${escapeHtml(pricingAccessorySelectedStageNames(line).join(' / '))}` : '';
+        return `${escapeHtml(line.type || 'إكسسوار')} ${money(quantity)} كجم × ${money(unitPrice)}${stages} = ${money(line.total ?? quantity * unitPrice)}`;
+      }).join('<br>')
     : '-';
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td>${escapeHtml(item.fabricType || '-')}</td>
