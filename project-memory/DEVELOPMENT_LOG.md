@@ -500,3 +500,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: accessory data is stored inside `pricing_items_json` as `accessoryLines` and `accessoryCost`; no database schema change was made.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Update Pricing Deferred Payment Monthly Rule
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.18`
+- Goal: calculate deferred payment cost by month.
+- Change: the deferred value in pricing-card lines is treated as month count.
+- Rule: each deferred month adds `3%` before profit.
+- Example: `3` months equals `9%`.
+- No automatic row filling was added; the user still enters the month count manually.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

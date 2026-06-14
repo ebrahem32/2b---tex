@@ -226,7 +226,8 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
       var wasteBase = wasteBasis === 'gross' ? productionCost : Number(pricing.rawCost || 0);
       var wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
       var costBeforeDeferred = productionCost + wasteCost;
-      var deferredCost = costBeforeDeferred * Number(pricing.deferredPercent || pricing.deferred_percent || 0) / 100;
+      var deferredPercent = Number(pricing.deferredPercent || pricing.deferred_percent || 0) * 3;
+      var deferredCost = costBeforeDeferred * deferredPercent / 100;
       var costPerKg = costBeforeDeferred + deferredCost;
       var sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
       var totalOffer = sellPrice * Number(pricing.quantity || 0);
@@ -237,7 +238,8 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
         productionCost: roundNumber(productionCost),
         wasteCost: roundNumber(wasteCost),
         costBeforeDeferred: roundNumber(costBeforeDeferred),
-        deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
+        deferredMonths: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
+        deferredPercent: deferredPercent,
         deferredCost: roundNumber(deferredCost),
         costPerKg: roundNumber(costPerKg),
         sellPrice: roundNumber(sellPrice),

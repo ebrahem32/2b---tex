@@ -298,3 +298,12 @@ For Phase 3.1 local verification before commit:
 - The pricing-card item layout no longer forces horizontal scrolling; item fields wrap inside the card and the dyeing/accessory tables stay visible in the same view.
 - Dyeing-stage names from the pricing card are copied to converted orders and appear automatically in the dyeing production order as operation stages only, without prices.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+
+## Latest Pricing Deferred Payment Rule
+
+- Version: `v2026.06.14.18`.
+- Deferred payment in the pricing card is now calculated by month.
+- The entered deferred value means number of months, not direct percent.
+- Each deferred month adds `3%` to the cost before profit.
+- Example: `1` month = `3%`, `2` months = `6%`, `3` months = `9%`, `4` months = `12%`.
+- No automatic filling was added to pricing-card rows; the user still controls the entered month count.

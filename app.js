@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.17';
-const APP_BUILD_TIME = '2026-06-14 23:18';
+const APP_VERSION = 'v2026.06.14.18';
+const APP_BUILD_TIME = '2026-06-14 23:31';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2669,7 +2669,7 @@ function pricingDeferredPercentFromPaymentDetails() {
   const monthMatch = text.match(/(?:أجل|اجل)\s*(\d+)/i);
   if (monthMatch) return Number(monthMatch[1] || 0);
   const match = text.match(/(?:أجل|اجل|نسبة)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%?/i);
-  return match ? Number(match[1] || 0) : 0;
+  return match ? Number(match[1] || 0) / 3 : 0;
 }
 
 function pricingWasteBasisSelect(value = '', disabled = false) {
@@ -2704,7 +2704,7 @@ function pricingItemRowHtml(item = {}) {
     </div>
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
-    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل %" value="${item.deferredPercent || ''}">
+    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل شهر" value="${item.deferredPercent || ''}">
     <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}">
     <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
   </div>`;
@@ -3097,7 +3097,7 @@ function openCustomerPricingQuotation(id) {
     <td>${dyeStagesLabel(item)}</td>
     <td>${accessoryLabel(item)}</td>
     <td>${money(item.wasteCost)} (${money(item.wastePercent)}% ${wasteBasisLabel(item)})</td>
-    <td>${money(item.deferredCost)} (${money(item.deferredPercent)}%)</td>
+    <td>${money(item.deferredCost)} (${money(item.deferredMonths || 0)} شهر / ${money(item.deferredPercent)}%)</td>
     <td>${money(item.profitPerKg)}</td>
     <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
     <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>

@@ -165,11 +165,12 @@
         : Number(pricing.rawCost || 0);
       const wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
       const costBeforeDeferred = productionCost + wasteCost;
-      const deferredCost = costBeforeDeferred * Number(pricing.deferredPercent || pricing.deferred_percent || 0) / 100;
+      const deferredPercent = Number(pricing.deferredPercent || pricing.deferred_percent || 0) * 3;
+      const deferredCost = costBeforeDeferred * deferredPercent / 100;
       const costPerKg = costBeforeDeferred + deferredCost;
       const sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
       const totalOffer = sellPrice * Number(pricing.quantity || 0);
-      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredPercent:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
+      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
     }
 
     return {
