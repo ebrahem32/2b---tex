@@ -414,9 +414,9 @@
 .grouped-order-head,.grouped-order-row{display:grid;grid-template-columns:1.4fr .8fr .7fr .8fr .7fr auto;gap:8px;align-items:center}
 .pricing-items-box{overflow-x:hidden}
 .pricing-items-head{display:none}
-.pricing-item-row{grid-template-columns:repeat(6,minmax(0,1fr));min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)}
-.pricing-item-row .pricing-stage-card{grid-column:span 3}
-.pricing-item-row .pricing-accessory-card{grid-column:span 3}
+.pricing-item-row{grid-template-columns:repeat(4,minmax(0,1fr));min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)}
+.pricing-item-row .pricing-stage-card{grid-column:span 2}
+.pricing-item-row .pricing-accessory-card{grid-column:span 2}
 .pricing-item-row select{min-width:90px}
 .pricing-legacy-field{display:none!important}
 .pricing-items-box .subsection-head span{font-size:18px;color:var(--accent2);font-weight:900}
@@ -435,7 +435,7 @@
 .pricing-stage-total{color:var(--muted);font-size:12px}
 .pricing-stage-total strong{color:var(--accent2)}
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}
-.grouped-order-row{margin-bottom:8px}.grouped-order-row.primary input{opacity:.78}
+.grouped-order-row{margin-bottom:8px}.grouped-order-row.primary{display:none}.grouped-order-row.primary input{opacity:.78}
 .grouped-order-row input{min-width:0!important}
 .pricing-conversion-hidden-field{display:none!important}
 .order-form-pricing-conversion[data-pricing-items-count="1"] #groupedOrderBox{display:none!important}

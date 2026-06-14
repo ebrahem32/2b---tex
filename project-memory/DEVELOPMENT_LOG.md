@@ -642,3 +642,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: normal new/edit order flows reset conversion mode and keep the full form.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, save endpoints, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Unify Order Form And Pricing Source Flow
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.09`
+- Goal: make the cleaned order form the standard form in every case and make pricing-to-order conversion preserve all grouped item data.
+- Change: added `مصدر النسيج` to the pricing card flow without changing the database schema.
+- Change: stored pricing weaving source inside each pricing item in `pricing_items_json`.
+- Change: pricing-to-order conversion now keeps full converted order drafts for grouped pricing cards.
+- Change: grouped order save uses those full drafts so every item keeps its own dyehouse, weaving source, accessory lines, raw cost, waste percent, kilo price, and dyeing stages.
+- Change: legacy accessory summary fields and the duplicated primary grouped-order row are hidden as the default order form behavior.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, save endpoints, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

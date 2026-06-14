@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.14.02`
+`v2026.06.15.09`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Implement customer quotation items`
+`Unify order form and pricing source flow`
 
 ## Current Phase
 
@@ -405,3 +405,15 @@ For Phase 3.1 local verification before commit:
 - Duplicate visual fields are reduced: the legacy accessory summary fields are hidden, the accessory lines table remains visible, and the duplicate primary grouped-order row is hidden.
 - For one-item pricing cards, the grouped-order box is hidden entirely during conversion.
 - Normal new-order and edit-order flows reset this mode and keep the full editable form.
+
+## Latest Unified Order Form And Pricing Source
+
+- Version: `v2026.06.15.09`.
+- The cleaned order form is now the default visual behavior, not only a pricing-conversion mode.
+- Legacy accessory summary fields are hidden permanently; the accessory lines table remains the active order input surface.
+- The duplicated primary grouped-order row is hidden visually in all order-entry cases, while it remains available internally for safe save logic.
+- Pricing cards now include `مصدر النسيج`.
+- Because the SQLite pricing schema was not changed, pricing weaving source is stored safely inside each pricing item in `pricing_items_json`.
+- Converting a grouped pricing card to orders now saves from full converted order drafts, not from the shortened grouped-order screen rows.
+- This preserves each pricing item data during conversion: fabric, quantity, width, kilo price, waste percent, dyehouse, weaving source, accessory lines, raw cost, and dyeing operation stages.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.

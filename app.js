@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.08';
-const APP_BUILD_TIME = '2026-06-15 03:35';
+const APP_VERSION = 'v2026.06.15.09';
+const APP_BUILD_TIME = '2026-06-15 04:15';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -213,6 +213,7 @@ let editingPricingId = null;
 let currentDocumentType = null;
 let pendingConvertedPricingId = null;
 let pendingConvertedPricingItems = [];
+let pendingConvertedOrderDrafts = [];
 let pendingPricingOrderId = null;
 let initialLocalStorageSnapshot = null;
 let orderFocusMode = false;
@@ -539,6 +540,7 @@ function mapDbTransfer(row) {
 }
 function mapDbPricing(row, customers) {
   const priceItems = parseDbJsonArray(row.pricing_items_json);
+  const firstItemWithWeavingSource = priceItems.find((item)=>item?.weavingSource || item?.weaving_source);
   return {
     id: row.id,
     pricingNumber: row.pricing_number || '',
@@ -559,6 +561,7 @@ function mapDbPricing(row, customers) {
     unitPrice: Number(row.unit_price || 0),
     totalPrice: Number(row.total_price || 0),
     paymentTerms: row.payment_terms || '',
+    weavingSource: firstItemWithWeavingSource?.weavingSource || firstItemWithWeavingSource?.weaving_source || '',
     notes: row.notes || '',
     status: row.status || 'active',
     priceItems,
@@ -762,7 +765,7 @@ const allocationToApi = (allocation) => ({
 const pricingToApi = (pricing, customerId = null) => {
   const calculated = calculatePricing(pricing);
   const currency = pricing.currency || 'EGP';
-  const priceItems = Array.isArray(pricing.priceItems) ? pricing.priceItems.map((item)=>({ ...item, currency:item.currency || currency })) : [];
+  const priceItems = Array.isArray(pricing.priceItems) ? pricing.priceItems.map((item)=>({ ...item, currency:item.currency || currency, weavingSource:item.weavingSource || pricing.weavingSource || '' })) : [];
   return {
     id: pricing.id,
     pricing_number: pricing.pricingNumber,
@@ -2598,6 +2601,7 @@ function pricingItemsFor(pricing = {}) {
     fabricType: item.fabricType || '',
     materialType: item.materialType || item.fabricType || '',
     dyehouse: item.dyehouse || '',
+    weavingSource: item.weavingSource || item.weaving_source || pricing.weavingSource || '',
     colorClass: item.colorClass || '',
     quantity: Number(item.quantity || 0),
     inchWidth: item.inchWidth || '',
@@ -2620,6 +2624,7 @@ function pricingItemsFor(pricing = {}) {
     fabricType: pricing.fabricType || '',
     materialType: pricing.materialType || pricing.fabricType || '',
     dyehouse: pricing.dyehouse || '',
+    weavingSource: pricing.weavingSource || '',
     colorClass: pricing.colorClass || '',
     quantity: Number(pricing.quantity || 0),
     inchWidth: pricing.inchWidth || '',
@@ -2675,6 +2680,7 @@ function pricingItemToOrderDraft(item = {}, pricing = {}) {
     rawCost: Number(calculated.rawCost || item.rawCost || 0),
     expectedWastePercent: Number(calculated.wastePercent || item.wastePercent || 0),
     dyehouse: calculated.dyehouse || item.dyehouse || '',
+    weavingSource: item.weavingSource || pricing.weavingSource || '',
     accessoryType: firstAccessory.type || '',
     accessoryPercent: Number(firstAccessory.percent || 0),
     accessoryLines,
@@ -2685,8 +2691,8 @@ function pricingItemToOrderDraft(item = {}, pricing = {}) {
 function setOrderFormPricingConversionMode(active = false, itemCount = 0) {
   refs.orderForm?.classList.toggle('order-form-pricing-conversion', Boolean(active));
   if (refs.orderForm) refs.orderForm.dataset.pricingItemsCount = String(Number(itemCount || 0));
-  refs.accessoryType?.closest('label')?.classList.toggle('pricing-conversion-hidden-field', Boolean(active));
-  refs.accessoryPercent?.closest('label')?.classList.toggle('pricing-conversion-hidden-field', Boolean(active));
+  refs.accessoryType?.closest('label')?.classList.add('pricing-conversion-hidden-field');
+  refs.accessoryPercent?.closest('label')?.classList.add('pricing-conversion-hidden-field');
 }
 
 function pricingPrimaryItemFromRefs() {
@@ -2695,6 +2701,7 @@ function pricingPrimaryItemFromRefs() {
     fabricType: canonicalFabricName(refs.pricingFabricType?.value),
     materialType: canonicalFabricName(refs.pricingFabricType?.value),
     dyehouse: refs.pricingDyehouse?.value || '',
+    weavingSource: refs.pricingWeavingSource?.value || '',
     colorClass: refs.pricingColorClass?.value || '',
     quantity: Number(refs.pricingQuantity?.value || 0),
     inchWidth: refs.pricingInchWidth?.value || '',
@@ -2755,7 +2762,7 @@ function pricingItemRowHtml(item = {}) {
     <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل شهر" value="${item.deferredPercent || ''}">
     <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}">
     <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
-  </div>`;
+  </div>`.replace('<input data-pricing-item-field="quantity"', `<input data-pricing-item-field="weavingSource" placeholder="مصدر النسيج" value="${escapeHtml(item.weavingSource || '')}"><input data-pricing-item-field="quantity"`);
 }
 
 function pricingAccessoryTypeOptions(current = '') {
@@ -2876,6 +2883,7 @@ function readPricingItemsEditor() {
     fabricType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     materialType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
+    weavingSource: row.querySelector('[data-pricing-item-field="weavingSource"]')?.value.trim() || refs.pricingWeavingSource?.value || '',
     colorClass: '',
     quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
     inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
@@ -2902,12 +2910,13 @@ function pricingCurrencyLabel(currency = pricingCurrencyValue()) {
   return currency === 'USD' ? 'دولار' : 'جنيه';
 }
 function pricingPreviewPayloadFromEditor() {
-  return { priceItems: readPricingItemsEditor(), currency:pricingCurrencyValue(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '' };
+  return { priceItems: readPricingItemsEditor(), currency:pricingCurrencyValue(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '', weavingSource:refs.pricingWeavingSource?.value || '' };
 }
 function renderPricingItemsEditor(pricing = null) {
   const rows = document.getElementById('pricingItemsRows');
   if (!rows) return;
   const items = pricing ? pricingItemsFor(pricing) : [pricingPrimaryItemFromRefs()];
+  if (refs.pricingWeavingSource) refs.pricingWeavingSource.value = pricing?.weavingSource || items.find((item)=>item.weavingSource)?.weavingSource || '';
   rows.innerHTML = (items.length ? items : [pricingPrimaryItemFromRefs()]).map((item)=>pricingItemRowHtml(item)).join('');
 }
 
@@ -2934,11 +2943,23 @@ function markPricingCardMode() {
   refs.pricingDialog?.querySelector('.dialog-head h2')?.replaceChildren(document.createTextNode('كرت تسعير جديد'));
 }
 
+function installPricingWeavingSourceField() {
+  if (!refs.pricingForm || document.getElementById('pricingWeavingSource')) {
+    refs.pricingWeavingSource = document.getElementById('pricingWeavingSource');
+    return;
+  }
+  const anchor = refs.pricingDyehouse?.closest('label') || refs.pricingFabricType?.closest('label');
+  if (!anchor) return;
+  anchor.insertAdjacentHTML('afterend', '<label><span>مصدر النسيج</span><input id="pricingWeavingSource" autocomplete="off"></label>');
+  refs.pricingWeavingSource = document.getElementById('pricingWeavingSource');
+}
+
 function ensurePricingItemsUi() {
   if (!refs.pricingForm || document.getElementById('pricingItemsBox')) return;
   const anchor = refs.pricingNotes?.closest('label') || refs.pricingForm.querySelector('.form-grid');
   if (!anchor) return;
   markPricingCardMode();
+  installPricingWeavingSourceField();
   refs.pricingPaymentMode?.closest('label')?.insertAdjacentHTML('beforebegin', `<label><span>عملة التسعير</span><select id="pricingCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label>`);
   anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. إضافات الصباغة داخل جدول الصباغة، والإكسسوار له جدول مستقل داخل نفس البند.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>الإكسسوار</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
@@ -3033,10 +3054,11 @@ function pricingPayload(id = uid()) {
   const paymentTerms = composePaymentTerms(refs.pricingPaymentMode?.value, refs.pricingPaymentDetails?.value);
   if (refs.pricingPaymentTerms) refs.pricingPaymentTerms.value = paymentTerms;
   const currency = pricingCurrencyValue();
-  const priceItems = readPricingItemsEditor().map((item)=>({ ...item, currency }));
+  const cardWeavingSource = refs.pricingWeavingSource?.value || '';
+  const priceItems = readPricingItemsEditor().map((item)=>({ ...item, currency, weavingSource:item.weavingSource || cardWeavingSource }));
   const primaryItem = priceItems[0] || pricingPrimaryItemFromRefs();
   const summary = calculatePricing({ priceItems: priceItems.length ? priceItems : [primaryItem] });
-  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:canonicalCustomerName(refs.pricingCustomer.value), pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, currency, priceItems, paymentTerms, notes:refs.pricingNotes.value };
+  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:canonicalCustomerName(refs.pricingCustomer.value), pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, weavingSource:primaryItem.weavingSource || cardWeavingSource, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, currency, priceItems, paymentTerms, notes:refs.pricingNotes.value };
 }
 async function attachPricingToOrder(orderId, pricingId) {
   const order = orders.find((item)=>item.id === orderId);
@@ -3141,6 +3163,7 @@ function convertPricingToOrder(id) {
   const orderNumber = orderNumberFromPricing(pricing.pricingNumber);
   pendingConvertedPricingId = pricing.id;
   pendingConvertedPricingItems = sourceOrderItems;
+  pendingConvertedOrderDrafts = orderDrafts;
   editingOrderId = null;
   fillOrderForm({
     pricingId: pricing.id,
@@ -3159,6 +3182,7 @@ function convertPricingToOrder(id) {
     paymentTerms: pricing.paymentTerms || '',
     dyehouse: primaryDraft.dyehouse || primary.dyehouse || pricing.dyehouse || '',
     weavingSource: pricing.weavingSource || primaryDraft.weavingSource || 'من كرت التسعير',
+    weavingSource: primaryDraft.weavingSource || pricing.weavingSource || 'من كرت التسعير',
     accessoryType: primaryDraft.accessoryType || '',
     accessoryPercent: primaryDraft.accessoryPercent || 0,
     accessoryLines: primaryDraft.accessoryLines || [],
@@ -3174,6 +3198,7 @@ function convertPricingToOrder(id) {
         inchWidth:item.inchWidth || '',
         kiloPrice:item.kiloPrice || '',
         expectedWastePercent:item.expectedWastePercent || '',
+        weavingSource:item.weavingSource || '',
       }, index === 0)).join('');
       syncGroupedOrderUi();
     }
@@ -4604,9 +4629,12 @@ async function addOrder(event) {
   const firstAccessory = accessoryLines[0] || {};
   const paymentTerms = composePaymentTerms(refs.paymentMode?.value, refs.paymentDetails?.value);
   if (refs.paymentTerms) refs.paymentTerms.value = paymentTerms;
-  const payloadOperationNotes = currentOrder?.operationNotes || pricingOperationNotesForItem(pendingConvertedPricingItems[0] || {});
+  const payloadOperationNotes = currentOrder?.operationNotes || pendingConvertedOrderDrafts[0]?.operationNotes || pricingOperationNotesForItem(pendingConvertedPricingItems[0] || {});
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
-  const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple' ? readGroupedOrderItems().map((item)=>({ ...item, fabricType:canonicalFabricName(item.fabricType) })) : [];
+  const convertedDraftItems = !editingOrderId && refs.widthMode.value !== 'multiple' && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
+  const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple'
+    ? (convertedDraftItems.length ? convertedDraftItems : readGroupedOrderItems()).map((item)=>({ ...item, fabricType:canonicalFabricName(item.fabricType) }))
+    : [];
   const hasGroupedOrderItems = groupedItems.length > 1;
   const groupedSourcePricingId = hasGroupedOrderItems ? payload.pricingId : '';
   if (hasGroupedOrderItems) {
@@ -4654,7 +4682,7 @@ async function addOrder(event) {
     if (hasGroupedOrderItems) {
       const groupedOrders = groupedItems.map((item, index)=> {
         const pricingItem = pendingConvertedPricingItems[index] || {};
-        const pricingDraft = pricingItemToOrderDraft(pricingItem, {});
+        const pricingDraft = pendingConvertedOrderDrafts[index] || pricingItemToOrderDraft(pricingItem, {});
         const groupedAccessoryLines = pricingDraft.accessoryLines || [];
         const firstGroupedAccessory = groupedAccessoryLines[0] || {};
         const groupedPayload = {
@@ -4669,7 +4697,8 @@ async function addOrder(event) {
           widthMode:'single',
           widthLines:[],
           productCode:buildItemCode(payload.orderNumber),
-          dyehouse:pricingDraft.dyehouse || payload.dyehouse,
+          dyehouse:pricingDraft.dyehouse || item.dyehouse || payload.dyehouse,
+          weavingSource:pricingDraft.weavingSource || item.weavingSource || payload.weavingSource,
           accessoryType:firstGroupedAccessory.type || '',
           accessoryPercent:Number(firstGroupedAccessory.percent || 0),
           accessoryLines:groupedAccessoryLines,
@@ -4698,6 +4727,7 @@ async function addOrder(event) {
       setOrderFormPricingConversionMode(false);
       pendingConvertedPricingId = null;
       pendingConvertedPricingItems = [];
+      pendingConvertedOrderDrafts = [];
       await loadBackendData();
       refs.orderDialog.close();
       return;
@@ -4723,6 +4753,7 @@ async function addOrder(event) {
   setOrderFormPricingConversionMode(false);
   pendingConvertedPricingId = null;
   pendingConvertedPricingItems = [];
+  pendingConvertedOrderDrafts = [];
   await loadBackendData();
   refs.orderDialog.close();
 }
@@ -5886,7 +5917,7 @@ installGroupedOrderUi();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); renderPricingItemsEditor(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
-refs.openOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
+refs.openOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
@@ -6018,7 +6049,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
 });
 
 refs.closePricingFormBtn.onclick = () => { pendingPricingOrderId = null; refs.pricingDialog.close(); };
-refs.closeOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; refs.orderDialog.close(); };
+refs.closeOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; refs.orderDialog.close(); };
 refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);
@@ -6054,6 +6085,9 @@ refs.ordersTableBody.onclick = (event) => {
   }
   if (button.dataset.editOrder) {
     setOrderFormPricingConversionMode(false);
+    pendingConvertedPricingId = null;
+    pendingConvertedPricingItems = [];
+    pendingConvertedOrderDrafts = [];
     editingOrderId = button.dataset.editOrder;
     const order = orders.find((item)=>item.id===editingOrderId);
     if (order) { selectedOrderId = order.id; fillOrderForm(order); refs.orderDialog.showModal(); }
@@ -6129,7 +6163,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
     if (selectedOrderId) deleteOrder(selectedOrderId).then(()=>{ if (!selectedOrderId) closeOrderFocusMode(); }).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
     return;
   }
-  if (target.id === 'editOrderBtn') { setOrderFormPricingConversionMode(false); editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
+  if (target.id === 'editOrderBtn') { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
   if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
   if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
   if (target.dataset.openCombinedMovement) {

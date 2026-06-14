@@ -105,6 +105,7 @@ function fillPricingForm(pricing) {
   refs.pricingMaterialType.value = [...refs.pricingMaterialType.options].some((option)=>option.value === material) ? material : '';
   applyPricingDyehouseOptions();
   refs.pricingDyehouse.value = [...refs.pricingDyehouse.options].some((option)=>option.value === dyehouse) ? dyehouse : '';
+  if (refs.pricingWeavingSource) refs.pricingWeavingSource.value = pricing.weavingSource || pricing.priceItems?.find((item)=>item?.weavingSource)?.weavingSource || '';
   applyPricingColorOptions();
   refs.pricingColorClass.value = [...refs.pricingColorClass.options].some((option)=>option.value === colorClass) ? colorClass : '';
   refs.pricingQuantity.value = pricing.quantity || '';
@@ -158,10 +159,29 @@ function pricingDraftFromOrder(order) {
     finishedWeight: calculated.allocations?.[0]?.targetFinishedWeight || '',
     rawCost: calculated.rawCost || orderRawCost(calculated) || '',
     dyehouse: calculated.dyehouse || calculated.allocations?.[0]?.dyehouse || '',
+    weavingSource: calculated.weavingSource || '',
     wastePercent: calculated.expectedWastePercent || '',
     profitPerKg: Number(calculated.kiloPrice || 0) ? Math.max(0, Number(calculated.kiloPrice || 0) - Number(calculated.rawCost || orderRawCost(calculated) || 0)) : '',
     paymentTerms: calculated.paymentTerms || '',
     currency: calculated.currency || 'EGP',
+    priceItems: [{
+      currency: calculated.currency || 'EGP',
+      fabricType: calculated.fabricType || '',
+      materialType: calculated.fabricType || '',
+      dyehouse: calculated.dyehouse || calculated.allocations?.[0]?.dyehouse || '',
+      weavingSource: calculated.weavingSource || '',
+      quantity: calculated.totalRawOrdered || calculated.totalRawQuantity || '',
+      inchWidth: calculated.inchWidth || '',
+      finishedWeight: calculated.allocations?.[0]?.targetFinishedWeight || '',
+      rawCost: calculated.rawCost || orderRawCost(calculated) || '',
+      dyeCost: 0,
+      dyeStages: [],
+      accessoryLines: calculated.accessoryLines || [],
+      wastePercent: calculated.expectedWastePercent || '',
+      wasteBasis: 'net',
+      deferredPercent: 0,
+      profitPerKg: Number(calculated.kiloPrice || 0) ? Math.max(0, Number(calculated.kiloPrice || 0) - Number(calculated.rawCost || orderRawCost(calculated) || 0)) : '',
+    }],
     notes: calculated.notes || '',
   };
 }
