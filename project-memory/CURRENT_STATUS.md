@@ -369,3 +369,12 @@ For Phase 3.1 local verification before commit:
 - Currency is stored safely inside pricing item JSON without changing the SQLite schema.
 - Pricing list, pricing preview, and customer quotation display the selected currency.
 - Customer quotation accessory sub-lines display accessory quantity, unit price, and total using the selected currency.
+
+## Latest Customer Quotation Print Layout
+
+- Version: `v2026.06.15.05`.
+- Customer quotation printing was reorganized as a clean commercial offer.
+- The printed quotation keeps only customer-facing values: item, quantity, kilo/unit price, total, currency, payment terms, and validity notes.
+- Fabric rows are shown as primary lines, and accessory rows appear directly underneath as separate commercial sub-lines.
+- Internal pricing details remain hidden from the customer output: raw fabric cost, dyeing-stage table, waste, deferred-payment cost, and profit.
+- The quotation print layout now uses a fixed table width and compact metadata strip to reduce horizontal scrolling and improve PDF/print readability.

@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.04';
-const APP_BUILD_TIME = '2026-06-15 01:45';
+const APP_VERSION = 'v2026.06.15.05';
+const APP_BUILD_TIME = '2026-06-15 02:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3193,7 +3193,7 @@ function openCustomerPricingQuotation(id) {
         const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
         const total = Number(line.total ?? quantity * unitPrice);
         return `<tr class="quotation-accessory-row">
-          <td><small>إكسسوار</small><strong>${escapeHtml(line.type || 'إكسسوار')}</strong></td>
+          <td><span class="quotation-line-kind">إكسسوار</span><strong>${escapeHtml(line.type || 'إكسسوار')}</strong></td>
           <td>${money(quantity)} كجم</td>
           <td>${money(unitPrice)} ${currency}</td>
           <td>${money(total)} ${currency}</td>
@@ -3202,8 +3202,8 @@ function openCustomerPricingQuotation(id) {
     : '';
   const publicItemRows = (items.length ? items : [pricing]).map((item)=>{
     const clothTotal = Number(item.clothTotal ?? Number(item.sellPrice || 0) * Number(item.quantity || 0));
-    return `<tr>
-      <td><strong>${escapeHtml(item.fabricType || '-')}</strong></td>
+    return `<tr class="quotation-fabric-row">
+      <td><span class="quotation-line-kind">قماش</span><strong>${escapeHtml(item.fabricType || '-')}</strong></td>
       <td>${money(item.quantity)} \u0643\u062c\u0645</td>
       <td>${money(item.sellPrice)} ${currency}</td>
       <td>${money(clothTotal)} ${currency}</td>
@@ -3213,11 +3213,12 @@ function openCustomerPricingQuotation(id) {
   refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
     ${documentHeader()}
     <div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">\u062a\u0646\u0632\u064a\u0644 \u0637\u0644\u0628</button><button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">\u062a\u0639\u062f\u064a\u0644</button></div>
-    <div class="report-title"><h2>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0644\u0644\u0639\u0645\u064a\u0644 <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0645\u0642\u062f\u0645 \u0644\u0644\u0639\u0645\u064a\u0644.</span></div>
-    <div class="document-meta">
+    <div class="report-title quotation-title"><h2>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0644\u0644\u0639\u0645\u064a\u0644 <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0645\u0642\u062f\u0645 \u0644\u0644\u0639\u0645\u064a\u0644.</span></div>
+    <div class="document-meta quotation-meta">
       <div><span>\u0627\u0644\u0639\u0645\u064a\u0644</span>${escapeHtml(customer)}</div>
       <div><span>\u0627\u0644\u062a\u0627\u0631\u064a\u062e</span>${escapeHtml(pricing.pricingDate || '-')}</div>
       <div><span>\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0643\u0645\u064a\u0629</span>${money(pricing.quantity)} \u0643\u062c\u0645</div>
+      <div><span>\u0627\u0644\u0639\u0645\u0644\u0629</span>${currency}</div>
       <div><span>\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0633\u062f\u0627\u062f</span>${escapeHtml(pricing.paymentTerms || '\u0643\u0627\u0634')}</div>
     </div>
     <section class="report-section quotation-summary">
@@ -3229,9 +3230,9 @@ function openCustomerPricingQuotation(id) {
     </section>
     <section class="report-section">
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
-      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${publicItemRows}</tbody></table>
+      <table class="quotation-items-table"><thead><tr><th>\u0627\u0644\u0628\u0646\u062f</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${publicItemRows}</tbody></table>
     </section>
-    <section class="report-section"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
+    <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
     ${documentFooter()}
   </div>`;
   refs.documentDialog.showModal();

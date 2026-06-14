@@ -592,3 +592,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: existing `accessoryLines` remain stored in `pricing_items_json`; no schema change was made.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Improve Customer Quotation Print Layout
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.05`
+- Goal: make the printed customer quotation organized, readable, and free from internal costing details.
+- Change: added a compact customer quotation print layout with a fixed-width item table.
+- Change: displayed fabric as the main commercial row and accessories as sub-lines underneath with quantity, unit price, and total.
+- Change: added currency to the quotation metadata strip.
+- Change: preserved the customer-facing cleanup: no raw fabric cost, dyeing-stage table, waste, deferred-payment cost, or profit in the printed offer.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
