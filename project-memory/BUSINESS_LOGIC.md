@@ -65,6 +65,34 @@ Example:
 
 These should resolve to the same customer record, using the official name saved in the customers screen.
 
+## Fabric Master Rule
+
+Fabric/item names are master data.
+
+The official fabric list is used by:
+
+- Customer orders.
+- Grouped order items.
+- Customer quotations.
+- Quotation item rows.
+- Fabric filters and selection helpers.
+
+To prevent duplicate fabric names, the system normalizes matching before saving a new order or quotation item. This matching ignores:
+
+- Extra spaces.
+- Arabic hamza variants such as `ا`, `أ`, `إ`, `آ`.
+- Tatweel and Arabic diacritics.
+
+Example:
+
+```text
+بيكا قطن استرتر
+بيكا  قطن إسترتر
+بيكا قطن أسترتر
+```
+
+Supported spelling variants should resolve to the official fabric name saved in the fabric master list. Historical records are not rewritten automatically; cleanup must be a separate controlled migration.
+
 ## Finished Stock Sale
 
 Arabic operating name:

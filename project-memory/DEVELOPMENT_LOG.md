@@ -351,3 +351,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: added customer master management inside the customers/accounts screen, added normalized customer matching, and made order creation, quotation creation, and finished-stock sale save against the canonical customer name when available.
 - Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Fabric Master Normalization
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.04`
+- Goal: prevent duplicate fabric/item names caused by spelling variants, extra spaces, and Arabic hamza differences.
+- Change: added official fabric list storage through `system_settings.fabricMaster`, exposed it in the system status/settings screen, added fabric-name datalists, and made order creation, grouped order items, quotation creation, and quotation item rows save canonical fabric names when available.
+- Compatibility: existing historical fabric names are left unchanged until a separate controlled cleanup/migration is explicitly requested.
+- Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

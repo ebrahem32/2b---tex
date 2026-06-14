@@ -181,3 +181,12 @@ For Phase 3.1 local verification before commit:
 - Customer matching normalizes spaces, Arabic hamza forms, tatweel, and diacritics so variants such as `امل فاشون`, `أمل فاشون`, and `إمل فاشون` resolve to the same customer.
 - Order creation, quotation creation, and finished-stock sale now use the canonical customer name when a matching customer already exists.
 - Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
+
+## Latest Fabric Master Normalization
+
+- Version: `v2026.06.14.04`.
+- Fabric/item names are now treated as master data through the system status/settings screen.
+- Fabric matching normalizes spaces, Arabic hamza forms, tatweel, and diacritics so spelling variants resolve to the same official fabric name.
+- Order creation, grouped order lines, quotation creation, and quotation item rows now save against the canonical fabric name when a matching official fabric exists.
+- Existing historical fabric names are not migrated automatically; this change protects new entries and allows a later controlled cleanup if needed.
+- Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
