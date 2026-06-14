@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.13.31';
-const APP_BUILD_TIME = '2026-06-13 09:20';
+const APP_VERSION = 'v2026.06.14.01';
+const APP_BUILD_TIME = '2026-06-14 14:45';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -506,6 +506,9 @@ function mapDbBatch(row) {
     partnerFabric: row.partner_fabric || '',
     outputName: row.output_name || '',
     customerName: row.customer_name || '',
+    unitPrice: Number(row.unit_price || 0),
+    totalPrice: Number(row.total_price || 0),
+    paymentTerms: row.payment_terms || '',
   };
 }
 function mapDbTransfer(row) {
@@ -795,6 +798,9 @@ const batchToApi = (batch) => ({
   partner_fabric: batch.partnerFabric || null,
   output_name: batch.outputName || null,
   customer_name: batch.customerName || null,
+  unit_price: Number(batch.unitPrice || 0),
+  total_price: Number(batch.totalPrice || 0),
+  payment_terms: batch.paymentTerms || null,
 });
 const transferToApi = (transfer) => ({
   id: transfer.id,
@@ -1411,15 +1417,48 @@ function ensureCustomerAccount(customerName) {
   customerAccounts[name].openingBalance = Number(customerAccounts[name].openingBalance || 0);
   return customerAccounts[name];
 }
+function isFinishedStockSale(batch = {}) {
+  return String(batch.movement || '').trim() === 'finished_sale' && String(batch.customerName || '').trim();
+}
+function orderLedgerDeliveredQuantity(order) {
+  const allocationIds = allocations.filter((allocation)=>allocation.orderId === order.id).map((allocation)=>allocation.id);
+  return roundNumber(customerBatches
+    .filter((batch)=>allocationIds.includes(batch.allocationId) && !isFinishedStockSale(batch))
+    .reduce((total, batch)=>total + Number(batch.quantity || 0), 0));
+}
+function finishedStockSaleInvoices(customerName) {
+  const name = String(customerName || '').trim();
+  if (!name) return [];
+  return customerBatches
+    .filter((batch)=>isFinishedStockSale(batch) && String(batch.customerName || '').trim() === name)
+    .map((batch)=>{
+      const sourceOrder = orders.find((order)=>order.id === batch.orderId) || {};
+      const sourceAllocation = allocations.find((allocation)=>allocation.id === batch.allocationId) || {};
+      const quantity = Number(batch.quantity || 0);
+      const unitPrice = Number(batch.unitPrice || sourceOrder.kiloPrice || 0);
+      const amount = Number(batch.totalPrice || 0) || roundNumber(quantity * unitPrice);
+      return {
+        id: batch.id,
+        orderNumber: sourceOrder.orderNumber || batch.orderId || '-',
+        date: batch.date,
+        item: [sourceOrder.fabricType, sourceAllocation.color].filter(Boolean).join(' / ') || 'بيع مجهز',
+        quantity,
+        unitPrice,
+        amount: roundNumber(amount),
+        status: 'بيع مجهز من المخزن',
+      };
+    });
+}
 function customerAccountInvoices(customerName) {
   const name = String(customerName || '').trim();
-  return orders
+  const orderInvoices = orders
     .filter((order)=>String(order.customer || '').trim() === name)
     .map(calculateOrder)
     .map((order)=>{
-      const deliveredQuantity = Number(order.totalDeliveredToCustomer || 0);
+      const deliveredQuantity = orderLedgerDeliveredQuantity(order);
       const contractQuantity = Number(order.totalRawQuantity || order.totalRawOrdered || 0);
-      const invoiceQuantity = deliveredQuantity || (order.operationClosed ? contractQuantity : 0);
+      const hasFinishedSaleFromOrder = customerBatches.some((batch)=>batch.orderId === order.id && isFinishedStockSale(batch));
+      const invoiceQuantity = deliveredQuantity || (order.operationClosed && !hasFinishedSaleFromOrder ? contractQuantity : 0);
       const unitPrice = Number(order.kiloPrice || 0);
       return {
         id: order.id,
@@ -1432,6 +1471,7 @@ function customerAccountInvoices(customerName) {
         status: deliveredQuantity ? 'تم التسليم' : (order.operationClosed ? 'مغلق بدون تسليم' : 'تحت التشغيل'),
       };
     });
+  return [...orderInvoices, ...finishedStockSaleInvoices(name)].sort((a, b)=>String(a.date || '').localeCompare(String(b.date || '')));
 }
 function customerAccountSummary(customerName) {
   const account = ensureCustomerAccount(customerName) || { openingBalance:0, payments:[] };
@@ -1442,7 +1482,7 @@ function customerAccountSummary(customerName) {
   return { customerName, openingBalance:Number(account.openingBalance || 0), invoices, invoiceTotal, payments:account.payments || [], paymentTotal, balance };
 }
 function knownAccountCustomers() {
-  return uniqueNonEmpty([...orders.map((order)=>order.customer), ...pricings.map((pricing)=>pricing.customer), ...Object.keys(customerAccounts || {})]);
+  return uniqueNonEmpty([...orders.map((order)=>order.customer), ...pricings.map((pricing)=>pricing.customer), ...customerBatches.map((batch)=>batch.customerName), ...Object.keys(customerAccounts || {})]);
 }
 function renderCustomerAccountsDialog() {
   ensureRuntimeCollections();
@@ -2462,6 +2502,180 @@ function openPricingQuotation(id) {
   refs.documentDialog.showModal();
 }
 function allOrders() { return orders.map(calculateOrder); }
+function finishedStockSaleSources() {
+  return allOrders()
+    .flatMap((order)=>(order.allocations || []).map((allocation)=>{
+      const balance = roundNumber(
+        Number(allocation.finishedReceived || 0)
+        - Number(allocation.deliveredToCustomer || 0)
+        - Number(allocation.sentToGluing || 0)
+        + Number(allocation.returnedFromGluing || 0)
+      );
+      return { order, allocation, balance };
+    }))
+    .filter((item)=>Number(item.balance || 0) > 0)
+    .sort((a, b)=>String(a.order.fabricType || '').localeCompare(String(b.order.fabricType || ''), 'ar') || Number(b.balance || 0) - Number(a.balance || 0));
+}
+function finishedStockSaleFabricOptions() {
+  const fabrics = uniqueNonEmpty(finishedStockSaleSources().map((item)=>item.order.fabricType));
+  return fabrics.map((fabric)=>`<option value="${escapeHtml(fabric)}">${escapeHtml(fabric)}</option>`).join('');
+}
+function selectedFinishedSaleFabric() {
+  return document.getElementById('finishedSaleFabric')?.value || '';
+}
+function renderFinishedSaleRows() {
+  const body = document.getElementById('finishedSaleRows');
+  if (!body) return;
+  const fabric = selectedFinishedSaleFabric();
+  const rows = finishedStockSaleSources()
+    .filter((item)=>!fabric || item.order.fabricType === fabric)
+    .map(({ order, allocation, balance })=>`
+      <tr data-finished-sale-row data-allocation-id="${escapeHtml(allocation.id)}" data-order-id="${escapeHtml(order.id)}" data-available="${escapeHtml(balance)}">
+        <td>${escapeHtml(order.orderNumber || '-')}</td>
+        <td>${escapeHtml(order.customer || '-')}</td>
+        <td>${escapeHtml(order.fabricType || '-')}</td>
+        <td>${escapeHtml(allocation.color || '-')}</td>
+        <td>${escapeHtml(allocation.targetFinishedWidth || allocation.rawWidth || order.inchWidth || '-')}</td>
+        <td><strong>${formatNumber(balance)}</strong></td>
+        <td><input type="number" step="0.01" min="0" max="${escapeHtml(balance)}" data-finished-sale-quantity placeholder="0"></td>
+      </tr>`)
+    .join('');
+  body.innerHTML = rows || '<tr><td colspan="7">لا يوجد رصيد مخزن متاح للبيع الجاهز.</td></tr>';
+}
+function renderFinishedSalePanel() {
+  const panel = document.getElementById('finishedSalePanel');
+  if (!panel) return;
+  const currentFabric = selectedFinishedSaleFabric();
+  const sources = finishedStockSaleSources();
+  const total = sources.reduce((sumValue, item)=>sumValue + Number(item.balance || 0), 0);
+  panel.innerHTML = `
+    <div class="section-head stacked-on-mobile">
+      <div><p class="eyebrow">المخزن والتسليم</p><h2>بيع مجهز</h2><p class="muted">بيع من رصيد المخزن الفعلي بدون إنشاء أمر تشغيل جديد.</p></div>
+      <div class="metric compact"><span>رصيد متاح للبيع</span><strong>${formatNumber(total)}</strong></div>
+    </div>
+    <datalist id="customerNamesList">${knownAccountCustomers().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('')}</datalist>
+    <form id="finishedSaleForm" class="batch-form finished-sale-form">
+      <input name="customerName" list="customerNamesList" placeholder="العميل المستلم" required>
+      <select id="finishedSaleFabric" name="fabricType" required>
+        <option value="">اختر الصنف من رصيد المخزن</option>
+        ${finishedStockSaleFabricOptions()}
+      </select>
+      <input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>
+      <input name="unitPrice" type="number" step="0.01" min="0" placeholder="سعر الكيلو" required>
+      <input name="paymentTerms" placeholder="طريقة السداد / شروط البيع">
+      <input name="noteNumber" placeholder="رقم مستند البيع">
+      <input class="full" name="notes" placeholder="ملاحظات">
+      <div class="table-wrap full">
+        <table class="mobile-card-table allocation-table finished-sale-table">
+          <thead><tr><th>رقم المصدر</th><th>مصدر الرصيد</th><th>الصنف</th><th>اللون</th><th>العرض</th><th>المتاح</th><th>كمية البيع</th></tr></thead>
+          <tbody id="finishedSaleRows"></tbody>
+        </table>
+      </div>
+      <button class="primary-btn full" type="submit">حفظ بيع مجهز</button>
+    </form>
+    <div class="subsection">
+      <div class="subsection-head"><h3>آخر حركات بيع مجهز</h3></div>
+      <div class="table-wrap">
+        <table class="mobile-card-table allocation-table">
+          <thead><tr><th>التاريخ</th><th>العميل</th><th>المصدر</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+          <tbody>${finishedStockSaleHistoryRows()}</tbody>
+        </table>
+      </div>
+    </div>`;
+  const select = document.getElementById('finishedSaleFabric');
+  if (select && currentFabric && [...select.options].some((option)=>option.value === currentFabric)) select.value = currentFabric;
+  renderFinishedSaleRows();
+}
+function finishedStockSaleHistoryRows() {
+  return customerBatches
+    .filter(isFinishedStockSale)
+    .slice()
+    .sort((a, b)=>String(b.date || '').localeCompare(String(a.date || '')))
+    .slice(0, 12)
+    .map((batch)=>{
+      const order = orders.find((item)=>item.id === batch.orderId) || {};
+      const allocation = allocations.find((item)=>item.id === batch.allocationId) || {};
+      return `<tr><td>${escapeHtml(batch.date || '-')}</td><td>${escapeHtml(batch.customerName || '-')}</td><td>${escapeHtml(order.orderNumber || '-')}</td><td>${escapeHtml([order.fabricType, allocation.color].filter(Boolean).join(' / ') || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${formatNumber(batch.unitPrice || 0)}</td><td>${formatNumber(batch.totalPrice || Number(batch.quantity || 0) * Number(batch.unitPrice || 0))}</td></tr>`;
+    })
+    .join('') || '<tr><td colspan="7">لا توجد حركات بيع مجهز مسجلة.</td></tr>';
+}
+function openFinishedSalePanel() {
+  openMainWorkspace();
+  closeDashboardFocusMode();
+  closeAiFocusMode();
+  closeOrderFocusMode();
+  setWorkspaceModule('warehouse');
+  renderFinishedSalePanel();
+  document.getElementById('finishedSalePanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function ensureFinishedSaleUi() {
+  if (!document.getElementById('finishedSalePanel')) {
+    const ordersPanel = document.querySelector('.orders-list-panel');
+    ordersPanel?.insertAdjacentHTML('beforebegin', '<section class="panel finished-sale-panel" id="finishedSalePanel" data-module-panel="warehouse"></section>');
+  }
+  const warehouseStageButton = document.querySelector('[data-stage-shortcut="stage:warehouse"]');
+  const warehouseSection = warehouseStageButton?.closest('section');
+  if (warehouseSection && !warehouseSection.querySelector('[data-nav-action="finishedSale"]')) {
+    warehouseStageButton.insertAdjacentHTML('afterend', '<button type="button" data-module-action="warehouse" data-nav-action="finishedSale">بيع مجهز</button>');
+  }
+  const topOperationMenu = [...document.querySelectorAll('.erp-menu-list')]
+    .find((menu)=>menu.querySelector('[data-nav-action="orderDetails"]') && menu.querySelector('[data-nav-action="gluingQueue"]'));
+  if (topOperationMenu && !topOperationMenu.querySelector('[data-nav-action="finishedSale"]')) {
+    topOperationMenu.querySelector('[data-nav-action="orderDetails"]')?.insertAdjacentHTML('afterend', '<button type="button" data-nav-action="finishedSale">بيع مجهز</button>');
+  }
+}
+async function saveFinishedStockSale(event) {
+  event.preventDefault();
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ بيع مجهز.'))) return;
+  const form = event.target.closest('#finishedSaleForm');
+  if (!form) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const customerName = String(data.customerName || '').trim();
+  const unitPrice = Number(data.unitPrice || 0);
+  const rows = [...form.querySelectorAll('[data-finished-sale-row]')]
+    .map((row)=>{
+      const quantity = Number(row.querySelector('[data-finished-sale-quantity]')?.value || 0);
+      return {
+        row,
+        orderId: row.dataset.orderId,
+        allocationId: row.dataset.allocationId,
+        available: Number(row.dataset.available || 0),
+        quantity,
+      };
+    })
+    .filter((item)=>item.quantity > 0);
+  if (!customerName) { alert('اكتب اسم العميل المستلم.'); return; }
+  if (!rows.length) { alert('اكتب كمية بيع واحدة على الأقل.'); return; }
+  const invalid = rows.find((item)=>item.quantity > item.available + 0.001);
+  if (invalid) { alert(`كمية البيع أكبر من المتاح. المتاح ${formatNumber(invalid.available)} كجم.`); return; }
+  await ensureBackendCustomer(customerName);
+  for (const item of rows) {
+    const totalPrice = roundNumber(item.quantity * unitPrice);
+    const saved = await postBackend('/batches/customer', batchToApi({
+      id: uid(),
+      orderId: item.orderId,
+      allocationId: item.allocationId,
+      date: data.date,
+      quantity: item.quantity,
+      customerName,
+      unitPrice,
+      totalPrice,
+      paymentTerms: data.paymentTerms || '',
+      noteNumber: data.noteNumber || '',
+      movement: 'finished_sale',
+      notes: ['بيع مجهز', data.notes || ''].filter(Boolean).join(' - '),
+    }));
+    if (!saved) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ بيع مجهز في قاعدة البيانات. لم يتم اعتماد الحركة.');
+      return;
+    }
+  }
+  recordAudit('create', 'finishedStockSale', customerName, null, { rows: rows.length, customerName }, 'تسجيل بيع مجهز من رصيد المخزن');
+  await saveBackendSetting('auditLog', auditLog);
+  await loadBackendData();
+  renderFinishedSalePanel();
+  alert('تم حفظ بيع مجهز وخصم الكمية من رصيد المخزن.');
+}
 function orderNoteNumbers(order) {
   const allocationIds = (order.allocations || []).map((allocation)=>allocation.id);
   return uniqueNonEmpty([
@@ -2949,6 +3163,7 @@ async function refreshOperationFollowPanel() {
   openManagementReport: (...args) => openManagementReport(...args),
   refreshOperationFollowPanel,
   openGluingQueueDialog,
+  openFinishedSalePanel,
   renderCustomerAccountsDialog,
   renderA5AccountsDialog,
   openWhatsappSettingsDialog,
@@ -4498,7 +4713,7 @@ function repairGlobalArabicText() {
   });
 }
 
-function renderAll() { ensureRuntimeCollections(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderOperationFollowPanel(); renderTodayOrdersPanel?.(); renderOperationalAiDashboard?.(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
+function renderAll() { ensureRuntimeCollections(); ensureFinishedSaleUi(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderFinishedSalePanel(); renderOperationFollowPanel(); renderTodayOrdersPanel?.(); renderOperationalAiDashboard?.(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
 let pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {
   return new Promise((resolve, reject) => {
@@ -4921,6 +5136,17 @@ document.getElementById('operationFollowPanel')?.addEventListener('click', (even
   }
   const viewButton = event.target.closest('[data-view]');
   if (viewButton?.dataset.view) openOrderFocusMode(viewButton.dataset.view);
+});
+document.addEventListener('change', (event) => {
+  if (event.target?.id === 'finishedSaleFabric') renderFinishedSaleRows();
+});
+document.addEventListener('submit', (event) => {
+  if (event.target?.id === 'finishedSaleForm') {
+    saveFinishedStockSale(event).catch((error)=>{
+      console.error('finished-sale-save-error', error);
+      alert(error.message || 'تعذر حفظ بيع مجهز.');
+    });
+  }
 });
 refs.orderDetailsPanel.addEventListener('submit', (event) => {
   addBatch(event).catch((error) => {

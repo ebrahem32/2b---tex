@@ -36,6 +36,59 @@ Order Closure
 - Every movement must keep its date and reference.
 - Balances are calculated from movements, not edited manually.
 
+## Finished Stock Sale
+
+Arabic operating name:
+
+`بيع مجهز`
+
+Meaning:
+
+`بيع مجهز` is a sale/delivery from existing finished warehouse stock to a customer.
+
+It is not a new weaving order and not a new dyeing order.
+
+Important factory case:
+
+- Some stock may be produced under the internal/customer name `2B`.
+- In this case, `2B` represents factory-owned stock or warehouse stock.
+- Other customers may buy from this finished stock later.
+- The movement must reduce the original warehouse balance.
+- The receiving/buying customer must have their own commercial record for the sale.
+
+Operational behavior:
+
+1. Open `بيع مجهز`.
+2. Show only items that currently exist in finished warehouse stock.
+3. Select the required fabric/item.
+4. Show available colors and quantities for that item.
+5. Select one or more colors.
+6. Enter sold quantities per color.
+7. Enter customer, price, date, payment data, notes, and reference number if available.
+8. Save the sale movement.
+
+Effects:
+
+- Reduces finished warehouse stock from the selected source order/allocation.
+- Creates a commercial sale/delivery record for the receiving customer.
+- Appears in the receiving customer's account/ledger.
+- Appears in warehouse movement reports.
+- Appears in sales/finished-stock sale reports.
+
+Must not:
+
+- Create a weaving order.
+- Create a dyeing order.
+- Send anything to dyehouse.
+- Receive new finished fabric.
+- Calculate operational waste for the receiving customer.
+- Change dyehouse or weaving balances.
+
+Validation:
+
+- The sold quantity for each color must not exceed the available warehouse balance for that color.
+- If requested quantity is greater than available quantity, block saving or show a clear warning.
+
 ## Waste Logic
 
 - Waste is not calculated when raw fabric is sent to the dyehouse.
@@ -60,4 +113,3 @@ Received finished: 1200 kg
 Waste: 50 kg
 Waste percentage: 4%
 ```
-

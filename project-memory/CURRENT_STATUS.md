@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.13.31`
+`v2026.06.14.01`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Refresh home task menu styling`
+`Implement finished stock sale flow`
 
 ## Current Phase
 
@@ -151,3 +151,13 @@ For Phase 3.1 local verification before commit:
 - Added `project-memory/UI_ORGANIZATION.md`.
 - Documented the current no-duplicate UI organization principle.
 - Documented that `Order 360` is a full operational order view concept, not an order number and not a database ID.
+
+## Latest Finished Stock Sale Flow
+
+- Version: `v2026.06.14.01`.
+- Added `بيع مجهز` as a warehouse/commercial flow.
+- The screen shows only real finished warehouse stock, then lets the user sell selected colors/quantities to a receiving customer.
+- The sale is stored as a marked `finished_sale` customer delivery movement, so it reduces the source warehouse balance without creating weaving or dyeing work.
+- The receiving customer appears in customer accounts with quantity, price, and total sale value.
+- Source stock customers such as `2B` are treated as stock owners for these movements, not as the buying customer.
+- Customer delivery batch schema now includes sale metadata: receiving customer, unit price, total price, payment terms, note number, and movement type.

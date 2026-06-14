@@ -71,6 +71,53 @@ Warehouse means finished stock available for customer delivery.
 
 Do not show `رصيد الخام` as a warehouse entry.
 
+### Finished Stock Sale Screen
+
+Arabic screen/process name:
+
+`بيع مجهز`
+
+Purpose:
+
+Sell finished fabric from existing warehouse balance to a customer without opening a new production cycle.
+
+Current screen behavior:
+
+1. Show fabric/items that currently have finished warehouse balance only.
+2. User selects an item.
+3. Screen opens that item's available colors and quantities.
+4. User selects one or more colors.
+5. User enters the quantity/weight sold per color.
+6. User enters sale data:
+   - Receiving customer.
+   - Price per kilo.
+   - Total value.
+   - Date.
+   - Payment method/details.
+   - Notes.
+   - Reference/invoice/permission number if available.
+7. User saves the `بيع مجهز` movement.
+
+The screen must show the source stock clearly:
+
+- Source order/customer, such as `2B`.
+- Fabric/item.
+- Color.
+- Available quantity.
+
+`2B` can represent internal factory stock, not only an external customer.
+
+The receiving customer may be different from the source stock owner.
+
+The UI must not route this process through:
+
+- Weaving screens.
+- Dyehouse screens.
+- Waste screens.
+- New production order screens.
+
+This is a warehouse/commercial sale flow only.
+
 ### Reports
 
 Do not duplicate reports already represented by module balances.
@@ -175,4 +222,3 @@ Use compact, work-focused views:
 - No repeated blocks.
 - No duplicated navigation paths.
 - No decorative layers that look like another system on top of the system.
-

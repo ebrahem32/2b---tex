@@ -106,6 +106,7 @@
       }
       if (action === 'printFilteredOrders') refs.printFilteredOrdersBtn?.click();
       if (action === 'gluingQueue') deps.openGluingQueueDialog();
+      if (action === 'finishedSale') deps.openFinishedSalePanel?.();
       if (action === 'customerAccounts') deps.renderCustomerAccountsDialog();
       if (action === 'a5Accounts') deps.renderA5AccountsDialog();
       if (action === 'whatsappSettings') deps.openWhatsappSettingsDialog().catch((error)=>{ console.error('whatsapp-settings-open-error', error); deps.renderWhatsappSettingsDialog([]); });

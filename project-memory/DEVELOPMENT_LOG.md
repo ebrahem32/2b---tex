@@ -319,3 +319,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Notes: documented that `Order 360` means a full operational order view, not an order number or database ID.
 - Not touched: application code, backend calculations, database, schema, waste logic, stock logic, persisted movement data.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Implement Finished Stock Sale Flow
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.01`
+- Goal: allow selling finished warehouse stock to a customer without opening a new production order.
+- Change: added `بيع مجهز` screen under warehouse, showing available warehouse items/colors, saving selected sale quantities as `finished_sale` customer delivery movements, and adding sale value to the receiving customer's account.
+- Schema: extended `customer_delivery_batches` with receiving customer, unit price, total price, payment terms, note number, and movement type.
+- Not touched: `backend/calculations.js`, waste logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`; `/api/health` returned `schema.ok=true`.
