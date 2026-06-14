@@ -403,3 +403,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: customer master delete now removes only the master-list record, does not check quotations/orders/movements as blockers, and keeps account data when opening balances or payments exist.
 - Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Full Customer Delete
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.10`
+- Goal: allow complete removal of incorrect/test/imported customers and their linked data when explicitly confirmed.
+- Change: added a full customer delete backend endpoint that removes the customer, customer quotations, customer orders through the existing order graph deletion, direct customer delivery/sale rows by customer name, and report outbox rows by customer name.
+- Safety: the backend creates a SQLite backup before executing the full delete.
+- Change: customer delete in the UI now uses the full delete endpoint with two confirmation prompts and removes the saved customer account entry.
+- Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

@@ -551,6 +551,30 @@ async function deleteAllocationGraph(allocationId) {
   return 1;
 }
 
+async function deleteCustomerGraph(customerId) {
+  const customer = await get('SELECT * FROM customers WHERE id = ?', [customerId]);
+  if (!customer) return { deletedCustomer: 0, deletedOrders: 0, deletedPricings: 0, deletedCustomerBatches: 0, deletedOutbox: 0 };
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const safeName = String(customer.name || customer.id || 'customer').replace(/[^\u0600-\u06FF\w-]+/g, '-').slice(0, 80) || 'customer';
+  const backupPath = path.join(BACKUP_DIR, `before-full-customer-delete-${safeName}-${stamp}.sqlite`);
+  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, backupPath);
+  const orderRows = await all('SELECT id FROM orders WHERE customer_id = ?', [customer.id]);
+  let deletedOrders = 0;
+  for (const row of orderRows) deletedOrders += await deleteOrderGraph(row.id);
+  const pricingResult = await run('DELETE FROM pricings WHERE customer_id = ?', [customer.id]);
+  const customerBatchResult = await run('DELETE FROM customer_delivery_batches WHERE customer_name = ?', [customer.name || '']);
+  const outboxResult = await run('DELETE FROM report_outbox WHERE customer_name = ?', [customer.name || '']);
+  const customerResult = await run('DELETE FROM customers WHERE id = ?', [customer.id]);
+  return {
+    deletedCustomer: customerResult.changes || 0,
+    deletedOrders,
+    deletedPricings: pricingResult.changes || 0,
+    deletedCustomerBatches: customerBatchResult.changes || 0,
+    deletedOutbox: outboxResult.changes || 0,
+    backup: path.basename(backupPath),
+  };
+}
+
 async function cleanupLegacyTestOrders() {
   const placeholders = [...LEGACY_TEST_ORDER_NUMBERS].map(() => '?').join(',');
   const rows = await all(
@@ -1609,6 +1633,13 @@ app.delete('/api/users/:id', requireRole('admin'), asyncHandler(async (req, res)
   await run('DELETE FROM users WHERE id = ?', [req.params.id]);
   await auditMutation('delete', 'users', req.params.id, publicUser(before), { deleted: 1 }, 'حذف مستخدم من النظام');
   res.json({ ok: true, deleted: 1 });
+}));
+
+app.delete('/api/customers/:id/full', requireRole('admin'), asyncHandler(async (req, res) => {
+  const before = await get('SELECT * FROM customers WHERE id = ?', [req.params.id]);
+  const deleted = await deleteCustomerGraph(req.params.id);
+  await auditMutation('delete', 'customers', req.params.id, before, { deleted }, 'حذف كامل للعميل');
+  res.json({ ok: true, deleted });
 }));
 
 crudRoutes('customers', 'customers');

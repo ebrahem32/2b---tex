@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.09';
-const APP_BUILD_TIME = '2026-06-14 17:52';
+const APP_VERSION = 'v2026.06.14.10';
+const APP_BUILD_TIME = '2026-06-14 18:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1681,12 +1681,6 @@ async function saveCustomerMasterFromDialog() {
   applyCustomerNameDatalist();
   renderCustomerAccountsDialog();
 }
-function customerMasterDeleteWarnings(customer) {
-  const warnings = [];
-  const account = customerAccounts?.[customer.name];
-  if (account && (Number(account.openingBalance || 0) !== 0 || (account.payments || []).length)) warnings.push('له رصيد أو دفعات محفوظة في حساب العميل، وسيظل الحساب محفوظًا');
-  return warnings;
-}
 async function deleteCustomerMaster(customerId) {
   const customer = customerMasterRows().find((item)=>String(item.id) === String(customerId));
   if (!customer) return;
@@ -1694,25 +1688,22 @@ async function deleteCustomerMaster(customerId) {
     alert('اسم العميل غير واضح.');
     return;
   }
-  const warnings = customerMasterDeleteWarnings(customer);
-  const warningText = warnings.length
-    ? `\n\nتنبيه: هذا الاسم مرتبط بـ: ${warnings.join('، ')}.\nسيتم حذف الاسم من قائمة العملاء فقط، ولن يتم حذف أي طلبات أو عروض أو حركات أو حسابات.`
-    : '\n\nسيتم حذف الاسم من قائمة العملاء فقط، ولن يتم حذف أي طلبات أو عروض أو حركات.';
-  if (!confirm(`حذف العميل ${customer.name} من قائمة العملاء؟${warningText}`)) return;
+  const fullDeleteText = `حذف كامل للعميل ${customer.name}؟\n\nسيتم حذف العميل من القائمة وحذف أي طلبات أو عروض سعر أو حركات بيع/تسليم مرتبطة به من قاعدة البيانات.\nهذه العملية لا تراجع إلا من النسخ الاحتياطية.`;
+  if (!confirm(fullDeleteText)) return;
+  if (!confirm(`تأكيد نهائي: حذف كامل للعميل ${customer.name} وكل بياناته المرتبطة؟`)) return;
   if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حذف العميل.'))) return;
-  const deleted = await deleteBackend(`/customers/${encodeURIComponent(customer.id)}`);
+  const deleted = await deleteBackend(`/customers/${encodeURIComponent(customer.id)}/full`);
   if (!deleted?.ok) {
-    await rollbackAfterBackendWriteFailure('تعذر حذف العميل من قاعدة البيانات.');
+    await rollbackAfterBackendWriteFailure('تعذر تنفيذ الحذف الكامل للعميل من قاعدة البيانات.');
     return;
   }
-  const account = customerAccounts?.[customer.name];
-  if (account && Number(account.openingBalance || 0) === 0 && !(account.payments || []).length) {
+  if (customerAccounts?.[customer.name]) {
     const nextAccounts = clone(customerAccounts);
     delete nextAccounts[customer.name];
     await saveBackendSetting('customerAccounts', nextAccounts);
     customerAccounts = nextAccounts;
   }
-  recordAudit('delete', 'customer', customer.id, customer, null, `حذف العميل ${customer.name} من قائمة العملاء`);
+  recordAudit('delete', 'customer', customer.id, customer, deleted.deleted || null, `حذف كامل للعميل ${customer.name}`);
   await persistAuditLog();
   await loadBackendData();
   applyCustomerNameDatalist();

@@ -222,3 +222,12 @@ For Phase 3.1 local verification before commit:
 - The delete action removes only the master-list name and does not delete historical orders, quotations, movements, or ledgers.
 - If the customer has opening balance or payments, the account data is kept and only a confirmation warning is shown.
 - This avoids false delete blockers caused by old imported names or near-duplicate customer spelling.
+
+## Latest Full Customer Delete
+
+- Version: `v2026.06.14.10`.
+- Customer delete is now a full delete operation after two confirmations.
+- Full delete removes the customer, customer quotations, customer orders with their full operational movement graph, direct customer delivery/sale movements by customer name, outbox rows by customer name, and the saved customer account entry.
+- The backend creates a SQLite backup before executing the full delete.
+- This is intentionally dangerous and should be used only for incorrect/test/imported customer records.
+- Not touched: `backend/calculations.js`, stock formulas, waste formulas, SQLite schema.
