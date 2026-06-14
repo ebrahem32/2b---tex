@@ -231,3 +231,13 @@ For Phase 3.1 local verification before commit:
 - The backend creates a SQLite backup before executing the full delete.
 - This is intentionally dangerous and should be used only for incorrect/test/imported customer records.
 - Not touched: `backend/calculations.js`, stock formulas, waste formulas, SQLite schema.
+
+## Latest Combined Movement Entry
+
+- Version: `v2026.06.14.11`.
+- Order details now use combined movement commands instead of separate visible entry forms.
+- The three combined commands are: `أمر صرف للمصبغة`, `أمر استلام من المصبغة`, and `أمر تسليم للعميل`.
+- Each combined command can save body fabric and accessories together in one operational entry screen.
+- Internally the save still uses the existing `/api/batches/bulk` endpoint and the existing movement tables, so calculations and reports continue to read the same data model.
+- The older individual entry forms are hidden from the UI to reduce clutter, while the movement history lists remain visible.
+- Not touched: `backend/calculations.js`, `backend/server.js`, stock formulas, waste formulas, SQLite schema, AI backend, WhatsApp service, A5 service.

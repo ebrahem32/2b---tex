@@ -415,3 +415,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: customer delete in the UI now uses the full delete endpoint with two confirmation prompts and removes the saved customer account entry.
 - Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Combined Movement Entry
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.11`
+- Goal: remove repeated individual movement forms and make body fabric and accessories move through the same operational command.
+- Change: added a combined movement command panel inside order details for dyehouse issue, dyehouse receipt, and customer delivery.
+- Change: each combined command renders fabric rows and accessory rows in one dialog and saves them through the existing `/api/batches/bulk` endpoint.
+- Change: individual entry forms for raw issue, finished receipt, customer delivery, accessory issue, and accessory receipt are hidden from the UI; existing movement history remains visible.
+- Not touched: `backend/calculations.js`, `backend/server.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

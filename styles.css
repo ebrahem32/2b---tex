@@ -604,6 +604,12 @@
 .order-detail-tab-panel.active{display:block}
 .order-detail-tab-panel>.empty-state{margin-top:10px;border:1px dashed var(--line);border-radius:14px}
 @media(max-width:700px){.order-detail-tabs{position:static;display:grid;grid-template-columns:1fr 1fr}.order-detail-tabs .mini-btn{width:100%}}
+.single-entry-form-hidden{display:none!important}
+.combined-movement-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;padding:14px;border:1px solid rgba(200,165,106,.26);border-radius:18px;background:rgba(13,20,27,.72)}
+.combined-movement-panel h3{margin:2px 0 0;font-size:18px}
+.combined-movement-actions{display:flex;gap:8px;flex-wrap:wrap}
+.bulk-entry-sheet .subsection-head{margin-top:16px}
+@media(max-width:760px){.combined-movement-panel{display:block}.combined-movement-actions{display:grid;grid-template-columns:1fr;margin-top:10px}.combined-movement-actions .mini-btn{width:100%}}
 .stock-flow-section{border:1px solid rgba(200,165,106,.18);border-radius:18px;padding:14px;background:rgba(13,20,27,.45)}
 .stock-flow-table{min-width:760px}
 .stock-flow-table td{white-space:normal;line-height:1.7;vertical-align:top}

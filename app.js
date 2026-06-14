@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.10';
-const APP_BUILD_TIME = '2026-06-14 18:05';
+const APP_VERSION = 'v2026.06.14.11';
+const APP_BUILD_TIME = '2026-06-14 20:03';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3501,11 +3501,28 @@ function updateCustomerDeliveryFields(form) {
 }
 
 function installBulkEntryButtons() {
-  refs.orderDetailsPanel?.querySelectorAll('form.batch-form').forEach((form) => {
-    if (!['production', 'customer', 'accessory', 'accessoryReceived'].includes(form.dataset.form)) return;
-    if (form.querySelector('[data-open-bulk-entry]')) return;
-    form.insertAdjacentHTML('afterbegin', '<button class="mini-btn gold full" type="button" data-open-bulk-entry>إدخال جماعي للألوان</button>');
+  const panel = refs.orderDetailsPanel;
+  if (!panel) return;
+  panel.querySelectorAll('form.batch-form').forEach((form) => {
+    if (['raw', 'production', 'customer', 'accessory', 'accessoryReceived'].includes(form.dataset.form)) {
+      form.classList.add('single-entry-form-hidden');
+      form.setAttribute('aria-hidden', 'true');
+    }
+    form.querySelectorAll('[data-open-bulk-entry]').forEach((button)=>button.remove());
   });
+  const batchGrid = panel.querySelector('.batch-grid.compact');
+  if (!batchGrid || panel.querySelector('[data-combined-movement-panel]')) return;
+  batchGrid.insertAdjacentHTML('beforebegin', `<section class="combined-movement-panel" data-combined-movement-panel>
+    <div>
+      <p class="eyebrow">أوامر الحركة المجمعة</p>
+      <h3>القماش والإكسسوار في إذن واحد</h3>
+    </div>
+    <div class="combined-movement-actions">
+      <button class="mini-btn gold" type="button" data-open-combined-movement="dyehouse">أمر صرف للمصبغة</button>
+      <button class="mini-btn" type="button" data-open-combined-movement="finished">أمر استلام من المصبغة</button>
+      <button class="mini-btn" type="button" data-open-combined-movement="customer">أمر تسليم للعميل</button>
+    </div>
+  </section>`);
 }
 function repairOrderDetailsArabic(order) {
   const root = refs.orderDetailsPanel;
@@ -4479,76 +4496,130 @@ function defaultBulkMovementForForm(formType, form = null) {
   return '';
 }
 
-function openBulkBatchDialog(form) {
+function combinedMovementConfig(source) {
+  const key = typeof source === 'string' ? source : '';
+  const form = typeof source === 'string' ? null : source;
+  const legacyMovement = form ? defaultBulkMovementForForm(form.dataset.form || '', form) : '';
+  const movementKey = key || ({
+    rawOut: 'dyehouse',
+    accessorySent: 'dyehouse',
+    finished: 'finished',
+    accessoryReceived: 'finished',
+    customer: 'customer',
+    accessoryCustomer: 'customer',
+  })[legacyMovement] || '';
+  return {
+    key: movementKey,
+    title: {
+      dyehouse: 'أمر صرف للمصبغة',
+      finished: 'أمر استلام من المصبغة',
+      customer: 'أمر تسليم للعميل',
+    }[movementKey] || 'إدخال جماعي',
+    description: {
+      dyehouse: 'أدخل القماش الخارج للمصبغة والإكسسوار المصروف في نفس الإذن.',
+      finished: 'أدخل القماش المجهز المستلم والإكسسوار المستلم في نفس الإذن.',
+      customer: 'أدخل القماش والإكسسوار المسلم للعميل في نفس الإذن.',
+    }[movementKey] || 'اكتب الكميات المطلوبة واترك الصفوف الفارغة بدون حفظ.',
+    clothMovement: {
+      dyehouse: 'rawOut',
+      finished: 'finished',
+      customer: 'customer',
+    }[movementKey] || legacyMovement,
+    accessoryMovement: {
+      dyehouse: 'accessorySent',
+      finished: 'accessoryReceived',
+      customer: 'accessoryCustomer',
+    }[movementKey] || legacyMovement,
+    form,
+  };
+}
+
+function combinedMovementClothAvailable(allocation, movement) {
+  if (movement === 'rawOut') return Math.max(Number(allocation.plannedQuantity || 0) - Number(allocation.sentToDyehouse || 0), 0);
+  if (movement === 'finished') return Math.max(Number(allocation.remainingAtDyehouse || 0), 0);
+  if (movement === 'customer') return allocationAvailableToCustomer(allocation);
+  return '';
+}
+
+function accessoryRowsForCombinedMovement(order, config) {
+  if (!order.accessoryLines?.length) return '';
+  if (config.accessoryMovement === 'accessorySent') {
+    return order.accessoryLines.map((line)=>`<tr data-bulk-accessory-type="${escapeHtml(line.type)}"><td>${escapeHtml(line.type)}</td><td>-</td><td>-</td><td>${formatNumber(Number(line.quantity || 0))}</td><td><input type="number" step="0.01" data-bulk-accessory-quantity placeholder="0"></td></tr>`).join('');
+  }
+  return order.allocations.map((allocation)=>order.accessoryLines.map((line)=>{
+    const received = sum(accessoryBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'received' && (batch.accessoryType || line.type) === line.type));
+    const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'customer' && (batch.accessoryType || line.type) === line.type));
+    const available = config.accessoryMovement === 'accessoryCustomer' ? Math.max(received - delivered, 0) : '';
+    return `<tr data-bulk-allocation="${escapeHtml(allocation.id)}" data-bulk-accessory-type="${escapeHtml(line.type)}"><td>${escapeHtml(line.type)}</td><td>${escapeHtml(allocation.color || '-')}</td><td>${escapeHtml(allocationWidthSuffix(order, allocation).replace(/^\s*\/\s*/, '') || '-')}</td><td>${available === '' ? '-' : formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-accessory-quantity placeholder="0"></td></tr>`;
+  }).join('')).join('');
+}
+
+function openBulkBatchDialog(source) {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
   if (!order) return;
-  const formType = form?.dataset.form || '';
-  const movement = defaultBulkMovementForForm(formType, form);
-  if (!movement) return;
+  const config = combinedMovementConfig(source);
+  const form = config.form;
+  if (!config.key || !config.clothMovement) return;
+  const movement = config.clothMovement;
   const date = form?.elements.date?.value || new Date().toISOString().slice(0, 10);
   const noteNumber = form?.elements.noteNumber?.value || '';
   const notes = form?.elements.notes?.value || '';
-  const accessoryType = form?.elements.accessoryType?.value || order.accessoryLines?.[0]?.type || '';
-  const title = {
-    rawOut: 'خروج خام جماعي للمصبغة',
-    finished: 'استلام مجهز جماعي',
-    customer: 'تسليم قماش جماعي',
-    accessoryReceived: 'استلام إكسسوار جماعي',
-    accessorySent: 'خروج إكسسوار جماعي',
-    accessoryCustomer: 'تسليم إكسسوار جماعي للعميل',
-  }[movement] || 'إدخال جماعي';
+  const title = config.title;
+  const accessoryRows = accessoryRowsForCombinedMovement(order, config);
   refs.documentTitle.textContent = title;
   refs.documentBody.dataset.documentType = 'bulk-batches';
-  refs.documentBody.innerHTML = `<div class="document-sheet bulk-entry-sheet" data-bulk-movement="${movement}">
-    <div class="subsection-head"><div><h2>${title}</h2><p class="muted">اكتب الكمية أمام كل لون، واترك اللون الفاضي بدون حفظ.</p></div></div>
+  refs.documentBody.innerHTML = `<div class="document-sheet bulk-entry-sheet" data-bulk-group="${config.key}" data-bulk-movement="${movement}" data-bulk-accessory-movement="${config.accessoryMovement}">
+    <div class="subsection-head"><div><h2>${title}</h2><p class="muted">${config.description}</p></div></div>
     <div class="summary-grid">
       <label><span>التاريخ</span><input type="date" data-bulk-date value="${escapeHtml(date)}"></label>
       <label><span>رقم الإذن</span><input data-bulk-note-number value="${escapeHtml(noteNumber)}"></label>
-      ${movement.startsWith('accessory') ? `<label><span>نوع الإكسسوار</span>${accessoryTypeSelectHtml(order).replace('name="accessoryType"', 'data-bulk-accessory-type')}</label>` : ''}
       <label class="full-row"><span>ملاحظات</span><input data-bulk-notes value="${escapeHtml(notes)}"></label>
     </div>
+    <div class="subsection-head"><h3>القماش</h3></div>
     <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th><th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
       ${order.allocations.map((allocation)=>{
-        const available = movement === 'rawOut'
-          ? Math.max(Number(allocation.plannedQuantity || 0) - Number(allocation.sentToDyehouse || 0), 0)
-          : movement === 'finished'
-          ? allocation.remainingAtDyehouse
-          : movement === 'customer'
-            ? allocationAvailableToCustomer(allocation)
-            : '';
-        return `<tr data-bulk-allocation="${escapeHtml(allocation.id)}"><td>${escapeHtml(allocation.color || '-')}</td><td>${escapeHtml(allocation.dyehouse || '-')}</td><td>${escapeHtml(allocationWidthSuffix(order, allocation).replace(/^\s*\/\s*/, '') || '-')}</td><td>${available === '' ? '-' : formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-quantity placeholder="0"></td></tr>`;
+        const available = combinedMovementClothAvailable(allocation, movement);
+        return `<tr data-bulk-allocation="${escapeHtml(allocation.id)}"><td>${escapeHtml(allocation.color || '-')}</td><td>${escapeHtml(allocation.dyehouse || '-')}</td><td>${escapeHtml(allocationWidthSuffix(order, allocation).replace(/^\s*\/\s*/, '') || '-')}</td><td>${available === '' ? '-' : formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
       }).join('')}
     </tbody></table>
-    <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>حفظ الإدخال الجماعي</button></div>
+    ${accessoryRows ? `<div class="subsection-head"><h3>الإكسسوار</h3></div><table class="bulk-entry-table"><thead><tr><th>نوع الإكسسوار</th><th>اللون</th><th>العرض</th><th>المتاح/المطلوب</th><th>الكمية</th></tr></thead><tbody>${accessoryRows}</tbody></table>` : ''}
+    <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>حفظ الأمر المجمع</button></div>
   </div>`;
-  const accessorySelect = refs.documentBody.querySelector('[data-bulk-accessory-type]');
-  if (accessorySelect && accessoryType) accessorySelect.value = accessoryType;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
 }
 
 function bulkBatchItemsFromDialog() {
   const body = refs.documentBody;
-  const movement = body.querySelector('[data-bulk-movement]')?.dataset.bulkMovement || body.dataset.bulkMovement || body.querySelector('.bulk-entry-sheet')?.dataset.bulkMovement || '';
+  const sheet = body.querySelector('.bulk-entry-sheet');
+  const movement = sheet?.dataset.bulkMovement || body.querySelector('[data-bulk-movement]')?.dataset.bulkMovement || body.dataset.bulkMovement || '';
+  const accessoryMovement = sheet?.dataset.bulkAccessoryMovement || '';
   const date = body.querySelector('[data-bulk-date]')?.value || new Date().toISOString().slice(0, 10);
   const noteNumber = body.querySelector('[data-bulk-note-number]')?.value || '';
   const notes = body.querySelector('[data-bulk-notes]')?.value || '';
-  const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
-  const accessoryType = body.querySelector('[data-bulk-accessory-type]')?.value || currentOrder?.accessoryLines?.[0]?.type || 'إكسسوار';
-  const rows = [...body.querySelectorAll('[data-bulk-allocation]')];
-  return rows.map((row) => {
-    const quantity = Number(row.querySelector('[data-bulk-quantity]')?.value || 0);
+  const clothRows = [...body.querySelectorAll('[data-bulk-cloth-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
+  const accessoryRows = [...body.querySelectorAll('[data-bulk-accessory-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
+  const clothItems = clothRows.map((row) => {
+    const quantity = Number(row.querySelector('[data-bulk-cloth-quantity]')?.value || 0);
     if (!quantity) return null;
     const allocationId = row.dataset.bulkAllocation;
     const allocation = allocations.find((item)=>item.id === allocationId) || {};
     if (movement === 'rawOut') return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, dyehouse:allocation.dyehouse || '' }) };
     if (movement === 'finished') return { type:'finished', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     if (movement === 'customer') return { type:'customer', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
-    if (movement === 'accessoryReceived') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'received' }) };
-    if (movement === 'accessorySent') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'sent' }) };
-    if (movement === 'accessoryCustomer') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'customer' }) };
     return null;
   }).filter(Boolean);
+  const accessoryItems = accessoryRows.map((row) => {
+    const quantity = Number(row.querySelector('[data-bulk-accessory-quantity]')?.value || 0);
+    if (!quantity) return null;
+    const allocationId = row.dataset.bulkAllocation || '';
+    const accessoryType = row.dataset.bulkAccessoryType || 'إكسسوار';
+    if (accessoryMovement === 'accessoryReceived') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'received' }) };
+    if (accessoryMovement === 'accessorySent') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'sent' }) };
+    if (accessoryMovement === 'accessoryCustomer') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'customer' }) };
+    return null;
+  }).filter(Boolean);
+  return [...clothItems, ...accessoryItems];
 }
 
 async function saveBulkBatchesFromDialog() {
@@ -5707,6 +5778,11 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
   if (target.id === 'editOrderBtn') { editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
   if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
   if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
+  if (target.dataset.openCombinedMovement) {
+    event.preventDefault();
+    openBulkBatchDialog(target.dataset.openCombinedMovement);
+    return;
+  }
   if (target.dataset.openBulkEntry !== undefined) {
     event.preventDefault();
     openBulkBatchDialog(target.closest('.batch-form'));
