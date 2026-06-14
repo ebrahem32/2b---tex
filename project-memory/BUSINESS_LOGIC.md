@@ -143,8 +143,9 @@ Must not:
 
 Validation:
 
-- The sold quantity for each color must not exceed the available warehouse balance for that color.
-- If requested quantity is greater than available quantity, block saving or show a clear warning.
+- Negative or insufficient finished-stock balance must not be hidden.
+- If the requested sale quantity is greater than the available quantity, the system may save the sale movement but must attach a clear warning note to the movement.
+- The warning keeps the stock issue visible for later operational review instead of silently blocking or hiding the problem.
 
 ## Waste Logic
 

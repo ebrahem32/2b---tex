@@ -362,3 +362,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: existing historical fabric names are left unchanged until a separate controlled cleanup/migration is explicitly requested.
 - Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Customer Delete And Negative Stock Save Warning
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.05`
+- Goal: allow safe cleanup of unused customer master records and keep negative/insufficient finished-stock issues visible without blocking sale entry.
+- Change: added customer master delete action for unused customers, with blockers for linked operational/commercial/customer-account data.
+- Change: finished-stock sale now includes negative/non-zero balances in the source list, removes the UI max restriction, and saves sale movements that exceed available balance with a warning note.
+- Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

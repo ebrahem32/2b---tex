@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.04';
-const APP_BUILD_TIME = '2026-06-14 16:51';
+const APP_VERSION = 'v2026.06.14.05';
+const APP_BUILD_TIME = '2026-06-14 17:06';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1602,12 +1602,15 @@ function knownAccountCustomers() {
 }
 function customerMasterTableRows() {
   const rows = customerMasterRows().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name), 'ar'));
-  return rows.map((customer)=>`<tr>
+  return rows.map((customer)=>{
+    const deleteAction = canDeleteRecords?.() ? `<button class="mini-btn danger" type="button" data-delete-customer-master="${escapeHtml(customer.id)}">حذف</button>` : '';
+    return `<tr>
     <td>${escapeHtml(customer.name)}</td>
     <td>${escapeHtml(customer.phone || '-')}</td>
     <td>${escapeHtml(customer.notes || '-')}</td>
-    <td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-edit-customer-master="${escapeHtml(customer.id)}">تعديل</button><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(customer.name)}">كشف الحساب</button></div></td>
-  </tr>`).join('') || '<tr><td colspan="4">لا توجد بيانات عملاء مسجلة.</td></tr>';
+    <td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-edit-customer-master="${escapeHtml(customer.id)}">تعديل</button><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(customer.name)}">كشف الحساب</button>${deleteAction}</div></td>
+  </tr>`;
+  }).join('') || '<tr><td colspan="4">لا توجد بيانات عملاء مسجلة.</td></tr>';
 }
 function customerMasterSectionHtml() {
   return `<section class="report-section no-print">
@@ -1673,6 +1676,44 @@ async function saveCustomerMasterFromDialog() {
     return;
   }
   recordAudit(id ? 'update' : 'create', 'customer', customerId, null, payload, `حفظ بيانات العميل ${name}`);
+  await persistAuditLog();
+  await loadBackendData();
+  applyCustomerNameDatalist();
+  renderCustomerAccountsDialog();
+}
+function customerMasterDeleteBlockers(customer) {
+  const wanted = normalizeCustomerMasterName(customer?.name);
+  if (!wanted) return ['اسم العميل غير واضح.'];
+  const blockers = [];
+  if (orders.some((order)=>normalizeCustomerMasterName(order.customer) === wanted)) blockers.push('له طلبات تشغيل');
+  if (pricings.some((pricing)=>normalizeCustomerMasterName(pricing.customer) === wanted)) blockers.push('له عروض سعر');
+  if (customerBatches.some((batch)=>normalizeCustomerMasterName(batch.customerName || batch.customer) === wanted)) blockers.push('له حركات تسليم/بيع مجهز');
+  const account = customerAccounts?.[customer.name];
+  if (account && (Number(account.openingBalance || 0) !== 0 || (account.payments || []).length)) blockers.push('له رصيد أو دفعات في حساب العميل');
+  return blockers;
+}
+async function deleteCustomerMaster(customerId) {
+  const customer = customerMasterRows().find((item)=>String(item.id) === String(customerId));
+  if (!customer) return;
+  const blockers = customerMasterDeleteBlockers(customer);
+  if (blockers.length) {
+    alert(`لا يمكن حذف العميل ${customer.name} لأنه مرتبط بـ: ${blockers.join('، ')}`);
+    return;
+  }
+  if (!confirm(`حذف العميل ${customer.name}؟`)) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حذف العميل.'))) return;
+  const deleted = await deleteBackend(`/customers/${encodeURIComponent(customer.id)}`);
+  if (!deleted?.ok) {
+    await rollbackAfterBackendWriteFailure('تعذر حذف العميل من قاعدة البيانات.');
+    return;
+  }
+  if (customerAccounts?.[customer.name]) {
+    const nextAccounts = clone(customerAccounts);
+    delete nextAccounts[customer.name];
+    await saveBackendSetting('customerAccounts', nextAccounts);
+    customerAccounts = nextAccounts;
+  }
+  recordAudit('delete', 'customer', customer.id, customer, null, `حذف العميل ${customer.name}`);
   await persistAuditLog();
   await loadBackendData();
   applyCustomerNameDatalist();
@@ -2979,7 +3020,7 @@ function finishedStockSaleSources() {
       );
       return { order, allocation, balance };
     }))
-    .filter((item)=>Number(item.balance || 0) > 0)
+    .filter((item)=>Math.abs(Number(item.balance || 0)) > 0.001)
     .sort((a, b)=>String(a.order.fabricType || '').localeCompare(String(b.order.fabricType || ''), 'ar') || Number(b.balance || 0) - Number(a.balance || 0));
 }
 function finishedStockSaleFabricOptions() {
@@ -3003,7 +3044,7 @@ function renderFinishedSaleRows() {
         <td>${escapeHtml(allocation.color || '-')}</td>
         <td>${escapeHtml(allocation.targetFinishedWidth || allocation.rawWidth || order.inchWidth || '-')}</td>
         <td><strong>${formatNumber(balance)}</strong></td>
-        <td><input type="number" step="0.01" min="0" max="${escapeHtml(balance)}" data-finished-sale-quantity placeholder="0"></td>
+        <td><input type="number" step="0.01" min="0" data-finished-sale-quantity placeholder="0"></td>
       </tr>`)
     .join('');
   body.innerHTML = rows || '<tr><td colspan="7">لا يوجد رصيد مخزن متاح للبيع الجاهز.</td></tr>';
@@ -3112,11 +3153,12 @@ async function saveFinishedStockSale(event) {
     .filter((item)=>item.quantity > 0);
   if (!customerName) { alert('اكتب اسم العميل المستلم.'); return; }
   if (!rows.length) { alert('اكتب كمية بيع واحدة على الأقل.'); return; }
-  const invalid = rows.find((item)=>item.quantity > item.available + 0.001);
-  if (invalid) { alert(`كمية البيع أكبر من المتاح. المتاح ${formatNumber(invalid.available)} كجم.`); return; }
   await ensureBackendCustomer(customerName);
   for (const item of rows) {
     const totalPrice = roundNumber(item.quantity * unitPrice);
+    const balanceWarning = item.quantity > item.available + 0.001
+      ? `تنبيه: كمية البيع ${formatNumber(item.quantity)} أكبر من رصيد الصنف المتاح ${formatNumber(item.available)} كجم`
+      : '';
     const saved = await postBackend('/batches/customer', batchToApi({
       id: uid(),
       orderId: item.orderId,
@@ -3129,7 +3171,7 @@ async function saveFinishedStockSale(event) {
       paymentTerms: data.paymentTerms || '',
       noteNumber: data.noteNumber || '',
       movement: 'finished_sale',
-      notes: ['بيع مجهز', data.notes || ''].filter(Boolean).join(' - '),
+      notes: ['بيع مجهز', balanceWarning, data.notes || ''].filter(Boolean).join(' - '),
     }));
     if (!saved) {
       await rollbackAfterBackendWriteFailure('تعذر حفظ بيع مجهز في قاعدة البيانات. لم يتم اعتماد الحركة.');
@@ -5528,6 +5570,8 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (ledgerButton) renderCustomerLedgerDialog(ledgerButton.dataset.customerLedger);
   const editCustomerMasterButton = event.target.closest('[data-edit-customer-master]');
   if (editCustomerMasterButton) fillCustomerMasterForm(editCustomerMasterButton.dataset.editCustomerMaster);
+  const deleteCustomerMasterButton = event.target.closest('[data-delete-customer-master]');
+  if (deleteCustomerMasterButton) deleteCustomerMaster(deleteCustomerMasterButton.dataset.deleteCustomerMaster).catch((error)=>{ console.error('customer-master-delete-error', error); alert(error.message || 'تعذر حذف العميل.'); });
   if (event.target.closest('[data-clear-customer-master]')) clearCustomerMasterForm();
   if (event.target.closest('[data-save-customer-master]')) saveCustomerMasterFromDialog().catch((error)=>{ console.error('customer-master-save-error', error); alert(error.message || 'تعذر حفظ بيانات العميل.'); });
   if (event.target.closest('[data-back-customer-accounts]')) renderCustomerAccountsDialog();

@@ -190,3 +190,12 @@ For Phase 3.1 local verification before commit:
 - Order creation, grouped order lines, quotation creation, and quotation item rows now save against the canonical fabric name when a matching official fabric exists.
 - Existing historical fabric names are not migrated automatically; this change protects new entries and allows a later controlled cleanup if needed.
 - Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+
+## Latest Customer Delete And Negative Stock Save Warning
+
+- Version: `v2026.06.14.05`.
+- Customer master now supports deleting unused customers from the customers/accounts screen.
+- Customer deletion is blocked when the customer is linked to orders, quotations, finished-stock sale movements, opening balances, or payments.
+- Finished-stock sale no longer blocks saving when the selected stock balance is negative or lower than the sold quantity.
+- When the sale exceeds the available balance, the movement is saved with a clear warning note so the operational problem remains visible for later correction.
+- Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
