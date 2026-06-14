@@ -74,7 +74,8 @@ function updateSuggestedDyeCost() {
 
 function renderPricings() {
   const activePricings = getPricings().filter(isActivePricing);
-  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم الكرت">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف / الخامة">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('en-US')}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('en-US')}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('en-US')}</td><td data-label="الحالة"><span class="status pending">كرت تسعير</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`).join('');
+  const currencyLabel = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
+  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم الكرت">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف / الخامة">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('en-US')} ${currencyLabel(pricing.currency)}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('en-US')} ${currencyLabel(pricing.currency)}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('en-US')} ${currencyLabel(pricing.currency)}</td><td data-label="الحالة"><span class="status pending">كرت تسعير</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`).join('');
 }
 
 function updatePricingPreview() {
@@ -82,10 +83,11 @@ function updatePricingPreview() {
     ? pricingPreviewPayloadFromEditor()
     : { dyehouse:refs.pricingDyehouse.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value };
   const pricing = calculatePricing(payload);
-  refs.pricingWasteCostPreview.textContent = pricing.wasteCost.toLocaleString('en-US');
-  refs.pricingCostPreview.textContent = pricing.costPerKg.toLocaleString('en-US');
-  refs.pricingSellPreview.textContent = pricing.sellPrice.toLocaleString('en-US');
-  refs.pricingTotalPreview.textContent = pricing.totalOffer.toLocaleString('en-US');
+  const currency = pricing.currency === 'USD' ? 'دولار' : 'جنيه';
+  refs.pricingWasteCostPreview.textContent = `${pricing.wasteCost.toLocaleString('en-US')} ${currency}`;
+  refs.pricingCostPreview.textContent = `${pricing.costPerKg.toLocaleString('en-US')} ${currency}`;
+  refs.pricingSellPreview.textContent = `${pricing.sellPrice.toLocaleString('en-US')} ${currency}`;
+  refs.pricingTotalPreview.textContent = `${pricing.totalOffer.toLocaleString('en-US')} ${currency}`;
 }
 
 function fillPricingForm(pricing) {
@@ -93,6 +95,8 @@ function fillPricingForm(pricing) {
   const dyehouse = pricing.dyehouse || '';
   const colorClass = normalizeDyehousePriceLabel(pricing.colorClass || '');
   refs.pricingNumber.value = pricing.pricingNumber || '';
+  const currencyRef = document.getElementById('pricingCurrency');
+  if (currencyRef) currencyRef.value = pricing.currency || pricing.priceItems?.find((item)=>item?.currency)?.currency || 'EGP';
   if (refs.pricingProductCode) refs.pricingProductCode.value = pricing.productCode || buildItemCode(pricing.pricingNumber);
   refs.pricingCustomer.value = pricing.customer || '';
   refs.pricingDate.value = pricing.pricingDate || new Date().toISOString().slice(0,10);
@@ -157,6 +161,7 @@ function pricingDraftFromOrder(order) {
     wastePercent: calculated.expectedWastePercent || '',
     profitPerKg: Number(calculated.kiloPrice || 0) ? Math.max(0, Number(calculated.kiloPrice || 0) - Number(calculated.rawCost || orderRawCost(calculated) || 0)) : '',
     paymentTerms: calculated.paymentTerms || '',
+    currency: calculated.currency || 'EGP',
     notes: calculated.notes || '',
   };
 }

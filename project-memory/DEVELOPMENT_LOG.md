@@ -123,6 +123,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Rule: internal dyeing-stage costs remain hidden from the customer-facing quotation.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
 
+### Add Pricing Currency And Active Order Pricing Drafts
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.04`
+- Goal: support pricing cards for already-running orders and allow customer quotation values in pound or dollar.
+- Change: active orders use the existing `openPricingForOrder` flow from the documents panel; if no linked pricing exists, a draft pricing card is created from the order and linked after save.
+- Change: added pricing-card currency selection with `EGP` and `USD`.
+- Compatibility: currency is persisted inside `pricing_items_json` without SQLite schema changes.
+- Change: pricing list, preview, and customer quotation display the selected currency.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+
 ### Extract Frontend Backend Client
 
 - Date: 2026-06-13

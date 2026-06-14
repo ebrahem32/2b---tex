@@ -5,7 +5,7 @@
       const currentOrder = deps.getOrders().find((item)=>item.id === deps.getSelectedOrderId());
       const linkedPricing = currentOrder?.pricingId ? deps.getPricings().find((pricing)=>pricing.id === currentOrder.pricingId) : null;
       const orderPricing = currentOrder ? (linkedPricing || deps.pricingForOrder(currentOrder)) : null;
-      const pricingActionLabel = orderPricing ? 'تعديل التسعيرة المرتبطة' : 'إنشاء تسعيرة من الطلب';
+      const pricingActionLabel = orderPricing ? 'تعديل كرت التسعير المرتبط' : 'إنشاء كرت تسعير من الطلب';
       refs.documentsPanel.innerHTML = `
         <div class="document-action-group">
           <h3>عرض العميل</h3>

@@ -358,3 +358,14 @@ For Phase 3.1 local verification before commit:
 - Each accessory row shows accessory type, quantity, kilo/unit price, and total.
 - The quotation summary contract total remains inclusive of fabric plus accessories.
 - Internal dyeing-stage costs are still hidden from the customer-facing quotation.
+
+## Latest Pricing Currency And Active Order Cards
+
+- Version: `v2026.06.15.04`.
+- Working orders can open a pricing card from the order documents panel.
+- If an order has no linked pricing card, the system opens a new draft card filled from the current order data and links it to the order after save.
+- If an order already has a linked pricing card, the same action opens the linked card for editing.
+- Pricing cards now support currency selection: Egyptian pound (`EGP`) or dollar (`USD`).
+- Currency is stored safely inside pricing item JSON without changing the SQLite schema.
+- Pricing list, pricing preview, and customer quotation display the selected currency.
+- Customer quotation accessory sub-lines display accessory quantity, unit price, and total using the selected currency.
