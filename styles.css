@@ -407,6 +407,9 @@
 .pricing-accessory-stage-option{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.025);color:var(--muted);font-size:12px;white-space:nowrap}
 .pricing-accessory-stage-option input{width:auto!important;min-height:0!important;accent-color:var(--accent2)}
 .pricing-accessory-hint{grid-column:1/-1;color:var(--muted);font-size:12px}
+.quotation-accessory-row td{background:#fbfdff!important;color:#0f172a!important}
+.quotation-accessory-row small{display:block;color:#64748b;font-weight:700;margin-bottom:3px}
+.quotation-accessory-row strong{display:block;font-weight:900}
 .pricing-stage-head span{font-size:12px!important;color:var(--muted)!important}
 .pricing-stage-row input{min-height:36px}
 .pricing-stage-total{color:var(--muted);font-size:12px}

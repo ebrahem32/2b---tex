@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.02';
-const APP_BUILD_TIME = '2026-06-15 01:05';
+const APP_VERSION = 'v2026.06.15.03';
+const APP_BUILD_TIME = '2026-06-15 01:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3166,18 +3166,28 @@ function openCustomerPricingQuotation(id) {
     <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
     <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
   </tr>`).join('');
-  const publicAccessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
+  const publicAccessoryRows = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
     ? item.accessoryLines.map((line)=>{
         const quantity = Number(line.quantity ?? line.percent ?? 0);
-        return `${escapeHtml(line.type || 'إكسسوار')}${quantity ? ` ${money(quantity)} كجم` : ''}`;
-      }).join(' - ')
+        const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
+        const total = Number(line.total ?? quantity * unitPrice);
+        return `<tr class="quotation-accessory-row">
+          <td><small>إكسسوار</small><strong>${escapeHtml(line.type || 'إكسسوار')}</strong></td>
+          <td>${money(quantity)} كجم</td>
+          <td>${money(unitPrice)} جنيه</td>
+          <td>${money(total)} جنيه</td>
+        </tr>`;
+      }).join('')
     : '';
-  const publicItemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
-    <td><strong>${escapeHtml(item.fabricType || '-')}</strong>${publicAccessoryLabel(item) ? `<br><small>إكسسوار: ${publicAccessoryLabel(item)}</small>` : ''}</td>
-    <td>${money(item.quantity)} \u0643\u062c\u0645</td>
-    <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
-    <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
-  </tr>`).join('');
+  const publicItemRows = (items.length ? items : [pricing]).map((item)=>{
+    const clothTotal = Number(item.clothTotal ?? Number(item.sellPrice || 0) * Number(item.quantity || 0));
+    return `<tr>
+      <td><strong>${escapeHtml(item.fabricType || '-')}</strong></td>
+      <td>${money(item.quantity)} \u0643\u062c\u0645</td>
+      <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
+      <td>${money(clothTotal)} \u062c\u0646\u064a\u0647</td>
+    </tr>${publicAccessoryRows(item)}`;
+  }).join('');
   refs.documentTitle.textContent = '\u0639\u0631\u0636 \u0633\u0639\u0631';
   refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
     ${documentHeader()}

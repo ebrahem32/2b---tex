@@ -348,3 +348,13 @@ For Phase 3.1 local verification before commit:
 - Accessory total remains `quantity * (raw unit price + selected stage prices)`.
 - The selected accessory stages do not change the fabric kilo price, fabric production cost, fabric waste, or deferred-payment cost.
 - Customer quotation remains clean: it shows accessory under the fabric item without exposing internal stage costs.
+
+## Latest Customer Quotation Accessory Lines
+
+- Version: `v2026.06.15.03`.
+- Customer quotation item rows now separate fabric and accessories commercially.
+- Fabric appears as the main row with its quantity, kilo price, and fabric-only total.
+- Accessories appear directly under the fabric row as accessory rows.
+- Each accessory row shows accessory type, quantity, kilo/unit price, and total.
+- The quotation summary contract total remains inclusive of fabric plus accessories.
+- Internal dyeing-stage costs are still hidden from the customer-facing quotation.

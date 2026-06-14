@@ -111,6 +111,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
 
+### Show Accessories As Quotation Sub-Lines
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.03`
+- Goal: make customer quotations commercially clear when a fabric item includes accessories.
+- Change: fabric row now shows fabric-only quantity, kilo price, and total.
+- Change: accessories appear directly below the fabric row with accessory type, quantity, unit price, and total.
+- Rule: customer quotation summary total remains inclusive of fabric plus accessories.
+- Rule: internal dyeing-stage costs remain hidden from the customer-facing quotation.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+
 ### Extract Frontend Backend Client
 
 - Date: 2026-06-13
