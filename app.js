@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.11';
-const APP_BUILD_TIME = '2026-06-14 20:03';
+const APP_VERSION = 'v2026.06.14.12';
+const APP_BUILD_TIME = '2026-06-14 21:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2577,6 +2577,7 @@ function calculatePricing(pricing) {
     fabricType: calculatedItems.length > 1 ? `${first.fabricType || 'عرض مجمع'} + ${calculatedItems.length - 1}` : first.fabricType || source.fabricType || '',
     quantity: totalQuantity,
     wasteCost: weighted('wasteCost'),
+    deferredCost: weighted('deferredCost'),
     costPerKg: weighted('costPerKg'),
     sellPrice: totalQuantity ? roundNumber(totalOffer / totalQuantity) : Number(first.sellPrice || 0),
     totalOffer,
@@ -2595,6 +2596,8 @@ function pricingItemsFor(pricing = {}) {
     rawCost: Number(item.rawCost || 0),
     dyeCost: Number(item.dyeCost || 0),
     wastePercent: Number(item.wastePercent || 0),
+    wasteBasis: item.wasteBasis || item.waste_basis || '',
+    deferredPercent: Number(item.deferredPercent || item.deferred_percent || 0),
     extraCost: Number(item.extraCost || 0),
     profitPerKg: Number(item.profitPerKg || 0),
   }));
@@ -2611,6 +2614,8 @@ function pricingItemsFor(pricing = {}) {
     rawCost: Number(pricing.rawCost || 0),
     dyeCost: Number(pricing.dyeCost || 0),
     wastePercent: Number(pricing.wastePercent || 0),
+    wasteBasis: pricing.wasteBasis || pricing.waste_basis || '',
+    deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
     extraCost: Number(pricing.extraCost || 0),
     profitPerKg: Number(pricing.profitPerKg || 0),
   }];
@@ -2627,10 +2632,27 @@ function pricingPrimaryItemFromRefs() {
     rawCost: Number(refs.pricingRawCost?.value || 0),
     dyeCost: Number(refs.pricingDyeCost?.value || 0),
     wastePercent: Number(refs.pricingWastePercent?.value || 0),
+    wasteBasis: 'net',
+    deferredPercent: pricingDeferredPercentFromPaymentDetails(),
     extraCost: Number(refs.pricingExtraCost?.value || 0),
     profitPerKg: Number(refs.pricingProfitPerKg?.value || 0),
   };
 }
+
+function pricingDeferredPercentFromPaymentDetails() {
+  const text = String(refs.pricingPaymentDetails?.value || refs.pricingPaymentTerms?.value || '');
+  const match = text.match(/(?:أجل|اجل|نسبة)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%?/i);
+  return match ? Number(match[1] || 0) : 0;
+}
+
+function pricingWasteBasisSelect(value = '', disabled = false) {
+  const current = value || 'net';
+  return `<select data-pricing-item-field="wasteBasis" ${disabled ? 'disabled' : ''}>
+    <option value="net" ${current === 'net' ? 'selected' : ''}>على الخام</option>
+    <option value="gross" ${current === 'gross' ? 'selected' : ''}>على القائم</option>
+  </select>`;
+}
+
 function pricingItemRowHtml(item = {}, primary = false) {
   return `<div class="grouped-order-row pricing-item-row${primary ? ' primary' : ''}" data-pricing-item-row>
     <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}" ${primary ? 'readonly' : ''}>
@@ -2642,8 +2664,10 @@ function pricingItemRowHtml(item = {}, primary = false) {
     <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}" ${primary ? 'readonly' : ''}>
     <input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="خام" value="${item.rawCost || ''}" ${primary ? 'readonly' : ''}>
     <input data-pricing-item-field="dyeCost" type="number" step="0.01" placeholder="صباغة" value="${item.dyeCost || ''}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="مراحل" value="${item.extraCost || ''}" ${primary ? 'readonly' : ''}>
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}" ${primary ? 'readonly' : ''}>
-    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="إضافي" value="${item.extraCost || ''}" ${primary ? 'readonly' : ''}>
+    ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net', primary)}
+    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل %" value="${item.deferredPercent || ''}" ${primary ? 'readonly' : ''}>
     <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}" ${primary ? 'readonly' : ''}>
     <button type="button" class="mini-btn danger" data-remove-pricing-item ${primary ? 'disabled' : ''}>حذف</button>
   </div>`;
@@ -2676,9 +2700,11 @@ function readPricingItemsEditor() {
     rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
     dyeCost: Number(row.querySelector('[data-pricing-item-field="dyeCost"]')?.value || 0),
     wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
+    wasteBasis: row.querySelector('[data-pricing-item-field="wasteBasis"]')?.value || 'net',
+    deferredPercent: Number(row.querySelector('[data-pricing-item-field="deferredPercent"]')?.value || 0),
     extraCost: Number(row.querySelector('[data-pricing-item-field="extraCost"]')?.value || 0),
     profitPerKg: Number(row.querySelector('[data-pricing-item-field="profitPerKg"]')?.value || 0),
-  })).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.profitPerKg > 0);
+  })).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.extraCost > 0 || item.deferredPercent > 0 || item.profitPerKg > 0);
 }
 function pricingPreviewPayloadFromEditor() {
   return { priceItems: readPricingItemsEditor(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '' };
@@ -2694,7 +2720,7 @@ function ensurePricingItemsUi() {
   if (!refs.pricingForm || document.getElementById('pricingItemsBox')) return;
   const anchor = refs.pricingNotes?.closest('label') || refs.pricingForm.querySelector('.form-grid');
   if (!anchor) return;
-  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>بنود عرض السعر للعميل</span><p class="eyebrow">يمكن إضافة أكثر من خامة أو صنف داخل نفس عرض السعر، مع بقاء الخانات الأساسية كبند أول.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف</span><span>الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>خام</span><span>صباغة</span><span>هالك</span><span>إضافي</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>بنود عرض السعر للعميل</span><p class="eyebrow">التسعير: خام + صباغة + مراحل + هالك، ثم الأجل قبل الربح.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف</span><span>الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>خام</span><span>صباغة</span><span>مراحل</span><span>هالك</span><span>أساس</span><span>أجل</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
     applyFabricNameDatalist();
@@ -2707,7 +2733,7 @@ function ensurePricingItemsUi() {
     updatePricingPreview();
   });
   document.getElementById('pricingItemsRows')?.addEventListener('input', updatePricingPreview);
-  [refs.pricingFabricType, refs.pricingMaterialType, refs.pricingDyehouse, refs.pricingColorClass, refs.pricingQuantity, refs.pricingInchWidth, refs.pricingFinishedWeight, refs.pricingRawCost, refs.pricingDyeCost, refs.pricingWastePercent, refs.pricingExtraCost, refs.pricingProfitPerKg].filter(Boolean).forEach((input)=>{
+  [refs.pricingFabricType, refs.pricingMaterialType, refs.pricingDyehouse, refs.pricingColorClass, refs.pricingQuantity, refs.pricingInchWidth, refs.pricingFinishedWeight, refs.pricingRawCost, refs.pricingDyeCost, refs.pricingWastePercent, refs.pricingExtraCost, refs.pricingProfitPerKg, refs.pricingPaymentDetails].filter(Boolean).forEach((input)=>{
     input.addEventListener('input', () => { syncPricingPrimaryItemRow(); updatePricingPreview(); });
     input.addEventListener('change', () => { syncPricingPrimaryItemRow(); updatePricingPreview(); });
   });
@@ -2926,7 +2952,12 @@ function openCustomerPricingQuotation(id) {
     <td>${escapeHtml(item.materialType || '-')}</td>
     <td>${escapeHtml(item.colorClass || '-')}</td>
     <td>${money(item.quantity)} \u0643\u062c\u0645</td>
-    <td>${escapeHtml(item.inchWidth || '-')}</td>
+    <td>${money(item.rawCost)}</td>
+    <td>${money(item.dyeCost)}</td>
+    <td>${money(item.extraCost)}</td>
+    <td>${money(item.wasteCost)} (${money(item.wastePercent)}%)</td>
+    <td>${money(item.deferredCost)} (${money(item.deferredPercent)}%)</td>
+    <td>${money(item.profitPerKg)}</td>
     <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
     <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
   </tr>`).join('');
@@ -2951,7 +2982,7 @@ function openCustomerPricingQuotation(id) {
     </section>
     <section class="report-section">
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
-      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u062f\u0631\u062c\u0629 \u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0627\u0644\u0628\u0648\u0635\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
+      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u062f\u0631\u062c\u0629 \u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u062e\u0627\u0645</th><th>\u0635\u0628\u0627\u063a\u0629</th><th>\u0645\u0631\u0627\u062d\u0644</th><th>\u0647\u0627\u0644\u0643</th><th>\u0623\u062c\u0644</th><th>\u0631\u0628\u062d</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
     </section>
     <section class="report-section"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml(notes || '\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629.')}</p></section>
     ${documentFooter()}

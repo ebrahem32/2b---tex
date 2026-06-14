@@ -241,3 +241,14 @@ For Phase 3.1 local verification before commit:
 - Internally the save still uses the existing `/api/batches/bulk` endpoint and the existing movement tables, so calculations and reports continue to read the same data model.
 - The older individual entry forms are hidden from the UI to reduce clutter, while the movement history lists remain visible.
 - Not touched: `backend/calculations.js`, `backend/server.js`, stock formulas, waste formulas, SQLite schema, AI backend, WhatsApp service, A5 service.
+
+## Latest Customer Quotation Pricing Formula
+
+- Version: `v2026.06.14.12`.
+- Customer quotation items now support the full pricing formula per fabric/material line.
+- Formula per line: raw/weaving cost + dyeing cost + finishing/stage cost + waste cost, then deferred-payment percentage, then profit per kg.
+- Deferred-payment percentage is applied before profit, as an operating finance cost.
+- Waste basis can be selected per quotation line: on raw cost (`net`) or on total production cost (`gross` / القائم).
+- The quotation document now shows raw, dyeing, stages, waste, deferred cost, profit, unit price, and total per line.
+- Existing quotations remain compatible; missing new fields default to zero or the existing dyehouse accounting mode.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, waste movement logic, AI backend, WhatsApp service, A5 service.

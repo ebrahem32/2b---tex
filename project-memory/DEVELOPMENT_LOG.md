@@ -427,3 +427,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: individual entry forms for raw issue, finished receipt, customer delivery, accessory issue, and accessory receipt are hidden from the UI; existing movement history remains visible.
 - Not touched: `backend/calculations.js`, `backend/server.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Customer Quotation Pricing Formula
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.12`
+- Goal: make quotation pricing customer-level and formula-based for multiple fabrics/materials.
+- Change: quotation item rows now include raw cost, dyeing cost, finishing/stage cost, waste percentage, waste basis, deferred-payment percentage, and profit per kg.
+- Change: pricing formula now applies deferred-payment cost before profit: production cost + waste + deferred percentage + profit.
+- Change: waste basis can be controlled per line as `net` (raw cost only) or `gross` (raw + dyeing + stages).
+- Change: quotation document now displays the cost breakdown per line and preserves the total quotation summary.
+- Compatibility: existing quotations still calculate because missing deferred/waste-basis fields default safely.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, dyehouse/warehouse movement logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

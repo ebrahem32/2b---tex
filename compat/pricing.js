@@ -221,15 +221,24 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     }
     function calculatePricing(pricing, librarySource) {
       var library = librarySource[pricing.dyehouse] || {};
-      var wasteBase = library.accountingMode === 'gross' ? Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) : Number(pricing.rawCost || 0);
+      var wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
+      var productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
+      var wasteBase = wasteBasis === 'gross' ? productionCost : Number(pricing.rawCost || 0);
       var wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
-      var costPerKg = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + wasteCost;
+      var costBeforeDeferred = productionCost + wasteCost;
+      var deferredCost = costBeforeDeferred * Number(pricing.deferredPercent || pricing.deferred_percent || 0) / 100;
+      var costPerKg = costBeforeDeferred + deferredCost;
       var sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
       var totalOffer = sellPrice * Number(pricing.quantity || 0);
       return _objectSpread(_objectSpread({}, pricing), {}, {
         productCode: pricing.productCode || buildItemCode(pricing.pricingNumber),
-        accountingMode: library.accountingMode || 'net',
+        accountingMode: wasteBasis,
+        wasteBasis: wasteBasis,
+        productionCost: roundNumber(productionCost),
         wasteCost: roundNumber(wasteCost),
+        costBeforeDeferred: roundNumber(costBeforeDeferred),
+        deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
+        deferredCost: roundNumber(deferredCost),
         costPerKg: roundNumber(costPerKg),
         sellPrice: roundNumber(sellPrice),
         totalOffer: roundNumber(totalOffer)

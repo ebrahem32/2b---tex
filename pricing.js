@@ -158,14 +158,18 @@
 
     function calculatePricing(pricing, librarySource) {
       const library = librarySource[pricing.dyehouse] || {};
-      const wasteBase = library.accountingMode === 'gross'
-        ? Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0)
+      const wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
+      const productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
+      const wasteBase = wasteBasis === 'gross'
+        ? productionCost
         : Number(pricing.rawCost || 0);
       const wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
-      const costPerKg = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + wasteCost;
+      const costBeforeDeferred = productionCost + wasteCost;
+      const deferredCost = costBeforeDeferred * Number(pricing.deferredPercent || pricing.deferred_percent || 0) / 100;
+      const costPerKg = costBeforeDeferred + deferredCost;
       const sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
       const totalOffer = sellPrice * Number(pricing.quantity || 0);
-      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:library.accountingMode || 'net', wasteCost:roundNumber(wasteCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
+      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredPercent:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
     }
 
     return {
