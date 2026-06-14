@@ -159,7 +159,8 @@
     function calculatePricing(pricing, librarySource) {
       const library = librarySource[pricing.dyehouse] || {};
       const wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
-      const productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + Number(pricing.accessoryCost || pricing.accessory_cost || 0);
+      const accessoryTotal = Number(pricing.accessoryCost || pricing.accessory_cost || 0);
+      const productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
       const wasteBase = wasteBasis === 'gross'
         ? productionCost
         : Number(pricing.rawCost || 0);
@@ -169,8 +170,9 @@
       const deferredCost = costBeforeDeferred * deferredPercent / 100;
       const costPerKg = costBeforeDeferred + deferredCost;
       const sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
-      const totalOffer = sellPrice * Number(pricing.quantity || 0);
-      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), totalOffer:roundNumber(totalOffer) };
+      const clothTotal = sellPrice * Number(pricing.quantity || 0);
+      const totalOffer = clothTotal + accessoryTotal;
+      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
     }
 
     return {

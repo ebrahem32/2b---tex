@@ -83,6 +83,20 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Deferred: `operationsUi.js`, `transfersUi.js`, and deeper `accessoriesUi.js` movement handlers remain in `app.js` because they are coupled to backend writes, operational validations, and stock movement safety.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
 
+### Correct Pricing Accessory As Raw Item
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.01`
+- Goal: correct the pricing-card accessory rule so accessories are not treated as dyeing/service additions.
+- Change: accessory rows now capture accessory type, quantity, and raw unit price.
+- Rule: accessory total is `quantity * raw unit price`.
+- Rule: accessory total is added to the contract total as a separate raw/material item.
+- Rule: accessory total is not part of fabric production cost, waste cost, deferred-payment cost, or fabric kilo selling price.
+- Customer quotation remains clean: accessory appears under the fabric item without internal prices.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`; direct pricing-domain check confirmed accessory is outside `productionCost` and added to `totalOffer` separately.
+
 ### Extract Frontend Backend Client
 
 - Date: 2026-06-13

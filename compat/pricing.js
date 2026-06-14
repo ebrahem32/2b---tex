@@ -222,7 +222,8 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     function calculatePricing(pricing, librarySource) {
       var library = librarySource[pricing.dyehouse] || {};
       var wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
-      var productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + Number(pricing.accessoryCost || pricing.accessory_cost || 0);
+      var accessoryTotal = Number(pricing.accessoryCost || pricing.accessory_cost || 0);
+      var productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
       var wasteBase = wasteBasis === 'gross' ? productionCost : Number(pricing.rawCost || 0);
       var wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
       var costBeforeDeferred = productionCost + wasteCost;
@@ -230,11 +231,14 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
       var deferredCost = costBeforeDeferred * deferredPercent / 100;
       var costPerKg = costBeforeDeferred + deferredCost;
       var sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
-      var totalOffer = sellPrice * Number(pricing.quantity || 0);
+      var clothTotal = sellPrice * Number(pricing.quantity || 0);
+      var totalOffer = clothTotal + accessoryTotal;
       return _objectSpread(_objectSpread({}, pricing), {}, {
         productCode: pricing.productCode || buildItemCode(pricing.pricingNumber),
         accountingMode: wasteBasis,
         wasteBasis: wasteBasis,
+        accessoryCost: roundNumber(accessoryTotal),
+        accessoryTotal: roundNumber(accessoryTotal),
         productionCost: roundNumber(productionCost),
         wasteCost: roundNumber(wasteCost),
         costBeforeDeferred: roundNumber(costBeforeDeferred),
@@ -243,6 +247,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
         deferredCost: roundNumber(deferredCost),
         costPerKg: roundNumber(costPerKg),
         sellPrice: roundNumber(sellPrice),
+        clothTotal: roundNumber(clothTotal),
         totalOffer: roundNumber(totalOffer)
       });
     }

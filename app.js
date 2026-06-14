@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.20';
-const APP_BUILD_TIME = '2026-06-14 23:59';
+const APP_VERSION = 'v2026.06.15.01';
+const APP_BUILD_TIME = '2026-06-15 00:25';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2583,7 +2583,7 @@ function calculatePricing(pricing) {
     wasteCost: weighted('wasteCost'),
     deferredCost: weighted('deferredCost'),
     costPerKg: weighted('costPerKg'),
-    sellPrice: totalQuantity ? roundNumber(totalOffer / totalQuantity) : Number(first.sellPrice || 0),
+    sellPrice: weighted('sellPrice') || Number(first.sellPrice || 0),
     totalOffer,
   };
 }
@@ -2700,7 +2700,7 @@ function pricingItemRowHtml(item = {}) {
     <div class="pricing-stage-card pricing-accessory-card" data-pricing-accessory-card>
       <div class="pricing-stage-head"><span>الإكسسوار</span><button class="mini-btn" type="button" data-add-pricing-accessory>+ إكسسوار</button></div>
       <div class="pricing-stage-rows">${accessoriesHtml}</div>
-      <div class="pricing-stage-total">تكلفة الإكسسوار: <strong data-pricing-accessory-total>${formatNumber(pricingAccessoriesTotal(accessories))}</strong></div>
+      <div class="pricing-stage-total">إجمالي خام الإكسسوار: <strong data-pricing-accessory-total>${formatNumber(pricingAccessoriesTotal(accessories))}</strong></div>
     </div>
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
@@ -2716,9 +2716,11 @@ function pricingAccessoryTypeOptions(current = '') {
 }
 
 function pricingAccessoryRowHtml(line = {}) {
+  const quantity = line.quantity ?? line.quantityManual ?? line.percent ?? '';
   return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
     <select data-pricing-accessory-type>${pricingAccessoryTypeOptions(line.type || '')}</select>
-    <input data-pricing-accessory-price type="number" step="0.01" placeholder="السعر" value="${line.price || ''}">
+    <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="الكمية" value="${quantity || ''}">
+    <input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}">
     <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
   </div>`;
 }
@@ -2745,13 +2747,14 @@ function pricingStagesTotal(stages = []) {
 function pricingAccessoriesFromRow(row) {
   return [...row.querySelectorAll('[data-pricing-accessory-row]')].map((accessoryRow)=>({
     type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
-    percent: 0,
+    quantity: Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0),
+    percent: Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0),
     price: Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0),
-  })).filter((line)=>line.type || line.price);
+  })).filter((line)=>line.type || line.quantity || line.price);
 }
 
 function pricingAccessoriesTotal(lines = []) {
-  return roundNumber(lines.reduce((total, line)=>total + Number(line.price || 0), 0));
+  return roundNumber(lines.reduce((total, line)=>total + Number(line.quantity ?? line.percent ?? 0) * Number(line.price || 0), 0));
 }
 
 function updatePricingStageTotals() {
@@ -3092,7 +3095,7 @@ function openCustomerPricingQuotation(id) {
     ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)}`).join('<br>')
     : money(item.dyeCost);
   const accessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
-    ? item.accessoryLines.map((line)=>`${escapeHtml(line.type || 'إكسسوار')} ${money(line.percent)}% × ${money(line.price)} = ${money(Number(line.percent || 0) * Number(line.price || 0) / 100)}`).join('<br>')
+    ? item.accessoryLines.map((line)=>`${escapeHtml(line.type || 'إكسسوار')} ${money(line.quantity ?? line.percent ?? 0)} كجم × ${money(line.price)} = ${money(Number(line.quantity ?? line.percent ?? 0) * Number(line.price || 0))}`).join('<br>')
     : '-';
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td>${escapeHtml(item.fabricType || '-')}</td>
@@ -3107,7 +3110,10 @@ function openCustomerPricingQuotation(id) {
     <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
   </tr>`).join('');
   const publicAccessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
-    ? item.accessoryLines.map((line)=>escapeHtml(line.type || 'إكسسوار')).join(' - ')
+    ? item.accessoryLines.map((line)=>{
+        const quantity = Number(line.quantity ?? line.percent ?? 0);
+        return `${escapeHtml(line.type || 'إكسسوار')}${quantity ? ` ${money(quantity)} كجم` : ''}`;
+      }).join(' - ')
     : '';
   const publicItemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td><strong>${escapeHtml(item.fabricType || '-')}</strong>${publicAccessoryLabel(item) ? `<br><small>إكسسوار: ${publicAccessoryLabel(item)}</small>` : ''}</td>

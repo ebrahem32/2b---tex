@@ -325,3 +325,15 @@ For Phase 3.1 local verification before commit:
 - Accessory pricing is now a direct service price, like dyeing/kastra/enzyme stages.
 - Accessory cost per line is the sum of accessory service prices, not `percentage * price / 100`.
 - Customer quotations continue to show accessory names only, without internal prices.
+
+## Latest Pricing Accessory Raw Item Correction
+
+- Version: `v2026.06.15.01`.
+- Correction: the previous accessory service rule was wrong for the factory workflow.
+- Accessory in a pricing card is now treated as a secondary raw/material item, not a dyeing/service addition.
+- Each accessory row captures accessory type, quantity, and raw unit price.
+- Accessory total is calculated as `quantity * raw unit price`.
+- Accessory total is added to the contract total as an independent raw item total.
+- Accessory total is not included in the fabric production cost, waste basis, deferred-payment cost, or fabric kilo selling price.
+- Customer quotations continue to show accessories under the fabric item without internal costing details.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
