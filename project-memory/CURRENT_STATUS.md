@@ -387,3 +387,11 @@ For Phase 3.1 local verification before commit:
 - For grouped pricing cards with more than one item, each saved order line keeps its own dyehouse, accessory lines, waste percent, raw cost, and dyeing operation stages.
 - The goal is that after pressing `تنزيل طلب`, the user only reviews the generated order data and saves it.
 - No backend endpoints, SQLite schema, or calculation logic were changed.
+
+## Latest Quotation Print Summary Cleanup
+
+- Version: `v2026.06.15.07`.
+- The printed quotation summary now shows only `إجمالي العقد`.
+- The separate summary KPI for `سعر الكيلو` was removed from beside the contract total.
+- The item table still keeps its `سعر الكيلو` column for fabric and accessory lines.
+- The contract total card is centered and visually emphasized for cleaner printing.

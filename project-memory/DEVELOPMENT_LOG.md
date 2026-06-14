@@ -617,3 +617,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: grouped pricing cards now preserve per-item dyehouse, waste percent, raw cost, accessory lines, and dyeing operation stages when saved as grouped orders.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Clean Quotation Print Summary
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.07`
+- Goal: improve the printed quotation summary without removing the item-table kilo price.
+- Change: removed only the separate `سعر الكيلو` KPI from beside `إجمالي العقد`.
+- Change: kept the `سعر الكيلو` column inside the quotation item table.
+- Change: centered and emphasized the contract total card for cleaner print/PDF output.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

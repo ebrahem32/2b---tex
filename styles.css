@@ -135,6 +135,9 @@
 .quotation-kpis strong{display:block;color:#071527;font-size:22px}
 .quotation-kpis .quotation-total{background:#fff8e6;border-color:#c8a56a}
 .quotation-kpis .quotation-total span,.quotation-kpis .quotation-total strong{color:#071527}
+.quotation-kpis-single{grid-template-columns:minmax(240px,420px)!important;justify-content:center}
+.quotation-kpis-single .quotation-total{padding:18px 20px}
+.quotation-kpis-single .quotation-total strong{font-size:25px}
 .quotation-items-table{table-layout:fixed!important;width:100%!important;min-width:0!important}
 .quotation-items-table th:first-child,.quotation-items-table td:first-child{width:42%;text-align:right!important}
 .quotation-items-table th:not(:first-child),.quotation-items-table td:not(:first-child){width:19.33%;text-align:center!important}
@@ -486,7 +489,9 @@
   .quotation-meta{grid-template-columns:repeat(5,1fr)!important;margin-bottom:10px!important}
   .quotation-meta div{min-height:42px!important;font-size:10px!important;padding:5px 6px!important}
   .quotation-kpis{gap:8px!important}
+  .quotation-kpis-single{grid-template-columns:minmax(0,78mm)!important}
   .quotation-kpis div{padding:9px 10px!important}
+  .quotation-kpis-single .quotation-total{padding:10px 12px!important}
   .quotation-kpis span{font-size:10px!important}
   .quotation-kpis strong{font-size:17px!important}
   .quotation-items-table th:first-child,

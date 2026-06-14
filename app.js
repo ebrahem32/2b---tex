@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.06';
-const APP_BUILD_TIME = '2026-06-15 02:35';
+const APP_VERSION = 'v2026.06.15.07';
+const APP_BUILD_TIME = '2026-06-15 03:10';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3263,8 +3263,7 @@ function openCustomerPricingQuotation(id) {
     </div>
     <section class="report-section quotation-summary">
       <h3>\u0645\u0644\u062e\u0635 \u0627\u0644\u0639\u0631\u0636</h3>
-      <div class="quotation-kpis">
-        <div><span>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</span><strong>${money(pricing.sellPrice)} ${currency}</strong></div>
+      <div class="quotation-kpis quotation-kpis-single">
         <div class="quotation-total"><span>\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0639\u0642\u062f</span><strong>${money(pricing.totalOffer)} ${currency}</strong></div>
       </div>
     </section>
