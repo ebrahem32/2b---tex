@@ -471,3 +471,32 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: the stage table is stored inside `pricing_items_json`, while the summed dye cost still fills the existing dye-cost field for reports, conversion, and old saved rows.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Simplify Pricing Card Fields
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.15`
+- Goal: remove fields that are not part of the real pricing card workflow.
+- Change: removed visible `نوع الخامة للتسعير` because `الصنف / الخامة` is the single item field.
+- Change: removed visible `درجة اللون` from pricing card lines and quotation output.
+- Change: removed visible `إضافات أخرى`; dyeing additions must be entered as dyeing-stage rows.
+- Rule: the `قائم` waste basis uses fabric/raw price + summed dyeing-stage table.
+- Compatibility: hidden/legacy fields remain internally available for schema and older records, but new card UI no longer asks the user for them.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Add Pricing Card Accessory Support
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.17`
+- Goal: include accessories inside the pricing card without adding another separate pricing screen.
+- Change: added an accessory table inside every pricing-card item line.
+- Change: accessory rows include accessory type, percentage, and price.
+- Rule: accessory cost is calculated as `percentage * price / 100` and is included in production cost before waste, deferred-payment cost, and profit.
+- Change: removed the forced horizontal scroll from pricing-card rows; each item now wraps inside the card and keeps dyeing/accessory tables visible in the same view.
+- Change: dyeing-stage names from the pricing card are copied to converted orders and shown in the dyeing production order as operation stages only, without prices.
+- Compatibility: accessory data is stored inside `pricing_items_json` as `accessoryLines` and `accessoryCost`; no database schema change was made.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

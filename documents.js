@@ -274,6 +274,22 @@
       return cleanDates[0] || todayIsoDate();
     }
 
+    function dyeingOperationStageNames(order) {
+      const notes = order?.operationNotes && typeof order.operationNotes === 'object' && !Array.isArray(order.operationNotes)
+        ? order.operationNotes
+        : {};
+      return uniqueNonEmpty((Array.isArray(notes.dyeingStages) ? notes.dyeingStages : [])
+        .map((stage) => clean(typeof stage === 'string' ? stage : stage?.name))
+        .filter(Boolean));
+    }
+
+    function dyeingOperationStagesSection(order) {
+      const stages = dyeingOperationStageNames(order);
+      if (!stages.length) return '';
+      const rows = stages.map((stage, index) => `<tr><td>${index + 1}</td><td>${safeText(stage)}</td></tr>`).join('');
+      return `<section class="report-section"><h3>مراحل التشغيل</h3><table class="summary-table"><thead><tr><th>م</th><th>المرحلة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    }
+
     function buildDyeingOrderDocument(order, dyehouseName) {
       const name = clean(dyehouseName || order?.dyehouse);
       const originalDyehouse = clean(order?.dyehouse);
@@ -291,8 +307,9 @@
       const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
+      const operationStages = dyeingOperationStagesSection(order);
       const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
-      return reportShell('أمر تشغيل صباغة', order, `${summary}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
+      return reportShell('أمر تشغيل صباغة', order, `${summary}${operationStages}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
     }
 
     function buildDyeingSummaryDocument(order) {

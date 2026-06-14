@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.14';
-const APP_BUILD_TIME = '2026-06-14 22:16';
+const APP_VERSION = 'v2026.06.14.17';
+const APP_BUILD_TIME = '2026-06-14 23:18';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -212,6 +212,7 @@ let editingOrderId = null;
 let editingPricingId = null;
 let currentDocumentType = null;
 let pendingConvertedPricingId = null;
+let pendingConvertedPricingItems = [];
 let pendingPricingOrderId = null;
 let initialLocalStorageSnapshot = null;
 let orderFocusMode = false;
@@ -2599,10 +2600,12 @@ function pricingItemsFor(pricing = {}) {
     rawCost: Number(item.rawCost || 0),
     dyeCost: Number(item.dyeCost || 0),
     dyeStages: Array.isArray(item.dyeStages) ? item.dyeStages : [],
+    accessoryLines: Array.isArray(item.accessoryLines) ? item.accessoryLines : [],
+    accessoryCost: Number(item.accessoryCost || 0),
     wastePercent: Number(item.wastePercent || 0),
     wasteBasis: item.wasteBasis || item.waste_basis || '',
     deferredPercent: Number(item.deferredPercent || item.deferred_percent || 0),
-    extraCost: Number(item.extraCost || 0),
+    extraCost: 0,
     profitPerKg: Number(item.profitPerKg || 0),
   }));
   const hasSingle = pricing.fabricType || pricing.quantity || pricing.rawCost || pricing.dyeCost || pricing.profitPerKg;
@@ -2618,13 +2621,27 @@ function pricingItemsFor(pricing = {}) {
     rawCost: Number(pricing.rawCost || 0),
     dyeCost: Number(pricing.dyeCost || 0),
     dyeStages: [],
+    accessoryLines: [],
+    accessoryCost: 0,
     wastePercent: Number(pricing.wastePercent || 0),
     wasteBasis: pricing.wasteBasis || pricing.waste_basis || '',
     deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
-    extraCost: Number(pricing.extraCost || 0),
+    extraCost: 0,
     profitPerKg: Number(pricing.profitPerKg || 0),
   }];
 }
+
+function pricingDyeStageNames(item = {}) {
+  return uniqueNonEmpty((Array.isArray(item.dyeStages) ? item.dyeStages : [])
+    .map((stage)=>String(stage?.name || '').trim())
+    .filter(Boolean));
+}
+
+function pricingOperationNotesForItem(item = {}) {
+  const dyeingStages = pricingDyeStageNames(item);
+  return dyeingStages.length ? { dyeingStages } : {};
+}
+
 function pricingPrimaryItemFromRefs() {
   return {
     fabricType: canonicalFabricName(refs.pricingFabricType?.value),
@@ -2637,10 +2654,12 @@ function pricingPrimaryItemFromRefs() {
     rawCost: Number(refs.pricingRawCost?.value || 0),
     dyeCost: Number(refs.pricingDyeCost?.value || 0),
     dyeStages: [],
+    accessoryLines: [],
+    accessoryCost: 0,
     wastePercent: Number(refs.pricingWastePercent?.value || 0),
     wasteBasis: 'net',
     deferredPercent: pricingDeferredPercentFromPaymentDetails(),
-    extraCost: Number(refs.pricingExtraCost?.value || 0),
+    extraCost: 0,
     profitPerKg: Number(refs.pricingProfitPerKg?.value || 0),
   };
 }
@@ -2664,10 +2683,11 @@ function pricingWasteBasisSelect(value = '', disabled = false) {
 function pricingItemRowHtml(item = {}) {
   const stages = Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'صباغة', price:item.dyeCost || '' }];
   const stagesHtml = stages.map((stage)=>pricingStageRowHtml(stage)).join('');
+  const accessories = Array.isArray(item.accessoryLines) && item.accessoryLines.length ? item.accessoryLines : [];
+  const accessoriesHtml = accessories.map((line)=>pricingAccessoryRowHtml(line)).join('');
   return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
     <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف / الخامة" value="${escapeHtml(item.fabricType || item.materialType || '')}">
     <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
-    <input data-pricing-item-field="colorClass" placeholder="درجة اللون" value="${escapeHtml(item.colorClass || '')}">
     <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
     <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
     <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
@@ -2677,12 +2697,25 @@ function pricingItemRowHtml(item = {}) {
       <div class="pricing-stage-rows">${stagesHtml}</div>
       <div class="pricing-stage-total">إجمالي الصباغة: <strong data-pricing-dye-total>${formatNumber(pricingStagesTotal(stages))}</strong></div>
     </div>
-    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="إضافات أخرى" value="${item.extraCost || ''}">
+    <div class="pricing-stage-card pricing-accessory-card" data-pricing-accessory-card>
+      <div class="pricing-stage-head"><span>الإكسسوار</span><button class="mini-btn" type="button" data-add-pricing-accessory>+ إكسسوار</button></div>
+      <div class="pricing-stage-rows">${accessoriesHtml}</div>
+      <div class="pricing-stage-total">تكلفة الإكسسوار: <strong data-pricing-accessory-total>${formatNumber(pricingAccessoriesTotal(accessories))}</strong></div>
+    </div>
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
     <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل %" value="${item.deferredPercent || ''}">
     <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}">
     <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
+  </div>`;
+}
+
+function pricingAccessoryRowHtml(line = {}) {
+  return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
+    <input data-pricing-accessory-type placeholder="نوع الإكسسوار" value="${escapeHtml(line.type || '')}">
+    <input data-pricing-accessory-percent type="number" step="0.01" placeholder="%" value="${line.percent || ''}">
+    <input data-pricing-accessory-price type="number" step="0.01" placeholder="السعر" value="${line.price || ''}">
+    <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
   </div>`;
 }
 
@@ -2705,11 +2738,26 @@ function pricingStagesTotal(stages = []) {
   return roundNumber(stages.reduce((total, stage)=>total + Number(stage.price || 0), 0));
 }
 
+function pricingAccessoriesFromRow(row) {
+  return [...row.querySelectorAll('[data-pricing-accessory-row]')].map((accessoryRow)=>({
+    type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
+    percent: Number(accessoryRow.querySelector('[data-pricing-accessory-percent]')?.value || 0),
+    price: Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0),
+  })).filter((line)=>line.type || line.percent || line.price);
+}
+
+function pricingAccessoriesTotal(lines = []) {
+  return roundNumber(lines.reduce((total, line)=>total + (Number(line.percent || 0) * Number(line.price || 0) / 100), 0));
+}
+
 function updatePricingStageTotals() {
   document.querySelectorAll('#pricingItemsRows [data-pricing-item-row]').forEach((row)=>{
     const total = pricingStagesTotal(pricingStagesFromRow(row));
     const totalEl = row.querySelector('[data-pricing-dye-total]');
     if (totalEl) totalEl.textContent = formatNumber(total);
+    const accessoryTotal = pricingAccessoriesTotal(pricingAccessoriesFromRow(row));
+    const accessoryTotalEl = row.querySelector('[data-pricing-accessory-total]');
+    if (accessoryTotalEl) accessoryTotalEl.textContent = formatNumber(accessoryTotal);
   });
 }
 
@@ -2721,19 +2769,21 @@ function readPricingItemsEditor() {
     fabricType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     materialType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
-    colorClass: row.querySelector('[data-pricing-item-field="colorClass"]')?.value.trim() || '',
+    colorClass: '',
     quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
     inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
     finishedWeight: row.querySelector('[data-pricing-item-field="finishedWeight"]')?.value.trim() || '',
     rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
     dyeCost: pricingStagesTotal(pricingStagesFromRow(row)),
     dyeStages: pricingStagesFromRow(row),
+    accessoryLines: pricingAccessoriesFromRow(row),
+    accessoryCost: pricingAccessoriesTotal(pricingAccessoriesFromRow(row)),
     wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
     wasteBasis: row.querySelector('[data-pricing-item-field="wasteBasis"]')?.value || 'net',
     deferredPercent: Number(row.querySelector('[data-pricing-item-field="deferredPercent"]')?.value || 0),
-    extraCost: Number(row.querySelector('[data-pricing-item-field="extraCost"]')?.value || 0),
+    extraCost: 0,
     profitPerKg: Number(row.querySelector('[data-pricing-item-field="profitPerKg"]')?.value || 0),
-  })).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.extraCost > 0 || item.deferredPercent > 0 || item.profitPerKg > 0);
+  })).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.accessoryCost > 0 || item.deferredPercent > 0 || item.profitPerKg > 0);
 }
 function pricingPreviewPayloadFromEditor() {
   return { priceItems: readPricingItemsEditor(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '' };
@@ -2748,6 +2798,7 @@ function renderPricingItemsEditor(pricing = null) {
 function markPricingCardMode() {
   const legacyFields = [
     refs.pricingFabricType,
+    refs.pricingMaterialType,
     refs.pricingDyehouse,
     refs.pricingColorClass,
     refs.pricingQuantity,
@@ -2772,7 +2823,7 @@ function ensurePricingItemsUi() {
   const anchor = refs.pricingNotes?.closest('label') || refs.pricingForm.querySelector('.form-grid');
   if (!anchor) return;
   markPricingCardMode();
-  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. سعر الصباغة جدول مراحل مثل: صباغة 71، رام مقفول 5، دبل إنزيم 9، كسترة 3، فنش 5.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>إضافات أخرى</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. إضافات الصباغة داخل جدول الصباغة، والإكسسوار له جدول مستقل داخل نفس البند.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>الإكسسوار</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
     applyFabricNameDatalist();
@@ -2782,6 +2833,20 @@ function ensurePricingItemsUi() {
     const addStageButton = event.target.closest('[data-add-pricing-stage]');
     if (addStageButton) {
       addStageButton.closest('[data-pricing-stage-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingStageRowHtml());
+      updatePricingStageTotals();
+      updatePricingPreview();
+      return;
+    }
+    const addAccessoryButton = event.target.closest('[data-add-pricing-accessory]');
+    if (addAccessoryButton) {
+      addAccessoryButton.closest('[data-pricing-accessory-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingAccessoryRowHtml());
+      updatePricingStageTotals();
+      updatePricingPreview();
+      return;
+    }
+    const removeAccessoryButton = event.target.closest('[data-remove-pricing-accessory]');
+    if (removeAccessoryButton) {
+      removeAccessoryButton.closest('[data-pricing-accessory-row]')?.remove();
       updatePricingStageTotals();
       updatePricingPreview();
       return;
@@ -2943,12 +3008,15 @@ function convertPricingToOrder(id) {
   const sourcePricing = pricings.find((item)=>item.id===id);
   const pricing = calculatePricing(sourcePricing);
   if (!pricing) return;
-  const items = pricingItemsFor(sourcePricing || pricing)
+  const sourceItems = pricingItemsFor(sourcePricing || pricing)
+    .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
+  const items = sourceItems
     .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
     .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
   const primary = items[0] || pricing;
   const orderNumber = orderNumberFromPricing(pricing.pricingNumber);
   pendingConvertedPricingId = pricing.id;
+  pendingConvertedPricingItems = sourceItems;
   editingOrderId = null;
   fillOrderForm({
     pricingId: pricing.id,
@@ -2968,7 +3036,8 @@ function convertPricingToOrder(id) {
     weavingSource: '',
     accessoryType: '',
     accessoryPercent: 0,
-    notes: pricing.notes || ''
+    notes: pricing.notes || '',
+    operationNotes: pricingOperationNotesForItem(sourceItems[0] || primary)
   });
   if (items.length > 1) {
     const rows = document.getElementById('groupedOrderRows');
@@ -3018,13 +3087,15 @@ function openCustomerPricingQuotation(id) {
   const dyeStagesLabel = (item) => Array.isArray(item.dyeStages) && item.dyeStages.length
     ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)}`).join('<br>')
     : money(item.dyeCost);
+  const accessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
+    ? item.accessoryLines.map((line)=>`${escapeHtml(line.type || 'إكسسوار')} ${money(line.percent)}% × ${money(line.price)} = ${money(Number(line.percent || 0) * Number(line.price || 0) / 100)}`).join('<br>')
+    : '-';
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
     <td>${escapeHtml(item.fabricType || '-')}</td>
-    <td>${escapeHtml(item.colorClass || '-')}</td>
     <td>${money(item.quantity)} \u0643\u062c\u0645</td>
     <td>${money(item.rawCost)}</td>
     <td>${dyeStagesLabel(item)}</td>
-    <td>${money(item.extraCost)}</td>
+    <td>${accessoryLabel(item)}</td>
     <td>${money(item.wasteCost)} (${money(item.wastePercent)}% ${wasteBasisLabel(item)})</td>
     <td>${money(item.deferredCost)} (${money(item.deferredPercent)}%)</td>
     <td>${money(item.profitPerKg)}</td>
@@ -3052,7 +3123,7 @@ function openCustomerPricingQuotation(id) {
     </section>
     <section class="report-section">
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
-      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641 / \u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u062f\u0631\u062c\u0629 \u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0642\u0645\u0627\u0634</th><th>\u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0628\u0627\u063a\u0629</th><th>\u0625\u0636\u0627\u0641\u0627\u062a \u0623\u062e\u0631\u0649</th><th>\u0647\u0627\u0644\u0643</th><th>\u0623\u062c\u0644</th><th>\u0631\u0628\u062d</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
+      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641 / \u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0642\u0645\u0627\u0634</th><th>\u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0628\u0627\u063a\u0629</th><th>\u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631</th><th>\u0647\u0627\u0644\u0643</th><th>\u0623\u062c\u0644</th><th>\u0631\u0628\u062d</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
     </section>
     <section class="report-section"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml(notes || '\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629.')}</p></section>
     ${documentFooter()}
@@ -4379,7 +4450,8 @@ async function addOrder(event) {
   const firstAccessory = accessoryLines[0] || {};
   const paymentTerms = composePaymentTerms(refs.paymentMode?.value, refs.paymentDetails?.value);
   if (refs.paymentTerms) refs.paymentTerms.value = paymentTerms;
-  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
+  const payloadOperationNotes = currentOrder?.operationNotes || pricingOperationNotesForItem(pendingConvertedPricingItems[0] || {});
+  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
   const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple' ? readGroupedOrderItems().map((item)=>({ ...item, fabricType:canonicalFabricName(item.fabricType) })) : [];
   const hasGroupedOrderItems = groupedItems.length > 1;
   const groupedSourcePricingId = hasGroupedOrderItems ? payload.pricingId : '';
@@ -4427,7 +4499,7 @@ async function addOrder(event) {
   } else {
     if (hasGroupedOrderItems) {
       const groupedOrders = groupedItems.map((item, index)=> {
-        const groupedPayload = { ...payload, pricingId:index === 0 ? groupedSourcePricingId : '', fabricType:item.fabricType, totalRawQuantity:item.totalRawQuantity, expectedWastePercent:item.expectedWastePercent || payload.expectedWastePercent, inchWidth:item.inchWidth || payload.inchWidth, kiloPrice:item.kiloPrice || payload.kiloPrice, widthMode:'single', widthLines:[], productCode:buildItemCode(payload.orderNumber) };
+        const groupedPayload = { ...payload, pricingId:index === 0 ? groupedSourcePricingId : '', fabricType:item.fabricType, totalRawQuantity:item.totalRawQuantity, expectedWastePercent:item.expectedWastePercent || payload.expectedWastePercent, inchWidth:item.inchWidth || payload.inchWidth, kiloPrice:item.kiloPrice || payload.kiloPrice, widthMode:'single', widthLines:[], productCode:buildItemCode(payload.orderNumber), operationNotes:pricingOperationNotesForItem(pendingConvertedPricingItems[index] || {}) };
         return { id:uid(), status:'pending', ...groupedPayload };
       });
       let savedGroupedOrders = null;
@@ -4449,6 +4521,7 @@ async function addOrder(event) {
       selectedOrderId = savedGroupedOrders[0]?.id || groupedOrders[0]?.id || null;
       editingOrderId = null;
       pendingConvertedPricingId = null;
+      pendingConvertedPricingItems = [];
       await loadBackendData();
       refs.orderDialog.close();
       return;
@@ -4472,6 +4545,7 @@ async function addOrder(event) {
   }
   editingOrderId = null;
   pendingConvertedPricingId = null;
+  pendingConvertedPricingItems = [];
   await loadBackendData();
   refs.orderDialog.close();
 }
@@ -5635,7 +5709,7 @@ installGroupedOrderUi();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); renderPricingItemsEditor(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
-refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
+refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; pendingConvertedPricingItems = []; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
@@ -5767,7 +5841,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
 });
 
 refs.closePricingFormBtn.onclick = () => { pendingPricingOrderId = null; refs.pricingDialog.close(); };
-refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; refs.orderDialog.close(); };
+refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; pendingConvertedPricingItems = []; refs.orderDialog.close(); };
 refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);

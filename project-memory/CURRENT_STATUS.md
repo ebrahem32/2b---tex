@@ -275,3 +275,26 @@ For Phase 3.1 local verification before commit:
 - Example dyeing stages: `صباغة 71`, `رام مقفول 5`, `دبل إنزيم 9`, `كسترة 3`, `فنش 5`.
 - The total dyeing cost for a pricing line is calculated from the stage table and remains stored in the existing pricing item data for compatibility.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+
+## Latest Pricing Card Simplification
+
+- Version: `v2026.06.14.15`.
+- Removed visible `نوع الخامة للتسعير` from the pricing card because `الصنف / الخامة` is now one field.
+- Removed visible `درجة اللون` from the pricing card.
+- Removed visible `إضافات أخرى` from pricing card lines.
+- All dyeing additions such as kastra, enzyme, ram, finish, and similar stages must be entered as rows inside `جدول الصباغة`.
+- For `قائم`, waste is now effectively based on fabric/raw price plus the summed dyeing-stage table only.
+- Legacy hidden columns remain populated safely for compatibility with old rows and backend schema.
+
+## Latest Pricing Card Accessory Support
+
+- Version: `v2026.06.14.17`.
+- Each pricing-card line now has an internal accessory table inside the same line.
+- Accessory rows capture accessory type, percentage, and price.
+- Accessory cost per pricing line is calculated as `percentage * price / 100`.
+- The calculated accessory cost is included in the production cost before waste, deferred-payment cost, and profit.
+- Accessory data is stored in `pricing_items_json` as `accessoryLines` and `accessoryCost`; the SQLite schema is unchanged.
+- Dyeing additions remain inside the dyeing-stage table; accessory is separate from dyeing stages.
+- The pricing-card item layout no longer forces horizontal scrolling; item fields wrap inside the card and the dyeing/accessory tables stay visible in the same view.
+- Dyeing-stage names from the pricing card are copied to converted orders and appear automatically in the dyeing production order as operation stages only, without prices.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.

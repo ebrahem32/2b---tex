@@ -159,7 +159,7 @@
     function calculatePricing(pricing, librarySource) {
       const library = librarySource[pricing.dyehouse] || {};
       const wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
-      const productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
+      const productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + Number(pricing.accessoryCost || pricing.accessory_cost || 0);
       const wasteBase = wasteBasis === 'gross'
         ? productionCost
         : Number(pricing.rawCost || 0);

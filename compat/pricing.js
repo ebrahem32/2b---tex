@@ -222,7 +222,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
     function calculatePricing(pricing, librarySource) {
       var library = librarySource[pricing.dyehouse] || {};
       var wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
-      var productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
+      var productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0) + Number(pricing.accessoryCost || pricing.accessory_cost || 0);
       var wasteBase = wasteBasis === 'gross' ? productionCost : Number(pricing.rawCost || 0);
       var wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
       var costBeforeDeferred = productionCost + wasteCost;
