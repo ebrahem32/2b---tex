@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.05';
-const APP_BUILD_TIME = '2026-06-14 17:06';
+const APP_VERSION = 'v2026.06.14.06';
+const APP_BUILD_TIME = '2026-06-14 17:18';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3030,12 +3030,27 @@ function finishedStockSaleFabricOptions() {
 function selectedFinishedSaleFabric() {
   return document.getElementById('finishedSaleFabric')?.value || '';
 }
+function finishedSaleFabricMatches(sourceFabric, selectedFabric) {
+  const source = cleanFabricDisplayName(sourceFabric);
+  const selected = cleanFabricDisplayName(selectedFabric);
+  if (!selected) return true;
+  if (source === selected) return true;
+  const sourceKey = normalizeFabricMasterName(source);
+  const selectedKey = normalizeFabricMasterName(selected);
+  if (!sourceKey || !selectedKey) return false;
+  if (sourceKey === selectedKey) return true;
+  const sourceTokens = cleanFabricDisplayName(source).toLowerCase().split(/\s+/).filter(Boolean).map(normalizeFabricMasterName);
+  const selectedTokens = cleanFabricDisplayName(selected).toLowerCase().split(/\s+/).filter(Boolean).map(normalizeFabricMasterName);
+  if (sourceTokens.includes(selectedKey) || selectedTokens.includes(sourceKey)) return true;
+  const startsWithWords = (words, prefixWords) => prefixWords.length > 0 && prefixWords.every((word, index)=>words[index] === word);
+  return startsWithWords(sourceTokens, selectedTokens) || startsWithWords(selectedTokens, sourceTokens);
+}
 function renderFinishedSaleRows() {
   const body = document.getElementById('finishedSaleRows');
   if (!body) return;
   const fabric = selectedFinishedSaleFabric();
   const rows = finishedStockSaleSources()
-    .filter((item)=>!fabric || item.order.fabricType === fabric)
+    .filter((item)=>finishedSaleFabricMatches(item.order.fabricType, fabric))
     .map(({ order, allocation, balance })=>`
       <tr data-finished-sale-row data-allocation-id="${escapeHtml(allocation.id)}" data-order-id="${escapeHtml(order.id)}" data-available="${escapeHtml(balance)}">
         <td>${escapeHtml(order.orderNumber || '-')}</td>

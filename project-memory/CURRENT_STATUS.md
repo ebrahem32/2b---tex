@@ -199,3 +199,10 @@ For Phase 3.1 local verification before commit:
 - Finished-stock sale no longer blocks saving when the selected stock balance is negative or lower than the sold quantity.
 - When the sale exceeds the available balance, the movement is saved with a clear warning note so the operational problem remains visible for later correction.
 - Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+
+## Latest Finished Stock Sale Fabric Matching Fix
+
+- Version: `v2026.06.14.06`.
+- Finished-stock sale fabric filtering now matches the selected fabric against related display names such as base fabric and suffix variants.
+- Example: selecting `F3` can show stock rows saved under `F3 تجهيز` when they are part of the same finished-stock family.
+- This is a UI filtering fix only; stock calculations and movement persistence are unchanged.

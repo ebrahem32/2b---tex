@@ -373,3 +373,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: finished-stock sale now includes negative/non-zero balances in the source list, removes the UI max restriction, and saves sale movements that exceed available balance with a warning note.
 - Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Fix Finished Stock Sale Fabric Matching
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.06`
+- Goal: prevent available finished-stock rows from disappearing when the selected fabric name is a base name and the stored stock row has a suffix such as `تجهيز`.
+- Change: added a finished-stock sale fabric matcher that compares exact names, normalized names, token matches, and safe prefix matches for the sale filter only.
+- Not touched: `backend/calculations.js`, waste logic, stock calculation logic, dyehouse logic, weaving logic, WhatsApp service, A5 service, SQLite schema.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
