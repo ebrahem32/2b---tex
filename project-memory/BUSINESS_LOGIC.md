@@ -38,6 +38,33 @@ Order Closure
 - Every movement must keep its date and reference.
 - Balances are calculated from movements, not edited manually.
 
+## Customer Master Rule
+
+Customer names are master data.
+
+The customers screen is the official source for customer names used by:
+
+- Customer orders.
+- Customer quotations.
+- Finished-stock sales.
+- Customer accounts and ledgers.
+
+To prevent duplicate names, the system normalizes customer-name matching before creating a new customer. This matching ignores:
+
+- Extra spaces.
+- Arabic hamza variants such as `ا`, `أ`, `إ`, `آ`.
+- Tatweel and Arabic diacritics.
+
+Example:
+
+```text
+امل فاشون
+أمل فاشون
+إمل فاشون
+```
+
+These should resolve to the same customer record, using the official name saved in the customers screen.
+
 ## Finished Stock Sale
 
 Arabic operating name:

@@ -172,3 +172,12 @@ For Phase 3.1 local verification before commit:
 - Opening the quotation document shows all quotation items under one customer-level offer.
 - Converting a multi-item quotation opens a grouped customer order with the same customer and order number, while keeping each fabric item as its own operational order line.
 - Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
+
+## Latest Customer Master Normalization
+
+- Version: `v2026.06.14.03`.
+- Customer names are now treated as master data from the customers screen.
+- The customers/account screen can add and edit customer names, phone, and notes.
+- Customer matching normalizes spaces, Arabic hamza forms, tatweel, and diacritics so variants such as `امل فاشون`, `أمل فاشون`, and `إمل فاشون` resolve to the same customer.
+- Order creation, quotation creation, and finished-stock sale now use the canonical customer name when a matching customer already exists.
+- Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.

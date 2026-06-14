@@ -341,3 +341,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: old single-item quotations still work and are interpreted as one item.
 - Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`; `/api/health` returned `schema.ok=true`.
+
+### Add Customer Master Normalization
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.03`
+- Goal: prevent duplicate customer names caused by spelling variants such as hamza forms and spacing differences.
+- Change: added customer master management inside the customers/accounts screen, added normalized customer matching, and made order creation, quotation creation, and finished-stock sale save against the canonical customer name when available.
+- Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

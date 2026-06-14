@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.02';
-const APP_BUILD_TIME = '2026-06-14 15:20';
+const APP_VERSION = 'v2026.06.14.03';
+const APP_BUILD_TIME = '2026-06-14 16:33';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -103,6 +103,7 @@ let dyehouseTransfers = clone(defaults.transfers);
 let rawReturns = clone(defaults.rawReturns);
 let gluingBatches = clone(defaults.gluing);
 let pricings = clone(defaults.pricings);
+let backendCustomers = [];
 let customerAccounts = (() => {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.customerAccounts));
@@ -623,6 +624,13 @@ async function loadBackendData(options = {}) {
     }
     if (!data) throw lastError || new Error('تعذر تحميل بيانات قاعدة البيانات');
     const customers = data.customers || [];
+    backendCustomers = customers.map((customer)=>({
+      id: customer.id || backendCustomerId(customer.name),
+      name: cleanCustomerDisplayName(customer.name || customer.customerName || ''),
+      phone: customer.phone || '',
+      a5CustomerId: customer.a5_customer_id || customer.a5CustomerId || '',
+      notes: customer.notes || '',
+    })).filter((customer)=>customer.name);
     orders = (data.orders || []).map((row)=>mapDbOrder(row, customers));
     pricings = (data.pricings || []).map((row)=>mapDbPricing(row, customers));
     allocations = (data.allocations || []).map(mapDbAllocation);
@@ -820,10 +828,18 @@ function backendCustomerId(name) {
   return `customer-${String(name || 'unknown').trim().replace(/\s+/g, '-').replace(/[^\u0600-\u06FF\w-]/g, '')}`;
 }
 async function ensureBackendCustomer(name) {
-  const cleanName = String(name || '').trim();
+  const cleanName = cleanCustomerDisplayName(name);
   if (!backendAvailable || !cleanName) return null;
+  const existing = findCustomerMasterByName(cleanName);
+  if (existing?.id) return existing.id;
   const id = backendCustomerId(cleanName);
   const saved = await postBackend('/customers', { id, name: cleanName, notes: 'مضاف من الواجهة' });
+  if (saved?.id) {
+    backendCustomers = [
+      ...customerMasterRows().filter((customer)=>customer.id !== saved.id),
+      { id:saved.id, name:saved.name || cleanName, phone:saved.phone || '', a5CustomerId:saved.a5_customer_id || '', notes:saved.notes || '' },
+    ];
+  }
   return saved?.id || id;
 }
 async function postBackend(path, payload) {
@@ -1009,12 +1025,53 @@ function orderRawCost(order) {
 function uniqueNonEmpty(values) {
   return [...new Set((values || []).map((value)=>String(value || '').trim()).filter(Boolean))];
 }
+function cleanCustomerDisplayName(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+function normalizeCustomerMasterName(value) {
+  return cleanCustomerDisplayName(value)
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[\u0623\u0625\u0622\u0671]/g, '\u0627')
+    .replace(/\u0649/g, '\u064a')
+    .replace(/\u0629/g, '\u0647')
+    .replace(/[^\u0600-\u06FF\w]/g, '')
+    .toLowerCase();
+}
+function customerMasterRows() {
+  return Array.isArray(backendCustomers) ? backendCustomers.filter((customer)=>cleanCustomerDisplayName(customer?.name)) : [];
+}
+function findCustomerMasterByName(name) {
+  const wanted = normalizeCustomerMasterName(name);
+  if (!wanted) return null;
+  return customerMasterRows().find((customer)=>normalizeCustomerMasterName(customer.name) === wanted) || null;
+}
+function canonicalCustomerName(name) {
+  const cleanName = cleanCustomerDisplayName(name);
+  return findCustomerMasterByName(cleanName)?.name || cleanName;
+}
 function knownCustomerNames() {
   return uniqueNonEmpty([
+    ...customerMasterRows().map((customer)=>customer.name),
     ...orders.map((order)=>order.customer),
     ...pricings.map((pricing)=>pricing.customer),
-    ...customerBatches.map((batch)=>batch.customer),
+    ...customerBatches.map((batch)=>batch.customerName || batch.customer),
   ]).sort((a,b)=>String(a).localeCompare(String(b), 'ar'));
+}
+function applyCustomerNameDatalist() {
+  const datalistId = 'customerNamesList';
+  let datalist = document.getElementById(datalistId);
+  if (!datalist) {
+    datalist = document.createElement('datalist');
+    datalist.id = datalistId;
+    document.body.appendChild(datalist);
+  }
+  datalist.innerHTML = knownCustomerNames().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('');
+  [refs.customer, refs.pricingCustomer].forEach((input)=>{
+    if (input) input.setAttribute('list', datalistId);
+  });
+  document.querySelectorAll('input[name="customerName"], input[data-customer-master-name]').forEach((input)=>{
+    input.setAttribute('list', datalistId);
+  });
 }
 function knownDyehouseNames() {
   return uniqueNonEmpty([
@@ -1484,7 +1541,85 @@ function customerAccountSummary(customerName) {
   return { customerName, openingBalance:Number(account.openingBalance || 0), invoices, invoiceTotal, payments:account.payments || [], paymentTotal, balance };
 }
 function knownAccountCustomers() {
-  return uniqueNonEmpty([...orders.map((order)=>order.customer), ...pricings.map((pricing)=>pricing.customer), ...customerBatches.map((batch)=>batch.customerName), ...Object.keys(customerAccounts || {})]);
+  return uniqueNonEmpty([...customerMasterRows().map((customer)=>customer.name), ...orders.map((order)=>order.customer), ...pricings.map((pricing)=>pricing.customer), ...customerBatches.map((batch)=>batch.customerName), ...Object.keys(customerAccounts || {})]);
+}
+function customerMasterTableRows() {
+  const rows = customerMasterRows().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name), 'ar'));
+  return rows.map((customer)=>`<tr>
+    <td>${escapeHtml(customer.name)}</td>
+    <td>${escapeHtml(customer.phone || '-')}</td>
+    <td>${escapeHtml(customer.notes || '-')}</td>
+    <td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-edit-customer-master="${escapeHtml(customer.id)}">تعديل</button><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(customer.name)}">كشف الحساب</button></div></td>
+  </tr>`).join('') || '<tr><td colspan="4">لا توجد بيانات عملاء مسجلة.</td></tr>';
+}
+function customerMasterSectionHtml() {
+  return `<section class="report-section no-print">
+    <h3>بيانات العملاء</h3>
+    <div class="summary-grid">
+      <input type="hidden" data-customer-master-id>
+      <input data-customer-master-name placeholder="اسم العميل الرسمي">
+      <input data-customer-master-phone placeholder="رقم الهاتف">
+      <input data-customer-master-notes placeholder="ملاحظات">
+      <button class="primary-btn" type="button" data-save-customer-master>حفظ العميل</button>
+      <button class="mini-btn" type="button" data-clear-customer-master>عميل جديد</button>
+    </div>
+    <p class="muted">النظام يطابق أسماء العملاء بعد توحيد الهمزات والمسافات، لذلك أمل/امل/إمل تعتبر نفس العميل.</p>
+    <table class="customer-ledger-table"><thead><tr><th>العميل</th><th>الهاتف</th><th>ملاحظات</th><th class="no-print">إجراء</th></tr></thead><tbody>${customerMasterTableRows()}</tbody></table>
+  </section>`;
+}
+function customerMasterFormRefs() {
+  return {
+    id: refs.documentBody.querySelector('[data-customer-master-id]'),
+    name: refs.documentBody.querySelector('[data-customer-master-name]'),
+    phone: refs.documentBody.querySelector('[data-customer-master-phone]'),
+    notes: refs.documentBody.querySelector('[data-customer-master-notes]'),
+  };
+}
+function clearCustomerMasterForm() {
+  const formRefs = customerMasterFormRefs();
+  if (formRefs.id) formRefs.id.value = '';
+  if (formRefs.name) formRefs.name.value = '';
+  if (formRefs.phone) formRefs.phone.value = '';
+  if (formRefs.notes) formRefs.notes.value = '';
+  formRefs.name?.focus();
+}
+function fillCustomerMasterForm(customerId) {
+  const customer = customerMasterRows().find((item)=>String(item.id) === String(customerId));
+  if (!customer) return;
+  const formRefs = customerMasterFormRefs();
+  if (formRefs.id) formRefs.id.value = customer.id || '';
+  if (formRefs.name) formRefs.name.value = customer.name || '';
+  if (formRefs.phone) formRefs.phone.value = customer.phone || '';
+  if (formRefs.notes) formRefs.notes.value = customer.notes || '';
+  formRefs.name?.focus();
+}
+async function saveCustomerMasterFromDialog() {
+  const formRefs = customerMasterFormRefs();
+  const id = formRefs.id?.value || '';
+  const name = cleanCustomerDisplayName(formRefs.name?.value || '');
+  const phone = String(formRefs.phone?.value || '').trim();
+  const notes = String(formRefs.notes?.value || '').trim();
+  if (!name) { alert('اكتب اسم العميل.'); return; }
+  const normalized = normalizeCustomerMasterName(name);
+  const duplicate = customerMasterRows().find((customer)=>normalizeCustomerMasterName(customer.name) === normalized && String(customer.id) !== String(id));
+  if (duplicate) {
+    alert(`العميل موجود بالفعل باسم: ${duplicate.name}`);
+    fillCustomerMasterForm(duplicate.id);
+    return;
+  }
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ بيانات العميل.'))) return;
+  const customerId = id || backendCustomerId(name);
+  const payload = { id: customerId, name, phone, notes };
+  const saved = id ? await putBackend(`/customers/${encodeURIComponent(customerId)}`, payload) : await postBackend('/customers', payload);
+  if (!saved) {
+    await rollbackAfterBackendWriteFailure('تعذر حفظ بيانات العميل داخل قاعدة البيانات.');
+    return;
+  }
+  recordAudit(id ? 'update' : 'create', 'customer', customerId, null, payload, `حفظ بيانات العميل ${name}`);
+  await persistAuditLog();
+  await loadBackendData();
+  applyCustomerNameDatalist();
+  renderCustomerAccountsDialog();
 }
 function renderCustomerAccountsDialog() {
   ensureRuntimeCollections();
@@ -1512,6 +1647,7 @@ function renderCustomerAccountsDialog() {
       <div class="emphasis"><span>إجمالي الرصيد</span><strong>${formatNumber(totals.balance)}</strong></div>
     </div>
     <p class="muted customer-ledger-note">الرصيد الحالي = الرصيد الافتتاحي + مستحقات الطلبات - المدفوعات. هذه القراءة داخل نظام المتابعة فقط ولا تعدل أرصدة A5.</p>
+    ${customerMasterSectionHtml()}
     <table class="customer-ledger-table"><thead><tr><th>العميل</th><th>رصيد افتتاحي</th><th>مبيعات / مستحقات</th><th>مدفوعات</th><th>الرصيد الحالي</th><th class="no-print">إجراء</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد حسابات عملاء متاحة.</td></tr>'}</tbody></table>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
@@ -2489,7 +2625,7 @@ function pricingPayload(id = uid()) {
   const priceItems = readPricingItemsEditor();
   const primaryItem = priceItems[0] || pricingPrimaryItemFromRefs();
   const summary = calculatePricing({ priceItems: priceItems.length ? priceItems : [primaryItem] });
-  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:refs.pricingCustomer.value, pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, priceItems, paymentTerms, notes:refs.pricingNotes.value };
+  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:canonicalCustomerName(refs.pricingCustomer.value), pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, priceItems, paymentTerms, notes:refs.pricingNotes.value };
 }
 async function attachPricingToOrder(orderId, pricingId) {
   const order = orders.find((item)=>item.id === orderId);
@@ -2781,7 +2917,7 @@ function renderFinishedSalePanel() {
       <div><p class="eyebrow">المخزن والتسليم</p><h2>بيع مجهز</h2><p class="muted">بيع من رصيد المخزن الفعلي بدون إنشاء أمر تشغيل جديد.</p></div>
       <div class="metric compact"><span>رصيد متاح للبيع</span><strong>${formatNumber(total)}</strong></div>
     </div>
-    <datalist id="customerNamesList">${knownAccountCustomers().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('')}</datalist>
+    <datalist id="customerNamesList">${knownCustomerNames().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('')}</datalist>
     <form id="finishedSaleForm" class="batch-form finished-sale-form">
       <input name="customerName" list="customerNamesList" placeholder="العميل المستلم" required>
       <select id="finishedSaleFabric" name="fabricType" required>
@@ -2858,7 +2994,7 @@ async function saveFinishedStockSale(event) {
   const form = event.target.closest('#finishedSaleForm');
   if (!form) return;
   const data = Object.fromEntries(new FormData(form).entries());
-  const customerName = String(data.customerName || '').trim();
+  const customerName = canonicalCustomerName(data.customerName);
   const unitPrice = Number(data.unitPrice || 0);
   const rows = [...form.querySelectorAll('[data-finished-sale-row]')]
     .map((row)=>{
@@ -3982,7 +4118,7 @@ async function addOrder(event) {
   const firstAccessory = accessoryLines[0] || {};
   const paymentTerms = composePaymentTerms(refs.paymentMode?.value, refs.paymentDetails?.value);
   if (refs.paymentTerms) refs.paymentTerms.value = paymentTerms;
-  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
+  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
   const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple' ? readGroupedOrderItems() : [];
   const hasGroupedOrderItems = groupedItems.length > 1;
   const groupedSourcePricingId = hasGroupedOrderItems ? payload.pricingId : '';
@@ -4946,7 +5082,7 @@ function repairGlobalArabicText() {
   });
 }
 
-function renderAll() { ensureRuntimeCollections(); ensureFinishedSaleUi(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderFinishedSalePanel(); renderOperationFollowPanel(); renderTodayOrdersPanel?.(); renderOperationalAiDashboard?.(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
+function renderAll() { ensureRuntimeCollections(); ensureFinishedSaleUi(); renderPricings(); renderOrderFilters(); ensureStageFilterOptions(); renderOrders(); renderFinishedSalePanel(); applyCustomerNameDatalist(); renderOperationFollowPanel(); renderTodayOrdersPanel?.(); renderOperationalAiDashboard?.(); renderDetails(); repairGlobalArabicText(); applyPermissionVisibility(); }
 let pendingWeavingSlipImage = '';
 function resizeSlipImage(file) {
   return new Promise((resolve, reject) => {
@@ -5288,6 +5424,10 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (event.target.closest('[data-back-a5-accounts]')) renderA5AccountsDialog();
   const ledgerButton = event.target.closest('[data-customer-ledger]');
   if (ledgerButton) renderCustomerLedgerDialog(ledgerButton.dataset.customerLedger);
+  const editCustomerMasterButton = event.target.closest('[data-edit-customer-master]');
+  if (editCustomerMasterButton) fillCustomerMasterForm(editCustomerMasterButton.dataset.editCustomerMaster);
+  if (event.target.closest('[data-clear-customer-master]')) clearCustomerMasterForm();
+  if (event.target.closest('[data-save-customer-master]')) saveCustomerMasterFromDialog().catch((error)=>{ console.error('customer-master-save-error', error); alert(error.message || 'تعذر حفظ بيانات العميل.'); });
   if (event.target.closest('[data-back-customer-accounts]')) renderCustomerAccountsDialog();
   const openingButton = event.target.closest('[data-save-opening-balance]');
   if (openingButton) saveCustomerOpeningBalance(openingButton.dataset.saveOpeningBalance).catch((error)=>{ console.error('customer-opening-save-error', error); alert('تعذر حفظ رصيد العميل.'); });
