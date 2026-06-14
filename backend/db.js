@@ -21,6 +21,7 @@ const REQUIRED_COLUMNS = {
     'accessory_lines_json',
     'operation_notes_json',
   ],
+  pricings: ['pricing_items_json'],
   order_allocations: [
     'width_line_id',
     'raw_inch',
@@ -87,6 +88,7 @@ function assertSchemaReady() {
 }
 
 function runMigrations() {
+  addColumnIfMissing('pricings', 'pricing_items_json TEXT');
   [
     'product_code TEXT',
     "width_mode TEXT DEFAULT 'single'",

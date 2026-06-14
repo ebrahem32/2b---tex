@@ -27,6 +27,8 @@ Order Closure
 ## Factory Rules
 
 - The same order number can intentionally exist with different fabric items.
+- A quotation is customer-level and may contain multiple fabric/material items.
+- When a multi-item quotation is converted to an order, each fabric item must become its own operational order line with the same customer/order number so weaving, dyehouse, warehouse, delivery, and waste remain traceable per item.
 - One order can be split into multiple colors.
 - Each color is an independent allocation inside the order.
 - Receiving is done in batches.

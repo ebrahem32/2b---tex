@@ -23,6 +23,8 @@
       setEditingPricingId,
       setPendingPricingOrderId,
       showAlert,
+      pricingPreviewPayloadFromEditor,
+      renderPricingItemsEditor,
     } = deps;
 
 function applyPricingDyehouseOptions() {
@@ -76,7 +78,10 @@ function renderPricings() {
 }
 
 function updatePricingPreview() {
-  const pricing = calculatePricing({ dyehouse:refs.pricingDyehouse.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value });
+  const payload = typeof pricingPreviewPayloadFromEditor === 'function'
+    ? pricingPreviewPayloadFromEditor()
+    : { dyehouse:refs.pricingDyehouse.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, quantity:+refs.pricingQuantity.value };
+  const pricing = calculatePricing(payload);
   refs.pricingWasteCostPreview.textContent = pricing.wasteCost.toLocaleString('en-US');
   refs.pricingCostPreview.textContent = pricing.costPerKg.toLocaleString('en-US');
   refs.pricingSellPreview.textContent = pricing.sellPrice.toLocaleString('en-US');
@@ -108,6 +113,7 @@ function fillPricingForm(pricing) {
   refs.pricingProfitPerKg.value = pricing.profitPerKg || '';
   setPaymentFields(refs.pricingPaymentMode, refs.pricingPaymentDetails, refs.pricingPaymentTerms, pricing.paymentTerms || '');
   refs.pricingNotes.value = pricing.notes || '';
+  if (typeof renderPricingItemsEditor === 'function') renderPricingItemsEditor(pricing);
   updateSuggestedDyeCost();
 }
 

@@ -18,8 +18,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.14.01';
-const APP_BUILD_TIME = '2026-06-14 14:45';
+const APP_VERSION = 'v2026.06.14.02';
+const APP_BUILD_TIME = '2026-06-14 15:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -550,6 +550,7 @@ function mapDbPricing(row, customers) {
     paymentTerms: row.payment_terms || '',
     notes: row.notes || '',
     status: row.status || 'active',
+    priceItems: parseDbJsonArray(row.pricing_items_json),
   };
 }
 function renderBackendUnavailable() {
@@ -757,6 +758,7 @@ const pricingToApi = (pricing, customerId = null) => {
     profit_per_kg: Number(pricing.profitPerKg || 0),
     unit_price: Number(calculated.sellPrice || 0),
     total_price: Number(calculated.totalOffer || 0),
+    pricing_items_json: JSON.stringify(Array.isArray(pricing.priceItems) ? pricing.priceItems : []),
     payment_terms: pricing.paymentTerms || '',
     notes: pricing.notes || '',
     status: pricing.status || 'active',
@@ -2285,7 +2287,162 @@ function calculateOrder(order) {
   return orderDomain.calculateOrder(order);
 }
 function calculatePricing(pricing) {
-  return pricingDomain.calculatePricing(pricing || {}, activeDyehousePriceLibrary());
+  const source = pricing || {};
+  const items = pricingItemsFor(source);
+  if (items.length <= 1 && !Array.isArray(source.priceItems)) return pricingDomain.calculatePricing(source, activeDyehousePriceLibrary());
+  const calculatedItems = items.map((item)=>pricingDomain.calculatePricing({ ...source, ...item }, activeDyehousePriceLibrary()));
+  const totalQuantity = roundNumber(calculatedItems.reduce((total, item)=>total + Number(item.quantity || 0), 0));
+  const totalOffer = roundNumber(calculatedItems.reduce((total, item)=>total + Number(item.totalOffer || 0), 0));
+  const weighted = (key) => totalQuantity ? roundNumber(calculatedItems.reduce((total, item)=>total + Number(item[key] || 0) * Number(item.quantity || 0), 0) / totalQuantity) : 0;
+  const first = calculatedItems[0] || {};
+  return {
+    ...source,
+    ...first,
+    customer: source.customer,
+    pricingNumber: source.pricingNumber,
+    pricingDate: source.pricingDate,
+    paymentTerms: source.paymentTerms,
+    notes: source.notes,
+    status: source.status,
+    priceItems: calculatedItems,
+    itemCount: calculatedItems.length,
+    fabricType: calculatedItems.length > 1 ? `${first.fabricType || 'عرض مجمع'} + ${calculatedItems.length - 1}` : first.fabricType || source.fabricType || '',
+    quantity: totalQuantity,
+    wasteCost: weighted('wasteCost'),
+    costPerKg: weighted('costPerKg'),
+    sellPrice: totalQuantity ? roundNumber(totalOffer / totalQuantity) : Number(first.sellPrice || 0),
+    totalOffer,
+  };
+}
+function pricingItemsFor(pricing = {}) {
+  const items = Array.isArray(pricing.priceItems) ? pricing.priceItems.filter(Boolean) : [];
+  if (items.length) return items.map((item)=>({
+    fabricType: item.fabricType || '',
+    materialType: item.materialType || '',
+    dyehouse: item.dyehouse || '',
+    colorClass: item.colorClass || '',
+    quantity: Number(item.quantity || 0),
+    inchWidth: item.inchWidth || '',
+    finishedWeight: item.finishedWeight || '',
+    rawCost: Number(item.rawCost || 0),
+    dyeCost: Number(item.dyeCost || 0),
+    wastePercent: Number(item.wastePercent || 0),
+    extraCost: Number(item.extraCost || 0),
+    profitPerKg: Number(item.profitPerKg || 0),
+  }));
+  const hasSingle = pricing.fabricType || pricing.quantity || pricing.rawCost || pricing.dyeCost || pricing.profitPerKg;
+  if (!hasSingle) return [];
+  return [{
+    fabricType: pricing.fabricType || '',
+    materialType: pricing.materialType || '',
+    dyehouse: pricing.dyehouse || '',
+    colorClass: pricing.colorClass || '',
+    quantity: Number(pricing.quantity || 0),
+    inchWidth: pricing.inchWidth || '',
+    finishedWeight: pricing.finishedWeight || '',
+    rawCost: Number(pricing.rawCost || 0),
+    dyeCost: Number(pricing.dyeCost || 0),
+    wastePercent: Number(pricing.wastePercent || 0),
+    extraCost: Number(pricing.extraCost || 0),
+    profitPerKg: Number(pricing.profitPerKg || 0),
+  }];
+}
+function pricingPrimaryItemFromRefs() {
+  return {
+    fabricType: refs.pricingFabricType?.value || '',
+    materialType: refs.pricingMaterialType?.value || '',
+    dyehouse: refs.pricingDyehouse?.value || '',
+    colorClass: refs.pricingColorClass?.value || '',
+    quantity: Number(refs.pricingQuantity?.value || 0),
+    inchWidth: refs.pricingInchWidth?.value || '',
+    finishedWeight: refs.pricingFinishedWeight?.value || '',
+    rawCost: Number(refs.pricingRawCost?.value || 0),
+    dyeCost: Number(refs.pricingDyeCost?.value || 0),
+    wastePercent: Number(refs.pricingWastePercent?.value || 0),
+    extraCost: Number(refs.pricingExtraCost?.value || 0),
+    profitPerKg: Number(refs.pricingProfitPerKg?.value || 0),
+  };
+}
+function pricingItemRowHtml(item = {}, primary = false) {
+  return `<div class="grouped-order-row pricing-item-row${primary ? ' primary' : ''}" data-pricing-item-row>
+    <input data-pricing-item-field="fabricType" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="materialType" placeholder="الخامة" value="${escapeHtml(item.materialType || '')}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="colorClass" placeholder="درجة اللون" value="${escapeHtml(item.colorClass || '')}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="خام" value="${item.rawCost || ''}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="dyeCost" type="number" step="0.01" placeholder="صباغة" value="${item.dyeCost || ''}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="extraCost" type="number" step="0.01" placeholder="إضافي" value="${item.extraCost || ''}" ${primary ? 'readonly' : ''}>
+    <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}" ${primary ? 'readonly' : ''}>
+    <button type="button" class="mini-btn danger" data-remove-pricing-item ${primary ? 'disabled' : ''}>حذف</button>
+  </div>`;
+}
+function syncPricingPrimaryItemRow() {
+  const rows = document.getElementById('pricingItemsRows');
+  if (!rows) return;
+  const primary = rows.querySelector('[data-pricing-item-row].primary');
+  if (!primary) {
+    rows.insertAdjacentHTML('afterbegin', pricingItemRowHtml(pricingPrimaryItemFromRefs(), true));
+    return;
+  }
+  const item = pricingPrimaryItemFromRefs();
+  Object.entries(item).forEach(([key, value])=>{
+    const input = primary.querySelector(`[data-pricing-item-field="${key}"]`);
+    if (input) input.value = value;
+  });
+}
+function readPricingItemsEditor() {
+  const rows = [...document.querySelectorAll('#pricingItemsRows [data-pricing-item-row]')];
+  if (!rows.length) return [pricingPrimaryItemFromRefs()].filter((item)=>item.fabricType || item.quantity > 0);
+  return rows.map((row)=>({
+    fabricType: row.querySelector('[data-pricing-item-field="fabricType"]')?.value.trim() || '',
+    materialType: row.querySelector('[data-pricing-item-field="materialType"]')?.value.trim() || '',
+    dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
+    colorClass: row.querySelector('[data-pricing-item-field="colorClass"]')?.value.trim() || '',
+    quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
+    inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
+    finishedWeight: row.querySelector('[data-pricing-item-field="finishedWeight"]')?.value.trim() || '',
+    rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
+    dyeCost: Number(row.querySelector('[data-pricing-item-field="dyeCost"]')?.value || 0),
+    wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
+    extraCost: Number(row.querySelector('[data-pricing-item-field="extraCost"]')?.value || 0),
+    profitPerKg: Number(row.querySelector('[data-pricing-item-field="profitPerKg"]')?.value || 0),
+  })).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.profitPerKg > 0);
+}
+function pricingPreviewPayloadFromEditor() {
+  return { priceItems: readPricingItemsEditor(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '' };
+}
+function renderPricingItemsEditor(pricing = null) {
+  const rows = document.getElementById('pricingItemsRows');
+  if (!rows) return;
+  const items = pricing ? pricingItemsFor(pricing) : [pricingPrimaryItemFromRefs()];
+  rows.innerHTML = (items.length ? items : [pricingPrimaryItemFromRefs()]).map((item, index)=>pricingItemRowHtml(item, index === 0)).join('');
+  syncPricingPrimaryItemRow();
+}
+function ensurePricingItemsUi() {
+  if (!refs.pricingForm || document.getElementById('pricingItemsBox')) return;
+  const anchor = refs.pricingNotes?.closest('label') || refs.pricingForm.querySelector('.form-grid');
+  if (!anchor) return;
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>بنود عرض السعر للعميل</span><p class="eyebrow">يمكن إضافة أكثر من خامة أو صنف داخل نفس عرض السعر، مع بقاء الخانات الأساسية كبند أول.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف</span><span>الخامة</span><span>المصبغة</span><span>اللون</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>خام</span><span>صباغة</span><span>هالك</span><span>إضافي</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
+    document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
+    updatePricingPreview();
+  });
+  document.getElementById('pricingItemsRows')?.addEventListener('click', (event)=>{
+    const button = event.target.closest('[data-remove-pricing-item]');
+    if (!button || button.disabled) return;
+    button.closest('[data-pricing-item-row]')?.remove();
+    updatePricingPreview();
+  });
+  document.getElementById('pricingItemsRows')?.addEventListener('input', updatePricingPreview);
+  [refs.pricingFabricType, refs.pricingMaterialType, refs.pricingDyehouse, refs.pricingColorClass, refs.pricingQuantity, refs.pricingInchWidth, refs.pricingFinishedWeight, refs.pricingRawCost, refs.pricingDyeCost, refs.pricingWastePercent, refs.pricingExtraCost, refs.pricingProfitPerKg].filter(Boolean).forEach((input)=>{
+    input.addEventListener('input', () => { syncPricingPrimaryItemRow(); updatePricingPreview(); });
+    input.addEventListener('change', () => { syncPricingPrimaryItemRow(); updatePricingPreview(); });
+  });
+  renderPricingItemsEditor();
 }
 ({
   applyPricingDyehouseOptions,
@@ -2322,12 +2479,17 @@ function calculatePricing(pricing) {
   setEditingPricingId: (value) => { editingPricingId = value; },
   setPendingPricingOrderId: (value) => { pendingPricingOrderId = value; },
   showAlert: (message) => alert(message),
+  pricingPreviewPayloadFromEditor,
+  renderPricingItemsEditor,
 }));
 
 function pricingPayload(id = uid()) {
   const paymentTerms = composePaymentTerms(refs.pricingPaymentMode?.value, refs.pricingPaymentDetails?.value);
   if (refs.pricingPaymentTerms) refs.pricingPaymentTerms.value = paymentTerms;
-  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:refs.pricingCustomer.value, pricingDate:refs.pricingDate.value, fabricType:refs.pricingFabricType.value, dyehouse:refs.pricingDyehouse.value, colorClass:refs.pricingColorClass.value, quantity:+refs.pricingQuantity.value, inchWidth:+refs.pricingInchWidth.value, finishedWeight:+refs.pricingFinishedWeight.value, materialType:refs.pricingMaterialType.value, rawCost:+refs.pricingRawCost.value, dyeCost:+refs.pricingDyeCost.value, wastePercent:+refs.pricingWastePercent.value, extraCost:+refs.pricingExtraCost.value, profitPerKg:+refs.pricingProfitPerKg.value, paymentTerms, notes:refs.pricingNotes.value };
+  const priceItems = readPricingItemsEditor();
+  const primaryItem = priceItems[0] || pricingPrimaryItemFromRefs();
+  const summary = calculatePricing({ priceItems: priceItems.length ? priceItems : [primaryItem] });
+  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:refs.pricingCustomer.value, pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, priceItems, paymentTerms, notes:refs.pricingNotes.value };
 }
 async function attachPricingToOrder(orderId, pricingId) {
   const order = orders.find((item)=>item.id === orderId);
@@ -2416,8 +2578,13 @@ async function addPricing(event) {
   refs.pricingDialog.close();
 }
 function convertPricingToOrder(id) {
-  const pricing = calculatePricing(pricings.find((item)=>item.id===id));
+  const sourcePricing = pricings.find((item)=>item.id===id);
+  const pricing = calculatePricing(sourcePricing);
   if (!pricing) return;
+  const items = pricingItemsFor(sourcePricing || pricing)
+    .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
+    .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
+  const primary = items[0] || pricing;
   const orderNumber = orderNumberFromPricing(pricing.pricingNumber);
   pendingConvertedPricingId = pricing.id;
   editingOrderId = null;
@@ -2427,20 +2594,33 @@ function convertPricingToOrder(id) {
     productCode: buildItemCode(orderNumber),
     customer: pricing.customer || '',
     orderDate: pricing.pricingDate || new Date().toISOString().slice(0,10),
-    fabricType: pricing.fabricType || '',
-    totalRawQuantity: pricing.quantity || '',
+    fabricType: primary.fabricType || pricing.fabricType || '',
+    totalRawQuantity: primary.quantity || pricing.quantity || '',
     widthMode: 'single',
-    inchWidth: pricing.inchWidth || '',
+    inchWidth: primary.inchWidth || pricing.inchWidth || '',
     widthLines: [],
-    kiloPrice: pricing.sellPrice || '',
-    rawCost: pricing.rawCost || 0,
+    kiloPrice: primary.sellPrice || pricing.sellPrice || '',
+    rawCost: primary.rawCost || pricing.rawCost || 0,
     paymentTerms: pricing.paymentTerms || '',
-    dyehouse: pricing.dyehouse || '',
+    dyehouse: primary.dyehouse || pricing.dyehouse || '',
     weavingSource: '',
     accessoryType: '',
     accessoryPercent: 0,
     notes: pricing.notes || ''
   });
+  if (items.length > 1) {
+    const rows = document.getElementById('groupedOrderRows');
+    if (rows) {
+      rows.innerHTML = items.map((item, index)=>groupedOrderRowHtml({
+        fabricType:item.fabricType || '',
+        totalRawQuantity:item.quantity || '',
+        inchWidth:item.inchWidth || '',
+        kiloPrice:item.sellPrice || '',
+        expectedWastePercent:item.wastePercent || '',
+      }, index === 0)).join('');
+      syncGroupedOrderUi();
+    }
+  }
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.orderDialog.showModal();
 }
@@ -2462,7 +2642,55 @@ async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
   }
   return ok;
 }
+function openCustomerPricingQuotation(id) {
+  const sourcePricing = pricings.find((item)=>item.id===id);
+  const pricing = calculatePricing(sourcePricing);
+  if (!pricing) return;
+  const items = pricingItemsFor(sourcePricing || pricing)
+    .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
+    .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
+  const money = (value) => Number(value || 0).toLocaleString('en-US');
+  const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
+  const notes = String(pricing.notes || '').trim();
+  const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
+    <td>${escapeHtml(item.fabricType || '-')}</td>
+    <td>${escapeHtml(item.materialType || '-')}</td>
+    <td>${escapeHtml(item.colorClass || '-')}</td>
+    <td>${money(item.quantity)} \u0643\u062c\u0645</td>
+    <td>${escapeHtml(item.inchWidth || '-')}</td>
+    <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
+    <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
+  </tr>`).join('');
+  refs.documentTitle.textContent = '\u0639\u0631\u0636 \u0633\u0639\u0631';
+  refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
+    ${documentHeader()}
+    <div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">\u062a\u0646\u0632\u064a\u0644 \u0637\u0644\u0628</button><button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">\u062a\u0639\u062f\u064a\u0644</button></div>
+    <div class="report-title"><h2>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0644\u0644\u0639\u0645\u064a\u0644 <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>\u0639\u0631\u0636 \u0645\u062c\u0645\u0639 \u0644\u0644\u0639\u0645\u064a\u0644 \u064a\u062d\u062a\u0648\u064a \u0639\u0644\u0649 ${items.length || 1} \u0628\u0646\u062f / \u062e\u0627\u0645\u0629.</span></div>
+    <div class="document-meta">
+      <div><span>\u0627\u0644\u0639\u0645\u064a\u0644</span>${escapeHtml(customer)}</div>
+      <div><span>\u0627\u0644\u062a\u0627\u0631\u064a\u062e</span>${escapeHtml(pricing.pricingDate || '-')}</div>
+      <div><span>\u0639\u062f\u062f \u0627\u0644\u0628\u0646\u0648\u062f</span>${items.length || 1}</div>
+      <div><span>\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0643\u0645\u064a\u0629</span>${money(pricing.quantity)} \u0643\u062c\u0645</div>
+      <div><span>\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0633\u062f\u0627\u062f</span>${escapeHtml(pricing.paymentTerms || '\u0643\u0627\u0634')}</div>
+    </div>
+    <section class="report-section quotation-summary">
+      <h3>\u0645\u0644\u062e\u0635 \u0627\u0644\u0639\u0631\u0636</h3>
+      <div class="quotation-kpis">
+        <div><span>\u0645\u062a\u0648\u0633\u0637 \u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</span><strong>${money(pricing.sellPrice)} \u062c\u0646\u064a\u0647</strong></div>
+        <div class="quotation-total"><span>\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0639\u0631\u0636</span><strong>${money(pricing.totalOffer)} \u062c\u0646\u064a\u0647</strong></div>
+      </div>
+    </section>
+    <section class="report-section">
+      <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
+      <table><thead><tr><th>\u0627\u0644\u0635\u0646\u0641</th><th>\u0627\u0644\u062e\u0627\u0645\u0629</th><th>\u062f\u0631\u062c\u0629 \u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0627\u0644\u0628\u0648\u0635\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${itemRows}</tbody></table>
+    </section>
+    <section class="report-section"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml(notes || '\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629.')}</p></section>
+    ${documentFooter()}
+  </div>`;
+  refs.documentDialog.showModal();
+}
 function openPricingQuotation(id) {
+  return openCustomerPricingQuotation(id);
   const pricing = calculatePricing(pricings.find((item)=>item.id===id));
   if (!pricing) return;
   const money = (value) => Number(value || 0).toLocaleString('en-US');
@@ -3757,7 +3985,7 @@ async function addOrder(event) {
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:refs.customer.value, orderDate:refs.orderDate.value, fabricType:refs.fabricType.value, totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value };
   const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple' ? readGroupedOrderItems() : [];
   const hasGroupedOrderItems = groupedItems.length > 1;
-  if (hasGroupedOrderItems && payload.pricingId) { alert('الطلب المحول من تسعيرة يحفظ كصنف واحد. احفظ الأصناف الإضافية كطلب مجمع مستقل.'); return; }
+  const groupedSourcePricingId = hasGroupedOrderItems ? payload.pricingId : '';
   if (hasGroupedOrderItems) {
     const incomplete = groupedItems.find((item)=>!item.fabricType || !(item.totalRawQuantity > 0));
     if (incomplete) { alert('راجع أصناف الطلب المجمع: كل صنف يجب أن يحتوي على اسم صنف وكمية.'); return; }
@@ -3801,8 +4029,8 @@ async function addOrder(event) {
     selectedOrderId = editingOrderId;
   } else {
     if (hasGroupedOrderItems) {
-      const groupedOrders = groupedItems.map((item)=> {
-        const groupedPayload = { ...payload, pricingId:'', fabricType:item.fabricType, totalRawQuantity:item.totalRawQuantity, expectedWastePercent:item.expectedWastePercent || payload.expectedWastePercent, inchWidth:item.inchWidth || payload.inchWidth, kiloPrice:item.kiloPrice || payload.kiloPrice, widthMode:'single', widthLines:[], productCode:buildItemCode(payload.orderNumber) };
+      const groupedOrders = groupedItems.map((item, index)=> {
+        const groupedPayload = { ...payload, pricingId:index === 0 ? groupedSourcePricingId : '', fabricType:item.fabricType, totalRawQuantity:item.totalRawQuantity, expectedWastePercent:item.expectedWastePercent || payload.expectedWastePercent, inchWidth:item.inchWidth || payload.inchWidth, kiloPrice:item.kiloPrice || payload.kiloPrice, widthMode:'single', widthLines:[], productCode:buildItemCode(payload.orderNumber) };
         return { id:uid(), status:'pending', ...groupedPayload };
       });
       let savedGroupedOrders = null;
@@ -3814,6 +4042,11 @@ async function addOrder(event) {
       }
       if (backendSaveRequired && (!Array.isArray(savedGroupedOrders) || savedGroupedOrders.length !== groupedOrders.length)) {
         await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب المجمع بالكامل في قاعدة البيانات. لم يتم اعتماد التسجيل.');
+        return;
+      }
+      const pricingMarked = await markPricingConverted(payload.orderNumber, savedGroupedOrders[0]?.id || groupedOrders[0]?.id, groupedSourcePricingId);
+      if (backendSaveRequired && !pricingMarked) {
+        await rollbackAfterBackendWriteFailure('تعذر تحديث حالة التسعيرة بعد حفظ الطلب المجمع. راجع الطلب والتسعيرة قبل المتابعة.');
         return;
       }
       selectedOrderId = savedGroupedOrders[0]?.id || groupedOrders[0]?.id || null;
@@ -4946,8 +5179,9 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
 if (refs.weavingSlipDialog) installAmalReviewUi();
 applyPricingMaterialOptions();
 applyPricingDyehouseOptions();
+ensurePricingItemsUi();
 installGroupedOrderUi();
-refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
+refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); renderPricingItemsEditor(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
 refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };

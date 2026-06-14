@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS pricings (
   profit_per_kg REAL DEFAULT 0,
   unit_price REAL DEFAULT 0,
   total_price REAL DEFAULT 0,
+  pricing_items_json TEXT,
   payment_terms TEXT,
   notes TEXT,
   status TEXT DEFAULT 'draft',

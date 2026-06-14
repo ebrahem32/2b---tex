@@ -330,3 +330,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Schema: extended `customer_delivery_batches` with receiving customer, unit price, total price, payment terms, note number, and movement type.
 - Not touched: `backend/calculations.js`, waste logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`; `/api/health` returned `schema.ok=true`.
+
+### Implement Customer Quotation Items
+
+- Date: 2026-06-14
+- Commit: pending.
+- Version: `v2026.06.14.02`
+- Goal: make quotation customer-level and able to contain more than one fabric/material item.
+- Change: added quotation item storage through `pricing_items_json`, added a quotation-items editor in the pricing form, made the quotation document render all items under one customer offer, and allowed converting a multi-item quotation into a grouped customer order.
+- Compatibility: old single-item quotations still work and are interpreted as one item.
+- Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`; `/api/health` returned `schema.ok=true`.

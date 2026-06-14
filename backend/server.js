@@ -23,7 +23,7 @@ app.use((req, _res, next) => {
 
 const TABLE_FIELDS = {
   customers: ['id','name','phone','a5_customer_id','notes','created_at','updated_at'],
-  pricings: ['id','pricing_number','customer_id','pricing_date','fabric_type','material_type','dyehouse','color_class','quantity','inch_width','finished_weight','raw_cost','dye_cost','waste_percent','extra_cost','profit_per_kg','unit_price','total_price','payment_terms','notes','status','created_at','updated_at'],
+  pricings: ['id','pricing_number','customer_id','pricing_date','fabric_type','material_type','dyehouse','color_class','quantity','inch_width','finished_weight','raw_cost','dye_cost','waste_percent','extra_cost','profit_per_kg','unit_price','total_price','pricing_items_json','payment_terms','notes','status','created_at','updated_at'],
   orders: ['id','order_number','pricing_id','customer_id','order_date','product_code','fabric_type','total_raw_quantity','expected_waste_percent','width_mode','width_lines_json','inch_width','kilo_price','raw_cost','payment_terms','accessory_type','accessory_percent','accessory_lines_json','dyehouse','weaving_source','notes','operation_notes_json','status','is_closed','created_at','updated_at'],
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','width_line_id','raw_inch','raw_width','finished_width','finished_weight','accessory_quantity_manual','notes','created_at','updated_at'],
   raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','source_document_json','created_at','updated_at'],
@@ -1961,6 +1961,7 @@ function mapPricing(row, customerId) {
     profit_per_kg: numValue(row, ['profitPerKg', 'profit_per_kg']),
     unit_price: numValue(row, ['unitPrice', 'unit_price']),
     total_price: numValue(row, ['totalPrice', 'total_price']),
+    pricing_items_json: typeof row.pricing_items_json === 'string' ? row.pricing_items_json : JSON.stringify(row.priceItems || row.pricingItems || []),
     payment_terms: firstValue(row, ['paymentTerms', 'payment_terms']),
     notes: firstValue(row, ['notes']),
     status: firstValue(row, ['status'], row.convertedOrderId ? 'converted' : 'active'),

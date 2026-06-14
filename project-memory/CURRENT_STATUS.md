@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.14.01`
+`v2026.06.14.02`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Implement finished stock sale flow`
+`Implement customer quotation items`
 
 ## Current Phase
 
@@ -161,3 +161,14 @@ For Phase 3.1 local verification before commit:
 - The receiving customer appears in customer accounts with quantity, price, and total sale value.
 - Source stock customers such as `2B` are treated as stock owners for these movements, not as the buying customer.
 - Customer delivery batch schema now includes sale metadata: receiving customer, unit price, total price, payment terms, note number, and movement type.
+
+## Latest Customer Quotation Items
+
+- Version: `v2026.06.14.02`.
+- Quotation is now treated as a customer quotation, not a single-fabric quotation.
+- A single quotation can include multiple fabric/material items.
+- Existing single-item quotations remain compatible and are read as one quotation item.
+- New quotation items are stored in `pricing_items_json`; legacy pricing columns remain as summary/primary-item fields for compatibility.
+- Opening the quotation document shows all quotation items under one customer-level offer.
+- Converting a multi-item quotation opens a grouped customer order with the same customer and order number, while keeping each fabric item as its own operational order line.
+- Not touched: `backend/calculations.js`, waste logic, stock logic, dyehouse logic, weaving logic, WhatsApp service, A5 service.
