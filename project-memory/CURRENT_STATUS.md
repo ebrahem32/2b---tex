@@ -395,3 +395,13 @@ For Phase 3.1 local verification before commit:
 - The separate summary KPI for `سعر الكيلو` was removed from beside the contract total.
 - The item table still keeps its `سعر الكيلو` column for fabric and accessory lines.
 - The contract total card is centered and visually emphasized for cleaner printing.
+
+## Latest Pricing To Order Save-Only Mode
+
+- Version: `v2026.06.15.08`.
+- `تنزيل طلب` from a pricing card now opens the order form in a dedicated pricing-conversion mode.
+- The form is prepared so the user can review and press `حفظ الطلب` without filling required blanks.
+- Missing weaving source is prefilled as `من كرت التسعير` during conversion to avoid blocking save.
+- Duplicate visual fields are reduced: the legacy accessory summary fields are hidden, the accessory lines table remains visible, and the duplicate primary grouped-order row is hidden.
+- For one-item pricing cards, the grouped-order box is hidden entirely during conversion.
+- Normal new-order and edit-order flows reset this mode and keep the full editable form.

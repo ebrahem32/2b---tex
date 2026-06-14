@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.07';
-const APP_BUILD_TIME = '2026-06-15 03:10';
+const APP_VERSION = 'v2026.06.15.08';
+const APP_BUILD_TIME = '2026-06-15 03:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2682,6 +2682,13 @@ function pricingItemToOrderDraft(item = {}, pricing = {}) {
   };
 }
 
+function setOrderFormPricingConversionMode(active = false, itemCount = 0) {
+  refs.orderForm?.classList.toggle('order-form-pricing-conversion', Boolean(active));
+  if (refs.orderForm) refs.orderForm.dataset.pricingItemsCount = String(Number(itemCount || 0));
+  refs.accessoryType?.closest('label')?.classList.toggle('pricing-conversion-hidden-field', Boolean(active));
+  refs.accessoryPercent?.closest('label')?.classList.toggle('pricing-conversion-hidden-field', Boolean(active));
+}
+
 function pricingPrimaryItemFromRefs() {
   return {
     currency: pricingCurrencyValue(),
@@ -3151,7 +3158,7 @@ function convertPricingToOrder(id) {
     rawCost: primaryDraft.rawCost || primary.rawCost || pricing.rawCost || 0,
     paymentTerms: pricing.paymentTerms || '',
     dyehouse: primaryDraft.dyehouse || primary.dyehouse || pricing.dyehouse || '',
-    weavingSource: '',
+    weavingSource: pricing.weavingSource || primaryDraft.weavingSource || 'من كرت التسعير',
     accessoryType: primaryDraft.accessoryType || '',
     accessoryPercent: primaryDraft.accessoryPercent || 0,
     accessoryLines: primaryDraft.accessoryLines || [],
@@ -3171,6 +3178,7 @@ function convertPricingToOrder(id) {
       syncGroupedOrderUi();
     }
   }
+  setOrderFormPricingConversionMode(true, orderDrafts.length || items.length || 1);
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.orderDialog.showModal();
 }
@@ -4687,6 +4695,7 @@ async function addOrder(event) {
       }
       selectedOrderId = savedGroupedOrders[0]?.id || groupedOrders[0]?.id || null;
       editingOrderId = null;
+      setOrderFormPricingConversionMode(false);
       pendingConvertedPricingId = null;
       pendingConvertedPricingItems = [];
       await loadBackendData();
@@ -4711,6 +4720,7 @@ async function addOrder(event) {
     }
   }
   editingOrderId = null;
+  setOrderFormPricingConversionMode(false);
   pendingConvertedPricingId = null;
   pendingConvertedPricingItems = [];
   await loadBackendData();
@@ -5876,7 +5886,7 @@ installGroupedOrderUi();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); renderPricingItemsEditor(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
 refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
-refs.openOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; pendingConvertedPricingItems = []; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
+refs.openOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
 if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilteredOrdersReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
@@ -6008,7 +6018,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
 });
 
 refs.closePricingFormBtn.onclick = () => { pendingPricingOrderId = null; refs.pricingDialog.close(); };
-refs.closeOrderFormBtn.onclick = () => { pendingConvertedPricingId = null; pendingConvertedPricingItems = []; refs.orderDialog.close(); };
+refs.closeOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; refs.orderDialog.close(); };
 refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);
@@ -6043,6 +6053,7 @@ refs.ordersTableBody.onclick = (event) => {
     return;
   }
   if (button.dataset.editOrder) {
+    setOrderFormPricingConversionMode(false);
     editingOrderId = button.dataset.editOrder;
     const order = orders.find((item)=>item.id===editingOrderId);
     if (order) { selectedOrderId = order.id; fillOrderForm(order); refs.orderDialog.showModal(); }
@@ -6108,6 +6119,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
   }
   if (target.id === 'backToOrdersBtn') { closeOrderFocusMode(); return; }
   if (target.id === 'focusEditOrderBtn') {
+    setOrderFormPricingConversionMode(false);
     editingOrderId = selectedOrderId;
     const order = orders.find((item)=>item.id===selectedOrderId);
     if (order) { fillOrderForm(order); refs.orderDialog.showModal(); }
@@ -6117,7 +6129,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
     if (selectedOrderId) deleteOrder(selectedOrderId).then(()=>{ if (!selectedOrderId) closeOrderFocusMode(); }).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
     return;
   }
-  if (target.id === 'editOrderBtn') { editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
+  if (target.id === 'editOrderBtn') { setOrderFormPricingConversionMode(false); editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
   if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
   if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
   if (target.dataset.openCombinedMovement) {

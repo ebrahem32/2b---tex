@@ -629,3 +629,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: centered and emphasized the contract total card for cleaner print/PDF output.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, operational stock logic, operational waste movement logic.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
+
+### Prepare Save-Only Order Conversion Mode
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.08`
+- Goal: make orders opened from pricing cards ready to save with no duplicated fields.
+- Change: added a dedicated order-form mode for pricing-card conversion.
+- Change: prefilled missing weaving source with `من كرت التسعير` so required fields do not block saving.
+- Change: hid duplicate visual fields during conversion: legacy accessory summary fields, one-item grouped-order box, and duplicated primary grouped row for multi-item pricing cards.
+- Change: normal new/edit order flows reset conversion mode and keep the full form.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, pricing formulas, save endpoints, operational stock logic, operational waste movement logic.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.

@@ -437,6 +437,10 @@
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}
 .grouped-order-row{margin-bottom:8px}.grouped-order-row.primary input{opacity:.78}
 .grouped-order-row input{min-width:0!important}
+.pricing-conversion-hidden-field{display:none!important}
+.order-form-pricing-conversion[data-pricing-items-count="1"] #groupedOrderBox{display:none!important}
+.order-form-pricing-conversion:not([data-pricing-items-count="1"]) #groupedOrderRows .grouped-order-row.primary{display:none!important}
+.order-form-pricing-conversion .accessory-lines-box{border:1px solid rgba(200,165,106,.28);border-radius:16px;padding:12px;background:rgba(200,165,106,.05)}
 @media(max-width:900px){.grouped-order-head{display:none}.grouped-order-row{grid-template-columns:1fr 1fr}.grouped-order-row button{grid-column:1/-1}.pricing-item-row{grid-template-columns:1fr 1fr}.pricing-item-row .pricing-stage-card,.pricing-item-row .pricing-accessory-card{grid-column:1/-1}}
 .amal-review-box{margin-top:16px;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:20px;padding:18px;direction:rtl}
 .amal-review-box .subsection-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
