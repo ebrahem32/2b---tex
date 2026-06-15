@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Packaging Pricing Stage
+
+- Date: 2026-06-15
+- Version: `v2026.06.15.24`
+- Goal: keep packaging as a standard dyeing-stage cost in every pricing card.
+- Change: pricing item dyeing stages now always include a fixed `تغليف` row.
+- Change: `تغليف` is fixed at `2 جنيه`, read-only, and has no delete action.
+- Change: existing pricing items get the fixed row when opened or saved, without duplicating it if it already exists.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Separate Active And Linked Pricing Cards
 
 - Date: 2026-06-15

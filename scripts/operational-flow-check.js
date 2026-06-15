@@ -489,6 +489,13 @@ function checkPricingActiveAndLinkedSectionsExist() {
   assert(appSource.includes("event.target.closest('[data-open-order]')"), 'pricing ui: open-order action must be handled');
 }
 
+function checkFixedPackagingPricingStageExists() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes("name:'تغليف', price:2, fixed:true"), 'pricing ui: packaging stage must be fixed at 2 EGP');
+  assert(appSource.includes("fixedPackaging ? 2"), 'pricing ui: fixed packaging stage price must stay 2');
+  assert(appSource.includes("fixedPackaging ? '<span class=\"status pending\">ثابت</span>'"), 'pricing ui: fixed packaging stage must not show delete action');
+}
+
 function checkOrderQuotationUsesLinkedPricingCard() {
   const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -523,6 +530,7 @@ checkUsdPricingMatchesExcelSheet();
 checkPricingCurrencyBadgesExist();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
+checkFixedPackagingPricingStageExists();
 checkOrderQuotationUsesLinkedPricingCard();
 checkManualAccessoryDistribution();
 

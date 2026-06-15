@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.23';
+const APP_VERSION = 'v2026.06.15.24';
 const APP_BUILD_TIME = '2026-06-15 18:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
@@ -2753,6 +2753,34 @@ function pricingPrimaryItemFromRefs() {
   };
 }
 
+function pricingStageKey(value) {
+  return String(value || '')
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function isFixedPackagingStageName(value) {
+  return pricingStageKey(value) === pricingStageKey('تغليف');
+}
+
+function normalizePricingDyeStages(stages = [], dyeCost = '') {
+  const normalized = (Array.isArray(stages) ? stages : [])
+    .map((stage)=>({
+      name: String(stage?.name || '').trim(),
+      price: isFixedPackagingStageName(stage?.name) ? 2 : Number(stage?.price || 0),
+      fixed: Boolean(stage?.fixed) || isFixedPackagingStageName(stage?.name),
+    }))
+    .filter((stage)=>stage.name || stage.price);
+  if (!normalized.length && dyeCost !== '' && dyeCost !== null && dyeCost !== undefined) {
+    normalized.push({ name:'صباغة', price:Number(dyeCost || 0), fixed:false });
+  }
+  if (!normalized.some((stage)=>isFixedPackagingStageName(stage.name))) {
+    normalized.push({ name:'تغليف', price:2, fixed:true });
+  }
+  return normalized.map((stage)=>isFixedPackagingStageName(stage.name) ? { ...stage, name:'تغليف', price:2, fixed:true } : stage);
+}
+
 function pricingDeferredPercentFromPaymentDetails() {
   const text = String(refs.pricingPaymentMode?.value || refs.pricingPaymentDetails?.value || refs.pricingPaymentTerms?.value || '');
   const monthMatch = text.match(/(?:أجل|اجل)\s*(\d+)/i);
@@ -2770,7 +2798,7 @@ function pricingWasteBasisSelect(value = '', disabled = false) {
 }
 
 function pricingItemRowHtml(item = {}) {
-  const stages = Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'صباغة', price:item.dyeCost || '' }];
+  const stages = normalizePricingDyeStages(Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'صباغة', price:item.dyeCost || '' }], item.dyeCost || '');
   const stagesHtml = stages.map((stage)=>pricingStageRowHtml(stage)).join('');
   const accessories = Array.isArray(item.accessoryLines) && item.accessoryLines.length ? item.accessoryLines : [];
   const accessoriesHtml = accessories.map((line)=>pricingAccessoryRowHtml(line, stages)).join('');
@@ -2834,18 +2862,20 @@ function pricingAccessoryRowHtml(line = {}, stages = []) {
 }
 
 function pricingStageRowHtml(stage = {}) {
+  const fixedPackaging = Boolean(stage.fixed) || isFixedPackagingStageName(stage.name);
   return `<div class="pricing-stage-row" data-pricing-stage-row>
-    <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(stage.name || '')}">
-    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${stage.price || ''}"><span data-pricing-currency-badge="egp">جنيه</span></div>
-    <button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>
+    <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(fixedPackaging ? 'تغليف' : (stage.name || ''))}" ${fixedPackaging ? 'readonly' : ''}>
+    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${fixedPackaging ? 2 : (stage.price || '')}" ${fixedPackaging ? 'readonly' : ''}><span data-pricing-currency-badge="egp">جنيه</span></div>
+    ${fixedPackaging ? '<span class="status pending">ثابت</span>' : '<button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>'}
   </div>`;
 }
 
 function pricingStagesFromRow(row) {
-  return [...row.querySelectorAll('[data-pricing-stage-row]')].map((stageRow)=>({
+  const stages = [...row.querySelectorAll('[data-pricing-stage-row]')].map((stageRow)=>({
     name: stageRow.querySelector('[data-pricing-stage-name]')?.value.trim() || '',
     price: Number(stageRow.querySelector('[data-pricing-stage-price]')?.value || 0),
   })).filter((stage)=>stage.name || stage.price);
+  return normalizePricingDyeStages(stages);
 }
 
 function pricingStagesTotal(stages = []) {

@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.15.23`
+`v2026.06.15.24`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix packaging pricing stage`
+
+## Latest Fixed Packaging Pricing Stage
+
+- Version: `v2026.06.15.24`.
+- Pricing cards now include `تغليف` as a fixed dyeing-stage row.
+- `تغليف` is fixed at `2 جنيه`.
+- The fixed row is added automatically to new pricing items and normalized into existing pricing items when opened.
+- The fixed `تغليف` row is read-only and does not show a delete action.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Separate active and linked pricing cards`
 
