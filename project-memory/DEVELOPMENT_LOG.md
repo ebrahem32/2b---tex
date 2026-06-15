@@ -871,3 +871,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: stage shortcuts explicitly open their own operational module before applying the filter.
 - Test: added an operational-flow regression to prevent shared pricing/orders panels from returning across all menus.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Fix Pricing Menu Module Fallback
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.28`
+- Goal: make `عروض الأسعار` always open the pricing screen, not the last operational list.
+- Root cause: closing order-focus mode restored the previous operational module even when order-focus mode was not active.
+- Change: `closeOrderFocusMode()` now restores the previous module only when an order details screen was actually open.
+- Test: added regression coverage to prevent inactive order-focus cleanup from overriding requested modules.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

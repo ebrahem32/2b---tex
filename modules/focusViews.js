@@ -20,11 +20,12 @@
     }
 
     function closeOrderFocusMode() {
+      const wasFocused = deps.getOrderFocusMode();
       deps.setOrderFocusMode(false);
-      deps.setWorkspaceModule(previousOrderListModule || 'orders');
+      if (wasFocused) deps.setWorkspaceModule(previousOrderListModule || 'orders');
       syncOrderFocusMode();
       deps.syncFilteredListMode();
-      document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      if (wasFocused) document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     }
 
     function openOrderFocusMode(orderId) {

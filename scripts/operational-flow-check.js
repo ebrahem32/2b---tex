@@ -538,6 +538,8 @@ function checkSeparateWorkspaceModules() {
   assert(navigationSource.includes("setWorkspaceModule('orders')"), 'navigation: orders action must open orders module');
   assert(navigationSource.includes("setWorkspaceModule('ai')"), 'navigation: AI action must open AI module');
   assert(focusSource.includes("deps.setWorkspaceModule('order-details')"), 'navigation: opening an order must switch to order-details module');
+  assert(focusSource.includes('const wasFocused = deps.getOrderFocusMode()'), 'navigation: closing order focus must know whether an order was actually focused');
+  assert(focusSource.includes('if (wasFocused) deps.setWorkspaceModule(previousOrderListModule ||'), 'navigation: closing inactive order focus must not override the requested module');
   assert(stylesSource.includes('body[data-active-module="pricing"] .main-workspace'), 'navigation: CSS must expose pricing module workspace');
   assert(stylesSource.includes('body[data-active-module="order-details"] .main-workspace'), 'navigation: CSS must expose order-details module workspace');
 }

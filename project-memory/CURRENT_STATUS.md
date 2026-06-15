@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.15.27`
+`v2026.06.15.28`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix pricing menu module fallback`
+
+## Latest Pricing Menu Module Fix
+
+- Version: `v2026.06.15.28`.
+- Fixed a navigation bug where clicking `عروض الأسعار` could reopen the previous operational list, such as `رصيد المخزن`.
+- Root cause: `closeOrderFocusMode()` restored the previous operational module even when no order focus screen was active.
+- Fix: `closeOrderFocusMode()` now restores the previous module only when an order detail focus screen was actually open.
+- Regression coverage was added so inactive order-focus cleanup cannot override a requested module like `pricing`.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Separate workspace module screens`
 
