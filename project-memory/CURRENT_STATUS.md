@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.10`
+`v2026.06.15.11`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,7 @@
 
 ## Latest Commit Message
 
-`Clean frontend compatibility files and unify pricing source`
+`Stabilize pricing flow, navigation, and regression test`
 
 ## Current Phase
 
@@ -35,6 +35,21 @@ Phase 3.1 - Daily Operations and Operational Test
 - Kept only the loaded compatibility polyfill:
   - `compat/polyfills.js`
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock calculations, waste logic, save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+## Latest Three-Path Stabilization
+
+- Version: `v2026.06.15.11`.
+- Stabilized the pricing-card-to-order regression path by expanding `scripts/full-operational-test.js`.
+- The full test now seeds a multi-line pricing card using `pricing_items_json` with:
+  - two fabric/material lines,
+  - dyeing-stage tables,
+  - accessory raw-item rows,
+  - selected accessory stages,
+  - currency data.
+- The test verifies that grouped order conversion preserves the second item data, including fabric, quantity, dyehouse, and operation-stage notes.
+- Removed the hidden top ERP menu markup from `index.html` so Sidebar and the home task cards are the only navigation layers.
+- Confirmed the local backend must be restarted after migrations if an older server process is running, otherwise the live process may still use an old SQLite schema.
+- Not touched: `backend/calculations.js`, stock formulas, waste formulas, operational save formulas, AI backend, WhatsApp service, A5 service.
 
 ## Completed Frontend Modules
 

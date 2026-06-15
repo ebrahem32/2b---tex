@@ -681,3 +681,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: `scripts/full-operational-test.js` now loads `pricing.js` directly and verifies pricing calculation, accessory total, gross waste basis, and monthly deferred-payment rule.
 - Verified locally with a real test cycle named `تيست`: customer quotation, grouped order with two items under the same order number, dyehouse dispatch, raw return, dyehouse transfer, finished receiving, customer delivery, accessory movement, close/waste calculation, and operational documents.
 - Test: local full operational test passed against `http://127.0.0.1:3050`.
+
+### Stabilize Pricing Flow, Navigation, And Regression Test
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.11`
+- Goal: execute the three approved paths together: stabilize pricing-card-to-order flow, reduce duplicated navigation, and harden regression testing.
+- Change: removed the hidden top ERP menu markup from `index.html`; Sidebar and home task cards are now the only navigation layers.
+- Change: bumped the app version and app script cache key to `v2026.06.15.11`.
+- Change: expanded `scripts/full-operational-test.js` so the seeded quotation uses `pricing_items_json` with two pricing-card lines, dyeing stages, accessory raw-item lines, selected accessory stages, and currency data.
+- Change: the full operational test now verifies persisted pricing-card items, accessory stage pricing, grouped-order second item preservation, per-item dyehouse/quantity, and dyeing operation stages in the dyeing production order.
+- Finding: local backend must be restarted after migrations if an old server process was already running; otherwise the live process may still use an old SQLite schema.
+- Not touched: `backend/calculations.js`, stock formulas, waste formulas, operational save formulas, AI backend, WhatsApp service, A5 service.
+- Test: `npm run check` passed locally, including `Operational flow check passed`.
+- Test: full operational test passed locally against `http://127.0.0.1:3050` after restarting the local backend with the current migration code.

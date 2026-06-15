@@ -20,6 +20,8 @@ Each operational balance belongs to its real module:
 
 Dashboard should remain a high-level entry point, not a second copy of every module.
 
+The Sidebar and home task cards are the active navigation surfaces. Do not reintroduce the old top ERP menu as a second navigation layer unless the user explicitly asks for it.
+
 ## Home Task Menu
 
 The home task menu is the first action layer after login.

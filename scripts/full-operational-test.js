@@ -30,6 +30,59 @@ const ids = {
 
 let cookie = '';
 
+const pricingCardItems = [
+  {
+    currency: 'EGP',
+    fabricType: 'قماش تيست سنجل 30/32',
+    materialType: 'قماش تيست سنجل 30/32',
+    dyehouse: 'جيما',
+    weavingSource: 'قسم النسيج تيست',
+    quantity: 500,
+    inchWidth: 30,
+    finishedWeight: 180,
+    rawCost: 80,
+    dyeCost: 95,
+    dyeStages: [
+      { name: 'صباغة', price: 79 },
+      { name: 'دبل إنزيم', price: 5 },
+      { name: 'تجهيز', price: 11 },
+    ],
+    accessoryLines: [
+      { type: 'ريب', quantity: 50, price: 220, stageNames: ['صباغة'], stageCost: 79, unitPrice: 299, total: 14950 },
+      { type: 'أساور', quantity: 25, price: 120, stageNames: [], stageCost: 0, unitPrice: 120, total: 3000 },
+    ],
+    accessoryCost: 17950,
+    wastePercent: 8,
+    wasteBasis: 'gross',
+    deferredPercent: 2,
+    extraCost: 0,
+    profitPerKg: 25,
+  },
+  {
+    currency: 'EGP',
+    fabricType: 'قماش تيست إنترلوك عرض إضافي',
+    materialType: 'قماش تيست إنترلوك عرض إضافي',
+    dyehouse: 'السلام',
+    weavingSource: 'قسم النسيج تيست',
+    quantity: 120,
+    inchWidth: 34,
+    finishedWeight: 190,
+    rawCost: 90,
+    dyeCost: 40,
+    dyeStages: [
+      { name: 'صباغة', price: 35 },
+      { name: 'فنش', price: 5 },
+    ],
+    accessoryLines: [],
+    accessoryCost: 0,
+    wastePercent: 5,
+    wasteBasis: 'net',
+    deferredPercent: 0,
+    extraCost: 0,
+    profitPerKg: 25,
+  },
+];
+
 function fail(label, extra = null) {
   console.error(JSON.stringify({ ok: false, label, extra }, null, 2));
   process.exit(1);
@@ -67,6 +120,15 @@ function parseArray(value) {
   }
 }
 
+function parseObject(value) {
+  try {
+    const parsed = JSON.parse(value || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function mapOrder(row, customers) {
   const widthMode = row.width_mode || 'single';
   return {
@@ -91,6 +153,7 @@ function mapOrder(row, customers) {
     dyehouse: row.dyehouse || '',
     weavingSource: row.weaving_source || '',
     notes: row.notes || '',
+    operationNotes: parseObject(row.operation_notes_json),
     status: row.status || 'pending',
     operationClosed: !!row.is_closed,
   };
@@ -226,6 +289,7 @@ async function seedOperationalCycle() {
     profit_per_kg: 25,
     unit_price: 140,
     total_price: 70000,
+    pricing_items_json: JSON.stringify(pricingCardItems),
     payment_terms: 'كاش',
     notes: 'عرض سعر اختبار لاختبار توليد المستندات والقيمة غير صفر',
     status: 'converted',
@@ -258,6 +322,7 @@ async function seedOperationalCycle() {
     ]),
     dyehouse: 'جيما',
     weaving_source: 'قسم النسيج تيست',
+    operation_notes_json: JSON.stringify({ dyeingStages: pricingCardItems[0].dyeStages.map((stage) => stage.name) }),
     notes: 'اختبار كامل: تسعير، أمر نسيج، صباغة، مرتجع خام، مخزن، تسليم، هالك.',
     status: 'in-progress',
     is_closed: 0,
@@ -278,6 +343,7 @@ async function seedOperationalCycle() {
     payment_terms: 'كاش',
     dyehouse: 'السلام',
     weaving_source: 'قسم النسيج تيست',
+    operation_notes_json: JSON.stringify({ dyeingStages: pricingCardItems[1].dyeStages.map((stage) => stage.name) }),
     notes: 'الصنف الثاني لنفس رقم الطلب لاختبار الطلب المجمع بدون عرض سعر إضافي.',
     status: 'in-progress',
     is_closed: 0,
@@ -305,6 +371,12 @@ async function seedOperationalCycle() {
 async function verifyOperationalCycle() {
   const bootstrap = await api('GET', '/bootstrap');
   const customers = bootstrap.customers || [];
+  const pricingRecord = (bootstrap.pricings || []).find((item) => item.id === ids.pricing) || {};
+  const persistedPricingItems = parseArray(pricingRecord.pricing_items_json);
+  assert(persistedPricingItems.length === 2, 'pricing-card-two-items-persisted', { count: persistedPricingItems.length });
+  assert(persistedPricingItems[0]?.fabricType === pricingCardItems[0].fabricType, 'pricing-card-first-item-fabric', persistedPricingItems[0]);
+  assert(persistedPricingItems[1]?.fabricType === pricingCardItems[1].fabricType, 'pricing-card-second-item-fabric', persistedPricingItems[1]);
+  assert(Number(persistedPricingItems[0]?.accessoryLines?.[0]?.unitPrice || 0) === 299, 'pricing-card-accessory-stage-price', persistedPricingItems[0]?.accessoryLines?.[0]);
   const state = {
     orders: (bootstrap.orders || []).map((row) => mapOrder(row, customers)),
     allocations: (bootstrap.allocations || []).map(mapAllocation),
@@ -318,6 +390,7 @@ async function verifyOperationalCycle() {
   };
   const domain = createFrontendDomain(state);
   const order = domain.calculateOrder(state.orders.find((item) => item.id === ids.orderA));
+  const secondOrder = domain.calculateOrder(state.orders.find((item) => item.id === ids.orderB));
   order.rawBatches = state.rawBatches.filter((row) => row.orderId === order.id);
   order.productionBatches = state.productionBatches.filter((row) => row.orderId === order.id);
   order.customerBatches = state.customerBatches.filter((row) => row.orderId === order.id);
@@ -326,6 +399,10 @@ async function verifyOperationalCycle() {
   order.dyehouseTransfers = state.dyehouseTransfers.filter((row) => row.orderId === order.id);
   const grouped = state.orders.filter((item) => item.orderNumber === order.orderNumber);
   assert(grouped.length === 2, 'grouped-order-two-items', { count: grouped.length });
+  assert(secondOrder.fabricType === pricingCardItems[1].fabricType, 'converted-second-order-fabric', secondOrder);
+  assert(secondOrder.totalRawOrdered === 120 && secondOrder.dyehouse.includes('السلام'), 'converted-second-order-full-data', { totalRawOrdered: secondOrder.totalRawOrdered, dyehouse: secondOrder.dyehouse });
+  assert(Array.isArray(order.operationNotes?.dyeingStages) && order.operationNotes.dyeingStages.includes('صباغة'), 'converted-order-dyeing-stages', order.operationNotes);
+  assert(Array.isArray(secondOrder.operationNotes?.dyeingStages) && secondOrder.operationNotes.dyeingStages.includes('فنش'), 'converted-second-order-dyeing-stages', secondOrder.operationNotes);
   assert(order.totalSentToDyehouse === 500, 'frontend-sent', { value: order.totalSentToDyehouse });
   assert(order.totalFinishedReceived === 450, 'frontend-finished', { value: order.totalFinishedReceived });
   assert(order.totalDeliveredToCustomer === 420, 'frontend-delivered', { value: order.totalDeliveredToCustomer });
@@ -369,7 +446,7 @@ async function verifyOperationalCycle() {
   };
   assert(documents.quotation.length > 1000 && (documents.quotation.includes('70,000') || documents.quotation.includes('70000')), 'doc-quotation', { length: documents.quotation.length });
   assert(documents.weaving.length > 1000 && documents.weaving.includes(order.customer), 'doc-weaving', { length: documents.weaving.length });
-  assert(documents.dyeing.length > 1000 && !documents.dyeing.includes(order.customer) && documents.dyeing.includes('500') && documents.dyeing.includes('ND-'), 'doc-dyeing', { length: documents.dyeing.length });
+  assert(documents.dyeing.length > 1000 && !documents.dyeing.includes(order.customer) && documents.dyeing.includes('500') && documents.dyeing.includes('ND-') && documents.dyeing.includes('صباغة'), 'doc-dyeing', { length: documents.dyeing.length });
   assert(documents.full.length > 1000 && documents.full.includes(order.orderNumber), 'doc-full', { length: documents.full.length });
   assert(documents.waste.length > 1000 && documents.waste.includes(order.orderNumber), 'doc-waste', { length: documents.waste.length });
   assert(documents.lab.length > 500 && documents.lab.includes(order.orderNumber), 'doc-lab', { length: documents.lab.length });
