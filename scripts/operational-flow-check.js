@@ -479,6 +479,17 @@ function checkPricingGroupedPriceViewExists() {
   assert(pricingUiSource.includes('سعر المجهز'), 'pricing ui: grouped price list must show finished price explicitly');
 }
 
+function checkOrderQuotationUsesLinkedPricingCard() {
+  const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  assert(documentsUiSource.includes("if (type === 'quotation')"), 'documents ui: quotation branch must be explicit');
+  assert(documentsUiSource.includes('deps.openPricingQuotation(orderPricing.id)'), 'documents ui: order quotation must use linked pricing card when available');
+  assert(documentsUiSource.includes('عرض السعر المرتبط'), 'documents ui: linked quotation action must be clear to the user');
+  assert(appSource.includes('alreadyConverted') && appSource.includes('pricingConvertedByOrder(sourcePricing || pricing)'), 'quotation document: converted pricing cards must not offer duplicate order conversion');
+  assert(pricingUiSource.includes('تحويل لطلب تشغيل'), 'pricing ui: conversion action must be explicitly labelled as an order conversion');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -501,6 +512,7 @@ checkUsdPricingConvertsEgpProfit();
 checkUsdPricingMatchesExcelSheet();
 checkPricingCurrencyBadgesExist();
 checkPricingGroupedPriceViewExists();
+checkOrderQuotationUsesLinkedPricingCard();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');

@@ -6,11 +6,12 @@
       const linkedPricing = currentOrder?.pricingId ? deps.getPricings().find((pricing)=>pricing.id === currentOrder.pricingId) : null;
       const orderPricing = currentOrder ? (linkedPricing || deps.pricingForOrder(currentOrder)) : null;
       const pricingActionLabel = orderPricing ? 'تعديل كرت التسعير المرتبط' : 'إنشاء كرت تسعير من الطلب';
+      const quotationActionLabel = orderPricing ? 'عرض السعر المرتبط' : 'إنشاء عرض سعر من الطلب';
       refs.documentsPanel.innerHTML = `
         <div class="document-action-group">
           <h3>عرض العميل</h3>
           <button class="mini-btn gold" data-order-pricing>${pricingActionLabel}</button>
-          <button class="mini-btn gold" data-doc="quotation">إنشاء عرض سعر</button>
+          <button class="mini-btn gold" data-doc="quotation">${quotationActionLabel}</button>
         </div>
         <div class="document-action-group">
           <h3>أوامر التشغيل</h3>
@@ -84,6 +85,12 @@
       let body = '';
       let alreadyWrapped = false;
       if (type === 'quotation') {
+        const linkedPricing = order?.pricingId ? deps.getPricings().find((pricing)=>pricing.id === order.pricingId) : null;
+        const orderPricing = linkedPricing || deps.pricingForOrder(order);
+        if (orderPricing && typeof deps.openPricingQuotation === 'function') {
+          deps.openPricingQuotation(orderPricing.id);
+          return;
+        }
         body = deps.buildQuotationDocument(order, fmt, safe);
       } else if (type === 'weaving') {
         const operationNoteText = await deps.promptOperationNotes(sourceOrder, 'weaving');

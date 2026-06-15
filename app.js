@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.21';
-const APP_BUILD_TIME = '2026-06-15 18:10';
+const APP_VERSION = 'v2026.06.15.22';
+const APP_BUILD_TIME = '2026-06-15 18:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3354,6 +3354,8 @@ function openCustomerPricingQuotation(id) {
   const currency = pricingCurrencyLabel(pricing.currency || pricing.priceItems?.find((item)=>item?.currency)?.currency || 'EGP');
   const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
   const notes = String(pricing.notes || '').trim();
+  const alreadyConverted = pricingConvertedByOrder(sourcePricing || pricing);
+  const convertPricingButton = alreadyConverted ? '' : `<button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">تحويل لطلب تشغيل</button>`;
   const wasteBasisLabel = (item) => (item.wasteBasis || item.accountingMode) === 'gross' ? 'قائم' : 'صافي';
   const dyeStagesLabel = (item) => Array.isArray(item.dyeStages) && item.dyeStages.length
     ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)}`).join('<br>')
@@ -3403,7 +3405,7 @@ function openCustomerPricingQuotation(id) {
   refs.documentTitle.textContent = '\u0639\u0631\u0636 \u0633\u0639\u0631';
   refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
     ${documentHeader()}
-    <div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">\u062a\u0646\u0632\u064a\u0644 \u0637\u0644\u0628</button><button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">\u062a\u0639\u062f\u064a\u0644</button></div>
+    <div class="document-inline-actions no-print">${convertPricingButton}<button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">\u062a\u0639\u062f\u064a\u0644</button></div>
     <div class="report-title quotation-title"><h2>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0644\u0644\u0639\u0645\u064a\u0644 <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>\u0639\u0631\u0636 \u0633\u0639\u0631 \u0645\u0642\u062f\u0645 \u0644\u0644\u0639\u0645\u064a\u0644.</span></div>
     <div class="document-meta quotation-meta">
       <div><span>\u0627\u0644\u0639\u0645\u064a\u0644</span>${escapeHtml(customer)}</div>
@@ -5667,6 +5669,7 @@ function reportOperationNotes(order) {
   editPricing,
   convertPricingToOrder,
   openPricingForOrder,
+  openPricingQuotation,
   stopWhatsappSettingsAutoRefresh,
   isBackendAvailable: () => backendAvailable,
   getOrders: () => orders,

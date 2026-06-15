@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.21`
+`v2026.06.15.22`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,17 @@
 
 ## Latest Commit Message
 
-`Add grouped raw and finished pricing view`
+`Fix quotation pricing linkage and conversion labels`
+
+## Latest Order Quotation Currency Fix
+
+- Version: `v2026.06.15.22`.
+- When creating a quotation from inside an order, the system now opens the linked/matching pricing card quotation if one exists.
+- This preserves USD pricing, exchange-rate calculations, totals, accessories, and multi-item pricing card lines.
+- If no pricing card exists, the system falls back to the legacy order-based quotation.
+- Pricing cards remain pricing cards; conversion to an operational order is shown only as an explicit `تحويل لطلب تشغيل` action.
+- Linked/converted pricing cards do not show the conversion action inside the quotation document, preventing duplicate work orders.
+- Not touched: SQLite schema/data, pricing formulas, stock formulas, waste formulas, save/rollback flows.
 
 ## Latest Grouped Raw / Finished Pricing View
 

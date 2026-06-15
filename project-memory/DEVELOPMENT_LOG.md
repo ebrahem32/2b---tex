@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Quotation Pricing Linkage And Conversion Labels
+
+- Date: 2026-06-15
+- Version: `v2026.06.15.22`
+- Goal: prevent quotations opened from an order from losing USD pricing and showing zero totals.
+- Change: when an order has a linked or matching pricing card, the quotation document opens from the pricing card instead of the order fallback.
+- Change: pricing-card conversion is labelled as `تحويل لطلب تشغيل`, and linked/converted cards do not show a duplicate conversion button in the quotation document.
+- Fallback: if no pricing card exists, the old order-based quotation remains available.
+- Not touched: SQLite schema/data, pricing formulas, stock formulas, operational waste formulas, backend save/rollback flows.
+
 ### Add Grouped Raw And Finished Pricing View
 
 - Date: 2026-06-15
