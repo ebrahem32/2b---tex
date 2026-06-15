@@ -740,3 +740,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: preserved support for old allocation-linked raw records so previous data stays readable.
 - Test: added an operational-flow regression that one 3000 kg raw issue against two 1500 kg colors distributes to both colors by plan.
 - Not touched: backend, SQLite schema/data, pricing formulas, waste formulas, AI backend, WhatsApp service, A5 service.
+
+### Fix Body Label Display For Accessory Orders Only
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.16`
+- Goal: the `جسم` label must appear only when an order includes accessories.
+- Change: updated the shared warehouse `stockFlowText` helper so plain fabric-only orders show just the quantity.
+- Change: updated document fallback rendering with the same rule.
+- Change: accessory orders continue to show `جسم` plus the accessory type/quantity.
+- Test: added operational-flow document regression for both no-accessory and accessory dyeing documents.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, pricing formulas, AI backend, WhatsApp service, A5 service.

@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.15`
+`v2026.06.15.16`
 
 ## Last Known Commit Before Project Memory
 
@@ -46,6 +46,15 @@
 - New raw-dispatch saves leave `allocationId` empty, preserving the business rule that the dyehouse receives raw fabric first and splits colors later.
 - Existing allocation-linked raw records remain supported for backward compatibility and old data safety.
 - Not touched: backend, SQLite schema, stock formulas, waste formulas, pricing formulas, AI backend, WhatsApp service, A5 service.
+
+## Latest Body/Accessory Display Rule Fix
+
+- Version: `v2026.06.15.16`.
+- Standardized body/accessory quantity display across documents and warehouse flow views.
+- Orders without accessories now show plain fabric quantities only, without the `جسم` label.
+- Orders with accessories show fabric as `جسم` together with the configured accessory type/quantity.
+- Added regression coverage so dyeing documents cannot reintroduce `جسم` for non-accessory orders.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, pricing formulas, AI backend, WhatsApp service, A5 service.
 
 ## Current Phase
 

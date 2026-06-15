@@ -30,20 +30,43 @@ function createDocumentBuilders() {
   const sandbox = { window: {}, Date };
   const source = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
   vm.runInNewContext(source, sandbox, { filename: 'documents.js' });
+  const formatNumber = (value, digits = 3) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: digits });
+  const accessoryLineName = (line) => String(line?.type || 'إكسسوار').trim() || 'إكسسوار';
+  const accessoryPlannedQuantityForLine = (order, allocation, line) => {
+    const allocations = Array.isArray(order?.allocations) ? order.allocations : [];
+    const totalPlanned = allocations.reduce((total, item) => total + Number(item.plannedQuantity || 0), 0);
+    const manual = line?.quantityManual !== undefined && line?.quantityManual !== null && line?.quantityManual !== '';
+    const quantity = manual && totalPlanned
+      ? Number(line.quantityManual || 0) * Number(allocation?.plannedQuantity || 0) / totalPlanned
+      : Number(allocation?.plannedQuantity || 0) * Number(line?.percent || 0) / 100;
+    return roundNumber(quantity);
+  };
   return sandbox.window.TwoBTexDocuments.createBuilders({
     documentFooter: () => '',
     documentHeader: () => '',
     documentLogo: () => '',
     emptyRow: (cols, text) => `<tr><td colspan="${cols}">${text}</td></tr>`,
     escapeHtml: (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch])),
-    formatNumber: (value, digits = 3) => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: digits }),
+    formatNumber,
     orderRawCost: () => 0,
     rawPermitImagesSection: () => '',
     reportOperationNotes: () => '',
     uniqueNonEmpty: (items) => [...new Set((items || []).map((item) => String(item || '').trim()).filter(Boolean))],
     sum,
     roundNumber,
-    stockFlowText: () => '-',
+    accessoryLineName,
+    accessoryPlannedQuantityForLine,
+    accessoryPlannedPartsForOrder: (order, allocation) => (order?.accessoryLines || []).map((line) => {
+      const quantity = accessoryPlannedQuantityForLine(order, allocation, line);
+      return quantity ? `${formatNumber(quantity)} ${accessoryLineName(line)}` : '';
+    }).filter(Boolean),
+    stockFlowText: (clothQuantity, accessoryParts = []) => {
+      const parts = [];
+      const hasAccessories = Array.isArray(accessoryParts) && accessoryParts.length > 0;
+      if (Number(clothQuantity || 0)) parts.push(hasAccessories ? `${formatNumber(clothQuantity)} جسم` : formatNumber(clothQuantity));
+      parts.push(...accessoryParts);
+      return parts.length ? parts.join(' - ') : '-';
+    },
   });
 }
 
@@ -344,6 +367,36 @@ function checkDyeingDocumentShowsPhysicalRawBalance() {
   assert(html.includes('175.6'), 'document: dyeing order raw balance must show physical sent balance above planned quantity');
 }
 
+function checkBodyLabelOnlyAppearsWithAccessories() {
+  const builders = createDocumentBuilders();
+  const baseOrder = {
+    id: 'order-body-label',
+    orderNumber: 'DOC-BODY',
+    orderDate: '2026-06-15',
+    customer: 'Test',
+    fabricType: 'Fabric',
+    dyehouse: 'D',
+    totalRawOrdered: 3000,
+    allocations: [
+      { id: 'alloc-body-a', orderId: 'order-body-label', color: 'أسود', plannedQuantity: 1500, dyehouse: 'D', targetFinishedWidth: 160, targetFinishedWeight: 270 },
+      { id: 'alloc-body-b', orderId: 'order-body-label', color: 'أبيض', plannedQuantity: 1500, dyehouse: 'D', targetFinishedWidth: 160, targetFinishedWeight: 270 },
+    ],
+    rawBatches: [{ orderId: 'order-body-label', date: '2026-06-15', quantity: 3000, noteNumber: '53135' }],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [],
+  };
+  const noAccessoryHtml = builders.buildDyeingOrderDocument(baseOrder, 'D');
+  assert(!noAccessoryHtml.includes('جسم'), 'document: body label must not appear when order has no accessories');
+
+  const withAccessoryHtml = builders.buildDyeingOrderDocument({
+    ...baseOrder,
+    accessoryLines: [{ type: 'ريب', percent: 10, quantity: 300 }],
+  }, 'D');
+  assert(withAccessoryHtml.includes('جسم'), 'document: body label must appear when order has accessories');
+  assert(withAccessoryHtml.includes('ريب'), 'document: accessory type must appear when order has accessories');
+}
+
 function checkWarehouseTabKeepsInventorySection() {
   const source = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(source.includes('const inventorySection = `<div class="subsection stock-flow-section">'), 'ui: inventory section must be routed to warehouse tab');
@@ -365,6 +418,7 @@ checkOversentFinishedOrderKeepsExtraAtDyehouse();
 checkAllocationLinkedRawDispatchStaysPerColor();
 checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
+checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
 checkManualAccessoryDistribution();
 

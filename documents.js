@@ -31,11 +31,12 @@
     const resolvedAccessoryName = (line, order) => (
       typeof accessoryLineName === 'function' ? accessoryLineName(line, order) : fallbackAccessoryName(line, order)
     );
-    const flowText = (clothQuantity, accessoryParts = []) => (
-      typeof stockFlowText === 'function'
-        ? stockFlowText(clothQuantity, accessoryParts)
-        : [Number(clothQuantity || 0) ? `${fmt(clothQuantity)} جسم` : '', ...(accessoryParts || [])].filter(Boolean).join(' - ') || '-'
-    );
+    const flowText = (clothQuantity, accessoryParts = []) => {
+      if (typeof stockFlowText === 'function') return stockFlowText(clothQuantity, accessoryParts);
+      const hasAccessories = Array.isArray(accessoryParts) && accessoryParts.length > 0;
+      const clothText = Number(clothQuantity || 0) ? (hasAccessories ? `${fmt(clothQuantity)} جسم` : fmt(clothQuantity)) : '';
+      return [clothText, ...(accessoryParts || [])].filter(Boolean).join(' - ') || '-';
+    };
     const flowCell = (clothQuantity, accessoryParts = []) => flowText(clothQuantity, accessoryParts)
       .split(' - ')
       .map((part, index) => `<span class="report-flow-line ${index ? 'report-flow-accessory' : 'report-flow-body'}">${safeText(part)}</span>`)

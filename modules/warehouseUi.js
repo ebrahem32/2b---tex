@@ -10,7 +10,8 @@
 
     function stockFlowText(clothQuantity, accessoryParts = []) {
       const parts = [];
-      if (Number(clothQuantity || 0)) parts.push(`${formatNumber(clothQuantity)} \u062c\u0633\u0645`);
+      const hasAccessories = Array.isArray(accessoryParts) && accessoryParts.length > 0;
+      if (Number(clothQuantity || 0)) parts.push(hasAccessories ? `${formatNumber(clothQuantity)} \u062c\u0633\u0645` : formatNumber(clothQuantity));
       parts.push(...accessoryParts);
       return parts.length ? parts.join(' - ') : '-';
     }
