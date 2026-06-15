@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.28';
-const APP_BUILD_TIME = '2026-06-15 22:35';
+const APP_VERSION = 'v2026.06.15.29';
+const APP_BUILD_TIME = '2026-06-15 23:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -339,7 +339,7 @@ let openPricingForOrder;
 let pricingRowsForReport;
 
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','weavingOrdersTableBody','dyehouseOrdersTableBody','warehouseOrdersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
@@ -3932,6 +3932,7 @@ function renderErpCockpit(list = []) {
   canDeleteRecords,
   activeOrderFilterSummary: () => activeOrderFilterSummary(),
   getOrderFocusMode: () => orderFocusMode,
+  getCalculatedOrders: () => allOrders(),
 }));
 function documentFooter() {
   const printedAt = new Date().toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' });
@@ -6328,7 +6329,7 @@ refs.pricingTableBody.onclick = (event) => {
   const deletePricingButton = event.target.closest('[data-delete-pricing]');
   if (deletePricingButton) deletePricing(deletePricingButton.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); });
 };
-refs.ordersTableBody.onclick = (event) => {
+function handleOrderTableClick(event) {
   const button = event.target.closest('button');
   if (!button) {
     const row = event.target.closest('[data-order-row]');
@@ -6358,7 +6359,10 @@ refs.ordersTableBody.onclick = (event) => {
     return;
   }
   if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
-};
+}
+[refs.ordersTableBody, refs.weavingOrdersTableBody, refs.dyehouseOrdersTableBody, refs.warehouseOrdersTableBody]
+  .filter(Boolean)
+  .forEach((body) => { body.onclick = handleOrderTableClick; });
 document.getElementById('refreshOperationFollowBtn')?.addEventListener('click', refreshOperationFollowPanel);
 document.getElementById('erpCockpit')?.addEventListener('click', (event) => {
   const viewButton = event.target.closest('[data-view]');

@@ -11,6 +11,7 @@
       canDeleteRecords,
       activeOrderFilterSummary,
       getOrderFocusMode,
+      getCalculatedOrders,
     } = deps;
 
 function ordersListHeadingForCurrentFilter(list = []) {
@@ -73,16 +74,10 @@ function updateOrdersListHeading(list = []) {
   note.hidden = !heading.subtitle;
 }
 
-function renderOrders() {
-  const list = filteredOrders();
-  syncFilteredListMode();
-  renderStats(list);
-  renderErpCockpit(list);
-  updateOrdersListHeading(list);
-  refs.ordersTableBody.innerHTML = list.map((order) => {
-    const stage = orderStageInfo(order);
-    const waitingText = stage.startDate ? `${stage.startDate} / ${stage.days} يوم` : '-';
-    return `<tr class="order-result-row" data-order-row="${order.id}">
+function orderRowHtml(order) {
+  const stage = orderStageInfo(order);
+  const waitingText = stage.startDate ? `${stage.startDate} / ${stage.days} يوم` : '-';
+  return `<tr class="order-result-row" data-order-row="${order.id}">
       <td data-label="رقم الطلب"><strong class="order-number-cell">${escapeHtml(order.orderNumber || '-')}</strong></td>
       <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
       <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
@@ -96,7 +91,50 @@ function renderOrders() {
       <td data-label="المرحلة"><span class="status ${order.status}" title="${escapeHtml(stage.reason)}">${escapeHtml(stage.label)}</span><small class="order-stage-age">${escapeHtml(waitingText)}</small></td>
       <td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-view="${order.id}">عرض</button><button class="mini-btn" data-edit-order="${order.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-order="${order.id}">حذف</button>` : ''}</div></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6">لا توجد طلبات مطابقة للفلتر الحالي.</td></tr>';
+}
+
+function renderOrderRows(body, list, emptyText) {
+  if (!body) return;
+  body.innerHTML = list.map(orderRowHtml).join('') || `<tr><td colspan="6">${emptyText}</td></tr>`;
+}
+
+function sortDesc(list, valueOf) {
+  return [...list].sort((a, b) => Number(valueOf(b) || 0) - Number(valueOf(a) || 0));
+}
+
+function renderStageScreens() {
+  const source = typeof getCalculatedOrders === 'function' ? getCalculatedOrders() : filteredOrders();
+  const weaving = sortDesc(
+    source.filter((order) => ['weaving', 'color-planning'].includes(orderStageInfo(order).key)),
+    (order) => Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)
+  );
+  const dyehouse = sortDesc(
+    source.filter((order) => {
+      const stage = orderStageInfo(order).key;
+      return ['dyehouse', 'gluing', 'glued-ready'].includes(stage)
+        || Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0
+        || Number(order.gluingBalance || 0) > 0
+        || Number(order.gluedProductBalance || 0) > 0;
+    }),
+    (order) => Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || order.gluingBalance || order.gluedProductBalance || 0)
+  );
+  const warehouse = sortDesc(
+    source.filter((order) => Number(order.warehouseBalance || 0) !== 0),
+    (order) => Math.abs(Number(order.warehouseBalance || 0))
+  );
+  renderOrderRows(refs.weavingOrdersTableBody, weaving, 'لا توجد أوامر نسيج مفتوحة حاليًا.');
+  renderOrderRows(refs.dyehouseOrdersTableBody, dyehouse, 'لا توجد أوامر داخل المصبغة حاليًا.');
+  renderOrderRows(refs.warehouseOrdersTableBody, warehouse, 'لا يوجد رصيد مخزن حاليًا.');
+}
+
+function renderOrders() {
+  const list = filteredOrders();
+  syncFilteredListMode();
+  renderStats(list);
+  renderErpCockpit(list);
+  updateOrdersListHeading(list);
+  renderOrderRows(refs.ordersTableBody, list, 'لا توجد طلبات مطابقة للفلتر الحالي.');
+  renderStageScreens();
 }
 
 function hasActiveOrderFilter() {

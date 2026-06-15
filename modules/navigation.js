@@ -57,6 +57,12 @@
         'stage:dyehouse': 'dyehouse',
         'stage:warehouse': 'warehouse',
       };
+      const panelByStage = {
+        'stage:weaving': '#weavingOrdersPanel',
+        'stage:gluing': '#dyehouseOrdersPanel',
+        'stage:dyehouse': '#dyehouseOrdersPanel',
+        'stage:warehouse': '#warehouseOrdersPanel',
+      };
       openMainWorkspace();
       deps.closeDashboardFocusMode();
       deps.closeAiFocusMode();
@@ -64,7 +70,7 @@
       setWorkspaceModule(moduleByStage[stageValue] || 'orders');
       refs.orderStatusFilter.value = stageValue;
       deps.renderOrders();
-      document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      document.querySelector(panelByStage[stageValue] || '.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     }
 
     function handleNavMenuAction(action) {

@@ -882,3 +882,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: `closeOrderFocusMode()` now restores the previous module only when an order details screen was actually open.
 - Test: added regression coverage to prevent inactive order-focus cleanup from overriding requested modules.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Separate Operational List Screens
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.29`
+- Goal: stop reusing the same orders table for `orders`, `weaving`, `dyehouse`, and `warehouse`.
+- Change: general orders, weaving, dyehouse, and warehouse now have independent module panels and independent table bodies.
+- Change: stage shortcuts now scroll to the matching screen: weaving, dyehouse, or warehouse.
+- Change: all separated operational rows still open the same order details workflow and keep the same edit/delete actions.
+- Test: added operational-flow coverage to prevent returning to one shared operational list panel.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

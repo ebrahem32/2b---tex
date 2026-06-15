@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.15.28`
+`v2026.06.15.29`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Separate operational list screens`
+
+## Latest Operational Screen Separation
+
+- Version: `v2026.06.15.29`.
+- The general orders list is now its own `orders` screen only.
+- `weaving`, `dyehouse`, and `warehouse` now have separate panels and separate table bodies:
+  - `weavingOrdersPanel` / `weavingOrdersTableBody`
+  - `dyehouseOrdersPanel` / `dyehouseOrdersTableBody`
+  - `warehouseOrdersPanel` / `warehouseOrdersTableBody`
+- Stage shortcuts now scroll to the matching operational screen instead of reusing the general orders list.
+- All operational list rows still open the same order details screen and use the same existing order actions.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix pricing menu module fallback`
 
