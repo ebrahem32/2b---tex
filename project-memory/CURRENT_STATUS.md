@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.12`
+`v2026.06.15.13`
 
 ## Last Known Commit Before Project Memory
 
@@ -18,6 +18,15 @@
 - Fixed a UI visibility issue where the dynamically-created `finishedSalePanel` could appear when opening the main operations dashboard.
 - `finishedSalePanel` is now hidden by default and immediately synchronized with the active workspace module after creation.
 - The panel still opens normally from `بيع مجهز` under warehouse/sales flow.
+- Not touched: backend, SQLite, stock calculations, waste calculations, save/rollback flows.
+
+## Latest Pricing Edit Matching Fix
+
+- Version: `v2026.06.15.13`.
+- Fixed pricing-card/order matching so a pricing card is no longer matched to an order by number alone.
+- A pricing card now matches an order only by explicit `pricingId`, or by order number plus compatible customer name plus compatible fabric name.
+- This protects the intentional business rule that the same order number can exist with different customers/items.
+- Hardened pricing edit button handling with `closest(...)` and added explicit support for pricing edit buttons inside quotation documents.
 - Not touched: backend, SQLite, stock calculations, waste calculations, save/rollback flows.
 
 ## Current Phase

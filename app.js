@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.12';
-const APP_BUILD_TIME = '2026-06-15 06:45';
+const APP_VERSION = 'v2026.06.15.13';
+const APP_BUILD_TIME = '2026-06-15 11:08';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1031,10 +1031,41 @@ function getFirstRawNoteNumber(order) {
   if (!order) return '';
   return [...new Set(rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber).filter(Boolean))].join('، ');
 }
+function compatibleNameForMatch(left, right) {
+  const a = normalizeForCompare(left).replace(/\s+/g, ' ').trim();
+  const b = normalizeForCompare(right).replace(/\s+/g, ' ').trim();
+  return !!a && !!b && (a === b || a.includes(b) || b.includes(a));
+}
+function compatibleFabricForMatch(left, right) {
+  const a = normalizeForCompare(left).replace(/[^\p{L}\p{N}\s/.-]/gu, ' ').replace(/\s+/g, ' ').trim();
+  const b = normalizeForCompare(right).replace(/[^\p{L}\p{N}\s/.-]/gu, ' ').replace(/\s+/g, ' ').trim();
+  if (!a || !b) return false;
+  if (a === b || a.includes(b) || b.includes(a)) return true;
+  const aTokens = new Set(a.split(/\s+/).filter((token)=>token.length > 1));
+  const bTokens = new Set(b.split(/\s+/).filter((token)=>token.length > 1));
+  let shared = 0;
+  aTokens.forEach((token)=>{ if (bTokens.has(token)) shared += 1; });
+  return shared >= Math.min(2, aTokens.size, bTokens.size);
+}
+function pricingMatchesOrder(pricing, order) {
+  if (!pricing || !order) return false;
+  const pricingId = String(pricing.id || '').trim();
+  if (pricingId && String(order.pricingId || '').trim() === pricingId) return true;
+  const orderNo = String(order.orderNumber || '').trim();
+  const pricingNo = String(pricing.pricingNumber || '').trim();
+  const pricingOrderNo = String(orderNumberFromPricing(pricing.pricingNumber) || '').trim();
+  const sameNumber = !!orderNo && (orderNo === pricingNo || orderNo === pricingOrderNo);
+  if (!sameNumber) return false;
+  if (!compatibleNameForMatch(order.customer, pricing.customer)) return false;
+  const pricingFabrics = uniqueNonEmpty([
+    pricing.fabricType,
+    ...pricingItemsFor(pricing).map((item)=>item.fabricType || item.materialType),
+  ]);
+  return pricingFabrics.some((fabric)=>compatibleFabricForMatch(order.fabricType, fabric));
+}
 function pricingForOrder(order) {
   if (!order) return null;
-  const orderNo = String(order.orderNumber || '').trim();
-  return pricings.find((pricing)=>String(pricing.pricingNumber || '').trim() === orderNo || orderNumberFromPricing(pricing.pricingNumber) === orderNo) || null;
+  return pricings.find((pricing)=>pricingMatchesOrder(pricing, order)) || null;
 }
 function orderRawCost(order) {
   const direct = Number(order?.rawCost || order?.rawPrice || 0);
@@ -3046,6 +3077,14 @@ function ensurePricingItemsUi() {
   getSelectedOrderId: () => selectedOrderId,
   setEditingPricingId: (value) => { editingPricingId = value; },
   setPendingPricingOrderId: (value) => { pendingPricingOrderId = value; },
+  resetOrderEditingContext: () => {
+    setOrderFormPricingConversionMode(false);
+    pendingConvertedPricingId = null;
+    pendingConvertedPricingItems = [];
+    pendingConvertedOrderDrafts = [];
+    editingOrderId = null;
+    if (refs.orderDialog?.open) refs.orderDialog.close();
+  },
   showAlert: (message) => alert(message),
   pricingPreviewPayloadFromEditor,
   renderPricingItemsEditor,
@@ -3210,8 +3249,11 @@ function convertPricingToOrder(id) {
 async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
   const convertedAt = new Date().toISOString();
   const converted = [];
+  const convertedOrder = orders.find((order)=>order.id === orderId);
   pricings.forEach((pricing)=>{
-    const matches = pricingId ? pricing.id === pricingId : (String(pricing.pricingNumber)===String(pricingNumber) || orderNumberFromPricing(pricing.pricingNumber)===String(pricingNumber));
+    const matches = pricingId
+      ? pricing.id === pricingId
+      : (convertedOrder ? pricingMatchesOrder(pricing, convertedOrder) : (String(pricing.pricingNumber)===String(pricingNumber) || orderNumberFromPricing(pricing.pricingNumber)===String(pricingNumber)));
     if (matches) converted.push({ ...pricing, status:'converted', convertedOrderId: orderId || true, convertedAt });
   });
   let ok = true;
@@ -5987,6 +6029,20 @@ document.addEventListener('click', (event) => {
   }
 });
 if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
+  const editPricingDocButton = event.target.closest('[data-edit-pricing-doc]');
+  if (editPricingDocButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    editPricing(editPricingDocButton.dataset.editPricingDoc);
+    return;
+  }
+  const convertPricingDocButton = event.target.closest('[data-convert-pricing]');
+  if (convertPricingDocButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    convertPricingToOrder(convertPricingDocButton.dataset.convertPricing);
+    return;
+  }
   if (event.target.closest('[data-save-gluing-source]')) {
     saveGluingSourceFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-source-save-error', error); alert('تعذر سحب الخامة إلى عملية الدمج.'); });
     return;
@@ -6070,7 +6126,16 @@ refs.accessoryLinesEditor.onclick = (event) => { if (event.target.dataset.remove
 refs.orderForm.onsubmit = (event) => addOrder(event).catch((error)=>{ console.error('order-save-error', error); alert('تعذر حفظ الطلب.'); });
 refs.orderNumber.oninput = syncAutoCodes;
 refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.oninput = refs.dyehouseFilter.oninput = refs.fabricFilter.oninput = renderOrders;
-refs.pricingTableBody.onclick = (event) => { if (event.target.dataset.pricingQuote) openPricingQuotation(event.target.dataset.pricingQuote); if (event.target.dataset.convertPricing) convertPricingToOrder(event.target.dataset.convertPricing); if (event.target.dataset.editPricing) editPricing(event.target.dataset.editPricing); if (event.target.dataset.deletePricing) deletePricing(event.target.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
+refs.pricingTableBody.onclick = (event) => {
+  const pricingQuoteButton = event.target.closest('[data-pricing-quote]');
+  if (pricingQuoteButton) { openPricingQuotation(pricingQuoteButton.dataset.pricingQuote); return; }
+  const convertPricingButton = event.target.closest('[data-convert-pricing]');
+  if (convertPricingButton) { convertPricingToOrder(convertPricingButton.dataset.convertPricing); return; }
+  const editPricingButton = event.target.closest('[data-edit-pricing]');
+  if (editPricingButton) { editPricing(editPricingButton.dataset.editPricing); return; }
+  const deletePricingButton = event.target.closest('[data-delete-pricing]');
+  if (deletePricingButton) deletePricing(deletePricingButton.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); });
+};
 refs.ordersTableBody.onclick = (event) => {
   const button = event.target.closest('button');
   if (!button) {

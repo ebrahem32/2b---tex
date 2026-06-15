@@ -706,3 +706,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: `finishedSalePanel` is created hidden by default and synchronized with the active workspace module immediately after dynamic insertion.
 - Change: bumped the app version and app script cache key to `v2026.06.15.12`.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Fix Pricing Card Edit Matching
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.13`
+- Goal: editing or creating a pricing card from an order must not open a pricing card belonging to another order/customer with the same number.
+- Change: pricing-card/order matching now requires explicit `pricingId`, or order number plus compatible customer name plus compatible fabric name.
+- Change: hardened pricing-table event handling with `closest(...)` so nested clicks cannot pass the wrong target.
+- Change: added explicit handlers for quotation-document `تعديل` and `تنزيل طلب` buttons.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

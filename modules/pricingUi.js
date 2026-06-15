@@ -22,6 +22,7 @@
       getSelectedOrderId,
       setEditingPricingId,
       setPendingPricingOrderId,
+      resetOrderEditingContext,
       showAlert,
       pricingPreviewPayloadFromEditor,
       renderPricingItemsEditor,
@@ -125,6 +126,7 @@ function fillPricingForm(pricing) {
 function editPricing(id) {
   const pricing = getPricings().find((item)=>item.id===id);
   if (!pricing) return;
+  resetOrderEditingContext?.();
   setEditingPricingId(id);
   setPendingPricingOrderId(null);
   if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'inline-flex';
