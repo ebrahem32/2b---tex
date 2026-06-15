@@ -894,3 +894,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: all separated operational rows still open the same order details workflow and keep the same edit/delete actions.
 - Test: added operational-flow coverage to prevent returning to one shared operational list panel.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+### Stabilize Workflow Screens And Mobile Layout
+
+- Date: 2026-06-16
+- Commit: pending.
+- Version: `v2026.06.16.01`
+- Goal: continue the approved 7-point cleanup and start the mobile version pass without touching backend or calculations.
+- Change: pricing-to-order conversion now carries dyehouse, weaving source, and accessory summary into grouped order review.
+- Change: grouped order saves now prefer the per-item operational values from the converted pricing rows before falling back to pricing defaults.
+- Change: removed the duplicated warehouse inventory report entry from the warehouse sidebar.
+- Change: improved mobile layout for grouped order rows, pricing cards, dialogs, forms, filters, and general workspace width.
+- Test: added operational-flow coverage for grouped pricing operational fields and the removed duplicated warehouse menu.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

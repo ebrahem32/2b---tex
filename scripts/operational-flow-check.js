@@ -511,6 +511,17 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
 }
 
+function checkPricingToOrderCarriesGroupedOperationalFields() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const formsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'formsUi.js'), 'utf8');
+  assert(formsUiSource.includes('data-grouped-field="dyehouse"'), 'order form: grouped pricing rows must carry dyehouse');
+  assert(formsUiSource.includes('data-grouped-field="weavingSource"'), 'order form: grouped pricing rows must carry weaving source');
+  assert(formsUiSource.includes('data-grouped-field="accessorySummary"'), 'order form: grouped pricing rows must show accessory summary');
+  assert(appSource.includes('accessoryLines:item.accessoryLines || []'), 'pricing conversion: grouped order review must show accessory lines');
+  assert(appSource.includes('dyehouse:item.dyehouse || pricingDraft.dyehouse'), 'order save: grouped order item dyehouse must be preserved before pricing fallback');
+  assert(appSource.includes('weavingSource:item.weavingSource || pricingDraft.weavingSource'), 'order save: grouped order item weaving source must be preserved before pricing fallback');
+}
+
 function checkOrderQuotationUsesLinkedPricingCard() {
   const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -540,6 +551,7 @@ function checkSeparateWorkspaceModules() {
   assert(indexSource.includes('class="workspace-grid module-hidden" data-module-panel="order-details"'), 'navigation: order details must be its own module');
   assert(!indexSource.includes('data-module-panel="dashboard sales weaving dyehouse warehouse reports"'), 'navigation: orders list must not be shared across every module');
   assert(!indexSource.includes('data-module-panel="sales reports"'), 'navigation: pricing list must not be shared with reports/sales aggregate');
+  assert(!indexSource.includes('data-module-action="warehouse" data-nav-action="report:inventory"'), 'navigation: warehouse menu must not duplicate inventory report');
   assert(navigationSource.includes("setWorkspaceModule('pricing')"), 'navigation: pricing action must open pricing module');
   assert(navigationSource.includes("setWorkspaceModule('orders')"), 'navigation: orders action must open orders module');
   assert(navigationSource.includes("setWorkspaceModule('ai')"), 'navigation: AI action must open AI module');
@@ -578,6 +590,7 @@ checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
+checkPricingToOrderCarriesGroupedOperationalFields();
 checkOrderQuotationUsesLinkedPricingCard();
 checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();

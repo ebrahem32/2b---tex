@@ -48,11 +48,37 @@ function syncWidthModeUi() {
 }
 
 function groupedOrderRowHtml(item = {}, isPrimary = false) {
-  return `<div class="grouped-order-row${isPrimary ? ' primary' : ''}" data-grouped-order-row><input data-grouped-field="fabricType" list="fabricNamesList" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="totalRawQuantity" type="number" step="0.01" placeholder="الكمية" value="${item.totalRawQuantity || ''}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="inchWidth" placeholder="البوصة" value="${item.inchWidth || ''}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="kiloPrice" type="number" step="0.01" placeholder="سعر الكيلو" value="${item.kiloPrice || ''}" ${isPrimary ? 'readonly' : ''}><input data-grouped-field="expectedWastePercent" type="number" step="0.01" placeholder="الهالك %" value="${item.expectedWastePercent || ''}" ${isPrimary ? 'readonly' : ''}><button type="button" class="mini-btn danger" data-remove-grouped-order ${isPrimary ? 'disabled' : ''}>حذف</button></div>`;
+  const accessoryText = Array.isArray(item.accessoryLines) && item.accessoryLines.length
+    ? item.accessoryLines.map((line)=>line.type || 'إكسسوار').filter(Boolean).join(' / ')
+    : (item.accessoryType || '');
+  return `<div class="grouped-order-row${isPrimary ? ' primary' : ''}" data-grouped-order-row>
+    <input data-grouped-field="fabricType" list="fabricNamesList" placeholder="الصنف" value="${escapeHtml(item.fabricType || '')}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="totalRawQuantity" type="number" step="0.01" placeholder="الكمية" value="${item.totalRawQuantity || ''}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="inchWidth" placeholder="البوصة" value="${item.inchWidth || ''}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="kiloPrice" type="number" step="0.01" placeholder="سعر الكيلو" value="${item.kiloPrice || ''}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="expectedWastePercent" type="number" step="0.01" placeholder="الهالك %" value="${item.expectedWastePercent || ''}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="weavingSource" placeholder="مصدر النسيج" value="${escapeHtml(item.weavingSource || '')}" ${isPrimary ? 'readonly' : ''}>
+    <input data-grouped-field="accessorySummary" placeholder="الإكسسوار" value="${escapeHtml(accessoryText)}" readonly>
+    <button type="button" class="mini-btn danger" data-remove-grouped-order ${isPrimary ? 'disabled' : ''}>حذف</button>
+  </div>`;
 }
 
 function groupedOrderPrimaryItem() {
-  return { fabricType:refs.fabricType?.value || '', totalRawQuantity:refs.totalRawQuantity?.value || '', inchWidth:refs.inchWidth?.value || '', kiloPrice:refs.kiloPrice?.value || '', expectedWastePercent:refs.expectedWastePercent?.value || '' };
+  const accessorySummary = [...(refs.accessoryLinesEditor?.querySelectorAll?.('.accessory-line-row') || [])]
+    .map((row)=>row.querySelector('[data-accessory-field="type"]')?.value.trim())
+    .filter(Boolean)
+    .join(' / ');
+  return {
+    fabricType:refs.fabricType?.value || '',
+    totalRawQuantity:refs.totalRawQuantity?.value || '',
+    inchWidth:refs.inchWidth?.value || '',
+    kiloPrice:refs.kiloPrice?.value || '',
+    expectedWastePercent:refs.expectedWastePercent?.value || '',
+    dyehouse:refs.dyehouse?.value || '',
+    weavingSource:refs.weavingSource?.value || '',
+    accessorySummary:accessorySummary || refs.accessoryType?.value || '',
+  };
 }
 
 function syncGroupedOrderPrimaryRow() {
@@ -88,6 +114,8 @@ function readGroupedOrderItems() {
     inchWidth: row.querySelector('[data-grouped-field="inchWidth"]')?.value.trim() || '',
     kiloPrice: Number(row.querySelector('[data-grouped-field="kiloPrice"]')?.value || 0),
     expectedWastePercent: Number(row.querySelector('[data-grouped-field="expectedWastePercent"]')?.value || 0),
+    dyehouse: row.querySelector('[data-grouped-field="dyehouse"]')?.value.trim() || '',
+    weavingSource: row.querySelector('[data-grouped-field="weavingSource"]')?.value.trim() || '',
   })).filter((item)=>item.fabricType || item.totalRawQuantity > 0 || item.inchWidth || item.kiloPrice > 0);
 }
 
@@ -95,14 +123,14 @@ function installGroupedOrderUi() {
   if (!refs.orderForm || document.getElementById('groupedOrderBox')) return;
   const anchor = refs.totalRawQuantity?.closest('label') || refs.fabricType?.closest('label');
   if (!anchor) return;
-  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box" id="groupedOrderBox"><div class="subsection-head"><div><span>أصناف داخل نفس الطلب</span><p class="eyebrow">كل صنف يحفظ كأمر تشغيل مستقل بنفس رقم الطلب والعميل حتى تظل مراحل النسيج والصباغة والتسليم منفصلة وآمنة.</p></div><button type="button" class="mini-btn" id="addGroupedOrderItemBtn">+ إضافة صنف</button></div><div class="grouped-order-head"><span>الصنف</span><span>الكمية</span><span>البوصة</span><span>سعر الكيلو</span><span>الهالك %</span><span></span></div><div id="groupedOrderRows"></div></div>`);
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box" id="groupedOrderBox"><div class="subsection-head"><div><span>أصناف داخل نفس الطلب</span><p class="eyebrow">كل صنف يحفظ كأمر تشغيل مستقل بنفس رقم الطلب والعميل حتى تظل مراحل النسيج والصباغة والتسليم منفصلة وآمنة.</p></div><button type="button" class="mini-btn" id="addGroupedOrderItemBtn">+ إضافة صنف</button></div><div class="grouped-order-head"><span>الصنف</span><span>الكمية</span><span>البوصة</span><span>سعر الكيلو</span><span>الهالك %</span><span>المصبغة</span><span>مصدر النسيج</span><span>الإكسسوار</span><span></span></div><div id="groupedOrderRows"></div></div>`);
   document.getElementById('addGroupedOrderItemBtn')?.addEventListener('click', () => document.getElementById('groupedOrderRows')?.insertAdjacentHTML('beforeend', groupedOrderRowHtml()));
   document.getElementById('groupedOrderRows')?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-remove-grouped-order]');
     if (!button || button.disabled) return;
     button.closest('[data-grouped-order-row]')?.remove();
   });
-  [refs.fabricType, refs.totalRawQuantity, refs.inchWidth, refs.kiloPrice, refs.expectedWastePercent].filter(Boolean).forEach((input) => {
+  [refs.fabricType, refs.totalRawQuantity, refs.inchWidth, refs.kiloPrice, refs.expectedWastePercent, refs.dyehouse, refs.weavingSource, refs.accessoryType, refs.accessoryPercent].filter(Boolean).forEach((input) => {
     input.addEventListener('input', syncGroupedOrderPrimaryRow);
     input.addEventListener('change', syncGroupedOrderPrimaryRow);
   });

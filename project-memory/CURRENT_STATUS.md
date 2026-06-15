@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.15.29`
+`v2026.06.16.01`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Stabilize workflow screens and mobile layout`
+
+## Latest Workflow Screen Stabilization And Mobile Pass
+
+- Version: `v2026.06.16.01`.
+- Continued the 7-point cleanup direction:
+  - standalone operational screens remain separated.
+  - pricing-to-order conversion now carries dyehouse, weaving source, and accessory summary into grouped order review.
+  - grouped order saving prefers each item operational values before falling back to the pricing card defaults.
+  - warehouse sidebar no longer duplicates the inventory report entry under the warehouse balance screen.
+  - mobile layout received a focused pass for forms, dialogs, filters, pricing cards, and grouped order rows.
+- Added regression coverage so future changes cannot drop grouped pricing operational fields or reintroduce the duplicated warehouse inventory menu.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Separate operational list screens`
 

@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.29';
-const APP_BUILD_TIME = '2026-06-15 23:05';
+const APP_VERSION = 'v2026.06.16.01';
+const APP_BUILD_TIME = '2026-06-16 00:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3395,7 +3395,10 @@ function convertPricingToOrder(id) {
         inchWidth:item.inchWidth || '',
         kiloPrice:item.kiloPrice || '',
         expectedWastePercent:item.expectedWastePercent || '',
+        dyehouse:item.dyehouse || '',
         weavingSource:item.weavingSource || '',
+        accessoryType:item.accessoryType || '',
+        accessoryLines:item.accessoryLines || [],
       }, index === 0)).join('');
       syncGroupedOrderUi();
     }
@@ -4910,8 +4913,8 @@ async function addOrder(event) {
           widthMode:'single',
           widthLines:[],
           productCode:buildItemCode(payload.orderNumber),
-          dyehouse:pricingDraft.dyehouse || item.dyehouse || payload.dyehouse,
-          weavingSource:pricingDraft.weavingSource || item.weavingSource || payload.weavingSource,
+          dyehouse:item.dyehouse || pricingDraft.dyehouse || payload.dyehouse,
+          weavingSource:item.weavingSource || pricingDraft.weavingSource || payload.weavingSource,
           accessoryType:firstGroupedAccessory.type || '',
           accessoryPercent:Number(firstGroupedAccessory.percent || 0),
           accessoryLines:groupedAccessoryLines,
