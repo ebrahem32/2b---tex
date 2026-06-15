@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.16`
+`v2026.06.15.17`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,24 @@
 ## Latest Commit Message
 
 `Stabilize pricing flow, navigation, and regression test`
+
+## Latest No Raw Warehouse Terminology Cleanup
+
+- Version: `v2026.06.15.17`.
+- Confirmed the operating principle: there is no separate raw-fabric warehouse in the system.
+- Raw fabric is treated as moving directly from weaving to dyehouse through a raw dispatch/issue movement.
+- The warehouse means finished/ready stock only.
+- Dashboard totals now avoid duplicated raw labels and show:
+  - raw required
+  - raw issued to dyehouse
+  - inside dyehouse
+  - finished entered warehouse
+  - ready for delivery
+  - delivered to customer
+  - actual waste
+- AI stage wording no longer uses `ready-to-dyehouse` as a standalone operational stage; unsent raw stays under weaving / not issued to dyehouse.
+- Added regression coverage to prevent reintroducing raw-warehouse wording in dashboard/AI terminology.
+- Not touched: SQLite data/schema, `backend/calculations.js`, stock formulas, waste formulas, pricing formulas, operational save/rollback flows.
 
 ## Latest Dashboard Finished-Sale Visibility Fix
 

@@ -47,7 +47,7 @@
     function applyStageShortcut(stageValue) {
       const refs = deps.refs;
       if (!stageValue || !refs.orderStatusFilter) return;
-      if (stageValue === 'stage:ready-to-dyehouse') stageValue = 'stage:dyehouse';
+      if (stageValue === 'stage:ready-to-dyehouse') stageValue = 'stage:weaving';
       if (stageValue === 'stage:delivery') stageValue = 'stage:warehouse';
       if (stageValue === 'stage:color-planning') stageValue = 'stage:weaving';
       if (stageValue === 'stage:glued-ready') stageValue = 'stage:gluing';

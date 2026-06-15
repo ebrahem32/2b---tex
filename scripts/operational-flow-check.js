@@ -403,6 +403,15 @@ function checkWarehouseTabKeepsInventorySection() {
   assert(!source.includes('section.remove();'), 'ui: warehouse inventory section must not be removed while consolidating order details');
 }
 
+function checkNoRawWarehouseDashboardTerminology() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
+  assert(!appSource.includes("['خام مستلم'"), 'ui: dashboard must not show raw received as a warehouse-like stage');
+  assert(!appSource.includes('خام متاح بالمصبغة'), 'ui: order details must call dyehouse balance داخل المصبغة');
+  assert(!serverSource.includes("key: 'ready-to-dyehouse'"), 'ai: no standalone ready-to-dyehouse stage after removing raw warehouse concept');
+  assert(!serverSource.includes('خام جاهز للمصبغة'), 'ai: no raw-ready wording after removing raw warehouse concept');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -420,6 +429,7 @@ checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
+checkNoRawWarehouseDashboardTerminology();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');

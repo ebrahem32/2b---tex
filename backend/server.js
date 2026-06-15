@@ -272,9 +272,8 @@ const LOCAL_IMPORT_ENABLED = process.env.ALLOW_LOCAL_IMPORT === '1';
 const BACKUP_RETENTION_DAYS = Number(process.env.BACKUP_RETENTION_DAYS || 6);
 let lastBackupCleanup = { deleted: 0, deletedFiles: [], retentionDays: BACKUP_RETENTION_DAYS, ranAt: null };
 const OPERATION_STAGE_DEFINITIONS = [
-  { key: 'weaving', label: 'واقف في النسيج', description: 'طلب لم يكتمل استلام الخام/خروجه من النسيج.' },
-  { key: 'color-planning', label: 'بانتظار توزيع الألوان', description: 'خام موجود بدون خطة ألوان واضحة.' },
-  { key: 'ready-to-dyehouse', label: 'خام جاهز للمصبغة', description: 'خام مستلم ولم يرسل للمصبغة بالكامل.' },
+  { key: 'weaving', label: 'واقف في النسيج', description: 'طلب لم يكتمل خروج الخام من النسيج إلى المصبغة.' },
+  { key: 'color-planning', label: 'بانتظار توزيع الألوان', description: 'طلب يحتاج خطة ألوان واضحة قبل التشغيل.' },
   { key: 'dyehouse', label: 'واقف في المصبغة', description: 'خام مرسل للمصبغة ولم يكتمل استلام المجهز.' },
   { key: 'warehouse', label: 'واقف في المخزن', description: 'مجهز مستلم ولم يتم تسليمه للعميل بالكامل.' },
   { key: 'delivery', label: 'جاهز للتسليم', description: 'يوجد رصيد جاهز يحتاج تسليم ومتابعة.' },
@@ -829,7 +828,7 @@ function aiFallbackAnalysis(data) {
     executiveSummary: `يوجد ${orders.length} طلب داخل النظام، منها ${openOrders.length} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، ورصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم. أهم إجراء: ${stuckOrderItems[0] ? `${stuckOrderItems[0].label}. ${stuckOrderItems[0].action}` : 'لا توجد أولوية حرجة الآن.'}`,
     keyFindings: [
       `طلبات مفتوحة: ${openOrders.length}`,
-      `خام لم يخرج للنسيج/المصبغة بعد: ${Math.round(unsentRaw).toLocaleString('en-US')} كجم`,
+      `خام لم يخرج من النسيج للمصبغة بعد: ${Math.round(unsentRaw).toLocaleString('en-US')} كجم`,
       `رصيد داخل المصابغ: ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، وهذا ليس هالكًا نهائيًا أثناء التشغيل.`,
       `رصيد جاهز أو واقف بالمخزن: ${Math.round(warehouse).toLocaleString('en-US')} كجم`,
       `تقارير واتساب تحتاج متابعة: ${failedReports.length}`,
@@ -853,7 +852,7 @@ function aiFallbackAnalysis(data) {
         'فلتر الطلبات على: واقف في المخزن، ورتب حسب العميل والتاريخ.',
         'راجع قائمة الإرسال لو فيها تقارير معلقة قبل نهاية اليوم.',
       ],
-    whatsappMessage: `ملخص 2B: ${orders.length} طلب، المفتوح ${openOrders.length}. رصيد المصابغ ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، رصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم، خام غير مرسل ${Math.round(unsentRaw).toLocaleString('en-US')} كجم. الأولوية: متابعة أقدم طلبات واقفة في المصبغة والمخزن.`,
+    whatsappMessage: `ملخص 2B: ${orders.length} طلب، المفتوح ${openOrders.length}. رصيد المصابغ ${Math.round(atDyehouse).toLocaleString('en-US')} كجم، رصيد المخزن ${Math.round(warehouse).toLocaleString('en-US')} كجم، خام لم يخرج للمصبغة ${Math.round(unsentRaw).toLocaleString('en-US')} كجم. الأولوية: متابعة أقدم طلبات واقفة في المصبغة والمخزن.`,
   };
 }
 
@@ -935,8 +934,8 @@ function latestDate(rows, ...keys) {
 function orderStageForAi(order, summary, movementDates = {}, allocationsCount = 0) {
   if (Number(order.is_closed || 0) === 1) return { key: 'closed', label: 'مغلق', since: movementDates.closed || order.updated_at || order.created_at, reason: 'تم إغلاق الطلب تشغيليًا' };
   if (!allocationsCount) return { key: 'color-planning', label: 'بانتظار توزيع الألوان', since: order.created_at || order.order_date, reason: 'لا توجد خطة ألوان مسجلة' };
-  if (summary.remainingRawToReceive > 0) return { key: 'weaving', label: 'واقف في النسيج', since: order.order_date || order.created_at, reason: `متبقي استلام خام ${summary.remainingRawToReceive} كجم` };
-  if (summary.remainingNotSentToDyehouse > 0) return { key: 'ready-to-dyehouse', label: 'خام جاهز لم يرسل للمصبغة', since: movementDates.rawReceived || order.order_date || order.created_at, reason: `رصيد خام لم يرسل ${summary.remainingNotSentToDyehouse} كجم` };
+  if (summary.remainingRawToReceive > 0) return { key: 'weaving', label: 'واقف في النسيج', since: order.order_date || order.created_at, reason: `متبقي خروج خام للمصبغة ${summary.remainingRawToReceive} كجم` };
+  if (summary.remainingNotSentToDyehouse > 0) return { key: 'weaving', label: 'واقف في النسيج', since: movementDates.rawReceived || order.order_date || order.created_at, reason: `خام لم يخرج للمصبغة ${summary.remainingNotSentToDyehouse} كجم` };
   if (summary.gluingBalance > 0) return { key: 'gluing', label: 'واقف في دمج الخامات', since: movementDates.gluing || movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `رصيد خام في دمج الخامات ${summary.gluingBalance} كجم` };
   if (summary.gluedProductBalance > 0) return { key: 'glued-ready', label: 'منتج مدمج جاهز للتسليم', since: movementDates.gluing || movementDates.finishedReceived || order.order_date || order.created_at, reason: `رصيد منتج مدمج ${summary.gluedProductBalance} كجم` };
   if (summary.remainingAtDyehouse > 0) return { key: 'dyehouse', label: 'واقف في المصبغة', since: movementDates.sentToDyehouse || order.order_date || order.created_at, reason: `داخل المصبغة ${summary.remainingAtDyehouse} كجم` };
@@ -1248,7 +1247,7 @@ function aiQuestionIntent(question = '') {
     dyehouse: hasAny(['مصبغة', 'المصبغة', 'المصابغ', 'الصباغة', 'الصباغه', 'داخل المصبغة', 'واقف في المصبغة']),
     delivery: hasAny(['جاهز للتسليم', 'تسليم', 'تسليمه', 'المخزن', 'رصيد المخزن', 'مخزن']),
     weaving: hasAny(['النسيج', 'خام لم يستلم', 'استلام خام', 'واقف في النسيج']),
-    rawReady: hasAny(['خام جاهز', 'لم يرسل', 'لم يتبعت', 'ارسال للمصبغة', 'إرسال للمصبغة']),
+    rawReady: hasAny(['خام لم يخرج', 'لم يرسل', 'لم يتبعت', 'ارسال للمصبغة', 'إرسال للمصبغة']),
     delayed: hasAny(['متاخر', 'متأخر', 'متاخره', 'متأخرة', 'واقف بقاله', 'واقف من زمان', 'اقدم', 'أقدم']),
     waste: hasAny(['هالك', 'الهالك', 'فاقد', 'فرق الكمية']),
     open: hasAny(['مفتوح', 'تحت التشغيل', 'شغال']),
@@ -1282,7 +1281,7 @@ function orderMatchesAiIntent(order = {}, intent = {}) {
   if (intent.dyehouse) checks.push(stageKey === 'dyehouse' || Number(quantities.remainingAtDyehouse || 0) > 0 || stageLabel.includes('مصبغه'));
   if (intent.delivery) checks.push(stageKey === 'delivery' || stageLabel.includes('تسليم'));
   if (intent.weaving) checks.push(stageKey === 'weaving' || Number(quantities.remainingRawToReceive || 0) > 0 || stageLabel.includes('نسيج'));
-  if (intent.rawReady) checks.push(stageKey === 'ready-to-dyehouse' || Number(quantities.remainingNotSentToDyehouse || 0) > 0);
+  if (intent.rawReady) checks.push(stageKey === 'weaving' || Number(quantities.remainingNotSentToDyehouse || 0) > 0);
   if (intent.delayed) checks.push(Number(order.stage?.days || 0) >= 7);
   if (intent.waste) checks.push(Number(quantities.totalWaste || 0) > 0 || Number(quantities.expectedWasteQuantity || 0) > 0);
   if (intent.open) checks.push(!order.isClosed && !['completed', 'closed'].includes(String(order.status || '')));

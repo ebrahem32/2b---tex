@@ -752,3 +752,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: accessory orders continue to show `جسم` plus the accessory type/quantity.
 - Test: added operational-flow document regression for both no-accessory and accessory dyeing documents.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, pricing formulas, AI backend, WhatsApp service, A5 service.
+
+### Clean Raw Warehouse Terminology
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.17`
+- Goal: align the UI and AI wording with the operating principle that there is no separate raw-fabric warehouse.
+- Change: dashboard totals now avoid the misleading raw-received card and show raw issued to dyehouse, inside dyehouse, finished entered warehouse, ready for delivery, delivered, and actual waste.
+- Change: order details now call dyehouse balance `داخل المصبغة` and finished receipt `مجهز دخل المخزن`.
+- Change: AI stage analysis no longer exposes a standalone `ready-to-dyehouse` stage; raw not yet issued stays under weaving / not issued to dyehouse.
+- Test: added an operational-flow regression to prevent reintroducing raw-warehouse dashboard/AI terminology.
+- Not touched: SQLite schema/data, `backend/calculations.js`, stock formulas, waste formulas, pricing formulas, operational save/rollback flows.
