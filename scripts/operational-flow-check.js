@@ -496,6 +496,17 @@ function checkFixedPackagingPricingStageExists() {
   assert(appSource.includes("fixedPackaging ? '<span class=\"status pending\">ثابت</span>'"), 'pricing ui: fixed packaging stage must not show delete action');
 }
 
+function checkPricingListFiltersAndOrderNumber() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  assert(pricingUiSource.includes('pricingNumber: calculated.orderNumber || nextOrderPricingNumber(calculated)'), 'pricing ui: cards opened from existing orders must keep the order number');
+  assert(pricingUiSource.includes('pricingRowsForReport'), 'pricing ui: filtered pricing rows must be exposed for printing');
+  assert(indexSource.includes('pricingSearchInput') && indexSource.includes('pricingCustomerFilter') && indexSource.includes('pricingStatusFilter'), 'pricing ui: pricing list must have standalone filters');
+  assert(indexSource.includes('printFilteredPricingsBtn'), 'pricing ui: filtered pricing list must be printable');
+  assert(appSource.includes('openFilteredPricingsReport'), 'pricing ui: filtered pricing print report must be wired');
+}
+
 function checkOrderQuotationUsesLinkedPricingCard() {
   const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -531,6 +542,7 @@ checkPricingCurrencyBadgesExist();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
+checkPricingListFiltersAndOrderNumber();
 checkOrderQuotationUsesLinkedPricingCard();
 checkManualAccessoryDistribution();
 

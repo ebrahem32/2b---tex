@@ -76,9 +76,7 @@ function updateSuggestedDyeCost() {
   updatePricingPreview();
 }
 
-function renderPricings() {
-  const currencyLabel = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
-  const money = (value, currency) => `${Number(value || 0).toLocaleString('en-US')} ${currencyLabel(currency)}`;
+function pricingListRows() {
   const allPricings = getPricings();
   const linkedOrdersForPricing = (pricing) => getOrders().filter((order) => {
     if (typeof pricingMatchesOrder === 'function') return pricingMatchesOrder(pricing, order);
@@ -94,8 +92,83 @@ function renderPricings() {
       || (typeof pricingConvertedByOrder === 'function' && pricingConvertedByOrder(pricing));
     return { linked, linkedOrders };
   };
-  const activePricings = allPricings.filter((pricing) => !pricingState(pricing).linked && isActivePricing(pricing));
-  const convertedPricings = allPricings.filter((pricing) => pricingState(pricing).linked);
+  return allPricings.flatMap((sourcePricing) => {
+    const state = pricingState(sourcePricing);
+    const listMode = state.linked ? 'linked' : 'active';
+    if (listMode === 'active' && !isActivePricing(sourcePricing)) return [];
+    const pricing = calculatePricing(sourcePricing);
+    const items = Array.isArray(pricing.priceItems) && pricing.priceItems.length ? pricing.priceItems : [pricing];
+    return items.map((item, index) => ({
+      ...calculatePricing({ ...pricing, ...item, priceItems:null }),
+      id: pricing.id,
+      pricingNumber: pricing.pricingNumber,
+      customer: pricing.customer,
+      linkedOrder: state.linkedOrders[0] || null,
+      linkedOrders: state.linkedOrders,
+      listMode,
+      itemIndex: index,
+    }));
+  });
+}
+
+function pricingMoney(value, currency) {
+  const currencyLabel = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
+  return `${Number(value || 0).toLocaleString('en-US')} ${currencyLabel(currency)}`;
+}
+
+function refreshPricingFilters(rows) {
+  if (!refs.pricingCustomerFilter) return;
+  const current = refs.pricingCustomerFilter.value || 'all';
+  const customers = uniqueNonEmpty(rows.map((row)=>row.customer)).sort((a,b)=>a.localeCompare(b, 'ar'));
+  refs.pricingCustomerFilter.innerHTML = `<option value="all">كل العملاء</option>${customers.map((name)=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')}`;
+  refs.pricingCustomerFilter.value = customers.includes(current) ? current : 'all';
+}
+
+function pricingRowsForReport() {
+  const rows = pricingListRows();
+  refreshPricingFilters(rows);
+  const query = String(refs.pricingSearchInput?.value || '').trim().toLowerCase();
+  const customer = refs.pricingCustomerFilter?.value || 'all';
+  const status = refs.pricingStatusFilter?.value || 'all';
+  return rows.filter((row) => {
+    if (customer !== 'all' && row.customer !== customer) return false;
+    if (status === 'active' && row.listMode !== 'active') return false;
+    if (status === 'linked' && row.listMode !== 'linked') return false;
+    if (!query) return true;
+    return [
+      row.pricingNumber,
+      row.linkedOrder?.orderNumber,
+      row.customer,
+      row.fabricType,
+      row.dyehouse,
+      row.currency,
+    ].join(' ').toLowerCase().includes(query);
+  }).sort((a,b)=>
+    String(a.customer || '').localeCompare(String(b.customer || ''), 'ar')
+    || String(a.pricingNumber || '').localeCompare(String(b.pricingNumber || ''), 'ar', { numeric:true })
+    || String(a.fabricType || '').localeCompare(String(b.fabricType || ''), 'ar')
+  );
+}
+
+function renderPricings() {
+  const money = pricingMoney;
+  const linkedOrdersForPricing = (pricing) => getOrders().filter((order) => {
+    if (typeof pricingMatchesOrder === 'function') return pricingMatchesOrder(pricing, order);
+    const pricingId = String(pricing?.id || '').trim();
+    return pricingId && String(order?.pricingId || '').trim() === pricingId;
+  });
+  const pricingState = (pricing) => {
+    const status = String(pricing?.status || '').toLowerCase();
+    const linkedOrders = linkedOrdersForPricing(pricing);
+    const linked = linkedOrders.length > 0
+      || pricing?.convertedOrderId
+      || ['converted', 'ordered', 'order', 'closed'].includes(status)
+      || (typeof pricingConvertedByOrder === 'function' && pricingConvertedByOrder(pricing));
+    return { linked, linkedOrders };
+  };
+  const visiblePricings = pricingRowsForReport();
+  const activePricings = visiblePricings.filter((pricing) => pricing.listMode === 'active');
+  const convertedPricings = visiblePricings.filter((pricing) => pricing.listMode === 'linked');
   const headers = refs.pricingTableBody?.closest('table')?.querySelectorAll('thead th') || [];
   if (headers.length >= 8) {
     headers[5].textContent = 'سعر الخام';
@@ -227,7 +300,7 @@ function pricingDraftFromOrder(order) {
   const matchedPricing = pricingForOrder(calculated);
   if (matchedPricing) return matchedPricing;
   return {
-    pricingNumber: nextOrderPricingNumber(calculated),
+    pricingNumber: calculated.orderNumber || nextOrderPricingNumber(calculated),
     productCode: calculated.productCode || buildItemCode(calculated.orderNumber),
     customer: calculated.customer || '',
     pricingDate: new Date().toISOString().slice(0, 10),
@@ -290,6 +363,7 @@ function openPricingForOrder(orderId = getSelectedOrderId()) {
       nextOrderPricingNumber,
       pricingDraftFromOrder,
       openPricingForOrder,
+      pricingRowsForReport,
     };
   }
 

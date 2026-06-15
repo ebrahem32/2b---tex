@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.15.24`
+`v2026.06.15.25`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix pricing card order linkage and filters`
+
+## Latest Pricing Card Linkage And Filters
+
+- Version: `v2026.06.15.25`.
+- Pricing cards opened from an existing operational order now keep the same order number instead of taking a new automatic number.
+- Pricing cards list is now a standalone filtered list with search, customer filter, status filter, and filtered print.
+- Linked pricing cards are reported with their operational order number in the print view.
+- Railway data cleanup: linked pricing cards were aligned to their order numbers, and duplicate unlinked pricing rows were removed/left absent while preserving the referenced card.
+- Verification: `npm run check` passed and Operational flow check passed.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix packaging pricing stage`
 

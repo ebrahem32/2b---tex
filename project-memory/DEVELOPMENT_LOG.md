@@ -4,6 +4,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Pricing Card Order Linkage And Filters
+
+- Date: 2026-06-15
+- Version: `v2026.06.15.25`
+- Goal: make pricing cards connected to real operational orders use the real order number and make the pricing list usable as an independent list.
+- Change: pricing cards opened from an existing order now keep the order number instead of receiving a new automatic pricing number.
+- Change: the pricing list now has search, customer filter, status filter, and filtered print.
+- Change: filtered pricing print includes the linked operational order number when available.
+- Railway data cleanup: linked pricing cards were aligned to their order numbers, and duplicate unlinked pricing rows were removed/left absent while preserving referenced pricing cards.
+- Verification: `npm run check` passed and Operational flow check passed.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Fix Packaging Pricing Stage
 
 - Date: 2026-06-15
