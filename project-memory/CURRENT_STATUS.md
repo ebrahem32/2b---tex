@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.20`
+`v2026.06.15.21`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,16 @@
 
 ## Latest Commit Message
 
-`Match USD pricing to Excel calculation`
+`Add grouped raw and finished pricing view`
+
+## Latest Grouped Raw / Finished Pricing View
+
+- Version: `v2026.06.15.21`.
+- The pricing list now groups cards by fabric/raw item.
+- Under each fabric, the system shows every related customer/card line together.
+- Each line shows raw price and finished price clearly, even when the same raw item is priced for multiple customers or multiple lines inside the same pricing card.
+- This is a UI organization change only.
+- Not touched: SQLite schema/data, pricing formulas, stock formulas, waste formulas, save/rollback flows.
 
 ## Latest Excel-Style USD Pricing Fix
 

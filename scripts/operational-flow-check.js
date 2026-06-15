@@ -472,6 +472,13 @@ function checkPricingCurrencyBadgesExist() {
   assert(appSource.includes('pricingFormulaPreview'), 'pricing ui: formula preview must explain the visible pricing result');
 }
 
+function checkPricingGroupedPriceViewExists() {
+  const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  assert(pricingUiSource.includes('pricing-group-row'), 'pricing ui: pricing list must group prices by fabric/raw item');
+  assert(pricingUiSource.includes('سعر الخام'), 'pricing ui: grouped price list must show raw price explicitly');
+  assert(pricingUiSource.includes('سعر المجهز'), 'pricing ui: grouped price list must show finished price explicitly');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -493,6 +500,7 @@ checkNoRawWarehouseDashboardTerminology();
 checkUsdPricingConvertsEgpProfit();
 checkUsdPricingMatchesExcelSheet();
 checkPricingCurrencyBadgesExist();
+checkPricingGroupedPriceViewExists();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');

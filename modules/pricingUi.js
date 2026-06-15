@@ -77,7 +77,38 @@ function updateSuggestedDyeCost() {
 function renderPricings() {
   const activePricings = getPricings().filter(isActivePricing);
   const currencyLabel = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
-  refs.pricingTableBody.innerHTML = activePricings.map(calculatePricing).map((pricing)=>`<tr><td data-label="رقم الكرت">${pricing.pricingNumber}</td><td data-label="العميل">${pricing.customer}</td><td data-label="الصنف / الخامة">${pricing.fabricType}</td><td data-label="المصبغة">${pricing.dyehouse}</td><td data-label="الكمية">${pricing.quantity}</td><td data-label="تكلفة الكيلو">${pricing.costPerKg.toLocaleString('en-US')} ${currencyLabel(pricing.currency)}</td><td data-label="سعر البيع">${pricing.sellPrice.toLocaleString('en-US')} ${currencyLabel(pricing.currency)}</td><td data-label="إجمالي العقد">${pricing.totalOffer.toLocaleString('en-US')} ${currencyLabel(pricing.currency)}</td><td data-label="الحالة"><span class="status pending">كرت تسعير</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`).join('');
+  const money = (value, currency) => `${Number(value || 0).toLocaleString('en-US')} ${currencyLabel(currency)}`;
+  const headers = refs.pricingTableBody?.closest('table')?.querySelectorAll('thead th') || [];
+  if (headers.length >= 8) {
+    headers[5].textContent = 'سعر الخام';
+    headers[6].textContent = 'سعر المجهز';
+    headers[7].textContent = 'إجمالي العقد';
+  }
+  const grouped = new Map();
+  activePricings.map(calculatePricing).forEach((pricing) => {
+    const items = Array.isArray(pricing.priceItems) && pricing.priceItems.length ? pricing.priceItems : [pricing];
+    items.forEach((item, index) => {
+      const row = calculatePricing({ ...pricing, ...item, priceItems:null });
+      const fabric = String(row.fabricType || pricing.fabricType || 'بدون صنف').trim();
+      const groupKey = fabric.toLowerCase();
+      if (!grouped.has(groupKey)) grouped.set(groupKey, { fabric, rows: [] });
+      grouped.get(groupKey).rows.push({
+        ...row,
+        id: pricing.id,
+        pricingNumber: pricing.pricingNumber,
+        customer: pricing.customer,
+        itemIndex: index,
+      });
+    });
+  });
+  refs.pricingTableBody.innerHTML = [...grouped.values()].sort((a,b)=>a.fabric.localeCompare(b.fabric, 'ar')).map((group) => {
+    const rows = group.rows.sort((a,b)=>String(a.pricingNumber || '').localeCompare(String(b.pricingNumber || ''), 'ar', { numeric:true }) || String(a.customer || '').localeCompare(String(b.customer || ''), 'ar'));
+    const rawPrices = uniqueNonEmpty(rows.map((row)=>money(row.rawCost, row.currency)));
+    const finishedPrices = uniqueNonEmpty(rows.map((row)=>money(row.sellPrice, row.currency)));
+    const header = `<tr class="pricing-group-row"><td colspan="10"><div class="pricing-group-title"><strong>${escapeHtml(group.fabric)}</strong><span>${rows.length} سعر مسجل</span><span>سعر الخام: ${escapeHtml(rawPrices.join(' / ') || '-')}</span><span>سعر المجهز: ${escapeHtml(finishedPrices.join(' / ') || '-')}</span></div></td></tr>`;
+    const body = rows.map((pricing)=>`<tr class="pricing-child-row"><td data-label="رقم الكرت">${escapeHtml(pricing.pricingNumber || '-')}</td><td data-label="العميل">${escapeHtml(pricing.customer || '-')}</td><td data-label="الصنف">${escapeHtml(pricing.fabricType || group.fabric)}</td><td data-label="المصبغة">${escapeHtml(pricing.dyehouse || '-')}</td><td data-label="الكمية">${Number(pricing.quantity || 0).toLocaleString('en-US')}</td><td data-label="سعر الخام">${escapeHtml(money(pricing.rawCost, pricing.currency))}</td><td data-label="سعر المجهز">${escapeHtml(money(pricing.sellPrice, pricing.currency))}</td><td data-label="إجمالي العقد">${escapeHtml(money(pricing.totalOffer, pricing.currency))}</td><td data-label="الحالة"><span class="status pending">كرت تسعير</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`).join('');
+    return header + body;
+  }).join('');
 }
 
 function updatePricingPreview() {

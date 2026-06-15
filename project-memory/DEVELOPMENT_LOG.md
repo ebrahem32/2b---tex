@@ -4,6 +4,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Add Grouped Raw And Finished Pricing View
+
+- Date: 2026-06-15
+- Version: `v2026.06.15.21`
+- Goal: make the pricing screen show the full price history for each raw/fabric item in one place.
+- Change: pricing cards are grouped by fabric/raw item, with customer/card lines underneath each group.
+- UI: each line shows raw price, finished price, quantity, customer, dyehouse, total contract, and actions.
+- Not touched: SQLite schema/data, pricing formulas, stock formulas, operational waste formulas, backend save/rollback flows.
+
 ### Match USD Pricing To Excel Calculation
 
 - Date: 2026-06-15
