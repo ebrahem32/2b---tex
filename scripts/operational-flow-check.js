@@ -4,8 +4,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { calculateOrderSummary } = require('../backend/calculations');
 
-function roundNumber(value) {
-  return Math.round(Number(value || 0) * 100) / 100;
+function roundNumber(value, digits = 2) {
+  const factor = 10 ** digits;
+  return Math.round(Number(value || 0) * factor) / factor;
 }
 
 function sum(rows, key = 'quantity') {
@@ -439,8 +440,28 @@ function checkUsdPricingConvertsEgpProfit() {
     quantity: 100,
   }, {});
   assertClose(pricing.dyeCost, 1, 'pricing: EGP dye cost must convert to USD');
-  assertClose(pricing.profitPerKg, 0.6, 'pricing: EGP profit margin must convert to USD');
+  assertClose(pricing.profitPerKg, 30, 'pricing: stored profit input must stay in EGP');
+  assertClose(pricing.profitCost, 0.6, 'pricing: EGP profit margin must expose converted USD value');
   assertClose(pricing.sellPrice, 5.6, 'pricing: USD sell price must add converted profit, not raw EGP profit');
+}
+
+function checkUsdPricingMatchesExcelSheet() {
+  const pricingDomain = createPricingDomain();
+  const pricing = pricingDomain.calculatePricing({
+    currency: 'USD',
+    exchangeRate: 52,
+    rawCost: 4.4,
+    dyeCost: 80,
+    extraCost: 0,
+    wastePercent: 10,
+    wasteBasis: 'net',
+    deferredPercent: 0,
+    profitPerKg: 33,
+    quantity: 2700,
+  }, {});
+  assertClose(pricing.costPerKgEgp, 332, 'pricing: USD card must round EGP cost per kg like the Excel sheet');
+  assertClose(pricing.sellPriceEgp, 365, 'pricing: USD card must add EGP profit after rounding EGP cost');
+  assertClose(pricing.sellPrice, 7.02, 'pricing: USD final sell price must match Excel after converting final EGP price');
 }
 
 function checkPricingCurrencyBadgesExist() {
@@ -448,6 +469,7 @@ function checkPricingCurrencyBadgesExist() {
   assert(appSource.includes('data-pricing-currency-badge="pricing"'), 'pricing ui: selected currency badge must appear beside pricing-currency money inputs');
   assert(appSource.includes('data-pricing-currency-badge="egp"'), 'pricing ui: EGP badge must appear beside EGP-entered money inputs');
   assert(appSource.includes('updatePricingCurrencyBadges'), 'pricing ui: currency badges must update when currency changes');
+  assert(appSource.includes('pricingFormulaPreview'), 'pricing ui: formula preview must explain the visible pricing result');
 }
 
 function checkManualAccessoryDistribution() {
@@ -469,6 +491,7 @@ checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
 checkNoRawWarehouseDashboardTerminology();
 checkUsdPricingConvertsEgpProfit();
+checkUsdPricingMatchesExcelSheet();
 checkPricingCurrencyBadgesExist();
 checkManualAccessoryDistribution();
 

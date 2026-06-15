@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.19';
-const APP_BUILD_TIME = '2026-06-15 17:20';
+const APP_VERSION = 'v2026.06.15.20';
+const APP_BUILD_TIME = '2026-06-15 17:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2978,6 +2978,38 @@ function syncPricingExchangeRateVisibility() {
 function pricingPreviewPayloadFromEditor() {
   return { priceItems: readPricingItemsEditor(), currency:pricingCurrencyValue(), exchangeRate:pricingExchangeRateValue(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '', weavingSource:refs.pricingWeavingSource?.value || '' };
 }
+function renderPricingFormulaBreakdown(payload = {}, calculated = {}) {
+  const box = document.getElementById('pricingFormulaPreview');
+  if (!box) return;
+  const items = Array.isArray(payload.priceItems) && payload.priceItems.length ? payload.priceItems : [payload];
+  const calculatedItems = Array.isArray(calculated.priceItems) && calculated.priceItems.length ? calculated.priceItems : [calculated];
+  const currency = calculated.currency || payload.currency || pricingCurrencyValue();
+  const currencyLabel = pricingCurrencyLabel(currency);
+  const money = (value) => `${formatNumber(value || 0, 2)} ${currencyLabel}`;
+  const egp = (value) => `${formatNumber(value || 0, 2)} جنيه`;
+  if (items.length !== 1) {
+    box.innerHTML = `<strong>تفصيل التسعير:</strong> كرت مجمع من ${items.length} خامات. متوسط سعر البيع ${money(calculated.sellPrice)} وإجمالي العقد ${money(calculated.totalOffer)}.`;
+    return;
+  }
+  const item = items[0] || {};
+  const calc = calculatedItems[0] || calculated || {};
+  const exchangeRate = Number(item.exchangeRate || payload.exchangeRate || calculated.exchangeRate || 0) || 1;
+  const rawCost = Number(item.rawCost || 0);
+  const dyeEgp = Number(item.dyeCost || 0);
+  const dyeConverted = Number(calc.dyeCost || 0);
+  const wasteCost = Number(calc.wasteCost || 0);
+  const deferredCost = Number(calc.deferredCost || 0);
+  const profitEgp = Number(item.profitPerKg || 0);
+  const profitConverted = Number(calc.profitCost || calc.profitPerKg || 0);
+  const rateText = currency === 'USD' ? ` | سعر الدولار المستخدم: ${formatNumber(exchangeRate, 2)}` : '';
+  const profitText = currency === 'USD'
+    ? `ربح ${egp(profitEgp)} = ${money(profitConverted)}`
+    : `ربح ${money(profitConverted)}`;
+  const dyeText = currency === 'USD'
+    ? `صباغة ${egp(dyeEgp)} = ${money(dyeConverted)}`
+    : `صباغة ${money(dyeConverted)}`;
+  box.innerHTML = `<strong>طريقة الحساب:</strong> خام ${money(rawCost)} + ${dyeText} + هالك ${money(wasteCost)} + أجل ${money(deferredCost)} + ${profitText} = <strong>${money(calc.sellPrice || calculated.sellPrice || 0)}</strong>${rateText}`;
+}
 function renderPricingItemsEditor(pricing = null) {
   const rows = document.getElementById('pricingItemsRows');
   if (!rows) return;
@@ -3029,6 +3061,7 @@ function ensurePricingItemsUi() {
   installPricingWeavingSourceField();
   refs.pricingPaymentMode?.closest('label')?.insertAdjacentHTML('beforebegin', `<label><span>عملة التسعير</span><select id="pricingCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label><label class="pricing-exchange-rate-field field-hidden"><span>سعر الدولار اليوم</span><input id="pricingExchangeRate" type="number" step="0.01" min="0" placeholder="مثال: 52"><small>يحول الصباغة والتجهيز بالجنيه إلى دولار.</small></label>`);
   anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. إضافات الصباغة داخل جدول الصباغة، والإكسسوار له جدول مستقل داخل نفس البند.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>الإكسسوار</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  refs.pricingForm?.querySelector('.pricing-preview')?.insertAdjacentHTML('afterend', '<div class="pricing-formula-preview" id="pricingFormulaPreview"></div>');
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
     applyFabricNameDatalist();
@@ -3129,6 +3162,7 @@ function ensurePricingItemsUi() {
   showAlert: (message) => alert(message),
   pricingPreviewPayloadFromEditor,
   renderPricingItemsEditor,
+  renderPricingFormulaBreakdown,
 }));
 
 function pricingPayload(id = uid()) {

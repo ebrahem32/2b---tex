@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Match USD Pricing To Excel Calculation
+
+- Date: 2026-06-15
+- Version: `v2026.06.15.20`
+- Goal: make USD pricing cards match the factory Excel sheet.
+- Change: USD cards now convert raw USD to EGP, add EGP dyeing/finishing/waste/deferred/profit, round EGP cost per kg, then convert final selling price back to USD.
+- UI: added a pricing formula preview and moved currency badges beside fields so numbers stay readable.
+- Regression: raw `$4.4`, rate `52`, processing `80 EGP`, net waste `10%`, profit `33 EGP` must produce `$7.02`.
+- Not touched: SQLite schema/data, stock formulas, operational waste formulas, backend save/rollback flows.
+
 ### Organize UI Navigation Structure
 
 - Goal: reorganize the single crowded UI into clearer ERP-style sections.

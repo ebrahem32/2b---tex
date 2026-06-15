@@ -26,6 +26,7 @@
       showAlert,
       pricingPreviewPayloadFromEditor,
       renderPricingItemsEditor,
+      renderPricingFormulaBreakdown,
     } = deps;
 
 function applyPricingDyehouseOptions() {
@@ -89,6 +90,7 @@ function updatePricingPreview() {
   refs.pricingCostPreview.textContent = `${pricing.costPerKg.toLocaleString('en-US')} ${currency}`;
   refs.pricingSellPreview.textContent = `${pricing.sellPrice.toLocaleString('en-US')} ${currency}`;
   refs.pricingTotalPreview.textContent = `${pricing.totalOffer.toLocaleString('en-US')} ${currency}`;
+  if (typeof renderPricingFormulaBreakdown === 'function') renderPricingFormulaBreakdown(payload, pricing);
 }
 
 function fillPricingForm(pricing) {

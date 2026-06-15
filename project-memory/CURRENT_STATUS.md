@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.19`
+`v2026.06.15.20`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,19 @@
 
 ## Latest Commit Message
 
-`Stabilize pricing flow, navigation, and regression test`
+`Match USD pricing to Excel calculation`
+
+## Latest Excel-Style USD Pricing Fix
+
+- Version: `v2026.06.15.20`.
+- USD pricing now follows the working Excel sheet method.
+- Raw fabric USD price is converted to EGP first using the entered daily exchange rate.
+- EGP dyeing, finishing, waste, deferred payment cost, and EGP profit are then calculated in EGP.
+- The EGP cost per kg is rounded before adding EGP profit, then the final selling price is converted back to USD.
+- Example covered by regression: raw `$4.4`, exchange rate `52`, EGP processing `80`, net waste `10%`, profit `33 EGP` gives final selling price `$7.02`.
+- Added a pricing formula preview in the pricing card to show how the visible price was calculated.
+- Currency badges are rendered beside fields without covering typed numbers.
+- Not touched: SQLite schema/data, stock formulas, operational waste formulas, save/rollback flows.
 
 ## Latest Pricing Currency Badge Clarification
 

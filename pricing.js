@@ -183,23 +183,74 @@
       const library = librarySource[pricing.dyehouse] || {};
       const wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
       const exchangeRate = pricingExchangeRate(pricing);
+      const rawCostInput = Number(pricing.rawCost || 0);
+      const profitPerKgInput = Number(pricing.profitPerKg || 0);
+      const deferredPercent = Number(pricing.deferredPercent || pricing.deferred_percent || 0) * 3;
+      if ((pricing.currency || 'EGP') === 'USD') {
+        const dyeCostEgp = Number(pricing.dyeCost || 0);
+        const extraCostEgp = Number(pricing.extraCost || 0);
+        const rawCostEgp = rawCostInput * exchangeRate;
+        const productionCostEgp = rawCostEgp + dyeCostEgp + extraCostEgp;
+        const wasteBaseEgp = wasteBasis === 'gross' ? productionCostEgp : rawCostEgp;
+        const wasteCostEgp = wasteBaseEgp * Number(pricing.wastePercent || 0) / 100;
+        const costBeforeDeferredEgp = productionCostEgp + wasteCostEgp;
+        const deferredCostEgp = costBeforeDeferredEgp * deferredPercent / 100;
+        const costPerKgEgp = costBeforeDeferredEgp + deferredCostEgp;
+        const roundedCostPerKgEgp = roundNumber(costPerKgEgp, 0);
+        const sellPriceEgp = roundedCostPerKgEgp + profitPerKgInput;
+        const sellPrice = sellPriceEgp / exchangeRate;
+        const clothTotal = sellPrice * Number(pricing.quantity || 0);
+        const accessoryTotal = accessoryTotalForPricing(pricing);
+        const totalOffer = clothTotal + accessoryTotal;
+        return {
+          ...pricing,
+          exchangeRate,
+          productCode: pricing.productCode || buildItemCode(pricing.pricingNumber),
+          accountingMode: wasteBasis,
+          wasteBasis,
+          rawCostEgp: roundNumber(rawCostEgp),
+          dyeCost: roundNumber(dyeCostEgp / exchangeRate),
+          dyeCostEgp: roundNumber(dyeCostEgp),
+          extraCost: roundNumber(extraCostEgp / exchangeRate),
+          extraCostEgp: roundNumber(extraCostEgp),
+          profitPerKg: roundNumber(profitPerKgInput),
+          profitCost: roundNumber(profitPerKgInput / exchangeRate),
+          profitCostEgp: roundNumber(profitPerKgInput),
+          accessoryCost: roundNumber(accessoryTotal),
+          accessoryTotal: roundNumber(accessoryTotal),
+          productionCost: roundNumber(productionCostEgp / exchangeRate),
+          productionCostEgp: roundNumber(productionCostEgp),
+          wasteCost: roundNumber(wasteCostEgp / exchangeRate),
+          wasteCostEgp: roundNumber(wasteCostEgp),
+          costBeforeDeferred: roundNumber(costBeforeDeferredEgp / exchangeRate),
+          costBeforeDeferredEgp: roundNumber(costBeforeDeferredEgp),
+          deferredMonths: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
+          deferredPercent,
+          deferredCost: roundNumber(deferredCostEgp / exchangeRate),
+          deferredCostEgp: roundNumber(deferredCostEgp),
+          costPerKg: roundNumber(roundedCostPerKgEgp / exchangeRate),
+          costPerKgEgp: roundedCostPerKgEgp,
+          sellPrice: roundNumber(sellPrice),
+          sellPriceEgp: roundNumber(sellPriceEgp),
+          clothTotal: roundNumber(clothTotal),
+          totalOffer: roundNumber(totalOffer),
+        };
+      }
       const dyeCost = convertEgpCostForPricing(pricing.dyeCost || 0, pricing);
       const extraCost = convertEgpCostForPricing(pricing.extraCost || 0, pricing);
-      const profitPerKg = convertEgpCostForPricing(pricing.profitPerKg || 0, pricing);
       const accessoryTotal = accessoryTotalForPricing(pricing);
-      const productionCost = Number(pricing.rawCost || 0) + dyeCost + extraCost;
+      const productionCost = rawCostInput + dyeCost + extraCost;
       const wasteBase = wasteBasis === 'gross'
         ? productionCost
-        : Number(pricing.rawCost || 0);
+        : rawCostInput;
       const wasteCost = wasteBase * Number(pricing.wastePercent || 0) / 100;
       const costBeforeDeferred = productionCost + wasteCost;
-      const deferredPercent = Number(pricing.deferredPercent || pricing.deferred_percent || 0) * 3;
       const deferredCost = costBeforeDeferred * deferredPercent / 100;
       const costPerKg = costBeforeDeferred + deferredCost;
-      const sellPrice = costPerKg + profitPerKg;
+      const sellPrice = costPerKg + profitPerKgInput;
       const clothTotal = sellPrice * Number(pricing.quantity || 0);
       const totalOffer = clothTotal + accessoryTotal;
-      return { ...pricing, exchangeRate, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, dyeCost:roundNumber(dyeCost), extraCost:roundNumber(extraCost), profitPerKg:roundNumber(profitPerKg), accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
+      return { ...pricing, exchangeRate, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, dyeCost:roundNumber(dyeCost), extraCost:roundNumber(extraCost), profitPerKg:roundNumber(profitPerKgInput), profitCost:roundNumber(profitPerKgInput), accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
     }
 
     return {
