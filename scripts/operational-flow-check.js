@@ -70,6 +70,19 @@ function createDocumentBuilders() {
   });
 }
 
+function createPricingDomain() {
+  const sandbox = { window: {} };
+  const source = fs.readFileSync(path.join(__dirname, '..', 'pricing.js'), 'utf8');
+  vm.runInNewContext(source, sandbox, { filename: 'pricing.js' });
+  return sandbox.window.TwoBTexPricing.createPricingDomain({
+    buildItemCode: (value) => `2B-${value || ''}`,
+    clone: (value) => JSON.parse(JSON.stringify(value ?? null)),
+    isLegacyRecoveredText: () => false,
+    normalizeDyehousePriceLabel: (value) => String(value || '').trim(),
+    roundNumber,
+  });
+}
+
 function assertClose(actual, expected, label) {
   assert.equal(roundNumber(actual), roundNumber(expected), label);
 }
@@ -412,6 +425,31 @@ function checkNoRawWarehouseDashboardTerminology() {
   assert(!serverSource.includes('خام جاهز للمصبغة'), 'ai: no raw-ready wording after removing raw warehouse concept');
 }
 
+function checkUsdPricingConvertsEgpProfit() {
+  const pricingDomain = createPricingDomain();
+  const pricing = pricingDomain.calculatePricing({
+    currency: 'USD',
+    exchangeRate: 50,
+    rawCost: 4,
+    dyeCost: 50,
+    extraCost: 0,
+    wastePercent: 0,
+    deferredPercent: 0,
+    profitPerKg: 30,
+    quantity: 100,
+  }, {});
+  assertClose(pricing.dyeCost, 1, 'pricing: EGP dye cost must convert to USD');
+  assertClose(pricing.profitPerKg, 0.6, 'pricing: EGP profit margin must convert to USD');
+  assertClose(pricing.sellPrice, 5.6, 'pricing: USD sell price must add converted profit, not raw EGP profit');
+}
+
+function checkPricingCurrencyBadgesExist() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('data-pricing-currency-badge="pricing"'), 'pricing ui: selected currency badge must appear beside pricing-currency money inputs');
+  assert(appSource.includes('data-pricing-currency-badge="egp"'), 'pricing ui: EGP badge must appear beside EGP-entered money inputs');
+  assert(appSource.includes('updatePricingCurrencyBadges'), 'pricing ui: currency badges must update when currency changes');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -430,6 +468,8 @@ checkDyeingDocumentShowsPhysicalRawBalance();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
 checkNoRawWarehouseDashboardTerminology();
+checkUsdPricingConvertsEgpProfit();
+checkPricingCurrencyBadgesExist();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');

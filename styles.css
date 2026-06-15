@@ -432,6 +432,9 @@
 .quotation-accessory-row strong{display:block;font-weight:900}
 .pricing-stage-head span{font-size:12px!important;color:var(--muted)!important}
 .pricing-stage-row input{min-height:36px}
+.pricing-money-field{position:relative;display:flex;align-items:center;min-width:0}
+.pricing-money-field input{width:100%;padding-inline-end:58px!important}
+.pricing-money-field [data-pricing-currency-badge]{position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--accent2);font-size:11px;font-weight:900;background:rgba(200,165,106,.08);border:1px solid rgba(200,165,106,.18);border-radius:999px;padding:2px 6px;line-height:1.4}
 .pricing-stage-total{color:var(--muted);font-size:12px}
 .pricing-stage-total strong{color:var(--accent2)}
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}

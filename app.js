@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.17';
-const APP_BUILD_TIME = '2026-06-15 16:35';
+const APP_VERSION = 'v2026.06.15.19';
+const APP_BUILD_TIME = '2026-06-15 17:20';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2781,7 +2781,7 @@ function pricingItemRowHtml(item = {}) {
     <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
     <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
     <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
-    <input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="سعر القماش" value="${item.rawCost || ''}">
+    <div class="pricing-money-field"><input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="سعر القماش" value="${item.rawCost || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
     <div class="pricing-stage-card" data-pricing-stage-card>
       <div class="pricing-stage-head"><span>جدول الصباغة</span><button class="mini-btn" type="button" data-add-pricing-stage>+ مرحلة</button></div>
       <div class="pricing-stage-rows">${stagesHtml}</div>
@@ -2795,7 +2795,7 @@ function pricingItemRowHtml(item = {}) {
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
     <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل شهر" value="${item.deferredPercent || ''}">
-    <input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}">
+    <div class="pricing-money-field"><input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}"><span data-pricing-currency-badge="egp">جنيه</span></div>
     <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
   </div>`;
 }
@@ -2827,7 +2827,7 @@ function pricingAccessoryRowHtml(line = {}, stages = []) {
   return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
     <select data-pricing-accessory-type>${pricingAccessoryTypeOptions(line.type || '')}</select>
     <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="الكمية" value="${quantity || ''}">
-    <input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}">
+    <div class="pricing-money-field"><input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
     <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
     <div class="pricing-accessory-stage-options" data-pricing-accessory-stage-options>${pricingAccessoryStageOptions(line, stages)}</div>
   </div>`;
@@ -2836,7 +2836,7 @@ function pricingAccessoryRowHtml(line = {}, stages = []) {
 function pricingStageRowHtml(stage = {}) {
   return `<div class="pricing-stage-row" data-pricing-stage-row>
     <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(stage.name || '')}">
-    <input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${stage.price || ''}">
+    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${stage.price || ''}"><span data-pricing-currency-badge="egp">جنيه</span></div>
     <button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>
   </div>`;
 }
@@ -2949,6 +2949,15 @@ function pricingCurrencyValue() {
 function pricingCurrencyLabel(currency = pricingCurrencyValue()) {
   return currency === 'USD' ? 'دولار' : 'جنيه';
 }
+function updatePricingCurrencyBadges() {
+  const label = pricingCurrencyLabel();
+  document.querySelectorAll('[data-pricing-currency-badge="pricing"]').forEach((badge)=>{
+    badge.textContent = label;
+  });
+  document.querySelectorAll('[data-pricing-currency-badge="egp"]').forEach((badge)=>{
+    badge.textContent = 'جنيه';
+  });
+}
 function pricingExchangeRateRef() {
   return document.getElementById('pricingExchangeRate');
 }
@@ -2964,6 +2973,7 @@ function syncPricingExchangeRateVisibility() {
   const wrapper = pricingExchangeRateRef()?.closest('label');
   if (!wrapper) return;
   wrapper.classList.toggle('field-hidden', pricingCurrencyValue() !== 'USD');
+  updatePricingCurrencyBadges();
 }
 function pricingPreviewPayloadFromEditor() {
   return { priceItems: readPricingItemsEditor(), currency:pricingCurrencyValue(), exchangeRate:pricingExchangeRateValue(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '', weavingSource:refs.pricingWeavingSource?.value || '' };
@@ -2974,6 +2984,7 @@ function renderPricingItemsEditor(pricing = null) {
   const items = pricing ? pricingItemsFor(pricing) : [pricingPrimaryItemFromRefs()];
   if (refs.pricingWeavingSource) refs.pricingWeavingSource.value = pricing?.weavingSource || items.find((item)=>item.weavingSource)?.weavingSource || '';
   rows.innerHTML = (items.length ? items : [pricingPrimaryItemFromRefs()]).map((item)=>pricingItemRowHtml(item)).join('');
+  updatePricingCurrencyBadges();
 }
 
 function markPricingCardMode() {
@@ -3021,12 +3032,14 @@ function ensurePricingItemsUi() {
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
     applyFabricNameDatalist();
+    updatePricingCurrencyBadges();
     updatePricingPreview();
   });
   document.getElementById('pricingItemsRows')?.addEventListener('click', (event)=>{
     const addStageButton = event.target.closest('[data-add-pricing-stage]');
     if (addStageButton) {
       addStageButton.closest('[data-pricing-stage-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingStageRowHtml());
+      updatePricingCurrencyBadges();
       updatePricingStageTotals();
       updatePricingPreview();
       return;
@@ -3035,6 +3048,7 @@ function ensurePricingItemsUi() {
     if (addAccessoryButton) {
       const itemRow = addAccessoryButton.closest('[data-pricing-item-row]');
       addAccessoryButton.closest('[data-pricing-accessory-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingAccessoryRowHtml({}, pricingStagesFromRow(itemRow)));
+      updatePricingCurrencyBadges();
       updatePricingStageTotals();
       updatePricingPreview();
       return;

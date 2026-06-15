@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.17`
+`v2026.06.15.19`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,25 @@
 ## Latest Commit Message
 
 `Stabilize pricing flow, navigation, and regression test`
+
+## Latest Pricing Currency Badge Clarification
+
+- Version: `v2026.06.15.19`.
+- Added visible currency badges beside money fields in the pricing card.
+- Raw fabric price and accessory raw price show the selected pricing currency (`جنيه` / `دولار`).
+- Dyeing stage prices and profit margin show `جنيه` because they are entered in EGP and converted when the pricing currency is USD.
+- Updated CSS and cache keys so the badges render without adding horizontal clutter.
+- Added regression coverage to keep currency badges present.
+- Not touched: SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows.
+
+## Latest USD Profit Margin Conversion Fix
+
+- Version: `v2026.06.15.18`.
+- Fixed pricing calculation when currency is USD.
+- Profit margin entered in EGP is now converted to USD using `سعر الدولار اليوم` before being added to the per-kg selling price.
+- Existing EGP dyeing/finishing conversion remains unchanged.
+- Added regression coverage: 30 EGP profit with exchange rate 50 is calculated as 0.6 USD, not 30 USD.
+- Not touched: SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows.
 
 ## Latest No Raw Warehouse Terminology Cleanup
 

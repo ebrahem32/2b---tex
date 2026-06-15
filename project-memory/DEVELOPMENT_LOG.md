@@ -764,3 +764,24 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: AI stage analysis no longer exposes a standalone `ready-to-dyehouse` stage; raw not yet issued stays under weaving / not issued to dyehouse.
 - Test: added an operational-flow regression to prevent reintroducing raw-warehouse dashboard/AI terminology.
 - Not touched: SQLite schema/data, `backend/calculations.js`, stock formulas, waste formulas, pricing formulas, operational save/rollback flows.
+
+### Fix USD Pricing Profit Conversion
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.18`
+- Goal: when pricing in USD, EGP-entered profit margin must not be added directly as dollars.
+- Change: `pricing.js` now converts `profitPerKg` from EGP to USD using the pricing exchange rate before adding it to the USD sell price.
+- Test: added an operational-flow regression proving 30 EGP profit at exchange rate 50 becomes 0.6 USD.
+- Not touched: SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows.
+
+### Add Pricing Currency Badges
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.19`
+- Goal: make every money entry in the pricing card visibly identify its currency.
+- Change: raw fabric and accessory raw price inputs show the selected pricing currency.
+- Change: dyeing stages and profit margin show `جنيه` because they are EGP inputs that convert when USD pricing is selected.
+- Change: updated styles/cache keys and added regression coverage for the currency badges.
+- Not touched: SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows.
