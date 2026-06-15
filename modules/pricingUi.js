@@ -16,6 +16,8 @@
       orderRawCost,
       nextPricingNumber,
       isActivePricing,
+      pricingMatchesOrder,
+      pricingConvertedByOrder,
       canDeleteRecords,
       getPricings,
       getOrders,
@@ -75,17 +77,37 @@ function updateSuggestedDyeCost() {
 }
 
 function renderPricings() {
-  const activePricings = getPricings().filter(isActivePricing);
   const currencyLabel = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
   const money = (value, currency) => `${Number(value || 0).toLocaleString('en-US')} ${currencyLabel(currency)}`;
+  const allPricings = getPricings();
+  const linkedOrdersForPricing = (pricing) => getOrders().filter((order) => {
+    if (typeof pricingMatchesOrder === 'function') return pricingMatchesOrder(pricing, order);
+    const pricingId = String(pricing?.id || '').trim();
+    return pricingId && String(order?.pricingId || '').trim() === pricingId;
+  });
+  const pricingState = (pricing) => {
+    const status = String(pricing?.status || '').toLowerCase();
+    const linkedOrders = linkedOrdersForPricing(pricing);
+    const linked = linkedOrders.length > 0
+      || pricing?.convertedOrderId
+      || ['converted', 'ordered', 'order', 'closed'].includes(status)
+      || (typeof pricingConvertedByOrder === 'function' && pricingConvertedByOrder(pricing));
+    return { linked, linkedOrders };
+  };
+  const activePricings = allPricings.filter((pricing) => !pricingState(pricing).linked && isActivePricing(pricing));
+  const convertedPricings = allPricings.filter((pricing) => pricingState(pricing).linked);
   const headers = refs.pricingTableBody?.closest('table')?.querySelectorAll('thead th') || [];
   if (headers.length >= 8) {
     headers[5].textContent = 'سعر الخام';
     headers[6].textContent = 'سعر المجهز';
     headers[7].textContent = 'إجمالي العقد';
   }
-  const grouped = new Map();
-  activePricings.map(calculatePricing).forEach((pricing) => {
+  const buildGroupedRows = (sourcePricings, mode) => {
+    const grouped = new Map();
+    sourcePricings.map(calculatePricing).forEach((pricing) => {
+      const sourcePricing = sourcePricings.find((item) => item.id === pricing.id) || pricing;
+      const state = pricingState(sourcePricing);
+      const linkedOrder = state.linkedOrders[0] || null;
     const items = Array.isArray(pricing.priceItems) && pricing.priceItems.length ? pricing.priceItems : [pricing];
     items.forEach((item, index) => {
       const row = calculatePricing({ ...pricing, ...item, priceItems:null });
@@ -97,18 +119,36 @@ function renderPricings() {
         id: pricing.id,
         pricingNumber: pricing.pricingNumber,
         customer: pricing.customer,
+        linkedOrder,
+        linkedOrders: state.linkedOrders,
+        listMode: mode,
         itemIndex: index,
       });
     });
   });
-  refs.pricingTableBody.innerHTML = [...grouped.values()].sort((a,b)=>a.fabric.localeCompare(b.fabric, 'ar')).map((group) => {
+    return [...grouped.values()].sort((a,b)=>a.fabric.localeCompare(b.fabric, 'ar')).map((group) => {
     const rows = group.rows.sort((a,b)=>String(a.pricingNumber || '').localeCompare(String(b.pricingNumber || ''), 'ar', { numeric:true }) || String(a.customer || '').localeCompare(String(b.customer || ''), 'ar'));
     const rawPrices = uniqueNonEmpty(rows.map((row)=>money(row.rawCost, row.currency)));
     const finishedPrices = uniqueNonEmpty(rows.map((row)=>money(row.sellPrice, row.currency)));
     const header = `<tr class="pricing-group-row"><td colspan="10"><div class="pricing-group-title"><strong>${escapeHtml(group.fabric)}</strong><span>${rows.length} سعر مسجل</span><span>سعر الخام: ${escapeHtml(rawPrices.join(' / ') || '-')}</span><span>سعر المجهز: ${escapeHtml(finishedPrices.join(' / ') || '-')}</span></div></td></tr>`;
-    const body = rows.map((pricing)=>`<tr class="pricing-child-row"><td data-label="رقم الكرت">${escapeHtml(pricing.pricingNumber || '-')}</td><td data-label="العميل">${escapeHtml(pricing.customer || '-')}</td><td data-label="الصنف">${escapeHtml(pricing.fabricType || group.fabric)}</td><td data-label="المصبغة">${escapeHtml(pricing.dyehouse || '-')}</td><td data-label="الكمية">${Number(pricing.quantity || 0).toLocaleString('en-US')}</td><td data-label="سعر الخام">${escapeHtml(money(pricing.rawCost, pricing.currency))}</td><td data-label="سعر المجهز">${escapeHtml(money(pricing.sellPrice, pricing.currency))}</td><td data-label="إجمالي العقد">${escapeHtml(money(pricing.totalOffer, pricing.currency))}</td><td data-label="الحالة"><span class="status pending">كرت تسعير</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-convert-pricing="${pricing.id}">تحويل لطلب تشغيل</button><button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`).join('');
+    const body = rows.map((pricing)=>{
+      const linkedOrder = pricing.linkedOrder;
+      const statusLabel = pricing.listMode === 'linked'
+        ? (linkedOrder ? `مرتبط بطلب ${escapeHtml(linkedOrder.orderNumber || '')}` : 'محوّل ويحتاج ربط')
+        : 'كرت تسعير';
+      const statusClass = pricing.listMode === 'linked' ? 'completed' : 'pending';
+      const linkedOrderButton = linkedOrder ? `<button class="mini-btn" data-open-order="${escapeHtml(linkedOrder.id)}">فتح الطلب</button>` : '';
+      const convertButton = pricing.listMode === 'linked' ? '' : `<button class="mini-btn" data-convert-pricing="${pricing.id}">تحويل لطلب تشغيل</button>`;
+      return `<tr class="pricing-child-row"><td data-label="رقم الكرت">${escapeHtml(pricing.pricingNumber || '-')}</td><td data-label="العميل">${escapeHtml(pricing.customer || '-')}</td><td data-label="الصنف">${escapeHtml(pricing.fabricType || group.fabric)}</td><td data-label="المصبغة">${escapeHtml(pricing.dyehouse || '-')}</td><td data-label="الكمية">${Number(pricing.quantity || 0).toLocaleString('en-US')}</td><td data-label="سعر الخام">${escapeHtml(money(pricing.rawCost, pricing.currency))}</td><td data-label="سعر المجهز">${escapeHtml(money(pricing.sellPrice, pricing.currency))}</td><td data-label="إجمالي العقد">${escapeHtml(money(pricing.totalOffer, pricing.currency))}</td><td data-label="الحالة"><span class="status ${statusClass}">${statusLabel}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button>${linkedOrderButton}${convertButton}<button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل الكرت</button>${canDeleteRecords() && pricing.listMode !== 'linked' ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`;
+    }).join('');
     return header + body;
   }).join('');
+  };
+  const section = (title, subtitle, count, body) => `<tr class="pricing-section-row"><td colspan="10"><div class="pricing-section-title"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span><b>${Number(count || 0).toLocaleString('en-US')}</b></div></td></tr>${body || `<tr><td colspan="10" class="empty-state">لا توجد بيانات في هذا القسم.</td></tr>`}`;
+  refs.pricingTableBody.innerHTML = [
+    section('كروت سعر شغالة فعليًا', 'عروض سعر لم تتحول إلى طلب تشغيل بعد.', activePricings.length, buildGroupedRows(activePricings, 'active')),
+    section('كروت سعر مرتبطة بطلبات تشغيل', 'طلبات اشتغلت أو اتعمل لها كرت سعر وتحتاج متابعة من الطلب نفسه.', convertedPricings.length, buildGroupedRows(convertedPricings, 'linked')),
+  ].join('');
 }
 
 function updatePricingPreview() {

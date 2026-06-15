@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.15.22`
+`v2026.06.15.23`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Separate active and linked pricing cards`
+
+## Latest Pricing Card Separation
+
+- Version: `v2026.06.15.23`.
+- Pricing cards are now split into two clear sections:
+  - Active pricing cards that have not been converted to an operational order.
+  - Pricing cards linked to operational orders or already converted.
+- Linked pricing cards show `فتح الطلب` so the user can review the real operational order directly.
+- Linked pricing cards do not show the conversion action, preventing duplicate work orders.
+- Local data correction linked safe converted pricing cards to their matching orders where there was exactly one same-number/same-customer match.
+- Ambiguous customer-name cases are not force-updated in SQLite; the UI matching layer handles compatible names/fabrics without writing unsafe data.
+- Not touched: backend calculations, SQLite schema, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix quotation pricing linkage and conversion labels`
 

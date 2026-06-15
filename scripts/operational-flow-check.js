@@ -479,6 +479,16 @@ function checkPricingGroupedPriceViewExists() {
   assert(pricingUiSource.includes('سعر المجهز'), 'pricing ui: grouped price list must show finished price explicitly');
 }
 
+function checkPricingActiveAndLinkedSectionsExist() {
+  const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(pricingUiSource.includes('pricing-section-row'), 'pricing ui: pricing cards must be split into clear sections');
+  assert(pricingUiSource.includes('كروت سعر شغالة فعليًا'), 'pricing ui: active pricing cards section must exist');
+  assert(pricingUiSource.includes('كروت سعر مرتبطة بطلبات تشغيل'), 'pricing ui: linked pricing cards section must exist');
+  assert(pricingUiSource.includes('data-open-order'), 'pricing ui: linked pricing cards must open the operational order');
+  assert(appSource.includes("event.target.closest('[data-open-order]')"), 'pricing ui: open-order action must be handled');
+}
+
 function checkOrderQuotationUsesLinkedPricingCard() {
   const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -512,6 +522,7 @@ checkUsdPricingConvertsEgpProfit();
 checkUsdPricingMatchesExcelSheet();
 checkPricingCurrencyBadgesExist();
 checkPricingGroupedPriceViewExists();
+checkPricingActiveAndLinkedSectionsExist();
 checkOrderQuotationUsesLinkedPricingCard();
 checkManualAccessoryDistribution();
 

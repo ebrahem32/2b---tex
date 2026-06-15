@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.22';
+const APP_VERSION = 'v2026.06.15.23';
 const APP_BUILD_TIME = '2026-06-15 18:35';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
@@ -3145,6 +3145,8 @@ function ensurePricingItemsUi() {
   orderRawCost,
   nextPricingNumber,
   isActivePricing,
+  pricingMatchesOrder,
+  pricingConvertedByOrder,
   canDeleteRecords,
   getPricings: () => pricings,
   getOrders: () => orders,
@@ -6232,6 +6234,8 @@ refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.
 refs.pricingTableBody.onclick = (event) => {
   const pricingQuoteButton = event.target.closest('[data-pricing-quote]');
   if (pricingQuoteButton) { openPricingQuotation(pricingQuoteButton.dataset.pricingQuote); return; }
+  const openOrderButton = event.target.closest('[data-open-order]');
+  if (openOrderButton) { openOrderFocusMode(openOrderButton.dataset.openOrder); return; }
   const convertPricingButton = event.target.closest('[data-convert-pricing]');
   if (convertPricingButton) { convertPricingToOrder(convertPricingButton.dataset.convertPricing); return; }
   const editPricingButton = event.target.closest('[data-edit-pricing]');

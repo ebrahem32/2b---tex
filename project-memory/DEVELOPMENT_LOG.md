@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Separate Active And Linked Pricing Cards
+
+- Date: 2026-06-15
+- Version: `v2026.06.15.23`
+- Goal: separate pricing cards that are still only quotations from pricing cards already linked to operational orders.
+- Change: the pricing list now has an active section and a linked-to-order section.
+- Change: linked pricing cards show `فتح الطلب` and do not show another conversion button, preventing duplicate operational orders.
+- Change: safe local data correction linked converted pricing cards to orders only when the match was exact and unambiguous by order number and customer.
+- Note: ambiguous customer-name differences are not force-written to SQLite; the UI matching layer handles compatible names and fabric wording for display/linkage.
+- Not touched: backend calculations, SQLite schema, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Fix Quotation Pricing Linkage And Conversion Labels
 
 - Date: 2026-06-15
