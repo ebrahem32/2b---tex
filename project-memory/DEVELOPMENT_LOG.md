@@ -859,3 +859,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: the printed pricing list now includes `إجمالي العقد` and `الرصيد الفعلي للبيع` summaries.
 - Test: added an operational-flow regression for unified pricing-list numbering and sellable-balance print coverage.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Separate Workspace Module Screens
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.27`
+- Goal: stop showing the same system panels under multiple menus and make every menu feel like a separate screen.
+- Change: pricing, dashboard, AI, order lists, and order details now use distinct workspace modules.
+- Change: order details switch to an `order-details` module and return to the previous operational list after closing.
+- Change: stage shortcuts explicitly open their own operational module before applying the filter.
+- Test: added an operational-flow regression to prevent shared pricing/orders panels from returning across all menus.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

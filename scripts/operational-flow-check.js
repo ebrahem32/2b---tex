@@ -522,6 +522,26 @@ function checkOrderQuotationUsesLinkedPricingCard() {
   assert(pricingUiSource.includes('تحويل لطلب تشغيل'), 'pricing ui: conversion action must be explicitly labelled as an order conversion');
 }
 
+function checkSeparateWorkspaceModules() {
+  const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const navigationSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'navigation.js'), 'utf8');
+  const focusSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'focusViews.js'), 'utf8');
+  const stylesSource = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  assert(indexSource.includes('class="panel pricing-panel" data-module-panel="pricing"'), 'navigation: pricing must be a standalone module panel');
+  assert(indexSource.includes('id="aiModelPanel" data-module-panel="ai"'), 'navigation: AI must be a standalone module panel');
+  assert(indexSource.includes('id="statsGrid" data-module-panel="dashboard"'), 'navigation: dashboard stats must stay only in dashboard');
+  assert(indexSource.includes('class="panel orders-list-panel" data-module-panel="orders weaving dyehouse warehouse"'), 'navigation: orders list must be limited to operational list modules');
+  assert(indexSource.includes('class="workspace-grid module-hidden" data-module-panel="order-details"'), 'navigation: order details must be its own module');
+  assert(!indexSource.includes('data-module-panel="dashboard sales weaving dyehouse warehouse reports"'), 'navigation: orders list must not be shared across every module');
+  assert(!indexSource.includes('data-module-panel="sales reports"'), 'navigation: pricing list must not be shared with reports/sales aggregate');
+  assert(navigationSource.includes("setWorkspaceModule('pricing')"), 'navigation: pricing action must open pricing module');
+  assert(navigationSource.includes("setWorkspaceModule('orders')"), 'navigation: orders action must open orders module');
+  assert(navigationSource.includes("setWorkspaceModule('ai')"), 'navigation: AI action must open AI module');
+  assert(focusSource.includes("deps.setWorkspaceModule('order-details')"), 'navigation: opening an order must switch to order-details module');
+  assert(stylesSource.includes('body[data-active-module="pricing"] .main-workspace'), 'navigation: CSS must expose pricing module workspace');
+  assert(stylesSource.includes('body[data-active-module="order-details"] .main-workspace'), 'navigation: CSS must expose order-details module workspace');
+}
+
 function checkManualAccessoryDistribution() {
   const frontend = frontendManualAccessorySummary();
   assertClose(frontend.accessoryRequired, 70, 'accessory: manual total is preserved');
@@ -548,6 +568,7 @@ checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkOrderQuotationUsesLinkedPricingCard();
+checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();
 
 console.log('Operational flow check passed.');

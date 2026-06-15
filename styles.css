@@ -719,9 +719,13 @@
 .order-focus-mode .sidebar-backdrop{display:none!important}
 body[data-active-module="dashboard"] .main-workspace,
 body[data-active-module="sales"] .main-workspace,
+body[data-active-module="pricing"] .main-workspace,
+body[data-active-module="orders"] .main-workspace,
 body[data-active-module="weaving"] .main-workspace,
 body[data-active-module="dyehouse"] .main-workspace,
 body[data-active-module="warehouse"] .main-workspace,
+body[data-active-module="ai"] .main-workspace,
+body[data-active-module="order-details"] .main-workspace,
 body[data-active-module="reports"] .main-workspace,
 body[data-active-module="whatsapp"] .main-workspace,
 body[data-active-module="admin"] .main-workspace{display:block}

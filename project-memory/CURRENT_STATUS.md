@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.15.26`
+`v2026.06.15.27`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Separate workspace module screens`
+
+## Latest Separate Workspace Modules
+
+- Version: `v2026.06.15.27`.
+- The main workspace panels are now separated into clearer standalone modules instead of showing the same panels under several menus.
+- `pricing` shows the pricing list only.
+- `ai` shows the smart follow-up center only.
+- `dashboard` shows dashboard totals, ERP cockpit, and operation follow-up only.
+- `orders`, `weaving`, `dyehouse`, and `warehouse` each use the order list in its own operational context.
+- Order details now open as their own `order-details` workspace module, with a safe return to the previous operational list.
+- Verification coverage was added to prevent reverting to one shared orders/pricing panel across all menus.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Unify pricing order numbers in reports`
 

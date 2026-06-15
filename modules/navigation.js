@@ -51,10 +51,17 @@
       if (stageValue === 'stage:delivery') stageValue = 'stage:warehouse';
       if (stageValue === 'stage:color-planning') stageValue = 'stage:weaving';
       if (stageValue === 'stage:glued-ready') stageValue = 'stage:gluing';
+      const moduleByStage = {
+        'stage:weaving': 'weaving',
+        'stage:gluing': 'dyehouse',
+        'stage:dyehouse': 'dyehouse',
+        'stage:warehouse': 'warehouse',
+      };
       openMainWorkspace();
       deps.closeDashboardFocusMode();
       deps.closeAiFocusMode();
       deps.closeOrderFocusMode();
+      setWorkspaceModule(moduleByStage[stageValue] || 'orders');
       refs.orderStatusFilter.value = stageValue;
       deps.renderOrders();
       document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -78,19 +85,24 @@
         return;
       }
       if (action === 'ordersList') {
+        setWorkspaceModule('orders');
         deps.closeDashboardFocusMode();
         deps.closeAiFocusMode();
         deps.closeOrderFocusMode();
+        if (refs.orderStatusFilter) refs.orderStatusFilter.value = 'all';
+        deps.renderOrders();
+        document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
         return;
       }
-      if (action === 'pricingNew') refs.openPricingFormBtn?.click();
-      if (action === 'orderNew') refs.openOrderFormBtn?.click();
-      if (action === 'managementReports') refs.openManagementReportsBtn?.click();
+      if (action === 'pricingNew') { setWorkspaceModule('pricing'); refs.openPricingFormBtn?.click(); }
+      if (action === 'orderNew') { setWorkspaceModule('orders'); refs.openOrderFormBtn?.click(); }
+      if (action === 'managementReports') { setWorkspaceModule('reports'); refs.openManagementReportsBtn?.click(); }
       if (action.startsWith('report:')) {
         deps.openManagementReport(normalizeReportAction(action.slice('report:'.length)));
         return;
       }
       if (action === 'aiModel') {
+        setWorkspaceModule('ai');
         deps.openAiFocusMode();
         return;
       }
@@ -115,9 +127,8 @@
       if (action === 'users') deps.openUsersDialog();
       if (action === 'systemStatus') deps.openSystemStatusDialog();
       if (action === 'dyehousePrices') deps.renderDyehousePricesDialog();
-      if (action === 'pricingList') { deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-      if (action === 'ordersList') { deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); refs.searchInput?.closest('.panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
-      if (action === 'orderDetails') { deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      if (action === 'pricingList') { setWorkspaceModule('pricing'); deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); deps.closeOrderFocusMode(); document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      if (action === 'orderDetails') { setWorkspaceModule('order-details'); deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' }); }
     }
 
     return {

@@ -1,5 +1,7 @@
 (function () {
   function createFocusViews(deps) {
+    let previousOrderListModule = 'orders';
+
     function syncOrderFocusMode() {
       document.body.classList.toggle('order-focus-mode', deps.getOrderFocusMode());
     }
@@ -19,15 +21,18 @@
 
     function closeOrderFocusMode() {
       deps.setOrderFocusMode(false);
+      deps.setWorkspaceModule(previousOrderListModule || 'orders');
       syncOrderFocusMode();
       deps.syncFilteredListMode();
       document.querySelector('.orders-list-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     }
 
     function openOrderFocusMode(orderId) {
+      previousOrderListModule = document.body.dataset.activeModule || 'orders';
       deps.setSelectedOrderId(orderId);
       deps.closeDashboardFocusMode();
       deps.closeAiFocusMode();
+      deps.setWorkspaceModule('order-details');
       deps.setOrderFocusMode(true);
       syncOrderFocusMode();
       deps.syncFilteredListMode();
