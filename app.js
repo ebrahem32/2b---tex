@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.25';
-const APP_BUILD_TIME = '2026-06-15 19:20';
+const APP_VERSION = 'v2026.06.15.26';
+const APP_BUILD_TIME = '2026-06-15 21:45';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3203,9 +3203,17 @@ function openFilteredPricingsReport() {
   const rows = typeof pricingRowsForReport === 'function' ? pricingRowsForReport() : [];
   const currencyName = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
   const money = (value, currency) => `${formatNumber(value || 0, 2)} ${currencyName(currency)}`;
+  const unifiedNumber = (row) => row.linkedOrder?.orderNumber || row.pricingNumber || '-';
+  const sellableBalance = (row) => Number(row.linkedOrder?.warehouseBalance || 0);
+  const totalsByCurrency = rows.reduce((acc, row) => {
+    const currency = row.currency || 'EGP';
+    acc[currency] = (acc[currency] || 0) + Number(row.totalOffer || 0);
+    return acc;
+  }, {});
+  const totalContractsText = Object.entries(totalsByCurrency).map(([currency, total]) => money(total, currency)).join(' / ') || money(0, 'EGP');
+  const totalSellableBalance = rows.reduce((total, row) => total + sellableBalance(row), 0);
   const tableRows = rows.map((row)=>`<tr>
-    <td>${escapeHtml(row.pricingNumber || '-')}</td>
-    <td>${escapeHtml(row.linkedOrder?.orderNumber || '-')}</td>
+    <td>${escapeHtml(unifiedNumber(row))}</td>
     <td>${escapeHtml(row.customer || '-')}</td>
     <td>${escapeHtml(row.fabricType || '-')}</td>
     <td>${escapeHtml(row.dyehouse || '-')}</td>
@@ -3213,6 +3221,7 @@ function openFilteredPricingsReport() {
     <td>${escapeHtml(money(row.rawCost, row.currency))}</td>
     <td>${escapeHtml(money(row.sellPrice, row.currency))}</td>
     <td>${escapeHtml(money(row.totalOffer, row.currency))}</td>
+    <td>${formatNumber(sellableBalance(row))} كجم</td>
     <td>${row.listMode === 'linked' ? 'مرتبط بطلب تشغيل' : 'كرت تسعير شغال'}</td>
   </tr>`).join('') || emptyRow(10, 'لا توجد كروت تسعير مطابقة للفلترة.');
   refs.documentTitle.textContent = 'قائمة التسعير';
@@ -3221,12 +3230,18 @@ function openFilteredPricingsReport() {
     <div class="report-title"><h2>قائمة التسعير</h2><span>تقرير مطابق للفلترة الحالية في شاشة كروت التسعير.</span></div>
     <div class="document-meta">
       <div><span>عدد البنود</span>${formatNumber(rows.length, 0)}</div>
+      <div><span>إجمالي العقد</span>${escapeHtml(totalContractsText)}</div>
+      <div><span>الرصيد الفعلي للبيع</span>${formatNumber(totalSellableBalance)} كجم</div>
       <div><span>تاريخ الطباعة</span>${new Date().toLocaleString('en-GB')}</div>
     </div>
     <section class="report-section">
       <h3>كروت التسعير</h3>
-      <table><thead><tr><th>رقم الكرت</th><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>سعر الخام</th><th>سعر المجهز</th><th>إجمالي العقد</th><th>الحالة</th></tr></thead><tbody>${tableRows}</tbody></table>
+      <table><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>سعر الخام</th><th>سعر المجهز</th><th>إجمالي العقد</th><th>الرصيد الفعلي للبيع</th><th>الحالة</th></tr></thead><tbody>${tableRows}</tbody></table>
     </section>
+    <div class="summary-grid document-summary print-summary">
+      <div class="metric emphasis"><span>إجمالي العقد</span><strong>${escapeHtml(totalContractsText)}</strong></div>
+      <div class="metric"><span>الرصيد الفعلي للبيع</span><strong>${formatNumber(totalSellableBalance)} كجم</strong></div>
+    </div>
     ${documentFooter()}
   </div>`;
   refs.documentDialog.showModal();

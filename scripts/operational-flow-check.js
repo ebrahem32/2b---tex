@@ -505,6 +505,10 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(indexSource.includes('pricingSearchInput') && indexSource.includes('pricingCustomerFilter') && indexSource.includes('pricingStatusFilter'), 'pricing ui: pricing list must have standalone filters');
   assert(indexSource.includes('printFilteredPricingsBtn'), 'pricing ui: filtered pricing list must be printable');
   assert(appSource.includes('openFilteredPricingsReport'), 'pricing ui: filtered pricing print report must be wired');
+  assert(indexSource.includes('<th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية'), 'pricing ui: list must use the unified order number label');
+  assert(!appSource.includes('<th>رقم الكرت</th><th>رقم الطلب</th>'), 'pricing print: card and order numbers must not appear as separate columns');
+  assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
+  assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
 }
 
 function checkOrderQuotationUsesLinkedPricingCard() {

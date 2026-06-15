@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.15.25`
+`v2026.06.15.26`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Unify pricing order numbers in reports`
+
+## Latest Unified Pricing Print Numbers
+
+- Version: `v2026.06.15.26`.
+- Pricing list and pricing print now use one visible number: `رقم الطلب`.
+- The separate `رقم الكرت` column was removed from pricing-list print because linked cards now carry the same operational order number.
+- Pricing-list print now shows `إجمالي العقد` in the metadata strip and again as a bottom summary.
+- Pricing-list print now shows `الرصيد الفعلي للبيع`, calculated from the linked order warehouse balance, so the report exposes the quantity that can actually be sold/delivered.
+- Verification coverage was added to prevent reintroducing separate card/order number columns in pricing print.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix pricing card order linkage and filters`
 

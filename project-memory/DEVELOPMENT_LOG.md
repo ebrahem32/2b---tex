@@ -847,3 +847,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: dyeing stages and profit margin show `جنيه` because they are EGP inputs that convert when USD pricing is selected.
 - Change: updated styles/cache keys and added regression coverage for the currency badges.
 - Not touched: SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows.
+
+### Unify Pricing Order Numbers In Reports
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.26`
+- Goal: avoid confusing users with separate card/order/product-code numbers in pricing reports.
+- Change: pricing list and printed pricing report now display one unified visible number: `رقم الطلب`.
+- Change: the printed pricing list no longer has separate `رقم الكرت` and `رقم الطلب` columns.
+- Change: the printed pricing list now includes `إجمالي العقد` and `الرصيد الفعلي للبيع` summaries.
+- Test: added an operational-flow regression for unified pricing-list numbering and sellable-balance print coverage.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
