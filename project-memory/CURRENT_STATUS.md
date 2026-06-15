@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.13`
+`v2026.06.15.14`
 
 ## Last Known Commit Before Project Memory
 
@@ -28,6 +28,15 @@
 - This protects the intentional business rule that the same order number can exist with different customers/items.
 - Hardened pricing edit button handling with `closest(...)` and added explicit support for pricing edit buttons inside quotation documents.
 - Not touched: backend, SQLite, stock calculations, waste calculations, save/rollback flows.
+
+## Latest USD Pricing Exchange Fix
+
+- Version: `v2026.06.15.14`.
+- Added `سعر الدولار اليوم` to pricing cards when the pricing currency is USD.
+- When pricing in USD, dyeing/finishing stage costs entered in EGP are converted to USD before being added to the raw fabric price.
+- Accessory raw price remains in the selected pricing currency, while selected dyeing stages applied to accessories are converted from EGP to USD when currency is USD.
+- Stored the exchange rate inside pricing item JSON without changing SQLite schema.
+- Not touched: backend, SQLite schema, stock calculations, waste calculations, operational save/rollback flows.
 
 ## Current Phase
 

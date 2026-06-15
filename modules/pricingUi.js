@@ -98,6 +98,8 @@ function fillPricingForm(pricing) {
   refs.pricingNumber.value = pricing.pricingNumber || '';
   const currencyRef = document.getElementById('pricingCurrency');
   if (currencyRef) currencyRef.value = pricing.currency || pricing.priceItems?.find((item)=>item?.currency)?.currency || 'EGP';
+  const exchangeRateRef = document.getElementById('pricingExchangeRate');
+  if (exchangeRateRef) exchangeRateRef.value = pricing.exchangeRate || pricing.exchange_rate || pricing.priceItems?.find((item)=>item?.exchangeRate || item?.exchange_rate)?.exchangeRate || pricing.priceItems?.find((item)=>item?.exchangeRate || item?.exchange_rate)?.exchange_rate || '';
   if (refs.pricingProductCode) refs.pricingProductCode.value = pricing.productCode || buildItemCode(pricing.pricingNumber);
   refs.pricingCustomer.value = pricing.customer || '';
   refs.pricingDate.value = pricing.pricingDate || new Date().toISOString().slice(0,10);
@@ -107,6 +109,7 @@ function fillPricingForm(pricing) {
   applyPricingDyehouseOptions();
   refs.pricingDyehouse.value = [...refs.pricingDyehouse.options].some((option)=>option.value === dyehouse) ? dyehouse : '';
   if (refs.pricingWeavingSource) refs.pricingWeavingSource.value = pricing.weavingSource || pricing.priceItems?.find((item)=>item?.weavingSource)?.weavingSource || '';
+  exchangeRateRef?.closest('label')?.classList.toggle('field-hidden', (currencyRef?.value || 'EGP') !== 'USD');
   applyPricingColorOptions();
   refs.pricingColorClass.value = [...refs.pricingColorClass.options].some((option)=>option.value === colorClass) ? colorClass : '';
   refs.pricingQuantity.value = pricing.quantity || '';

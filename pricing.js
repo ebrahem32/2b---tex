@@ -156,11 +156,37 @@
       return resolved?.dyeing?.[materialType]?.[colorKey] ?? '';
     }
 
+    function pricingExchangeRate(pricing = {}) {
+      const rate = Number(pricing.exchangeRate || pricing.exchange_rate || pricing.usdRate || pricing.usd_rate || 0);
+      return Number.isFinite(rate) && rate > 0 ? rate : 1;
+    }
+
+    function convertEgpCostForPricing(value, pricing = {}) {
+      const amount = Number(value || 0);
+      if ((pricing.currency || 'EGP') !== 'USD') return amount;
+      return amount / pricingExchangeRate(pricing);
+    }
+
+    function accessoryTotalForPricing(pricing = {}) {
+      const lines = Array.isArray(pricing.accessoryLines) ? pricing.accessoryLines : [];
+      if (!lines.length) return Number(pricing.accessoryCost || pricing.accessory_cost || 0);
+      return lines.reduce((total, line) => {
+        const quantity = Number(line.quantity ?? line.percent ?? 0);
+        const rawPrice = Number(line.price || 0);
+        const convertedStageCost = convertEgpCostForPricing(line.stageCost || 0, pricing);
+        const unitPrice = rawPrice + convertedStageCost;
+        return total + quantity * unitPrice;
+      }, 0);
+    }
+
     function calculatePricing(pricing, librarySource) {
       const library = librarySource[pricing.dyehouse] || {};
       const wasteBasis = pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
-      const accessoryTotal = Number(pricing.accessoryCost || pricing.accessory_cost || 0);
-      const productionCost = Number(pricing.rawCost || 0) + Number(pricing.dyeCost || 0) + Number(pricing.extraCost || 0);
+      const exchangeRate = pricingExchangeRate(pricing);
+      const dyeCost = convertEgpCostForPricing(pricing.dyeCost || 0, pricing);
+      const extraCost = convertEgpCostForPricing(pricing.extraCost || 0, pricing);
+      const accessoryTotal = accessoryTotalForPricing(pricing);
+      const productionCost = Number(pricing.rawCost || 0) + dyeCost + extraCost;
       const wasteBase = wasteBasis === 'gross'
         ? productionCost
         : Number(pricing.rawCost || 0);
@@ -172,7 +198,7 @@
       const sellPrice = costPerKg + Number(pricing.profitPerKg || 0);
       const clothTotal = sellPrice * Number(pricing.quantity || 0);
       const totalOffer = clothTotal + accessoryTotal;
-      return { ...pricing, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
+      return { ...pricing, exchangeRate, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, dyeCost:roundNumber(dyeCost), extraCost:roundNumber(extraCost), accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
     }
 
     return {

@@ -717,3 +717,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: hardened pricing-table event handling with `closest(...)` so nested clicks cannot pass the wrong target.
 - Change: added explicit handlers for quotation-document `تعديل` and `تنزيل طلب` buttons.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Add USD Pricing Exchange Rate
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.14`
+- Goal: USD pricing must not add EGP dyeing/finishing costs directly to USD raw-fabric prices.
+- Change: added `سعر الدولار اليوم` to pricing cards when currency is USD.
+- Change: converted dyeing, finishing, and selected accessory-stage costs from EGP to USD before pricing calculation when USD is selected.
+- Change: stored the exchange rate in `pricing_items_json`; no database schema change.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.13';
-const APP_BUILD_TIME = '2026-06-15 11:08';
+const APP_VERSION = 'v2026.06.15.14';
+const APP_BUILD_TIME = '2026-06-15 11:30';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -765,7 +765,7 @@ const allocationToApi = (allocation) => ({
 const pricingToApi = (pricing, customerId = null) => {
   const calculated = calculatePricing(pricing);
   const currency = pricing.currency || 'EGP';
-  const priceItems = Array.isArray(pricing.priceItems) ? pricing.priceItems.map((item)=>({ ...item, currency:item.currency || currency, weavingSource:item.weavingSource || pricing.weavingSource || '' })) : [];
+  const priceItems = Array.isArray(pricing.priceItems) ? pricing.priceItems.map((item)=>({ ...item, currency:item.currency || currency, exchangeRate:item.exchangeRate || pricing.exchangeRate || '', weavingSource:item.weavingSource || pricing.weavingSource || '' })) : [];
   return {
     id: pricing.id,
     pricing_number: pricing.pricingNumber,
@@ -2629,6 +2629,7 @@ function pricingItemsFor(pricing = {}) {
   const items = Array.isArray(pricing.priceItems) ? pricing.priceItems.filter(Boolean) : [];
   if (items.length) return items.map((item)=>({
     currency: item.currency || pricing.currency || 'EGP',
+    exchangeRate: Number(item.exchangeRate || item.exchange_rate || pricing.exchangeRate || pricing.exchange_rate || 0),
     fabricType: item.fabricType || '',
     materialType: item.materialType || item.fabricType || '',
     dyehouse: item.dyehouse || '',
@@ -2652,6 +2653,7 @@ function pricingItemsFor(pricing = {}) {
   if (!hasSingle) return [];
   return [{
     currency: pricing.currency || 'EGP',
+    exchangeRate: Number(pricing.exchangeRate || pricing.exchange_rate || 0),
     fabricType: pricing.fabricType || '',
     materialType: pricing.materialType || pricing.fabricType || '',
     dyehouse: pricing.dyehouse || '',
@@ -2729,6 +2731,7 @@ function setOrderFormPricingConversionMode(active = false, itemCount = 0) {
 function pricingPrimaryItemFromRefs() {
   return {
     currency: pricingCurrencyValue(),
+    exchangeRate: pricingExchangeRateValue(),
     fabricType: canonicalFabricName(refs.pricingFabricType?.value),
     materialType: canonicalFabricName(refs.pricingFabricType?.value),
     dyehouse: refs.pricingDyehouse?.value || '',
@@ -2851,6 +2854,8 @@ function pricingStagesTotal(stages = []) {
 
 function pricingAccessoriesFromRow(row) {
   const stages = pricingStagesFromRow(row);
+  const currency = pricingCurrencyValue();
+  const exchangeRate = pricingExchangeRateValue();
   return [...row.querySelectorAll('[data-pricing-accessory-row]')].map((accessoryRow)=>{
     const stageNames = [...accessoryRow.querySelectorAll('[data-pricing-accessory-stage]:checked')]
       .map((input)=>String(input.value || '').trim())
@@ -2860,12 +2865,14 @@ function pricingAccessoriesFromRow(row) {
       .reduce((total, stage)=>total + Number(stage.price || 0), 0);
     const quantity = Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0);
     const price = Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0);
-    const unitPrice = roundNumber(price + stageCost);
+    const unitPrice = roundNumber(price + pricingConvertEgpCost(stageCost, currency, exchangeRate));
     return {
       type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
       quantity,
       percent: quantity,
       price,
+      currency,
+      exchangeRate,
       stageNames,
       stageCost: roundNumber(stageCost),
       unitPrice,
@@ -2912,6 +2919,7 @@ function readPricingItemsEditor() {
   if (!rows.length) return [pricingPrimaryItemFromRefs()].filter((item)=>item.fabricType || item.quantity > 0);
   return rows.map((row)=>({
     currency: pricingCurrencyValue(),
+    exchangeRate: pricingExchangeRateValue(),
     fabricType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     materialType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
     dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
@@ -2941,8 +2949,24 @@ function pricingCurrencyValue() {
 function pricingCurrencyLabel(currency = pricingCurrencyValue()) {
   return currency === 'USD' ? 'دولار' : 'جنيه';
 }
+function pricingExchangeRateRef() {
+  return document.getElementById('pricingExchangeRate');
+}
+function pricingExchangeRateValue() {
+  const value = Number(pricingExchangeRateRef()?.value || 0);
+  return Number.isFinite(value) && value > 0 ? value : 1;
+}
+function pricingConvertEgpCost(value, currency = pricingCurrencyValue(), exchangeRate = pricingExchangeRateValue()) {
+  const amount = Number(value || 0);
+  return currency === 'USD' ? amount / (Number(exchangeRate || 0) || 1) : amount;
+}
+function syncPricingExchangeRateVisibility() {
+  const wrapper = pricingExchangeRateRef()?.closest('label');
+  if (!wrapper) return;
+  wrapper.classList.toggle('field-hidden', pricingCurrencyValue() !== 'USD');
+}
 function pricingPreviewPayloadFromEditor() {
-  return { priceItems: readPricingItemsEditor(), currency:pricingCurrencyValue(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '', weavingSource:refs.pricingWeavingSource?.value || '' };
+  return { priceItems: readPricingItemsEditor(), currency:pricingCurrencyValue(), exchangeRate:pricingExchangeRateValue(), customer:refs.pricingCustomer?.value || '', pricingNumber:refs.pricingNumber?.value || '', pricingDate:refs.pricingDate?.value || '', weavingSource:refs.pricingWeavingSource?.value || '' };
 }
 function renderPricingItemsEditor(pricing = null) {
   const rows = document.getElementById('pricingItemsRows');
@@ -2992,7 +3016,7 @@ function ensurePricingItemsUi() {
   if (!anchor) return;
   markPricingCardMode();
   installPricingWeavingSourceField();
-  refs.pricingPaymentMode?.closest('label')?.insertAdjacentHTML('beforebegin', `<label><span>عملة التسعير</span><select id="pricingCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label>`);
+  refs.pricingPaymentMode?.closest('label')?.insertAdjacentHTML('beforebegin', `<label><span>عملة التسعير</span><select id="pricingCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label><label class="pricing-exchange-rate-field field-hidden"><span>سعر الدولار اليوم</span><input id="pricingExchangeRate" type="number" step="0.01" min="0" placeholder="مثال: 52"><small>يحول الصباغة والتجهيز بالجنيه إلى دولار.</small></label>`);
   anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. إضافات الصباغة داخل جدول الصباغة، والإكسسوار له جدول مستقل داخل نفس البند.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>الإكسسوار</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
@@ -3040,8 +3064,11 @@ function ensurePricingItemsUi() {
     input.addEventListener('input', updatePricingPreview);
     input.addEventListener('change', updatePricingPreview);
   });
-  pricingCurrencyRef()?.addEventListener('change', updatePricingPreview);
+  pricingCurrencyRef()?.addEventListener('change', () => { syncPricingExchangeRateVisibility(); updatePricingPreview(); });
+  pricingExchangeRateRef()?.addEventListener('input', updatePricingPreview);
+  pricingExchangeRateRef()?.addEventListener('change', updatePricingPreview);
   renderPricingItemsEditor();
+  syncPricingExchangeRateVisibility();
 }
 ({
   applyPricingDyehouseOptions,
@@ -3094,11 +3121,12 @@ function pricingPayload(id = uid()) {
   const paymentTerms = composePaymentTerms(refs.pricingPaymentMode?.value, refs.pricingPaymentDetails?.value);
   if (refs.pricingPaymentTerms) refs.pricingPaymentTerms.value = paymentTerms;
   const currency = pricingCurrencyValue();
+  const exchangeRate = pricingExchangeRateValue();
   const cardWeavingSource = refs.pricingWeavingSource?.value || '';
-  const priceItems = readPricingItemsEditor().map((item)=>({ ...item, currency, weavingSource:item.weavingSource || cardWeavingSource }));
+  const priceItems = readPricingItemsEditor().map((item)=>({ ...item, currency, exchangeRate, weavingSource:item.weavingSource || cardWeavingSource }));
   const primaryItem = priceItems[0] || pricingPrimaryItemFromRefs();
   const summary = calculatePricing({ priceItems: priceItems.length ? priceItems : [primaryItem] });
-  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:canonicalCustomerName(refs.pricingCustomer.value), pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, weavingSource:primaryItem.weavingSource || cardWeavingSource, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, currency, priceItems, paymentTerms, notes:refs.pricingNotes.value };
+  return { id, pricingNumber:refs.pricingNumber.value, productCode:buildItemCode(refs.pricingNumber.value), customer:canonicalCustomerName(refs.pricingCustomer.value), pricingDate:refs.pricingDate.value, fabricType:primaryItem.fabricType || refs.pricingFabricType.value, dyehouse:primaryItem.dyehouse || refs.pricingDyehouse.value, weavingSource:primaryItem.weavingSource || cardWeavingSource, colorClass:primaryItem.colorClass || refs.pricingColorClass.value, quantity:+summary.quantity || +primaryItem.quantity || +refs.pricingQuantity.value, inchWidth:primaryItem.inchWidth || refs.pricingInchWidth.value, finishedWeight:+primaryItem.finishedWeight || +refs.pricingFinishedWeight.value, materialType:primaryItem.materialType || refs.pricingMaterialType.value, rawCost:+primaryItem.rawCost || +refs.pricingRawCost.value, dyeCost:+primaryItem.dyeCost || +refs.pricingDyeCost.value, wastePercent:+primaryItem.wastePercent || +refs.pricingWastePercent.value, extraCost:+primaryItem.extraCost || +refs.pricingExtraCost.value, profitPerKg:+primaryItem.profitPerKg || +refs.pricingProfitPerKg.value, currency, exchangeRate, priceItems, paymentTerms, notes:refs.pricingNotes.value };
 }
 async function attachPricingToOrder(orderId, pricingId) {
   const order = orders.find((item)=>item.id === orderId);

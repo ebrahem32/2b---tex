@@ -432,6 +432,19 @@ async function verifyOperationalCycle() {
   assert(pricingCalculation.totalOffer > pricingCalculation.clothTotal, 'pricing-domain-accessory-total', pricingCalculation);
   assert(pricingCalculation.deferredPercent === 6, 'pricing-domain-deferred-month-rule', pricingCalculation);
   assert(pricingCalculation.wasteBasis === 'gross', 'pricing-domain-waste-basis', pricingCalculation);
+  const usdPricingCalculation = pricingDomain.calculatePricing({
+    currency: 'USD',
+    exchangeRate: 52,
+    quantity: 1,
+    rawCost: 4.5,
+    dyeCost: 104,
+    wastePercent: 0,
+    profitPerKg: 0,
+    accessoryLines: [{ type: 'ريب', quantity: 1, price: 4.52, stageCost: 52 }],
+  }, pricingLibrary);
+  assert(usdPricingCalculation.dyeCost === 2, 'pricing-domain-usd-dye-egp-conversion', usdPricingCalculation);
+  assert(usdPricingCalculation.sellPrice === 6.5, 'pricing-domain-usd-sell-price', usdPricingCalculation);
+  assert(usdPricingCalculation.accessoryTotal === 5.52, 'pricing-domain-usd-accessory-stage-conversion', usdPricingCalculation);
   const summary = await api('GET', `/orders/${ids.orderA}/summary`);
   assert(roundNumber(summary.totalSentToDyehouse) === 500 && roundNumber(summary.warehouseBalance) === 30 && roundNumber(summary.wasteQuantity) === 30, 'backend-summary', summary);
   const builders = createDocumentBuilders();
