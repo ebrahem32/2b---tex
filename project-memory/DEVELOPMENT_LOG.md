@@ -696,3 +696,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Not touched: `backend/calculations.js`, stock formulas, waste formulas, operational save formulas, AI backend, WhatsApp service, A5 service.
 - Test: `npm run check` passed locally, including `Operational flow check passed`.
 - Test: full operational test passed locally against `http://127.0.0.1:3050` after restarting the local backend with the current migration code.
+
+### Fix Finished Sale Panel Visibility
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.12`
+- Goal: opening the main operations dashboard must not show the full finished-stock sale form.
+- Change: `finishedSalePanel` is created hidden by default and synchronized with the active workspace module immediately after dynamic insertion.
+- Change: bumped the app version and app script cache key to `v2026.06.15.12`.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

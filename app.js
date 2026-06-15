@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.11';
-const APP_BUILD_TIME = '2026-06-15 06:05';
+const APP_VERSION = 'v2026.06.15.12';
+const APP_BUILD_TIME = '2026-06-15 06:45';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3465,11 +3465,18 @@ function openFinishedSalePanel() {
   renderFinishedSalePanel();
   document.getElementById('finishedSalePanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
+function applyModuleVisibilityToPanel(panel) {
+  if (!panel) return;
+  const activeModule = document.body.dataset.activeModule || 'dashboard';
+  const modules = String(panel.dataset.modulePanel || '').split(/\s+/).filter(Boolean);
+  panel.classList.toggle('module-hidden', modules.length > 0 && !modules.includes(activeModule));
+}
 function ensureFinishedSaleUi() {
   if (!document.getElementById('finishedSalePanel')) {
     const ordersPanel = document.querySelector('.orders-list-panel');
-    ordersPanel?.insertAdjacentHTML('beforebegin', '<section class="panel finished-sale-panel" id="finishedSalePanel" data-module-panel="warehouse"></section>');
+    ordersPanel?.insertAdjacentHTML('beforebegin', '<section class="panel finished-sale-panel module-hidden" id="finishedSalePanel" data-module-panel="warehouse"></section>');
   }
+  applyModuleVisibilityToPanel(document.getElementById('finishedSalePanel'));
   const warehouseStageButton = document.querySelector('[data-stage-shortcut="stage:warehouse"]');
   const warehouseSection = warehouseStageButton?.closest('section');
   if (warehouseSection && !warehouseSection.querySelector('[data-nav-action="finishedSale"]')) {

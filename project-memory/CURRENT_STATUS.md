@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.11`
+`v2026.06.15.12`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,14 @@
 ## Latest Commit Message
 
 `Stabilize pricing flow, navigation, and regression test`
+
+## Latest Dashboard Finished-Sale Visibility Fix
+
+- Version: `v2026.06.15.12`.
+- Fixed a UI visibility issue where the dynamically-created `finishedSalePanel` could appear when opening the main operations dashboard.
+- `finishedSalePanel` is now hidden by default and immediately synchronized with the active workspace module after creation.
+- The panel still opens normally from `بيع مجهز` under warehouse/sales flow.
+- Not touched: backend, SQLite, stock calculations, waste calculations, save/rollback flows.
 
 ## Current Phase
 
