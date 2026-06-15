@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.15.14`
+`v2026.06.15.15`
 
 ## Last Known Commit Before Project Memory
 
@@ -37,6 +37,15 @@
 - Accessory raw price remains in the selected pricing currency, while selected dyeing stages applied to accessories are converted from EGP to USD when currency is USD.
 - Stored the exchange rate inside pricing item JSON without changing SQLite schema.
 - Not touched: backend, SQLite schema, stock calculations, waste calculations, operational save/rollback flows.
+
+## Latest Raw Dispatch Bulk Issue Fix
+
+- Version: `v2026.06.15.15`.
+- Fixed dyehouse raw dispatch so the bulk issue form records one order/dyehouse-level raw issue instead of forcing one raw issue per color.
+- The issue screen now shows fabric as grouped by dyehouse with `كل الألوان` / `كل العروض`.
+- New raw-dispatch saves leave `allocationId` empty, preserving the business rule that the dyehouse receives raw fabric first and splits colors later.
+- Existing allocation-linked raw records remain supported for backward compatibility and old data safety.
+- Not touched: backend, SQLite schema, stock formulas, waste formulas, pricing formulas, AI backend, WhatsApp service, A5 service.
 
 ## Current Phase
 

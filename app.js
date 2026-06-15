@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.15.14';
-const APP_BUILD_TIME = '2026-06-15 11:30';
+const APP_VERSION = 'v2026.06.15.15';
+const APP_BUILD_TIME = '2026-06-15 12:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -5001,6 +5001,30 @@ function combinedMovementClothAvailable(allocation, movement) {
   return '';
 }
 
+function combinedMovementClothRows(order, movement) {
+  if (movement === 'rawOut') {
+    const groups = new Map();
+    order.allocations.forEach((allocation) => {
+      const dyehouse = allocation.dyehouse || order.dyehouse || '';
+      const key = dyehouse || '__blank__';
+      const current = groups.get(key) || { dyehouse, planned:0, sent:0, colors:[] };
+      current.planned += Number(allocation.plannedQuantity || 0);
+      current.sent += Number(allocation.sentToDyehouse || 0);
+      if (allocation.color) current.colors.push(allocation.color);
+      groups.set(key, current);
+    });
+    return [...groups.values()].map((group) => {
+      const available = Math.max(group.planned - group.sent, 0);
+      const colorLabel = group.colors.length > 1 ? 'كل الألوان' : (group.colors[0] || 'كل الألوان');
+      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td>كل العروض</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
+    }).join('');
+  }
+  return order.allocations.map((allocation)=>{
+    const available = combinedMovementClothAvailable(allocation, movement);
+    return `<tr data-bulk-allocation="${escapeHtml(allocation.id)}"><td>${escapeHtml(allocation.color || '-')}</td><td>${escapeHtml(allocation.dyehouse || '-')}</td><td>${escapeHtml(allocationWidthSuffix(order, allocation).replace(/^\s*\/\s*/, '') || '-')}</td><td>${available === '' ? '-' : formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
+  }).join('');
+}
+
 function accessoryRowsForCombinedMovement(order, config) {
   if (!order.accessoryLines?.length) return '';
   if (config.accessoryMovement === 'accessorySent') {
@@ -5037,10 +5061,7 @@ function openBulkBatchDialog(source) {
     </div>
     <div class="subsection-head"><h3>القماش</h3></div>
     <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th><th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
-      ${order.allocations.map((allocation)=>{
-        const available = combinedMovementClothAvailable(allocation, movement);
-        return `<tr data-bulk-allocation="${escapeHtml(allocation.id)}"><td>${escapeHtml(allocation.color || '-')}</td><td>${escapeHtml(allocation.dyehouse || '-')}</td><td>${escapeHtml(allocationWidthSuffix(order, allocation).replace(/^\s*\/\s*/, '') || '-')}</td><td>${available === '' ? '-' : formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
-      }).join('')}
+      ${combinedMovementClothRows(order, movement)}
     </tbody></table>
     ${accessoryRows ? `<div class="subsection-head"><h3>الإكسسوار</h3></div><table class="bulk-entry-table"><thead><tr><th>نوع الإكسسوار</th><th>اللون</th><th>العرض</th><th>المتاح/المطلوب</th><th>الكمية</th></tr></thead><tbody>${accessoryRows}</tbody></table>` : ''}
     <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>حفظ الأمر المجمع</button></div>
@@ -5064,7 +5085,7 @@ function bulkBatchItemsFromDialog() {
     if (!quantity) return null;
     const allocationId = row.dataset.bulkAllocation;
     const allocation = allocations.find((item)=>item.id === allocationId) || {};
-    if (movement === 'rawOut') return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, dyehouse:allocation.dyehouse || '' }) };
+    if (movement === 'rawOut') return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber, notes, dyehouse:row.dataset.bulkDyehouse || allocation.dyehouse || '' }) };
     if (movement === 'finished') return { type:'finished', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     if (movement === 'customer') return { type:'customer', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     return null;

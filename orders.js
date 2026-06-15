@@ -116,8 +116,8 @@
       const order = orderContext || data.orders.find((item)=>item.id===allocation.orderId) || {};
       const orderAllocations = getAllocations(order);
       const directAllocationIds = new Set(orderAllocations.map((item)=>item.id));
-      const orderRawSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && !directAllocationIds.has(batch.widthLineId)));
-      const directAllocationSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && batch.widthLineId === allocation.id));
+      const orderRawSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && !directAllocationIds.has(batch.allocationId) && !directAllocationIds.has(batch.widthLineId)));
+      const directAllocationSent = sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && (batch.allocationId === allocation.id || batch.widthLineId === allocation.id)));
       const widthRawSent = allocation.widthLineId ? sum(data.rawBatches.filter((batch) => batch.orderId === allocation.orderId && batch.widthLineId === allocation.widthLineId)) : 0;
       const widthPlanned = allocation.widthLineId ? orderAllocations.filter((item)=>item.widthLineId === allocation.widthLineId).reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) : 0;
       const totalPlanned = roundNumber(orderAllocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0));

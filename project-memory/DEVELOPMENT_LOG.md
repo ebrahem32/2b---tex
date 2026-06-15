@@ -728,3 +728,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: converted dyeing, finishing, and selected accessory-stage costs from EGP to USD before pricing calculation when USD is selected.
 - Change: stored the exchange rate in `pricing_items_json`; no database schema change.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Fix Bulk Raw Dispatch For Dyehouse
+
+- Date: 2026-06-15
+- Commit: pending.
+- Version: `v2026.06.15.15`
+- Goal: keep raw dispatch to dyehouse as one order/dyehouse issue, not one issue per color.
+- Change: the bulk raw-dispatch screen now groups cloth rows by dyehouse and shows `كل الألوان` / `كل العروض` with the remaining total quantity.
+- Change: new raw-dispatch saves are order-level records with empty `allocationId`; allocation distribution remains calculated from the color plan.
+- Change: preserved support for old allocation-linked raw records so previous data stays readable.
+- Test: added an operational-flow regression that one 3000 kg raw issue against two 1500 kg colors distributes to both colors by plan.
+- Not touched: backend, SQLite schema/data, pricing formulas, waste formulas, AI backend, WhatsApp service, A5 service.

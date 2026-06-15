@@ -164,6 +164,62 @@ function frontendOversentFinishedSummary() {
   return domain.calculateOrder(state.orders[0]);
 }
 
+function frontendAllocationLinkedRawDispatchSummary() {
+  const state = {
+    orders: [{
+      id: 'order-allocation-linked-raw',
+      orderNumber: 'CHECK-RAW-ALLOC',
+      totalRawQuantity: 3000,
+      expectedWastePercent: 0,
+      widthMode: 'single',
+      inchWidth: 32,
+    }],
+    allocations: [
+      { id: 'alloc-black', orderId: 'order-allocation-linked-raw', color: 'أسود', plannedQuantity: 1500, dyehouse: 'السلام' },
+      { id: 'alloc-white', orderId: 'order-allocation-linked-raw', color: 'أبيض', plannedQuantity: 1500, dyehouse: 'السلام' },
+    ],
+    rawBatches: [
+      { orderId: 'order-allocation-linked-raw', allocationId: 'alloc-black', quantity: 1500 },
+    ],
+    productionBatches: [],
+    customerBatches: [],
+    rawReturns: [],
+    gluingBatches: [],
+    dyehouseTransfers: [],
+    accessoryBatches: [],
+  };
+  const domain = createFrontendDomain(state);
+  return domain.calculateOrder(state.orders[0]);
+}
+
+function frontendOrderLevelRawDispatchSummary() {
+  const state = {
+    orders: [{
+      id: 'order-level-raw',
+      orderNumber: 'CHECK-RAW-ORDER',
+      totalRawQuantity: 3000,
+      expectedWastePercent: 0,
+      widthMode: 'single',
+      inchWidth: 32,
+    }],
+    allocations: [
+      { id: 'alloc-order-black', orderId: 'order-level-raw', color: 'أسود', plannedQuantity: 1500, dyehouse: 'السلام' },
+      { id: 'alloc-order-white', orderId: 'order-level-raw', color: 'أبيض', plannedQuantity: 1500, dyehouse: 'السلام' },
+    ],
+    rawBatches: [
+      { orderId: 'order-level-raw', allocationId: '', quantity: 3000, dyehouse: 'السلام' },
+    ],
+    productionBatches: [],
+    customerBatches: [],
+    rawReturns: [],
+    gluingBatches: [],
+    dyehouseTransfers: [],
+    accessoryBatches: [],
+  };
+  const domain = createFrontendDomain(state);
+  return domain.calculateOrder(state.orders[0]);
+}
+
 function frontendManualAccessorySummary() {
   const state = {
     orders: [{
@@ -251,6 +307,24 @@ function checkOversentFinishedOrderKeepsExtraAtDyehouse() {
   assertClose(frontend.warehouseBalance, 1000, 'oversent: warehouse balance follows finished receipt');
 }
 
+function checkAllocationLinkedRawDispatchStaysPerColor() {
+  const frontend = frontendAllocationLinkedRawDispatchSummary();
+  const black = frontend.allocations.find((allocation) => allocation.id === 'alloc-black');
+  const white = frontend.allocations.find((allocation) => allocation.id === 'alloc-white');
+  assertClose(black.sentToDyehouse, 1500, 'raw dispatch: allocation-linked raw must stay on selected color');
+  assertClose(white.sentToDyehouse, 0, 'raw dispatch: allocation-linked raw must not duplicate to sibling colors');
+  assertClose(frontend.totalSentToDyehouse, 1500, 'raw dispatch: total sent follows saved allocation rows only');
+}
+
+function checkOrderLevelRawDispatchDistributesByColorPlan() {
+  const frontend = frontendOrderLevelRawDispatchSummary();
+  const black = frontend.allocations.find((allocation) => allocation.id === 'alloc-order-black');
+  const white = frontend.allocations.find((allocation) => allocation.id === 'alloc-order-white');
+  assertClose(black.sentToDyehouse, 1500, 'raw dispatch: one order-level issue is allocated to black by plan');
+  assertClose(white.sentToDyehouse, 1500, 'raw dispatch: one order-level issue is allocated to white by plan');
+  assertClose(frontend.totalSentToDyehouse, 3000, 'raw dispatch: one order-level issue keeps the full sent total');
+}
+
 function checkDyeingDocumentShowsPhysicalRawBalance() {
   const builders = createDocumentBuilders();
   const html = builders.buildDyeingOrderDocument({
@@ -288,6 +362,8 @@ checkFrontendFlow();
 checkFrontendBackendParity();
 checkMultiColorOperationalEntry();
 checkOversentFinishedOrderKeepsExtraAtDyehouse();
+checkAllocationLinkedRawDispatchStaysPerColor();
+checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
 checkWarehouseTabKeepsInventorySection();
 checkManualAccessoryDistribution();
