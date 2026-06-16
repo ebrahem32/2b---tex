@@ -522,6 +522,13 @@ function checkPricingToOrderCarriesGroupedOperationalFields() {
   assert(appSource.includes('weavingSource:item.weavingSource || pricingDraft.weavingSource'), 'order save: grouped order item weaving source must be preserved before pricing fallback');
 }
 
+function checkGroupedPricingVerifyUsesItemsJson() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('function pricingPersistenceMatches'), 'pricing save: grouped pricing verification must use a dedicated matcher');
+  assert(appSource.includes('parseDbJsonArray(row.pricing_items_json)'), 'pricing save: grouped pricing verification must inspect saved price items JSON');
+  assert(appSource.includes('savedItems.length !== expectedItems.length'), 'pricing save: grouped pricing verification must compare item counts');
+}
+
 function checkOrderQuotationUsesLinkedPricingCard() {
   const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -591,6 +598,7 @@ checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkPricingToOrderCarriesGroupedOperationalFields();
+checkGroupedPricingVerifyUsesItemsJson();
 checkOrderQuotationUsesLinkedPricingCard();
 checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();

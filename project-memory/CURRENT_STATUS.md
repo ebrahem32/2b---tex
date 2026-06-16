@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.16.01`
+`v2026.06.16.02`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix grouped pricing save verification`
+
+## Latest Grouped Pricing Save Verification Fix
+
+- Version: `v2026.06.16.02`.
+- Fixed pricing-card edit save for grouped pricing cards.
+- Root cause: save verification still checked only the legacy `fabric_type` column, while grouped pricing cards now persist their real lines inside `pricing_items_json`.
+- The verification now compares saved pricing item JSON count/signature for grouped cards, and only falls back to `fabric_type` for legacy single-line cards.
+- This keeps the save/rollback protection active without falsely rolling back valid grouped pricing edits.
+- Not touched: backend calculations, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Stabilize workflow screens and mobile layout`
 

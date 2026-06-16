@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.16.01';
-const APP_BUILD_TIME = '2026-06-16 00:20';
+const APP_VERSION = 'v2026.06.16.02';
+const APP_BUILD_TIME = '2026-06-16 01:05';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -955,8 +955,32 @@ async function verifyRecordDeleted(type, id) {
 async function verifyPricingPersisted(pricingId, expected = {}) {
   return verifyRecordPersisted('pricing', pricingId, (row)=>(
     String(row.pricing_number || '') === String(expected.pricingNumber || row.pricing_number || '')
-    && String(row.fabric_type || '') === String(expected.fabricType || row.fabric_type || '')
+    && pricingPersistenceMatches(row, expected)
   ));
+}
+function pricingPersistenceMatches(row = {}, expected = {}) {
+  const savedItems = parseDbJsonArray(row.pricing_items_json);
+  const expectedItems = Array.isArray(expected.priceItems) ? expected.priceItems.filter(Boolean) : [];
+  if (expectedItems.length) {
+    if (!savedItems.length) return false;
+    if (savedItems.length !== expectedItems.length) return false;
+    const savedSignature = JSON.stringify(savedItems.map((item)=>({
+      fabricType:String(item.fabricType || item.fabric_type || ''),
+      quantity:Number(item.quantity || 0),
+      rawCost:Number(item.rawCost || item.raw_cost || 0),
+      dyeCost:Number(item.dyeCost || item.dye_cost || 0),
+      currency:String(item.currency || expected.currency || 'EGP'),
+    })));
+    const expectedSignature = JSON.stringify(expectedItems.map((item)=>({
+      fabricType:String(item.fabricType || item.fabric_type || ''),
+      quantity:Number(item.quantity || 0),
+      rawCost:Number(item.rawCost || item.raw_cost || 0),
+      dyeCost:Number(item.dyeCost || item.dye_cost || 0),
+      currency:String(item.currency || expected.currency || 'EGP'),
+    })));
+    return savedSignature === expectedSignature;
+  }
+  return String(row.fabric_type || '') === String(expected.fabricType || row.fabric_type || '');
 }
 async function verifyOrderPersisted(orderId, expected = {}) {
   if (!orderId) return false;

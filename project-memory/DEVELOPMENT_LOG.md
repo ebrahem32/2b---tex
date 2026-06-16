@@ -894,6 +894,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: all separated operational rows still open the same order details workflow and keep the same edit/delete actions.
 - Test: added operational-flow coverage to prevent returning to one shared operational list panel.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+### Fix Grouped Pricing Save Verification
+
+- Date: 2026-06-16
+- Commit: pending.
+- Version: `v2026.06.16.02`
+- Goal: fix pricing-card edits that appeared not to save after the grouped pricing-card changes.
+- Root cause: frontend verification after `PUT /pricings/:id` still compared the legacy `fabric_type` column only.
+- Change: grouped pricing save verification now reads `pricing_items_json` and compares saved item count/signature before approving the save.
+- Change: legacy single-line pricing still falls back to the old fabric-column check.
+- Test: added operational-flow coverage so grouped pricing verification cannot regress to the legacy single-column check.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
 ### Stabilize Workflow Screens And Mobile Layout
 
 - Date: 2026-06-16
