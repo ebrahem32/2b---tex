@@ -381,6 +381,44 @@ function checkDyeingDocumentShowsPhysicalRawBalance() {
   assert(html.includes('175.6'), 'document: dyeing order raw balance must show physical sent balance above planned quantity');
 }
 
+function checkDyeingDocumentSplitsMultiDyehouseOrder() {
+  const builders = createDocumentBuilders();
+  const order = {
+    id: 'order-document-multi-dyehouse',
+    orderNumber: 'DOC-MULTI-DYE',
+    orderDate: '2026-06-17',
+    customer: 'Test',
+    fabricType: 'Single Lycra Cotton',
+    dyehouse: 'Geima',
+    totalRawOrdered: 1500,
+    allocations: [
+      { id: 'alloc-new-white', orderId: 'order-document-multi-dyehouse', color: 'white', plannedQuantity: 300, dyehouse: 'New Geima', sentToDyehouse: 305.91, remainingAtDyehouse: 305.91, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-new-black', orderId: 'order-document-multi-dyehouse', color: 'black', plannedQuantity: 300, dyehouse: 'New Geima', sentToDyehouse: 305.91, remainingAtDyehouse: 305.91, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-geima-1', orderId: 'order-document-multi-dyehouse', color: 'red', plannedQuantity: 150, dyehouse: 'Geima', sentToDyehouse: 154.93, remainingAtDyehouse: 154.93, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-geima-2', orderId: 'order-document-multi-dyehouse', color: 'green', plannedQuantity: 150, dyehouse: 'Geima', sentToDyehouse: 154.93, remainingAtDyehouse: 154.93, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-geima-3', orderId: 'order-document-multi-dyehouse', color: 'blue', plannedQuantity: 150, dyehouse: 'Geima', sentToDyehouse: 154.93, remainingAtDyehouse: 154.93, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-geima-4', orderId: 'order-document-multi-dyehouse', color: 'yellow', plannedQuantity: 150, dyehouse: 'Geima', sentToDyehouse: 154.93, remainingAtDyehouse: 154.93, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-geima-5', orderId: 'order-document-multi-dyehouse', color: 'navy', plannedQuantity: 150, dyehouse: 'Geima', sentToDyehouse: 154.94, remainingAtDyehouse: 154.94, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+      { id: 'alloc-geima-6', orderId: 'order-document-multi-dyehouse', color: 'grey', plannedQuantity: 150, dyehouse: 'Geima', sentToDyehouse: 154.94, remainingAtDyehouse: 154.94, targetFinishedWidth: 175, targetFinishedWeight: 185 },
+    ],
+    rawBatches: [],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [],
+  };
+  const newGeimaHtml = builders.buildDyeingOrderDocument(order, 'New Geima');
+  assert(newGeimaHtml.includes('600'), 'document: New Geima planned total must include its two colors only');
+  assert(newGeimaHtml.includes('611.82'), 'document: New Geima raw balance must use its two color sent quantities only');
+  assert(newGeimaHtml.includes('white') && newGeimaHtml.includes('black'), 'document: New Geima must show white and black');
+  assert(!newGeimaHtml.includes('red'), 'document: New Geima must not include Geima colors');
+
+  const geimaHtml = builders.buildDyeingOrderDocument(order, 'Geima');
+  assert(geimaHtml.includes('900'), 'document: Geima planned total must include its six colors only');
+  assert(geimaHtml.includes('929.6'), 'document: Geima raw balance must use its six color sent quantities only');
+  assert(geimaHtml.includes('red') && geimaHtml.includes('grey'), 'document: Geima must show Geima colors');
+  assert(!geimaHtml.includes('white'), 'document: Geima must not include New Geima colors');
+}
+
 function checkBodyLabelOnlyAppearsWithAccessories() {
   const builders = createDocumentBuilders();
   const baseOrder = {
@@ -600,6 +638,7 @@ checkOversentFinishedOrderKeepsExtraAtDyehouse();
 checkAllocationLinkedRawDispatchStaysPerColor();
 checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
+checkDyeingDocumentSplitsMultiDyehouseOrder();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
 checkNoRawWarehouseDashboardTerminology();

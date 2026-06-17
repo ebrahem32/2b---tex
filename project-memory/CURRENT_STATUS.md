@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.17.01`
+`v2026.06.17.02`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix multi-dyehouse dyeing document totals`
+
+## Latest Multi-Dyehouse Dyeing Document Fix
+
+- Version: `v2026.06.17.02`.
+- Fixed dyeing operation documents for orders split across more than one dyehouse.
+- Each dyehouse document now filters colors by that dyehouse only.
+- Dyehouse raw balance is calculated from the selected dyehouse allocation sent quantities, not from all order raw permits.
+- This prevents Geima/New Geima documents from mixing colors, planned quantities, raw balances, and raw permit logic.
+- Added regression coverage for an order split between `Geima` and `New Geima`, verifying each document keeps its own colors and balances.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix pricing card edit save button`
 

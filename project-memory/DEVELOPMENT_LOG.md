@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Multi-Dyehouse Dyeing Document Totals
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.02`
+- Goal: keep each dyeing operation document limited to the selected dyehouse when one order is split across multiple dyehouses.
+- Root cause: the dyeing document balance path could use order-level raw movement totals for the original dyehouse and could over-filter non-original dyehouses unless a transfer record matched the color/allocation.
+- Change: dyeing documents now select allocations by the requested dyehouse name first, with transfer matching only as a fallback.
+- Change: raw balance in the document now starts from the selected dyehouse allocation `sentToDyehouse` quantities before falling back to movement rows.
+- Verification coverage: added a regression check for a Geima/New Geima split order so each document shows only its own colors, planned total, and raw balance.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Fix Pricing Card Edit Save Button
 
 - Date: 2026-06-17
