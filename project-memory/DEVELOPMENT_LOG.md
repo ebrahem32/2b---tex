@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Split Order Detail Dyehouse Balances
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.15`
+- Goal: make the order detail color/balance screen show the same dyehouse split that the detailed report now shows.
+- Change: the `الألوان والرصيد` table now renders scoped dyehouse rows instead of direct allocation rows when a physical raw transfer splits one width/color between dyehouses.
+- Change: source dyehouses keep their remaining raw quantity and target dyehouses show only the transferred quantity.
+- Verification coverage: added source-level assertions so the UI table keeps using scoped dyehouse rows and rejects foreign transfers.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Harden Detailed Report Transfer Ownership
 
 - Date: 2026-06-17

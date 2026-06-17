@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.14';
-const APP_BUILD_TIME = '2026-06-17 21:10';
+const APP_VERSION = 'v2026.06.17.15';
+const APP_BUILD_TIME = '2026-06-17 21:55';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -4743,17 +4743,19 @@ function consolidateOrderDetailView(order) {
       const body = table.querySelector('tbody');
       if (head && body) {
         head.innerHTML = '<tr><th>\u0627\u0644\u0644\u0648\u0646</th><th>\u0627\u0644\u0645\u062e\u0637\u0637</th><th>\u0627\u0644\u0645\u0635\u0628\u063a\u0629</th><th>\u0627\u0644\u0639\u0631\u0636</th><th>\u0627\u0644\u0648\u0632\u0646 \u0645\u062c\u0647\u0632</th><th>\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629</th><th>\u062a\u0633\u0644\u064a\u0645 \u0627\u0644\u0639\u0645\u064a\u0644</th><th>\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062e\u0632\u0646</th><th>\u0627\u0644\u0647\u0627\u0644\u0643</th><th>\u0625\u062c\u0631\u0627\u0621</th></tr>';
-        body.innerHTML = order.allocations.map((allocation) => {
-          const delivered = sum(customerBatches.filter((batch)=>batch.allocationId === allocation.id));
-          const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent'));
-          const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return'));
+        body.innerHTML = scopedOrderDetailAllocationRows(order).map((allocation) => {
+          const sourceAllocation = allocation.sourceAllocation || allocation;
+          const isReceiptDyehouse = String(sourceAllocation.dyehouse || order.dyehouse || '').trim() === String(allocation.scopedDyehouse || allocation.dyehouse || '').trim();
+          const delivered = isReceiptDyehouse ? sum(customerBatches.filter((batch)=>batch.allocationId === sourceAllocation.id)) : 0;
+          const sentGlue = isReceiptDyehouse ? sum(gluingBatches.filter((batch)=>batch.allocationId===sourceAllocation.id && batch.movement === 'sent')) : 0;
+          const returnedGlue = isReceiptDyehouse ? sum(gluingBatches.filter((batch)=>batch.allocationId===sourceAllocation.id && batch.movement === 'return')) : 0;
           const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue);
           const wasteLabel = `${formatNumber(allocation.wasteQuantity || 0)} (${formatNumber(allocation.wastePercent || 0, 1)}%)`;
-          const plannedCell = stockFlowCell(allocation.plannedQuantity || 0, accessoryPlannedPartsForOrder(order, allocation));
-          const sentCell = stockFlowCell(allocation.sentToDyehouse || 0, accessoryFlowPartsForOrder(order, allocation, 'sent'));
-          const deliveredCell = stockFlowCell(delivered || 0, accessoryFlowPartsForOrder(order, allocation, 'customer'));
-          const balanceCell = stockFlowCell(balance || 0, accessoryBalancePartsForOrder(order, allocation));
-          const actions = `<div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">\u062a\u0639\u062f\u064a\u0644 \u0644\u0648\u0646</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">\u0646\u0642\u0644 \u0645\u0635\u0628\u063a\u0629</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">\u062d\u0630\u0641 \u0644\u0648\u0646</button>` : ''}</div>`;
+          const plannedCell = stockFlowCell(allocation.plannedQuantity || 0, accessoryPlannedPartsForOrder(order, sourceAllocation));
+          const sentCell = stockFlowCell(allocation.sentToDyehouse || 0, accessoryFlowPartsForOrder(order, sourceAllocation, 'sent'));
+          const deliveredCell = stockFlowCell(delivered || 0, accessoryFlowPartsForOrder(order, sourceAllocation, 'customer'));
+          const balanceCell = stockFlowCell(balance || 0, accessoryBalancePartsForOrder(order, sourceAllocation));
+          const actions = `<div class="batch-actions"><button class="mini-btn" data-edit-allocation="${sourceAllocation.id}">\u062a\u0639\u062f\u064a\u0644 \u0644\u0648\u0646</button><button class="mini-btn" data-transfer-allocation="${sourceAllocation.id}">\u0646\u0642\u0644 \u0645\u0635\u0628\u063a\u0629</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${sourceAllocation.id}">\u062d\u0630\u0641 \u0644\u0648\u0646</button>` : ''}</div>`;
           return `<tr><td>${escapeHtml(allocation.color || '-')}</td><td>${plannedCell}</td><td>${escapeHtml(allocation.dyehouse || order.dyehouse || '-')}</td><td>${escapeHtml(allocationWidthLabel(order, allocation))}</td><td>${escapeHtml(allocation.targetFinishedWeight || '-')}</td><td>${sentCell}</td><td>${deliveredCell}</td><td><strong>${balanceCell}</strong></td><td>${wasteLabel}</td><td>${actions}</td></tr>`;
         }).join('');
       }
@@ -5749,7 +5751,7 @@ function emptyRow(colspan, text = 'لا توجد بيانات مسجلة.') {
 function dyehouseNamesForOrder(order) {
   const originalDyehouse = String(order?.dyehouse || '').trim();
   const transferDyehouses = dyehouseTransfers
-    .filter((transfer)=>transfer.orderId === order?.id)
+    .filter((transfer)=>transferBelongsToOrderScope(order, transfer))
     .flatMap((transfer)=>[transfer.fromDyehouse, transfer.toDyehouse]);
   const allocationDyehouses = (order?.allocations || [])
     .map((allocation)=>allocation.dyehouse || originalDyehouse);
@@ -5757,6 +5759,41 @@ function dyehouseNamesForOrder(order) {
 }
 function transferAllocationIdForScope(transfer = {}) {
   return transfer.allocationId || transfer.fromAllocationId || transfer.from_allocation_id || '';
+}
+function transferLinkedIdsForScope(transfer = {}) {
+  return [
+    transferAllocationIdForScope(transfer),
+    transfer.newAllocationId,
+    transfer.toAllocationId,
+    transfer.to_allocation_id,
+  ].filter(Boolean);
+}
+function orderAllocationIdSetForScope(order) {
+  return new Set((order?.allocations || []).map((allocation)=>allocation.id).filter(Boolean));
+}
+function transferHasOrderAllocationForScope(order, transfer = {}) {
+  const allocationIds = orderAllocationIdSetForScope(order);
+  return transferLinkedIdsForScope(transfer).some((id)=>allocationIds.has(id));
+}
+function baseDyehouseNamesForOrderScope(order) {
+  const originalDyehouse = String(order?.dyehouse || '').trim();
+  return new Set(uniqueNonEmpty([
+    originalDyehouse,
+    ...(order?.allocations || []).map((allocation)=>allocation.dyehouse || originalDyehouse),
+  ]).map((name)=>String(name || '').trim()));
+}
+function transferBelongsToOrderScope(order, transfer = {}) {
+  const orderId = String(order?.id || '').trim();
+  const transferOrderId = String(transfer.orderId || transfer.order_id || '').trim();
+  const linkedIds = transferLinkedIdsForScope(transfer);
+  const hasLinkedAllocation = transferHasOrderAllocationForScope(order, transfer);
+  if (orderId && transferOrderId) {
+    if (transferOrderId !== orderId) return false;
+    if (linkedIds.length) return hasLinkedAllocation;
+    const baseNames = baseDyehouseNamesForOrderScope(order);
+    return baseNames.has(String(transfer.fromDyehouse || '').trim()) || baseNames.has(String(transfer.toDyehouse || '').trim());
+  }
+  return hasLinkedAllocation;
 }
 function isRawTransferForScopedDyehouse(transfer = {}, allocation = {}) {
   const text = `${transfer.mode || ''} ${transfer.reason || ''} ${transfer.notes || ''}`;
@@ -5771,7 +5808,7 @@ function scopedDyehouseQuantityForPicker(order, allocation, dyehouseName) {
   const planned = Number(allocation?.plannedQuantity || 0);
   const allocationDyehouse = String(allocation?.dyehouse || order?.dyehouse || '').trim();
   const rawTransfers = dyehouseTransfers.filter((transfer)=>(
-    transfer.orderId === order?.id
+    transferBelongsToOrderScope(order, transfer)
     && transferAllocationIdForScope(transfer) === allocation?.id
     && isRawTransferForScopedDyehouse(transfer, allocation)
   ));
@@ -5789,6 +5826,41 @@ function scopedDyehouseRowsForPicker(order, dyehouseName) {
       return scopedQuantity > 0 ? { ...allocation, plannedQuantity:scopedQuantity } : null;
     })
     .filter(Boolean);
+}
+function scopedOrderDetailAllocationRows(order) {
+  const names = dyehouseNamesForOrder(order);
+  const rows = [];
+  (order?.allocations || []).forEach((allocation) => {
+    const rawTransfers = dyehouseTransfers.filter((transfer)=>(
+      transferBelongsToOrderScope(order, transfer)
+      && transferAllocationIdForScope(transfer) === allocation.id
+      && isRawTransferForScopedDyehouse(transfer, allocation)
+    ));
+    if (!rawTransfers.length) {
+      rows.push({ ...allocation, sourceAllocation:allocation, scopedDyehouse:allocation.dyehouse || order?.dyehouse || '', scopedQuantity:Number(allocation.plannedQuantity || 0) });
+      return;
+    }
+    names.forEach((name) => {
+      const scopedQuantity = scopedDyehouseQuantityForPicker(order, allocation, name);
+      if (scopedQuantity <= 0) return;
+      const isReceiptDyehouse = String(allocation.dyehouse || order?.dyehouse || '').trim() === String(name || '').trim();
+      rows.push({
+        ...allocation,
+        dyehouse:name,
+        plannedQuantity:scopedQuantity,
+        sentToDyehouse:scopedQuantity,
+        finishedReceived:isReceiptDyehouse ? allocation.finishedReceived : 0,
+        deliveredToCustomer:isReceiptDyehouse ? allocation.deliveredToCustomer : 0,
+        customerDelivered:isReceiptDyehouse ? allocation.customerDelivered : 0,
+        wasteQuantity:isReceiptDyehouse ? allocation.wasteQuantity : 0,
+        wastePercent:isReceiptDyehouse ? allocation.wastePercent : 0,
+        sourceAllocation:allocation,
+        scopedDyehouse:name,
+        scopedQuantity,
+      });
+    });
+  });
+  return rows;
 }
 function operationNotesKey(type, dyehouseName = '') {
   const name = String(dyehouseName || '').trim();

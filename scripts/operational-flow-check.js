@@ -567,6 +567,9 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(documentsSource.includes('function dyehouseScopedAllocations(order, dyehouseName)'), 'documents: dyeing documents must scope color rows by dyehouse transfer quantities');
   assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
   assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');
+  assert(appSource.includes('function scopedOrderDetailAllocationRows(order)'), 'ui: order detail color plan must split balances by scoped dyehouse rows');
+  assert(appSource.includes('body.innerHTML = scopedOrderDetailAllocationRows(order).map'), 'ui: order detail color plan must render scoped dyehouse rows');
+  assert(appSource.includes('transferBelongsToOrderScope(order, transfer)'), 'ui: order detail dyehouse rows must reject foreign order transfers');
 }
 
 function checkBodyLabelOnlyAppearsWithAccessories() {

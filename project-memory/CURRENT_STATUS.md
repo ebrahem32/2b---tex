@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.17.14`
+`v2026.06.17.15`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Split order detail dyehouse balances`
+
+## Latest Order Detail Dyehouse Balance Split Fix
+
+- Version: `v2026.06.17.15`.
+- The order detail `الألوان والرصيد` table now uses scoped dyehouse rows, matching the detailed report logic.
+- Physical raw transfers now show both sides inside the order screen:
+  - source dyehouse keeps the remaining quantity after transfer.
+  - target dyehouse shows the transferred quantity.
+- This fixes cases such as width 75 where balance exists in both Star and Biko but only Biko was shown.
+- UI transfer ownership filtering now rejects foreign order transfers before building dyehouse rows.
+- Added regression coverage so the order details screen cannot silently return to direct `order.allocations` rendering for dyehouse balances.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Harden detailed report transfer ownership`
 
