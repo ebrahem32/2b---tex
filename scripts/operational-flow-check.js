@@ -443,6 +443,9 @@ function checkLegacyPartialTransferUsesActualQuantity() {
   const bikoHtml = builders.buildDyeingOrderDocument(order, 'Biko');
   assert(bikoHtml.includes('380.8'), 'document: legacy partial dyehouse transfer must use the transferred raw quantity');
   assert(!bikoHtml.includes('2,100'), 'document: legacy partial dyehouse transfer must not show the full allocation as transferred');
+  const starHtml = builders.buildDyeingOrderDocument(order, 'Star');
+  assert(starHtml.includes('1,719.2'), 'document: legacy partial dyehouse transfer source must keep the remaining raw quantity visible');
+  assert(!starHtml.includes('2,100'), 'document: source dyehouse must not show the full allocation after partial raw transfer');
 }
 
 function checkDyehouseTransferKindsAreSeparated() {

@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Keep Source Dyehouse Visible After Partial Raw Transfer
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.09`
+- Goal: show both dyehouses after a partial raw balance transfer, not only the receiving dyehouse.
+- Change: dyeing document picker now includes transfer source and target dyehouses.
+- Change: picker totals use scoped transfer quantities so the target shows incoming raw and the source shows remaining raw.
+- Verification coverage: added a regression assertion for the source dyehouse remaining quantity after legacy partial raw transfer.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Restore Individual Order Movement Forms
 
 - Date: 2026-06-17

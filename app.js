@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.08';
-const APP_BUILD_TIME = '2026-06-17 15:31';
+const APP_VERSION = 'v2026.06.17.09';
+const APP_BUILD_TIME = '2026-06-17 16:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -5750,10 +5750,45 @@ function dyehouseNamesForOrder(order) {
   const originalDyehouse = String(order?.dyehouse || '').trim();
   const transferDyehouses = dyehouseTransfers
     .filter((transfer)=>transfer.orderId === order?.id)
-    .map((transfer)=>transfer.toDyehouse);
+    .flatMap((transfer)=>[transfer.fromDyehouse, transfer.toDyehouse]);
   const allocationDyehouses = (order?.allocations || [])
     .map((allocation)=>allocation.dyehouse || originalDyehouse);
   return uniqueNonEmpty([originalDyehouse, ...allocationDyehouses, ...transferDyehouses]);
+}
+function transferAllocationIdForScope(transfer = {}) {
+  return transfer.allocationId || transfer.fromAllocationId || transfer.from_allocation_id || '';
+}
+function isRawTransferForScopedDyehouse(transfer = {}, allocation = {}) {
+  const text = `${transfer.mode || ''} ${transfer.reason || ''} ${transfer.notes || ''}`;
+  if (text.includes(TRANSFER_ALLOCATION_MARKER) || transfer.newAllocationId) return false;
+  if (transferRecordMode(transfer) === 'raw') return true;
+  const planned = Number(allocation?.plannedQuantity || 0);
+  const quantity = Number(transfer?.quantity || 0);
+  return Boolean(planned && quantity > 0 && quantity < planned - 0.01);
+}
+function scopedDyehouseQuantityForPicker(order, allocation, dyehouseName) {
+  const name = String(dyehouseName || '').trim();
+  const planned = Number(allocation?.plannedQuantity || 0);
+  const allocationDyehouse = String(allocation?.dyehouse || order?.dyehouse || '').trim();
+  const rawTransfers = dyehouseTransfers.filter((transfer)=>(
+    transfer.orderId === order?.id
+    && transferAllocationIdForScope(transfer) === allocation?.id
+    && isRawTransferForScopedDyehouse(transfer, allocation)
+  ));
+  const rawIn = sum(rawTransfers.filter((transfer)=>String(transfer.toDyehouse || '').trim() === name));
+  const rawOut = sum(rawTransfers.filter((transfer)=>String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name));
+  if (rawIn > 0) return roundNumber(rawIn);
+  if (rawOut > 0) return roundNumber(Math.max(planned - rawOut, 0));
+  if (!name || allocationDyehouse === name) return roundNumber(planned);
+  return 0;
+}
+function scopedDyehouseRowsForPicker(order, dyehouseName) {
+  return (order?.allocations || [])
+    .map((allocation)=>{
+      const scopedQuantity = scopedDyehouseQuantityForPicker(order, allocation, dyehouseName);
+      return scopedQuantity > 0 ? { ...allocation, plannedQuantity:scopedQuantity } : null;
+    })
+    .filter(Boolean);
 }
 function operationNotesKey(type, dyehouseName = '') {
   const name = String(dyehouseName || '').trim();
@@ -6206,7 +6241,7 @@ function renderDyehouseDocumentPicker(order) {
     ${documentHeader()}
     <div class="report-title"><h2>اختيار أمر صباغة</h2><span>اختر المصبغة المطلوبة لفتح أمر تشغيل منفصل لكل مصبغة.</span></div>
     <table><thead><tr><th>المصبغة</th><th>عدد الألوان</th><th>إجمالي كمية الصباغة</th><th>إجراء</th></tr></thead><tbody>${names.map((name)=>{
-      const rows = (order.allocations || []).filter((allocation)=>String(allocation.dyehouse || order.dyehouse || '').trim() === name);
+      const rows = scopedDyehouseRowsForPicker(order, name);
       const quantity = rows.reduce((total, row)=>total + Number(row.plannedQuantity || 0), 0);
       return `<tr><td>${escapeHtml(name)}</td><td>${rows.length}</td><td>${formatNumber(quantity)}</td><td><button class="mini-btn gold" type="button" data-open-dyeing-for="${escapeHtml(name)}">فتح أمر الصباغة</button></td></tr>`;
     }).join('') || emptyRow(4, 'لا توجد مصابغ مرتبطة بهذا الطلب.')}</tbody></table>

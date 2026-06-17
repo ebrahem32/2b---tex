@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.17.08`
+`v2026.06.17.09`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Keep source dyehouse visible after partial raw transfer`
+
+## Latest Partial Dyehouse Source Visibility Fix
+
+- Version: `v2026.06.17.09`.
+- Dyeing document picker now includes both source and target dyehouses for raw balance transfers.
+- Picker quantities now use scoped raw-transfer logic:
+  - target dyehouse shows the transferred quantity.
+  - source dyehouse keeps the remaining quantity after the transfer.
+- Added regression coverage so old partial transfers continue to show the source dyehouse balance.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Restore individual order movement forms`
 
