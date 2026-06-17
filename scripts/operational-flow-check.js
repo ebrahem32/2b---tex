@@ -444,6 +444,7 @@ function checkLegacyPartialTransferUsesActualQuantity() {
     rawReturns: [],
     dyehouseTransfers: [
       { allocationId: 'alloc-width-75', fromDyehouse: 'Star', toDyehouse: 'Biko', quantity: 380.8, date: '2026-05-20', reason: 'تحويل مصبغة' },
+      { orderId: 'other-order', allocationId: 'other-allocation', fromDyehouse: 'Geima', toDyehouse: 'New Geima', quantity: 593.6, date: '2026-05-23', noteNumber: '5454', reason: 'foreign transfer must stay hidden' },
     ],
   };
   const bikoHtml = builders.buildDyeingOrderDocument(order, 'Biko');
@@ -460,6 +461,7 @@ function checkLegacyPartialTransferUsesActualQuantity() {
   assert(fullHtml.includes('off white') && fullHtml.includes('2,100'), 'document: detailed report must show color plan quantities');
   assert(fullHtml.includes('رصيد المخزن') && fullHtml.includes('60'), 'document: detailed report must show warehouse balance');
   assert(fullHtml.includes('داخل المصبغة') && fullHtml.includes('1,719.2'), 'document: detailed report must show dyehouse balance');
+  assert(!fullHtml.includes('593.6') && !fullHtml.includes('other-order'), 'document: detailed report must not include transfers from other orders');
 }
 
 function checkDyehouseTransferKindsAreSeparated() {

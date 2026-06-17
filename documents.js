@@ -441,8 +441,23 @@
       return parts.length ? parts.map(safeText).join(' / ') : '-';
     }
 
+    function transferBelongsToOrder(order, transfer = {}) {
+      const orderId = clean(order?.id);
+      const transferOrderId = clean(transfer.orderId || transfer.order_id);
+      if (orderId && transferOrderId) return transferOrderId === orderId;
+      const allocationIds = new Set(orderAllocations(order).map((line) => line.id).filter(Boolean));
+      const linkedIds = [
+        transferAllocationId(transfer),
+        transfer?.newAllocationId,
+        transfer?.toAllocationId,
+        transfer?.to_allocation_id,
+      ].filter(Boolean);
+      return linkedIds.some((id) => allocationIds.has(id));
+    }
+
     function dyehouseTransfersSection(order) {
-      const transfers = Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [];
+      const transfers = (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
+        .filter((transfer) => transferBelongsToOrder(order, transfer));
       if (!transfers.length) return '';
       const rows = transfers
         .slice()

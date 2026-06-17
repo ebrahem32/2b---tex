@@ -4,6 +4,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Scope Detailed Report Transfers To Current Order
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.12`
+- Goal: prevent dyehouse transfers from unrelated orders appearing in a detailed order report.
+- Change: detailed report transfer history now filters transfers by current order id, with allocation id fallback for older records.
+- Verification coverage: added a regression assertion that a foreign order transfer is hidden from the current order report.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Fix Detailed Report Movements And Balances
 
 - Date: 2026-06-17

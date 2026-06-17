@@ -2,13 +2,25 @@
 
 ## Current Version
 
-`v2026.06.17.11`
+`v2026.06.17.12`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Scope detailed report transfers to current order`
+
+## Latest Detailed Report Transfer Scope Fix
+
+- Version: `v2026.06.17.12`.
+- Detailed order reports now show only dyehouse transfers that belong to the current order.
+- Transfer matching uses the transfer `orderId` when present, and falls back to source/target allocation ids for older transfer records.
+- Added regression coverage so transfers from another order cannot appear in the current order report.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix detailed report movements and balances`
 
