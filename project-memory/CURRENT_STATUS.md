@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.17.06`
+`v2026.06.17.07`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Scope legacy partial dyehouse transfers by quantity`
+
+## Latest Legacy Partial Dyehouse Transfer Fix
+
+- Version: `v2026.06.17.07`.
+- Legacy unmarked dyehouse transfers are now classified by quantity when no explicit marker exists.
+- If an old transfer has no new allocation and its quantity is less than the source color/width quantity, it is treated as physical raw balance transfer, not as moving the full color.
+- Dyeing operation documents now build scoped rows per dyehouse:
+  - source dyehouse keeps the remaining part after raw transfer.
+  - target dyehouse shows only the transferred quantity.
+- Allocation runtime balances also prefer actual incoming raw-transfer quantity when an old partial transfer left the allocation on the target dyehouse.
+- Regression coverage now includes a legacy partial transfer case to prevent showing the full allocation as transferred.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Prioritize allocation dyehouse transfers over raw text`
 

@@ -420,6 +420,31 @@ function checkDyeingDocumentSplitsMultiDyehouseOrder() {
   assert(!geimaHtml.includes('white'), 'document: Geima must not include New Geima colors');
 }
 
+function checkLegacyPartialTransferUsesActualQuantity() {
+  const builders = createDocumentBuilders();
+  const order = {
+    id: 'order-document-legacy-transfer',
+    orderNumber: 'DOC-LEGACY-TRANSFER',
+    orderDate: '2026-06-17',
+    customer: 'Test',
+    fabricType: 'Mixed',
+    dyehouse: 'Star',
+    totalRawOrdered: 4100,
+    allocations: [
+      { id: 'alloc-width-75', orderId: 'order-document-legacy-transfer', color: 'off white', plannedQuantity: 2100, dyehouse: 'Biko', sentToDyehouse: 2100, remainingAtDyehouse: 2100, targetFinishedWidth: 75, targetFinishedWeight: 140 },
+    ],
+    rawBatches: [{ orderId: 'order-document-legacy-transfer', allocationId: null, date: '2026-05-20', quantity: 4180, noteNumber: '5454' }],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [
+      { allocationId: 'alloc-width-75', fromDyehouse: 'Star', toDyehouse: 'Biko', quantity: 380.8, date: '2026-05-20', reason: 'تحويل مصبغة' },
+    ],
+  };
+  const bikoHtml = builders.buildDyeingOrderDocument(order, 'Biko');
+  assert(bikoHtml.includes('380.8'), 'document: legacy partial dyehouse transfer must use the transferred raw quantity');
+  assert(!bikoHtml.includes('2,100'), 'document: legacy partial dyehouse transfer must not show the full allocation as transferred');
+}
+
 function checkDyehouseTransferKindsAreSeparated() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
@@ -434,7 +459,8 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes("mode:'raw'"), 'transfers: raw transfer must be saved without allocation splitting');
   assert(documentsSource.includes('const transferTextLooksRaw = (value) =>'), 'documents: legacy raw-transfer notes must be recognized');
   assert(documentsSource.includes("if (text.includes('[allocation-transfer]')) return false"), 'documents: allocation transfer must not be counted as physical raw transfer');
-  assert(documentsSource.includes('const isRawTransfer = (transfer) => transferKind(transfer) ==='), 'documents: dyeing documents must distinguish physical raw transfers');
+  assert(documentsSource.includes('const isRawTransfer = (transfer, order = null) => transferKind(transfer, order) ==='), 'documents: dyeing documents must distinguish physical raw transfers with order context');
+  assert(documentsSource.includes('function dyehouseScopedAllocations(order, dyehouseName)'), 'documents: dyeing documents must scope color rows by dyehouse transfer quantities');
   assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
   assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');
 }
@@ -670,6 +696,7 @@ checkAllocationLinkedRawDispatchStaysPerColor();
 checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
 checkDyeingDocumentSplitsMultiDyehouseOrder();
+checkLegacyPartialTransferUsesActualQuantity();
 checkDyehouseTransferKindsAreSeparated();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();

@@ -111,6 +111,30 @@
       };
     }
 
+    function transferText(transfer = {}) {
+      return String(`${transfer.mode || ''} ${transfer.reason || ''} ${transfer.notes || ''}`);
+    }
+
+    function transferTextLooksRaw(transfer = {}) {
+      const text = transferText(transfer);
+      if (text.includes('[allocation-transfer]')) return false;
+      return text.includes('[raw-transfer]')
+        || /\braw\b/i.test(text)
+        || text.includes('\u062e\u0631\u0648\u062c \u062e\u0627\u0645')
+        || text.includes('\u0646\u0642\u0644 \u062e\u0627\u0645');
+    }
+
+    function transferKindForAllocation(transfer = {}, allocation = null) {
+      const text = transferText(transfer);
+      if (text.includes('[allocation-transfer]')) return 'allocation';
+      if (transferTextLooksRaw(transfer)) return 'raw';
+      if (transfer.newAllocationId) return 'allocation';
+      const planned = Number(allocation?.plannedQuantity || 0);
+      const quantity = Number(transfer.quantity || 0);
+      if (planned && quantity > 0 && quantity < planned - 0.01) return 'raw';
+      return 'allocation';
+    }
+
     function calculateAllocation(allocation = {}, orderContext = null) {
       const data = state();
       const order = orderContext || data.orders.find((item)=>item.id===allocation.orderId) || {};
@@ -138,7 +162,12 @@
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
       const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
-      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), returnedFromGluing:roundNumber(returnedFromGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(gluingMetrics.balance), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(sent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:remainingPhysical(dyehouseTarget, finished + rawReturned + actualWaste), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
+      const rawTransfers = transfers.filter((transfer) => transferKindForAllocation(transfer, allocation) === 'raw');
+      const allocationDyehouse = String(allocation.dyehouse || order.dyehouse || '').trim();
+      const rawTransferredIn = sum(rawTransfers.filter((transfer) => String(transfer.toDyehouse || '').trim() === allocationDyehouse));
+      const scopedSent = rawTransferredIn > 0 ? roundNumber(rawTransferredIn) : sent;
+      const scopedTarget = rawTransferredIn > 0 ? scopedSent : dyehouseTarget;
+      return { ...allocation, transfers, rawReturned:roundNumber(rawReturned), sentToGluing:roundNumber(sentToGluing), returnedFromGluing:roundNumber(returnedFromGluing), receivedFromGluing:roundNumber(receivedFromGluing), gluingBalance:roundNumber(gluingMetrics.balance), transferredQuantity:roundNumber(sum(transfers)), sentToDyehouse:roundNumber(scopedSent), finishedReceived:roundNumber(finished), deliveredToCustomer:roundNumber(deliveredToCustomer), customerDelivered:roundNumber(deliveredToCustomer), remainingAtDyehouse:remainingPhysical(scopedTarget, finished + rawReturned + actualWaste), actualWasteQuantity:roundNumber(actualWaste), actualWastePercent, wasteQuantity:roundNumber(actualWaste), wastePercent:actualWastePercent };
     }
 
     function expectedWasteFor(order, quantity) {

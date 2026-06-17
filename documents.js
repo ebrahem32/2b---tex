@@ -34,13 +34,23 @@
         || text.includes('\u062e\u0631\u0648\u062c \u062e\u0627\u0645')
         || text.includes('\u0646\u0642\u0644 \u062e\u0627\u0645');
     };
-    const transferKind = (transfer) => {
+    function sourceAllocationForTransfer(order, transfer) {
+      const id = transfer?.allocationId || transfer?.fromAllocationId || transfer?.from_allocation_id;
+      return orderAllocations(order).find((allocation) => allocation.id === id) || null;
+    }
+
+    const transferKind = (transfer, order = null) => {
       const text = clean(`${transfer?.mode || ''} ${transfer?.reason || ''} ${transfer?.notes || ''}`);
       if (text.includes('[allocation-transfer]')) return 'allocation';
       if (transferTextLooksRaw(text)) return 'raw';
+      if (transfer?.newAllocationId || transfer?.toAllocationId || transfer?.to_allocation_id) return 'allocation';
+      const sourceAllocation = order ? sourceAllocationForTransfer(order, transfer) : null;
+      const planned = Number(sourceAllocation?.plannedQuantity || 0);
+      const quantity = Number(transfer?.quantity || 0);
+      if (planned && quantity > 0 && quantity < planned - 0.01) return 'raw';
       return 'allocation';
     };
-    const isRawTransfer = (transfer) => transferKind(transfer) === 'raw';
+    const isRawTransfer = (transfer, order = null) => transferKind(transfer, order) === 'raw';
     const customerName = (order) => clean(order?.customer || order?.customerName || order?.clientName || '');
     const fallbackAccessoryName = (line, order) => clean(line?.type || order?.accessoryType || 'إكسسوار');
     const resolvedAccessoryName = (line, order) => (
@@ -245,6 +255,42 @@
       ));
     }
 
+    function transferAllocationId(transfer = {}) {
+      return transfer.allocationId || transfer.fromAllocationId || transfer.from_allocation_id || '';
+    }
+
+    function rawTransfersForAllocation(order, allocation) {
+      const allocationId = allocation?.id;
+      if (!allocationId) return [];
+      return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
+        .filter((transfer) => transferAllocationId(transfer) === allocationId && isRawTransfer(transfer, order));
+    }
+
+    function scopedAllocationQuantity(order, allocation, dyehouseName) {
+      const name = clean(dyehouseName);
+      const planned = Number(allocation?.plannedQuantity || 0);
+      const allocationDyehouse = clean(allocation?.dyehouse || order?.dyehouse);
+      const rawTransfers = rawTransfersForAllocation(order, allocation);
+      const rawIn = sum(rawTransfers.filter((transfer) => clean(transfer.toDyehouse) === name));
+      const rawOut = sum(rawTransfers.filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
+      if (rawIn > 0) return roundNumber(rawIn);
+      if (rawOut > 0) return roundNumber(Math.max(planned - rawOut, 0));
+      if (!name || allocationDyehouse === name) return roundNumber(planned);
+      return 0;
+    }
+
+    function dyehouseScopedAllocations(order, dyehouseName) {
+      return orderAllocations(order)
+        .map((allocation) => {
+          const scopedQuantity = scopedAllocationQuantity(order, allocation, dyehouseName);
+          const hasRawTransfers = rawTransfersForAllocation(order, allocation).length > 0;
+          return scopedQuantity > 0
+            ? { ...allocation, plannedQuantity: scopedQuantity, sentToDyehouse: scopedQuantity, ...(hasRawTransfers ? { remainingAtDyehouse: scopedQuantity } : {}) }
+            : null;
+        })
+        .filter(Boolean);
+    }
+
     function transferNoteNumber(transfer) {
       const direct = String(transfer?.noteNumber || '').trim();
       if (direct) return direct;
@@ -265,7 +311,7 @@
     function dyehouseRawNoteList(order, dyehouseName, isOriginalDyehouse) {
       const name = clean(dyehouseName);
       const transfersToDyehouse = dyehouseTransfersFor(order, dyehouseName);
-      const rows = orderAllocations(order).filter((allocation) => allocationMatchesDyehouse(order, allocation, name, transfersToDyehouse));
+      const rows = dyehouseScopedAllocations(order, name);
       const rowAllocationIds = new Set(rows.map((allocation) => allocation.id).filter(Boolean));
       const rowRawNotes = rawBatchesFor(order)
         .filter((batch) => !batch.allocationId || rowAllocationIds.has(batch.allocationId))
@@ -273,7 +319,7 @@
       const transferNotes = transfersToDyehouse.map((transfer) => transferNoteNumber(transfer));
       if (!isOriginalDyehouse) return uniqueNonEmpty([...rowRawNotes, ...transferNotes]);
       const outgoingTransferNotes = new Set(uniqueNonEmpty((Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
-        .filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name)
+        .filter((transfer) => isRawTransfer(transfer, order) && clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name)
         .map((transfer) => transferNoteNumber(transfer))).map((note) => clean(note)));
       return rowRawNotes
         .filter((note) => !outgoingTransferNotes.has(clean(note)));
@@ -283,8 +329,8 @@
       const name = clean(dyehouseName);
       const rowAllocationIds = new Set(rows.map((allocation) => allocation.id).filter(Boolean));
       const rowBatchSum = (items) => sum((Array.isArray(items) ? items : []).filter((batch) => rowAllocationIds.has(batch.allocationId)));
-      const transferredOut = sum((order?.dyehouseTransfers || []).filter((transfer) => isRawTransfer(transfer) && clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
-      const transferredIn = sum((transfersToDyehouse || []).filter(isRawTransfer));
+      const transferredOut = sum((order?.dyehouseTransfers || []).filter((transfer) => isRawTransfer(transfer, order) && clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
+      const transferredIn = sum((transfersToDyehouse || []).filter((transfer) => isRawTransfer(transfer, order)));
       const sentFromRows = roundNumber(sum(rows.map((allocation) => ({ quantity: Number(allocation.sentToDyehouse || 0) }))));
       const sentToDyehouse = transferredIn || sentFromRows || (isOriginalDyehouse
         ? roundNumber(Math.max(rowBatchSum(rawBatchesFor(order)) - transferredOut, 0))
@@ -331,7 +377,7 @@
       const originalDyehouse = clean(order?.dyehouse);
       const isOriginalDyehouse = !name || name === originalDyehouse;
       const transfersToDyehouse = dyehouseTransfersFor(order, name);
-      const rows = orderAllocations(order).filter((allocation) => allocationMatchesDyehouse(order, allocation, name, transfersToDyehouse));
+      const rows = dyehouseScopedAllocations(order, name);
       const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
       const rawTotal = dyehouseDocumentBalance(order, rows, name, isOriginalDyehouse, transfersToDyehouse);
       const dates = isOriginalDyehouse ? rawBatchesFor(order).map((batch) => batch.date) : transfersToDyehouse.map((transfer) => transfer.transferDate || transfer.date);

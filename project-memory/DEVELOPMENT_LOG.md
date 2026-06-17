@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Scope Legacy Partial Dyehouse Transfers By Quantity
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.07`
+- Goal: stop old partial dyehouse balance transfers from making the whole color/width look transferred.
+- Change: legacy unmarked transfers with quantity lower than the source allocation quantity are treated as physical raw transfers.
+- Change: dyeing operation documents now scope each dyehouse row by the actual transferred quantity, keeping the source balance separate from the target balance.
+- Change: allocation runtime balances prefer actual incoming raw-transfer quantity for old partial transfers that previously moved the allocation label.
+- Verification coverage: added a regression case for old partial transfers without explicit markers.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Prioritize Allocation Dyehouse Transfers Over Raw Text
 
 - Date: 2026-06-17
