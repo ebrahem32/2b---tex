@@ -1073,6 +1073,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: all separated operational rows still open the same order details workflow and keep the same edit/delete actions.
 - Test: added operational-flow coverage to prevent returning to one shared operational list panel.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Fix Scoped Dyehouse Transfer Ledger
+
+- Date: 2026-06-17
+- Commit: pending.
+- Version: `v2026.06.17.18`
+- Goal: make order detail screens show both source and target dyehouse balances after partial dyehouse transfers.
+- Change: order detail rows now build a per-color dyehouse ledger from raw transfer movements instead of trusting the current allocation dyehouse only.
+- Change: legacy partial transfers keep the original source dyehouse visible with the remaining balance and show the target dyehouse with the transferred quantity.
+- Change: `نقل مصبغة` now starts with an explicit dialog for `نقل خام` or `نقل لون`, with the old prompt retained only as a browser fallback.
+- Test: `npm run check` passes and operational-flow regression coverage was updated.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
 ### Fix Grouped Pricing Save Verification
 
 - Date: 2026-06-16

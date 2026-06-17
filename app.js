@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.17';
-const APP_BUILD_TIME = '2026-06-17 23:05';
+const APP_VERSION = 'v2026.06.17.18';
+const APP_BUILD_TIME = '2026-06-17 23:35';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -5423,21 +5423,66 @@ async function editAllocation(id) {
   await loadBackendData();
 }
 
+function chooseDyehouseTransferType() {
+  const fallbackPrompt = () => {
+    const value = prompt('\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646', '1');
+    if (value === null) return null;
+    const normalized = String(value).trim();
+    if (/^1\b|\u062e\u0627\u0645/.test(normalized)) return 'raw';
+    if (/^2\b|\u0644\u0648\u0646/.test(normalized)) return 'allocation';
+    alert('\u0627\u062e\u062a\u0631 1 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0623\u0648 2 \u0644\u0646\u0642\u0644 \u0644\u0648\u0646.');
+    return null;
+  };
+  if (typeof document === 'undefined' || !document.createElement || typeof HTMLDialogElement === 'undefined') {
+    return Promise.resolve(fallbackPrompt());
+  }
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'transfer-choice-dialog';
+    dialog.innerHTML = `
+      <form method="dialog" class="transfer-choice-card" dir="rtl">
+        <button class="mini-btn transfer-choice-close" type="button" data-transfer-choice="">\u0625\u063a\u0644\u0627\u0642</button>
+        <h3>\u0646\u0642\u0644 \u0645\u0635\u0628\u063a\u0629</h3>
+        <p>\u0627\u062e\u062a\u0631 \u0647\u0644 \u0627\u0644\u062d\u0631\u0643\u0629 \u0646\u0642\u0644 \u062e\u0627\u0645 \u0641\u0639\u0644\u064a \u0628\u064a\u0646 \u0645\u0635\u0628\u063a\u062a\u064a\u0646 \u0623\u0645 \u0646\u0642\u0644 \u0644\u0648\u0646 \u0645\u0646 \u062e\u0637\u0629 \u0627\u0644\u0623\u0648\u0631\u062f\u0631.</p>
+        <div class="transfer-choice-actions">
+          <button class="mini-btn gold" type="button" data-transfer-choice="raw">\u0646\u0642\u0644 \u062e\u0627\u0645</button>
+          <button class="mini-btn" type="button" data-transfer-choice="allocation">\u0646\u0642\u0644 \u0644\u0648\u0646</button>
+        </div>
+      </form>`;
+    const finish = (value) => {
+      dialog.close();
+      dialog.remove();
+      resolve(value || null);
+    };
+    dialog.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-transfer-choice]');
+      if (!button) return;
+      finish(button.dataset.transferChoice || null);
+    });
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      finish(null);
+    });
+    document.body.appendChild(dialog);
+    try {
+      dialog.showModal();
+    } catch (error) {
+      dialog.remove();
+      resolve(fallbackPrompt());
+    }
+  });
+}
+
 async function transferAllocationDyehouse(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   const order = calculateOrder(orders.find((item)=>item.id===allocation.orderId));
   const calculated = order.allocations.find((item)=>item.id===id) || calculateAllocation(allocation);
   const currentDyehouse = allocation.dyehouse || order.dyehouse || '';
-  const transferTypeValue = prompt('\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646', '1');
-  if (transferTypeValue === null) return;
-  const normalizedTransferType = String(transferTypeValue).trim();
-  const isRawTransfer = /^1\b|\u062e\u0627\u0645/.test(normalizedTransferType);
-  const isAllocationTransfer = /^2\b|\u0644\u0648\u0646/.test(normalizedTransferType);
-  if (!isRawTransfer && !isAllocationTransfer) {
-    alert('\u0627\u062e\u062a\u0631 1 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0623\u0648 2 \u0644\u0646\u0642\u0644 \u0644\u0648\u0646.');
-    return;
-  }
+  const normalizedTransferType = await chooseDyehouseTransferType();
+  if (!normalizedTransferType) return;
+  const isRawTransfer = normalizedTransferType === 'raw';
+  const isAllocationTransfer = normalizedTransferType === 'allocation';
   const newDyehouseValue = prompt('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629', currentDyehouse);
   if (newDyehouseValue === null) return;
   const newDyehouse = newDyehouseValue.trim();
@@ -5812,19 +5857,42 @@ function isRawTransferForScopedDyehouse(transfer = {}, allocation = {}) {
 }
 function scopedDyehouseQuantityForPicker(order, allocation, dyehouseName) {
   const name = String(dyehouseName || '').trim();
-  const planned = Number(allocation?.plannedQuantity || 0);
-  const allocationDyehouse = String(allocation?.dyehouse || order?.dyehouse || '').trim();
-  const rawTransfers = dyehouseTransfers.filter((transfer)=>(
+  const segment = scopedDyehouseSegmentsForAllocation(order, allocation).find((item)=>item.dyehouse === name);
+  return roundNumber(segment?.quantity || 0);
+}
+function scopedDyehouseTransfersForAllocation(order, allocation) {
+  return dyehouseTransfers.filter((transfer)=>(
     transferBelongsToOrderScope(order, transfer)
     && transferAllocationIdForScope(transfer) === allocation?.id
     && isRawTransferForScopedDyehouse(transfer, allocation)
   ));
-  const rawIn = sum(rawTransfers.filter((transfer)=>String(transfer.toDyehouse || '').trim() === name));
-  const rawOut = sum(rawTransfers.filter((transfer)=>String(transfer.fromDyehouse || '').trim() === name && String(transfer.toDyehouse || '').trim() !== name));
-  if (rawIn > 0) return roundNumber(rawIn);
-  if (rawOut > 0) return roundNumber(Math.max(planned - rawOut, 0));
-  if (!name || allocationDyehouse === name) return roundNumber(planned);
-  return 0;
+}
+function scopedDyehouseSegmentsForAllocation(order, allocation) {
+  const planned = Number(allocation?.plannedQuantity || 0);
+  const rawTransfers = scopedDyehouseTransfersForAllocation(order, allocation);
+  const allocationDyehouse = String(allocation?.dyehouse || order?.dyehouse || '').trim();
+  const firstSourceDyehouse = String(rawTransfers.find((transfer)=>String(transfer.fromDyehouse || '').trim())?.fromDyehouse || '').trim();
+  const baseDyehouse = firstSourceDyehouse || allocationDyehouse;
+  const ledger = new Map();
+  const add = (dyehouseName, quantity) => {
+    const name = String(dyehouseName || '').trim();
+    if (!name) return;
+    ledger.set(name, roundNumber(Number(ledger.get(name) || 0) + Number(quantity || 0)));
+  };
+  add(baseDyehouse, planned);
+  rawTransfers.forEach((transfer) => {
+    const quantity = Number(transfer.quantity || 0);
+    const fromName = String(transfer.fromDyehouse || '').trim();
+    const toName = String(transfer.toDyehouse || '').trim();
+    if (fromName && toName && fromName !== toName) {
+      add(fromName, -quantity);
+      add(toName, quantity);
+    }
+  });
+  if (!rawTransfers.length && !ledger.size) add(allocationDyehouse, planned);
+  return [...ledger.entries()]
+    .map(([dyehouse, quantity])=>({ dyehouse, quantity:roundNumber(Math.max(Number(quantity || 0), 0)) }))
+    .filter((item)=>item.quantity > 0);
 }
 function scopedDyehouseRowsForPicker(order, dyehouseName) {
   return (order?.allocations || [])
@@ -5835,20 +5903,14 @@ function scopedDyehouseRowsForPicker(order, dyehouseName) {
     .filter(Boolean);
 }
 function scopedOrderDetailAllocationRows(order) {
-  const names = dyehouseNamesForOrder(order);
   const rows = [];
   (order?.allocations || []).forEach((allocation) => {
-    const rawTransfers = dyehouseTransfers.filter((transfer)=>(
-      transferBelongsToOrderScope(order, transfer)
-      && transferAllocationIdForScope(transfer) === allocation.id
-      && isRawTransferForScopedDyehouse(transfer, allocation)
-    ));
+    const rawTransfers = scopedDyehouseTransfersForAllocation(order, allocation);
     if (!rawTransfers.length) {
       rows.push({ ...allocation, sourceAllocation:allocation, scopedDyehouse:allocation.dyehouse || order?.dyehouse || '', scopedQuantity:Number(allocation.plannedQuantity || 0) });
       return;
     }
-    names.forEach((name) => {
-      const scopedQuantity = scopedDyehouseQuantityForPicker(order, allocation, name);
+    scopedDyehouseSegmentsForAllocation(order, allocation).forEach(({ dyehouse:name, quantity:scopedQuantity }) => {
       if (scopedQuantity <= 0) return;
       const isReceiptDyehouse = String(allocation.dyehouse || order?.dyehouse || '').trim() === String(name || '').trim();
       rows.push({

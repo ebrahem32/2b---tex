@@ -559,8 +559,10 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes('function transferRecordMode(transfer)'), 'transfers: repair must use normalized transfer kind, not stale mode values');
   assert(appSource.includes("text.includes('\\u062e\\u0631\\u0648\\u062c \\u062e\\u0627\\u0645')"), 'transfers: legacy خروج خام notes must be treated as raw transfer');
   assert(appSource.includes("allocation.dyehouse = fromDyehouse"), 'transfers: raw transfer repair must keep the allocation at its original dyehouse');
-  assert(appSource.includes('const isRawTransfer = /^1'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
-  assert(appSource.includes('1 - \\u0646\\u0642\\u0644 \\u062e\\u0627\\u0645\\n2 - \\u0646\\u0642\\u0644 \\u0644\\u0648\\u0646'), 'transfers: transfer button must first show clear raw/color choices');
+  assert(appSource.includes('function chooseDyehouseTransferType()'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
+  assert(appSource.includes('data-transfer-choice="raw"'), 'transfers: transfer dialog must expose a raw movement choice');
+  assert(appSource.includes('data-transfer-choice="allocation"'), 'transfers: transfer dialog must expose a color/allocation movement choice');
+  assert(appSource.includes('1 - \\u0646\\u0642\\u0644 \\u062e\\u0627\\u0645\\n2 - \\u0646\\u0642\\u0644 \\u0644\\u0648\\u0646'), 'transfers: fallback prompt must keep clear raw/color choices');
   assert(appSource.includes("mode:'raw'"), 'transfers: raw transfer must be saved without allocation splitting');
   assert(documentsSource.includes('const transferTextLooksRaw = (value) =>'), 'documents: legacy raw-transfer notes must be recognized');
   assert(documentsSource.includes("if (text.includes('[allocation-transfer]')) return false"), 'documents: allocation transfer must not be counted as physical raw transfer');
@@ -569,6 +571,8 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
   assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');
   assert(appSource.includes('function scopedOrderDetailAllocationRows(order)'), 'ui: order detail color plan must split balances by scoped dyehouse rows');
+  assert(appSource.includes('function scopedDyehouseSegmentsForAllocation(order, allocation)'), 'ui: order detail must build a dyehouse balance ledger for each color');
+  assert(appSource.includes('const firstSourceDyehouse = String(rawTransfers.find'), 'ui: legacy partial transfers must keep the original source dyehouse visible');
   assert(appSource.includes('body.innerHTML = scopedOrderDetailAllocationRows(order).map'), 'ui: order detail color plan must render scoped dyehouse rows');
   assert(appSource.includes('transferBelongsToOrderScope(order, transfer)'), 'ui: order detail dyehouse rows must reject foreign order transfers');
 }

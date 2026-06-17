@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.17.17`
+`v2026.06.17.18`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix scoped dyehouse transfer ledger`
+
+## Latest Scoped Dyehouse Transfer Ledger Fix
+
+- Version: `v2026.06.17.18`.
+- Order detail color/balance rows now build a per-color dyehouse ledger from transfer movements.
+- Legacy partial dyehouse transfers now keep the source dyehouse visible with its remaining balance and show the target dyehouse with the transferred quantity.
+- The `نقل مصبغة` action now opens an explicit two-choice dialog:
+  - `نقل خام`
+  - `نقل لون`
+- Navigation actions were reviewed; every sidebar `data-nav-action` has a handler, including `عروض الأسعار`.
+- Added regression coverage for the new dyehouse ledger and the transfer-type dialog.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix pricing list navigation`
 
