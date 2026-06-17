@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Show Dyehouse Balance Distribution In Detailed Report
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.13`
+- Goal: make detailed reports show how a physical raw transfer splits the same order between dyehouses.
+- Change: added a dyehouse distribution section to the detailed report.
+- Change: raw-transfer document calculations are scoped to the current order before distributing source and target dyehouse balances.
+- Example: 1,000 kg at Geima and 300 kg transferred to New Geima displays Geima 700 kg and New Geima 300 kg.
+- Verification coverage: added a regression assertion for the 1,000 -> 700/300 split.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Scope Detailed Report Transfers To Current Order
 
 - Date: 2026-06-17

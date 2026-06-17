@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.17.12`
+`v2026.06.17.13`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Show dyehouse balance distribution in detailed report`
+
+## Latest Detailed Report Dyehouse Distribution Fix
+
+- Version: `v2026.06.17.13`.
+- Detailed order reports now include a dyehouse distribution section.
+- Physical raw transfers split the operational balance by dyehouse:
+  - Example: 1,000 kg in Geima, then 300 kg transferred to New Geima, displays Geima 700 kg and New Geima 300 kg.
+- Raw-transfer calculations in documents are scoped to the current order before distributing balances.
+- Added regression coverage for the 1,000 -> 700/300 dyehouse split scenario.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Scope detailed report transfers to current order`
 

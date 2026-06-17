@@ -246,7 +246,8 @@
 
     function dyehouseTransfersFor(order, dyehouseName) {
       const name = clean(dyehouseName);
-      return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : []).filter((transfer) => clean(transfer.toDyehouse) === name);
+      return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
+        .filter((transfer) => transferBelongsToOrder(order, transfer) && clean(transfer.toDyehouse) === name);
     }
 
     function allocationMatchesDyehouse(order, allocation, dyehouseName, transfersToDyehouse = []) {
@@ -269,7 +270,7 @@
       const allocationId = allocation?.id;
       if (!allocationId) return [];
       return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
-        .filter((transfer) => transferAllocationId(transfer) === allocationId && isRawTransfer(transfer, order));
+        .filter((transfer) => transferBelongsToOrder(order, transfer) && transferAllocationId(transfer) === allocationId && isRawTransfer(transfer, order));
     }
 
     function scopedAllocationQuantity(order, allocation, dyehouseName) {
@@ -470,10 +471,37 @@
       return `<section class="report-section"><h3>تحويلات المصبغة</h3><table class="summary-table"><thead><tr><th>التاريخ</th><th>نوع التحويل</th><th>من مصبغة</th><th>إلى مصبغة</th><th>اللون / العرض</th><th>الكمية</th><th>رقم الإذن</th><th>ملاحظات</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     }
 
+    function dyehouseNamesForDetailedReport(order) {
+      const transferNames = (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
+        .filter((transfer) => transferBelongsToOrder(order, transfer))
+        .flatMap((transfer) => [transfer.fromDyehouse, transfer.toDyehouse]);
+      return uniqueNonEmpty([
+        order?.dyehouse,
+        ...orderAllocations(order).map((allocation) => allocation.dyehouse || order?.dyehouse),
+        ...transferNames,
+      ]);
+    }
+
+    function dyehouseDistributionSection(order) {
+      const names = dyehouseNamesForDetailedReport(order);
+      if (!names.length) return '';
+      const originalDyehouse = clean(order?.dyehouse);
+      const rows = names.map((name) => {
+        const scopedRows = dyehouseScopedAllocations(order, name);
+        if (!scopedRows.length) return '';
+        const plannedTotal = roundNumber(scopedRows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
+        const transfersToDyehouse = dyehouseTransfersFor(order, name);
+        const rawBalance = dyehouseDocumentBalance(order, scopedRows, name, !name || clean(name) === originalDyehouse, transfersToDyehouse);
+        const colors = uniqueNonEmpty(scopedRows.map((allocation) => allocation.color || allocation.pantoneCode)).join('، ');
+        return `<tr><td>${safeText(name)}</td><td>${fmt(plannedTotal)}</td><td>${fmt(rawBalance)}</td><td>${scopedRows.length}</td><td>${safeText(colors)}</td></tr>`;
+      }).filter(Boolean).join('');
+      return rows ? `<section class="report-section"><h3>توزيع الرصيد على المصابغ</h3><table class="summary-table"><thead><tr><th>المصبغة</th><th>طلب العميل داخل المصبغة</th><th>الرصيد داخل المصبغة</th><th>عدد الألوان</th><th>الألوان</th></tr></thead><tbody>${rows}</tbody></table></section>` : '';
+    }
+
     function buildCompactFullReportDocument(order) {
       const dyehouseBalance = Number(order?.rawAtDyehouseAvailable ?? order?.remainingAtDyehouse ?? 0);
       const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام خرج للمصبغة</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>داخل المصبغة</th><td>${fmt(dyehouseBalance)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order?.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td></tr><tr><th>هالك فعلي</th><td>${fmt(order?.totalWaste)}</td><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td></tr></tbody></table></section>`;
-      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeDyehouse:true, includeReceived:true, includeCustomerDelivered:true, includeWarehouseBalance:true, includeWaste:true })}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
+      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${dyehouseDistributionSection(order)}${colorRows(order, orderAllocations(order), { includeDyehouse:true, includeReceived:true, includeCustomerDelivered:true, includeWarehouseBalance:true, includeWaste:true })}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
     }
 
     function buildWasteReportDocument(order) {

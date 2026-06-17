@@ -464,6 +464,35 @@ function checkLegacyPartialTransferUsesActualQuantity() {
   assert(!fullHtml.includes('593.6') && !fullHtml.includes('other-order'), 'document: detailed report must not include transfers from other orders');
 }
 
+function checkDetailedReportSplitsRawTransferByDyehouse() {
+  const builders = createDocumentBuilders();
+  const order = {
+    id: 'order-detailed-transfer-split',
+    orderNumber: 'DOC-TRANSFER-SPLIT',
+    customer: 'Customer',
+    fabricType: 'Fabric',
+    dyehouse: 'Geima',
+    totalRawOrdered: 1000,
+    totalRawReceived: 1000,
+    rawAtDyehouseAvailable: 1000,
+    totalFinishedReceived: 0,
+    warehouseBalance: 0,
+    allocations: [
+      { id: 'alloc-transfer-split', orderId: 'order-detailed-transfer-split', color: 'main', plannedQuantity: 1000, dyehouse: 'Geima', sentToDyehouse: 1000, remainingAtDyehouse: 1000, targetFinishedWidth: 160, targetFinishedWeight: 270 },
+    ],
+    rawBatches: [{ orderId: 'order-detailed-transfer-split', allocationId: null, date: '2026-06-17', quantity: 1000, noteNumber: '1' }],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [
+      { orderId: 'order-detailed-transfer-split', allocationId: 'alloc-transfer-split', fromDyehouse: 'Geima', toDyehouse: 'New Geima', quantity: 300, date: '2026-06-17', reason: 'تحويل مصبغة' },
+    ],
+  };
+  const fullHtml = builders.buildCompactFullReportDocument(order);
+  assert(fullHtml.includes('توزيع الرصيد على المصابغ'), 'document: detailed report must include dyehouse distribution section');
+  assert(fullHtml.includes('<td>Geima</td><td>700</td><td>700</td>'), 'document: detailed report source dyehouse must show 700 after transferring 300 from 1000');
+  assert(fullHtml.includes('<td>New Geima</td><td>300</td><td>300</td>'), 'document: detailed report target dyehouse must show 300 after receiving transfer');
+}
+
 function checkDyehouseTransferKindsAreSeparated() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
@@ -716,6 +745,7 @@ checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
 checkDyeingDocumentSplitsMultiDyehouseOrder();
 checkLegacyPartialTransferUsesActualQuantity();
+checkDetailedReportSplitsRawTransferByDyehouse();
 checkDyehouseTransferKindsAreSeparated();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
