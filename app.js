@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.18.01';
-const APP_BUILD_TIME = '2026-06-18 00:25';
+const APP_VERSION = 'v2026.06.18.02';
+const APP_BUILD_TIME = '2026-06-18 01:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -90,7 +90,7 @@ const defaults = {
   pricings: [],
   customerAccounts: {},
   reportOutbox: [],
-  whatsappSettings: { weavingGroupName: '2B - النسيج', dyeingGroupName: '2B - المصبغة', dyehousesReportGroupName: 'اوردارات 2B', dyehouseGroups: {}, weavingGroups: {}, customerGroups: {}, sendingEnabled: false },
+  whatsappSettings: { weavingGroupName: '2B - النسيج', dyeingGroupName: '2B - المصبغة', dyehousesReportGroupName: 'اوردارات 2B', dyehouseGroups: {}, weavingGroups: {}, customerGroups: {}, sendingEnabled: false, scheduledReports: { enabled:false, time:'09:00', groupName:'', includeOperations:true, includeDyehouse:true, includeReady:true, includeDelayed:true, includeWaste:true, lastRunKey:'' } },
   fabricMaster: [],
   auditLog: [],
   whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '', qrDataUrl: '' },
@@ -129,6 +129,7 @@ let whatsappStatus = (() => {
   catch { return clone(defaults.whatsappStatus); }
 })();
 let whatsappSettingsRefreshTimer = null;
+let whatsappScheduleTimer = null;
 if (!Array.isArray(reportOutbox)) reportOutbox = clone(defaults.reportOutbox);
 if (!Array.isArray(auditLog)) auditLog = clone(defaults.auditLog);
 if (!Array.isArray(customerBatches)) customerBatches = clone(defaults.customer);
@@ -184,6 +185,8 @@ function ensureRuntimeCollections() {
   if (!whatsappSettings.dyehouseGroups || typeof whatsappSettings.dyehouseGroups !== 'object' || Array.isArray(whatsappSettings.dyehouseGroups)) whatsappSettings.dyehouseGroups = {};
   if (!whatsappSettings.weavingGroups || typeof whatsappSettings.weavingGroups !== 'object' || Array.isArray(whatsappSettings.weavingGroups)) whatsappSettings.weavingGroups = {};
   if (!whatsappSettings.customerGroups || typeof whatsappSettings.customerGroups !== 'object' || Array.isArray(whatsappSettings.customerGroups)) whatsappSettings.customerGroups = {};
+  if (!whatsappSettings.scheduledReports || typeof whatsappSettings.scheduledReports !== 'object' || Array.isArray(whatsappSettings.scheduledReports)) whatsappSettings.scheduledReports = {};
+  whatsappSettings.scheduledReports = { ...defaults.whatsappSettings.scheduledReports, ...whatsappSettings.scheduledReports };
   if (!whatsappStatus || typeof whatsappStatus !== 'object' || Array.isArray(whatsappStatus)) whatsappStatus = clone(defaults.whatsappStatus);
   whatsappStatus = { ...defaults.whatsappStatus, ...whatsappStatus };
 }
@@ -1058,6 +1061,7 @@ const reportTypeLabels = {
   dyehouses_report: 'تقرير المصابغ',
   orders_follow_report: 'تقرير متابعة الطلبات',
   dyehouse_balances_report: 'تقرير أرصدة المصابغ',
+  scheduled_operations_report: 'تقرير التشغيل الدوري',
   document_pdf_report: 'تقرير PDF',
 };
 const reportTypeIcons = { pending:'•', sending:'…', sent:'✓', failed:'!', cancelled:'×' };
@@ -1350,6 +1354,114 @@ function refreshQueuedReportRows(reportType, order, attachmentPath = '') {
       row.messageText = reportMessage(reportType, messageOrder);
     });
 }
+function scheduledReportSettings() {
+  ensureRuntimeCollections();
+  return { ...defaults.whatsappSettings.scheduledReports, ...(whatsappSettings.scheduledReports || {}) };
+}
+function scheduledReportRunKey(settings = scheduledReportSettings(), date = new Date()) {
+  return `${date.toISOString().slice(0, 10)}|${String(settings.time || '09:00').slice(0, 5)}`;
+}
+function orderDelayDays(order) {
+  const sourceDate = order?.orderDate ? new Date(order.orderDate) : null;
+  if (!sourceDate || isNaN(sourceDate.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - sourceDate.getTime()) / 86400000));
+}
+function topOrderLines(list, mapper, limit = 5) {
+  return list.slice(0, limit).map(mapper).filter(Boolean);
+}
+function buildScheduledOperationsReportText(settings = scheduledReportSettings()) {
+  ensureRuntimeCollections();
+  const calculated = orders.map((order)=>calculateOrder(order)).filter(Boolean);
+  const openOrders = calculated.filter((order)=>!order.closed);
+  const dyehouse = openOrders
+    .filter((order)=>Number(order.remainingAtDyehouse || order.totalSentToDyehouse || 0) > 0)
+    .sort((a,b)=>Number(b.remainingAtDyehouse || b.totalSentToDyehouse || 0) - Number(a.remainingAtDyehouse || a.totalSentToDyehouse || 0));
+  const ready = openOrders
+    .filter((order)=>Number(order.warehouseBalance || 0) > 0)
+    .sort((a,b)=>Number(b.warehouseBalance || 0) - Number(a.warehouseBalance || 0));
+  const delayed = openOrders
+    .map((order)=>({ ...order, delayDays:orderDelayDays(order) }))
+    .filter((order)=>order.delayDays >= 7)
+    .sort((a,b)=>b.delayDays - a.delayDays);
+  const waste = calculated
+    .filter((order)=>Number(order.totalWastePercent || 0) > Math.max(8, Number(order.expectedWastePercent || 0)))
+    .sort((a,b)=>Number(b.totalWastePercent || 0) - Number(a.totalWastePercent || 0));
+  const lines = [
+    `تقرير التشغيل الدوري - 2B Tex`,
+    `وقت التقرير: ${arDateTime()}`,
+    '',
+    `عدد الطلبات: ${formatNumber(calculated.length, 0)}`,
+    `طلبات مفتوحة: ${formatNumber(openOrders.length, 0)}`,
+    `داخل المصبغة: ${formatNumber(dyehouse.reduce((total, order)=>total + Number(order.remainingAtDyehouse || order.totalSentToDyehouse || 0), 0))} كجم`,
+    `جاهز للتسليم: ${formatNumber(ready.reduce((total, order)=>total + Number(order.warehouseBalance || 0), 0))} كجم`,
+  ];
+  if (settings.includeDyehouse && dyehouse.length) {
+    lines.push('', 'أعلى أرصدة داخل المصبغة:');
+    lines.push(...topOrderLines(dyehouse, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'} / ${order.dyehouse || '-'}: ${formatNumber(order.remainingAtDyehouse || order.totalSentToDyehouse || 0)} كجم`));
+  }
+  if (settings.includeReady && ready.length) {
+    lines.push('', 'جاهز للتسليم:');
+    lines.push(...topOrderLines(ready, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.warehouseBalance || 0)} كجم`));
+  }
+  if (settings.includeDelayed && delayed.length) {
+    lines.push('', 'طلبات متأخرة:');
+    lines.push(...topOrderLines(delayed, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.delayDays, 0)} يوم`));
+  }
+  if (settings.includeWaste && waste.length) {
+    lines.push('', 'أعلى هالك:');
+    lines.push(...topOrderLines(waste, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.totalWastePercent || 0, 1)}%`));
+  }
+  lines.push('', 'مرسل تلقائيًا من نظام 2B Tex.');
+  return lines.join('\n');
+}
+function enqueueScheduledWhatsappReport(settings = scheduledReportSettings(), runKey = scheduledReportRunKey(settings)) {
+  const targetGroup = String(settings.groupName || whatsappSettings.dyehousesReportGroupName || '').trim();
+  if (!targetGroup) return null;
+  const existing = reportOutbox.find((item)=>item.reportType === 'scheduled_operations_report' && item.orderNumber === runKey && item.targetGroup === targetGroup);
+  if (existing) return existing;
+  const row = {
+    id: uid(),
+    reportType: 'scheduled_operations_report',
+    orderNumber: runKey,
+    customerName: '2B Tex',
+    targetGroup,
+    messageText: buildScheduledOperationsReportText(settings),
+    attachmentPath: '',
+    status: 'pending',
+    createdAt: nowIso(),
+    sendingAt: null,
+    sentAt: null,
+    errorMessage: '',
+    retryCount: 0,
+  };
+  reportOutbox.unshift(row);
+  recordAudit('create', 'reportOutbox', row.id, null, row, 'إضافة تقرير التشغيل الدوري إلى قائمة الإرسال');
+  save();
+  syncOutboxToWhatsappService();
+  return row;
+}
+function runScheduledWhatsappReports(force = false) {
+  ensureRuntimeCollections();
+  const settings = scheduledReportSettings();
+  if (!settings.enabled || !whatsappSettings.sendingEnabled) return null;
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [hour, minute] = String(settings.time || '09:00').split(':').map((value)=>Number(value || 0));
+  const dueMinutes = Math.max(0, Math.min(1439, (Number(hour || 0) * 60) + Number(minute || 0)));
+  const runKey = scheduledReportRunKey(settings, now);
+  if (!force && (currentMinutes < dueMinutes || settings.lastRunKey === runKey)) return null;
+  const row = enqueueScheduledWhatsappReport(settings, runKey);
+  if (!row) return null;
+  whatsappSettings.scheduledReports = { ...settings, lastRunKey:runKey };
+  save();
+  saveBackendSetting('whatsappSettings', whatsappSettings).catch((error)=>console.warn('whatsapp-schedule-save-failed', error));
+  return row;
+}
+function startWhatsappScheduleTimer() {
+  if (whatsappScheduleTimer) clearInterval(whatsappScheduleTimer);
+  whatsappScheduleTimer = setInterval(()=>runScheduledWhatsappReports(false), 60000);
+  runScheduledWhatsappReports(false);
+}
 async function syncOutboxToWhatsappService() {
   try {
     await fetch(`${WHATSAPP_SERVICE_URL}/api/outbox/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ outbox:reportOutbox, settings:whatsappSettings }) });
@@ -1479,6 +1591,7 @@ function whatsappSettingsSectionHtml(type, title, label, map, names) {
 function renderWhatsappSettingsDialog(groupNames = []) {
   ensureRuntimeCollections();
   const groupOptions = groupNames.map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('');
+  const schedule = scheduledReportSettings();
   refs.documentTitle.textContent = 'إعدادات واتساب';
   refs.documentBody.dataset.documentType = 'whatsapp-settings';
   refs.documentBody.innerHTML = `<div class="document-sheet whatsapp-settings-sheet">
@@ -1489,6 +1602,25 @@ function renderWhatsappSettingsDialog(groupNames = []) {
       <label><span>جروب التقارير العامة</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="مثال: تقارير المصابغ"></label>
       <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل الإرسال التلقائي عند تشغيل خدمة واتساب</span></label>
     </div>
+    <section class="whatsapp-settings-section">
+      <div class="subsection-head">
+        <h3>التقارير الدورية</h3>
+        <button class="mini-btn" type="button" data-run-whatsapp-schedule-now>إرسال تجربة الآن</button>
+      </div>
+      <div class="summary-grid">
+        <label class="checkbox-row"><input type="checkbox" data-schedule-enabled ${schedule.enabled ? 'checked' : ''}> <span>تفعيل إرسال تقرير التشغيل الدوري</span></label>
+        <label><span>وقت الإرسال اليومي</span><input type="time" data-schedule-time value="${escapeHtml(schedule.time || '09:00')}"></label>
+        <label><span>جروب التقرير الدوري</span><input type="text" data-schedule-group value="${escapeHtml(schedule.groupName || whatsappSettings.dyehousesReportGroupName || '')}" list="whatsappGroupNames" placeholder="اسم جروب واتساب"></label>
+      </div>
+      <div class="summary-grid compact">
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeOperations" ${schedule.includeOperations ? 'checked' : ''}> <span>ملخص التشغيل</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeDyehouse" ${schedule.includeDyehouse ? 'checked' : ''}> <span>داخل المصبغة</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeReady" ${schedule.includeReady ? 'checked' : ''}> <span>جاهز للتسليم</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeDelayed" ${schedule.includeDelayed ? 'checked' : ''}> <span>الطلبات المتأخرة</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeWaste" ${schedule.includeWaste ? 'checked' : ''}> <span>أعلى هالك</span></label>
+      </div>
+      <p class="muted">التقرير الدوري يُرسل كرسالة تشغيل نصية من بيانات النظام الحالية. مستندات PDF/PNG تظل من قائمة المستندات حتى نضيف مولد PDF من السيرفر.</p>
+    </section>
     ${whatsappSettingsSectionHtml('dyehouse', 'ربط المصابغ بالجروبات', 'اسم المصبغة', whatsappSettings.dyehouseGroups, knownDyehouseNames())}
     ${whatsappSettingsSectionHtml('weaving', 'ربط مصادر النسيج بالجروبات', 'مصدر النسيج', whatsappSettings.weavingGroups, knownWeavingNames())}
     ${whatsappSettingsSectionHtml('customer', 'ربط العملاء بالجروبات', 'اسم العميل', whatsappSettings.customerGroups, knownCustomerNames())}
@@ -1519,6 +1651,17 @@ async function saveWhatsappSettingsFromDialog() {
     weavingGroups: nextMaps.weaving,
     customerGroups: nextMaps.customer,
     sendingEnabled: !!refs.documentBody.querySelector('[data-sending-enabled]')?.checked,
+    scheduledReports: {
+      ...scheduledReportSettings(),
+      enabled: !!refs.documentBody.querySelector('[data-schedule-enabled]')?.checked,
+      time: refs.documentBody.querySelector('[data-schedule-time]')?.value || '09:00',
+      groupName: refs.documentBody.querySelector('[data-schedule-group]')?.value.trim() || refs.documentBody.querySelector('[data-general-report-group]')?.value.trim() || '',
+      includeOperations: !!refs.documentBody.querySelector('[data-schedule-section="includeOperations"]')?.checked,
+      includeDyehouse: !!refs.documentBody.querySelector('[data-schedule-section="includeDyehouse"]')?.checked,
+      includeReady: !!refs.documentBody.querySelector('[data-schedule-section="includeReady"]')?.checked,
+      includeDelayed: !!refs.documentBody.querySelector('[data-schedule-section="includeDelayed"]')?.checked,
+      includeWaste: !!refs.documentBody.querySelector('[data-schedule-section="includeWaste"]')?.checked,
+    },
   };
   const saved = await saveBackendSetting('whatsappSettings', nextSettings);
   if (!saved) {
@@ -6532,6 +6675,21 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   }
   const deleteButton = event.target.closest('[data-delete-group-row]');
   if (deleteButton) deleteButton.closest('[data-whatsapp-group-row]')?.remove();
+  if (event.target.closest('[data-run-whatsapp-schedule-now]')) {
+    const currentSettings = {
+      ...scheduledReportSettings(),
+      enabled: true,
+      groupName: refs.documentBody.querySelector('[data-schedule-group]')?.value.trim() || refs.documentBody.querySelector('[data-general-report-group]')?.value.trim() || '',
+      includeOperations: !!refs.documentBody.querySelector('[data-schedule-section="includeOperations"]')?.checked,
+      includeDyehouse: !!refs.documentBody.querySelector('[data-schedule-section="includeDyehouse"]')?.checked,
+      includeReady: !!refs.documentBody.querySelector('[data-schedule-section="includeReady"]')?.checked,
+      includeDelayed: !!refs.documentBody.querySelector('[data-schedule-section="includeDelayed"]')?.checked,
+      includeWaste: !!refs.documentBody.querySelector('[data-schedule-section="includeWaste"]')?.checked,
+    };
+    const row = enqueueScheduledWhatsappReport(currentSettings, `manual-${Date.now()}`);
+    alert(row ? 'تمت إضافة تقرير تجربة إلى قائمة الإرسال.' : 'حدد جروب التقرير الدوري أولًا.');
+    return;
+  }
   if (event.target.closest('[data-save-whatsapp-settings]')) saveWhatsappSettingsFromDialog().catch((error)=>{ console.error('whatsapp-settings-save-error', error); alert('تعذر حفظ إعدادات واتساب.'); });
   if (event.target.closest('[data-add-price-row]')) {
     refs.documentBody.querySelector('[data-dyehouse-price-rows]')?.insertAdjacentHTML('beforeend', dyehousePriceRowHtml());
@@ -6750,6 +6908,6 @@ loadCurrentUser().finally(() => {
   pollBackendStatus();
   pollWhatsappService();
 });
-loadBackendData();
+loadBackendData().finally(startWhatsappScheduleTimer);
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);

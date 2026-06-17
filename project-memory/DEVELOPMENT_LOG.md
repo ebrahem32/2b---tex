@@ -1108,6 +1108,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Test: added operational-flow coverage so grouped pricing verification cannot regress to the legacy single-column check.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
 
+### Add Scheduled WhatsApp Operational Reports
+
+- Date: 2026-06-18
+- Commit: pending.
+- Version: `v2026.06.18.02`
+- Goal: send operational reports to WhatsApp periodically without changing stock, waste, database schema, or WhatsApp service internals.
+- Change: WhatsApp settings now include daily scheduled report controls: enable flag, send time, target group, and included report sections.
+- Change: the scheduler builds a text operational report from calculated frontend state and queues it in the existing `reportOutbox`.
+- Change: the existing WhatsApp service sends the scheduled row when WhatsApp is connected and automatic sending is enabled.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, WhatsApp service internals, A5 service.
+
 ### Stabilize Workflow Screens And Mobile Layout
 
 - Date: 2026-06-16

@@ -964,3 +964,13 @@ For Phase 3.1 local verification before commit:
 - Converting a grouped pricing card to orders now saves from full converted order drafts, not from the shortened grouped-order screen rows.
 - This preserves each pricing item data during conversion: fabric, quantity, width, kilo price, waste percent, dyehouse, weaving source, accessory lines, raw cost, and dyeing operation stages.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema, operational stock logic, operational waste movement logic, AI backend, WhatsApp service, A5 service.
+
+## Latest Scheduled WhatsApp Reports
+
+- Version: `v2026.06.18.02`.
+- WhatsApp settings now include a `التقارير الدورية` section.
+- The user can enable a daily scheduled operational report, choose the send time, choose the WhatsApp group, and select included sections: operations summary, dyehouse balance, ready stock, delayed orders, and high waste.
+- Scheduled reports are queued through the existing `reportOutbox` and synced to the existing WhatsApp service.
+- The scheduled report is text-based for now because PDF/PNG generation still depends on the frontend document screen.
+- Manual PDF/PNG sharing remains unchanged.
+- Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, WhatsApp service internals, A5 service.
