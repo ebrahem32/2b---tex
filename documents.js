@@ -421,9 +421,37 @@
       return `<div class="document-sheet sticker-sheet">${stickerRows || '<p>لا توجد استيكرات متاحة.</p>'}</div>`;
     }
 
+    function transferAllocationLabel(order, transfer = {}) {
+      const sourceId = transferAllocationId(transfer);
+      const targetId = transfer?.newAllocationId || transfer?.toAllocationId || transfer?.to_allocation_id;
+      const allocation = orderAllocations(order).find((line) => line.id === targetId)
+        || orderAllocations(order).find((line) => line.id === sourceId)
+        || {};
+      const parts = [
+        allocation.color || transfer.color || allocation.pantoneCode,
+        allocation.targetFinishedWidth || allocation.rawWidth,
+        allocation.targetFinishedWeight,
+      ].filter((value) => clean(value));
+      return parts.length ? parts.map(safeText).join(' / ') : '-';
+    }
+
+    function dyehouseTransfersSection(order) {
+      const transfers = Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [];
+      if (!transfers.length) return '';
+      const rows = transfers
+        .slice()
+        .sort((a, b) => clean(a.transferDate || a.date).localeCompare(clean(b.transferDate || b.date)))
+        .map((transfer) => {
+          const kind = isRawTransfer(transfer, order) ? 'نقل خام' : 'نقل لون';
+          const date = transfer.transferDate || transfer.date || '-';
+          return `<tr><td>${safeText(date)}</td><td>${safeText(kind)}</td><td>${safeText(transfer.fromDyehouse)}</td><td>${safeText(transfer.toDyehouse)}</td><td>${transferAllocationLabel(order, transfer)}</td><td>${fmt(transfer.quantity)}</td><td>${safeText(transferNoteNumber(transfer))}</td><td>${safeText(transfer.reason || transfer.notes)}</td></tr>`;
+        }).join('');
+      return `<section class="report-section"><h3>تحويلات المصبغة</h3><table class="summary-table"><thead><tr><th>التاريخ</th><th>نوع التحويل</th><th>من مصبغة</th><th>إلى مصبغة</th><th>اللون / العرض</th><th>الكمية</th><th>رقم الإذن</th><th>ملاحظات</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    }
+
     function buildCompactFullReportDocument(order) {
       const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order?.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td></tr></tbody></table></section>`;
-      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeCustomerDelivered:true, includeWaste:true })}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
+      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeCustomerDelivered:true, includeWaste:true })}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
     }
 
     function buildWasteReportDocument(order) {

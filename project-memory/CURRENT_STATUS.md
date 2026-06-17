@@ -2,13 +2,25 @@
 
 ## Current Version
 
-`v2026.06.17.09`
+`v2026.06.17.10`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Restore transfer history in detailed report`
+
+## Latest Detailed Report Transfer History Fix
+
+- Version: `v2026.06.17.10`.
+- Detailed order reports show dyehouse transfer history again.
+- Transfer history now includes transfer date, transfer type, source dyehouse, target dyehouse, color/width label, quantity, note number, and notes.
+- Added regression coverage so transfer history remains visible in detailed reports.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Keep source dyehouse visible after partial raw transfer`
 

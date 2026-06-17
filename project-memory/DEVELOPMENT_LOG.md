@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Restore Transfer History In Detailed Report
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.10`
+- Goal: bring dyehouse transfer history back into the detailed order report with each transfer date.
+- Change: the detailed report now includes a dedicated dyehouse transfers section after the color table.
+- Change: the section shows transfer date, type, source dyehouse, target dyehouse, color/width label, quantity, note number, and notes.
+- Verification coverage: added regression assertions that detailed reports include the transfer section, date, source/target dyehouses, and transfer quantity.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Keep Source Dyehouse Visible After Partial Raw Transfer
 
 - Date: 2026-06-17

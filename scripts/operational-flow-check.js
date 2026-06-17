@@ -446,6 +446,11 @@ function checkLegacyPartialTransferUsesActualQuantity() {
   const starHtml = builders.buildDyeingOrderDocument(order, 'Star');
   assert(starHtml.includes('1,719.2'), 'document: legacy partial dyehouse transfer source must keep the remaining raw quantity visible');
   assert(!starHtml.includes('2,100'), 'document: source dyehouse must not show the full allocation after partial raw transfer');
+  const fullHtml = builders.buildCompactFullReportDocument(order);
+  assert(fullHtml.includes('تحويلات المصبغة'), 'document: detailed report must include dyehouse transfer section');
+  assert(fullHtml.includes('2026-05-20'), 'document: detailed report transfer section must show transfer date');
+  assert(fullHtml.includes('Star') && fullHtml.includes('Biko'), 'document: detailed report transfer section must show source and target dyehouse');
+  assert(fullHtml.includes('380.8'), 'document: detailed report transfer section must show transfer quantity');
 }
 
 function checkDyehouseTransferKindsAreSeparated() {
