@@ -2,13 +2,28 @@
 
 ## Current Version
 
-`v2026.06.17.04`
+`v2026.06.17.05`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Classify legacy raw dyehouse transfers safely`
+
+## Latest Legacy Dyehouse Transfer Classification Fix
+
+- Version: `v2026.06.17.05`.
+- Legacy dyehouse transfer records containing `خروج خام` or `نقل خام` are now automatically treated as physical raw transfers.
+- Physical raw transfers no longer change the allocation/color dyehouse ownership.
+- Startup repair now works in two passes:
+  - raw transfers keep the allocation at the source dyehouse.
+  - explicit allocation/color transfers can still move or split the allocation.
+- Dyeing documents also recognize legacy raw transfer text, so old Locarno-style transfers do not make the whole order look moved as color/allocation transfer.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Separate dyehouse transfer types and scoped dyeing totals`
 

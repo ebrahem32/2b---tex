@@ -425,8 +425,12 @@ function checkDyehouseTransferKindsAreSeparated() {
   const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
   assert(appSource.includes('TRANSFER_RAW_MARKER'), 'transfers: raw-transfer marker must exist');
   assert(appSource.includes('TRANSFER_ALLOCATION_MARKER'), 'transfers: allocation-transfer marker must exist');
+  assert(appSource.includes('function transferTextLooksRaw(value)'), 'transfers: legacy raw-transfer text must be classified as raw transfer');
+  assert(appSource.includes("text.includes('\\u062e\\u0631\\u0648\\u062c \\u062e\\u0627\\u0645')"), 'transfers: legacy خروج خام notes must be treated as raw transfer');
+  assert(appSource.includes("allocation.dyehouse = fromDyehouse"), 'transfers: raw transfer repair must keep the allocation at its original dyehouse');
   assert(appSource.includes('const isRawTransfer = /^1'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
   assert(appSource.includes("mode:'raw'"), 'transfers: raw transfer must be saved without allocation splitting');
+  assert(documentsSource.includes('const transferTextLooksRaw = (value) =>'), 'documents: legacy raw-transfer notes must be recognized');
   assert(documentsSource.includes('const isRawTransfer = (transfer) => transferKind(transfer) ==='), 'documents: dyeing documents must distinguish physical raw transfers');
   assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
   assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');

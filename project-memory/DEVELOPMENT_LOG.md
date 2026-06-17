@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Classify Legacy Raw Dyehouse Transfers Safely
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.05`
+- Goal: prevent old dyehouse transfers such as `خروج خام - تحويل مصبغة` from being interpreted as full allocation/color transfer.
+- Change: legacy transfer notes containing `خروج خام` or `نقل خام` are classified as physical raw transfers.
+- Change: raw-transfer startup repair keeps the allocation assigned to its source dyehouse, while allocation-transfer records still move/split allocations.
+- Change: dyeing documents recognize the same legacy raw-transfer text so old transfer records do not distort dyehouse totals.
+- Verification coverage: expanded transfer-kind regression checks to cover legacy raw-transfer text and allocation ownership repair.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Separate Dyehouse Transfer Types And Scoped Dyeing Totals
 
 - Date: 2026-06-17

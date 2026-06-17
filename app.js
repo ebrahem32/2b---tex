@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.04';
-const APP_BUILD_TIME = '2026-06-17 13:45';
+const APP_VERSION = 'v2026.06.17.05';
+const APP_BUILD_TIME = '2026-06-17 14:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -193,10 +193,33 @@ function ensureRecordIds(collection) {
   (collection || []).forEach((item)=>{ if (item && !item.id) { item.id = uid(); changed = true; } });
   return changed;
 }
+function transferTextLooksRaw(value) {
+  const text = String(value || '');
+  return text.includes(TRANSFER_RAW_MARKER)
+    || /\braw\b/i.test(text)
+    || text.includes('\u062e\u0631\u0648\u062c \u062e\u0627\u0645')
+    || text.includes('\u0646\u0642\u0644 \u062e\u0627\u0645');
+}
+function transferModeFromText(reason, toAllocationId) {
+  if (transferTextLooksRaw(reason)) return 'raw';
+  if (String(reason || '').includes(TRANSFER_ALLOCATION_MARKER)) return toAllocationId ? 'split' : 'full';
+  return toAllocationId ? 'split' : 'full';
+}
 function repairTransferredAllocationDyehouses() {
   let changed = false;
   (dyehouseTransfers || []).forEach((transfer)=>{
-    if (transfer.mode === 'raw' || String(transfer.reason || transfer.notes || '').includes(TRANSFER_RAW_MARKER)) return;
+    if (transfer.mode !== 'raw' && !transferTextLooksRaw(transfer.reason || transfer.notes)) return;
+    const targetId = transfer.allocationId;
+    const fromDyehouse = String(transfer.fromDyehouse || '').trim();
+    if (!targetId || !fromDyehouse) return;
+    const allocation = allocations.find((item)=>item.id === targetId);
+    if (allocation && String(allocation.dyehouse || '').trim() !== fromDyehouse) {
+      allocation.dyehouse = fromDyehouse;
+      changed = true;
+    }
+  });
+  (dyehouseTransfers || []).forEach((transfer)=>{
+    if (transfer.mode === 'raw' || transferTextLooksRaw(transfer.reason || transfer.notes)) return;
     const targetId = transfer.newAllocationId || transfer.allocationId;
     const toDyehouse = String(transfer.toDyehouse || '').trim();
     if (!targetId || !toDyehouse) return;
@@ -528,12 +551,7 @@ function mapDbBatch(row) {
 }
 function mapDbTransfer(row) {
   const reason = row.notes || '';
-  const text = String(reason || '');
-  const mode = text.includes(TRANSFER_RAW_MARKER)
-    ? 'raw'
-    : text.includes(TRANSFER_ALLOCATION_MARKER)
-      ? (row.to_allocation_id ? 'split' : 'full')
-      : (row.to_allocation_id ? 'split' : 'full');
+  const mode = transferModeFromText(reason, row.to_allocation_id);
   return {
     id: row.id,
     orderId: row.order_id,

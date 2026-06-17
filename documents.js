@@ -26,8 +26,16 @@
     const safeText = (value) => escapeHtml(value === undefined || value === null || value === '' ? '-' : value);
     const fmt = (value, digits = 3) => formatNumber(Number(value || 0), digits);
     const clean = (value) => String(value || '').trim();
+    const transferTextLooksRaw = (value) => {
+      const text = String(value || '');
+      return text.includes('[raw-transfer]')
+        || /\braw\b/i.test(text)
+        || text.includes('\u062e\u0631\u0648\u062c \u062e\u0627\u0645')
+        || text.includes('\u0646\u0642\u0644 \u062e\u0627\u0645');
+    };
     const transferKind = (transfer) => {
       const text = clean(`${transfer?.mode || ''} ${transfer?.reason || ''} ${transfer?.notes || ''}`);
+      if (transferTextLooksRaw(text)) return 'raw';
       if (text.includes('[raw-transfer]')) return 'raw';
       if (text.includes('[allocation-transfer]')) return 'allocation';
       return 'allocation';
