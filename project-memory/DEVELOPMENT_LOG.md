@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Prioritize Allocation Dyehouse Transfers Over Raw Text
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.06`
+- Goal: stop color/allocation transfers from appearing as fabric/raw transfer when their note text includes old wording such as `خروج خام`.
+- Change: explicit `[allocation-transfer]` now overrides raw-transfer text detection in the frontend and document builders.
+- Change: startup repair uses the normalized transfer kind instead of stale local mode values.
+- Change: dyeing documents apply the same precedence so color transfers do not affect physical raw transfer totals.
+- Verification coverage: expanded transfer-kind regression checks for allocation marker precedence.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Classify Legacy Raw Dyehouse Transfers Safely
 
 - Date: 2026-06-17

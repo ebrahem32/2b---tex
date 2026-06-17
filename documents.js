@@ -28,6 +28,7 @@
     const clean = (value) => String(value || '').trim();
     const transferTextLooksRaw = (value) => {
       const text = String(value || '');
+      if (text.includes('[allocation-transfer]')) return false;
       return text.includes('[raw-transfer]')
         || /\braw\b/i.test(text)
         || text.includes('\u062e\u0631\u0648\u062c \u062e\u0627\u0645')
@@ -35,9 +36,8 @@
     };
     const transferKind = (transfer) => {
       const text = clean(`${transfer?.mode || ''} ${transfer?.reason || ''} ${transfer?.notes || ''}`);
-      if (transferTextLooksRaw(text)) return 'raw';
-      if (text.includes('[raw-transfer]')) return 'raw';
       if (text.includes('[allocation-transfer]')) return 'allocation';
+      if (transferTextLooksRaw(text)) return 'raw';
       return 'allocation';
     };
     const isRawTransfer = (transfer) => transferKind(transfer) === 'raw';

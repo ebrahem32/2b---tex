@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.17.05`
+`v2026.06.17.06`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Prioritize allocation dyehouse transfers over raw text`
+
+## Latest Dyehouse Transfer Precedence Fix
+
+- Version: `v2026.06.17.06`.
+- Explicit allocation/color transfers now always override legacy raw-transfer wording.
+- If a transfer record contains `[allocation-transfer]`, it is treated as color/allocation movement even if the note text contains `خروج خام`.
+- Raw transfer classification is now only used for:
+  - explicit `[raw-transfer]` records.
+  - legacy unmarked notes containing `خروج خام` or `نقل خام`.
+- Startup repair now uses normalized transfer kind instead of stale local `mode` values.
+- Dyeing documents use the same precedence so color transfers are not counted as fabric/raw transfer.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Classify legacy raw dyehouse transfers safely`
 

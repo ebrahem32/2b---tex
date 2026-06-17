@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.05';
-const APP_BUILD_TIME = '2026-06-17 14:05';
+const APP_VERSION = 'v2026.06.17.06';
+const APP_BUILD_TIME = '2026-06-17 14:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -195,20 +195,24 @@ function ensureRecordIds(collection) {
 }
 function transferTextLooksRaw(value) {
   const text = String(value || '');
+  if (text.includes(TRANSFER_ALLOCATION_MARKER)) return false;
   return text.includes(TRANSFER_RAW_MARKER)
     || /\braw\b/i.test(text)
     || text.includes('\u062e\u0631\u0648\u062c \u062e\u0627\u0645')
     || text.includes('\u0646\u0642\u0644 \u062e\u0627\u0645');
 }
 function transferModeFromText(reason, toAllocationId) {
-  if (transferTextLooksRaw(reason)) return 'raw';
   if (String(reason || '').includes(TRANSFER_ALLOCATION_MARKER)) return toAllocationId ? 'split' : 'full';
+  if (transferTextLooksRaw(reason)) return 'raw';
   return toAllocationId ? 'split' : 'full';
+}
+function transferRecordMode(transfer) {
+  return transferModeFromText(transfer?.reason || transfer?.notes || '', transfer?.newAllocationId);
 }
 function repairTransferredAllocationDyehouses() {
   let changed = false;
   (dyehouseTransfers || []).forEach((transfer)=>{
-    if (transfer.mode !== 'raw' && !transferTextLooksRaw(transfer.reason || transfer.notes)) return;
+    if (transferRecordMode(transfer) !== 'raw') return;
     const targetId = transfer.allocationId;
     const fromDyehouse = String(transfer.fromDyehouse || '').trim();
     if (!targetId || !fromDyehouse) return;
@@ -219,7 +223,7 @@ function repairTransferredAllocationDyehouses() {
     }
   });
   (dyehouseTransfers || []).forEach((transfer)=>{
-    if (transfer.mode === 'raw' || transferTextLooksRaw(transfer.reason || transfer.notes)) return;
+    if (transferRecordMode(transfer) === 'raw') return;
     const targetId = transfer.newAllocationId || transfer.allocationId;
     const toDyehouse = String(transfer.toDyehouse || '').trim();
     if (!targetId || !toDyehouse) return;
