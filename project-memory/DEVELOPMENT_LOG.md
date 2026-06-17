@@ -4,6 +4,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Pricing Card Edit Save Button
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.01`
+- Goal: make edited pricing cards save reliably after the grouped pricing verification fix.
+- Root cause: legacy hidden pricing fields still had native `required` validation in the dialog, which could stop the browser before the JavaScript save handler executed.
+- Change: added an explicit `savePricingBtn` button with `type="button"` and wired it directly to the pricing save handler.
+- Change: disabled legacy hidden pricing fields and removed their `required` attributes when the pricing-card editor is installed.
+- Change: added pricing-card-level validation for customer, at least one item line, fabric name, and quantity.
+- Verification coverage: `operational-flow-check` now asserts the explicit save button, disabled legacy fields, and app-level pricing validation.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Fix Pricing Card Order Linkage And Filters
 
 - Date: 2026-06-15

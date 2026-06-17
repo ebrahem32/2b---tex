@@ -2,13 +2,28 @@
 
 ## Current Version
 
-`v2026.06.16.02`
+`v2026.06.17.01`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix pricing card edit save button`
+
+## Latest Pricing Card Save Button Fix
+
+- Version: `v2026.06.17.01`.
+- Fixed pricing-card edit save still appearing not to save after grouped verification was corrected.
+- Root cause: the pricing dialog still contained legacy hidden `required` fields, so browser-native form validation could block the submit before `addPricing()` ran.
+- The save button is now an explicit `type="button"` wired directly to the pricing save handler.
+- Legacy hidden pricing fields now remove `required`, are disabled, and are marked with `data-pricing-legacy-disabled`.
+- Added app-level validation for the current pricing-card structure: customer is required, at least one fabric/item line is required, and every line must have fabric and quantity.
+- Bumped app cache key to force browsers/Railway clients to load the new frontend bundle.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, stock formulas, waste formulas, operational save/rollback flows outside pricing-card save, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix grouped pricing save verification`
 

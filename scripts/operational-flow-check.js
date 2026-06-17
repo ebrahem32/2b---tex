@@ -529,6 +529,19 @@ function checkGroupedPricingVerifyUsesItemsJson() {
   assert(appSource.includes('savedItems.length !== expectedItems.length'), 'pricing save: grouped pricing verification must compare item counts');
 }
 
+function checkPricingSaveBypassesLegacyHiddenRequiredFields() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert(indexSource.includes('id="savePricingBtn"'), 'pricing save: explicit save button must exist');
+  assert(indexSource.includes('type="button" id="savePricingBtn"'), 'pricing save: button must bypass native hidden-field validation');
+  assert(appSource.includes("'pricingForm','savePricingBtn','pricingNumber'"), 'pricing save: save button must be registered in refs');
+  assert(appSource.includes("field.removeAttribute('required')"), 'pricing save: legacy hidden fields must remove required attributes');
+  assert(appSource.includes('field.disabled = true'), 'pricing save: legacy hidden fields must be disabled');
+  assert(appSource.includes("field.setAttribute('data-pricing-legacy-disabled', 'true')"), 'pricing save: legacy hidden fields must be marked disabled');
+  assert(appSource.includes('function validatePricingPayloadForSave'), 'pricing save: app-level validation must replace hidden native validation');
+  assert(appSource.includes('refs.savePricingBtn.onclick = refs.pricingForm.onsubmit'), 'pricing save: explicit save button must call pricing save handler');
+}
+
 function checkOrderQuotationUsesLinkedPricingCard() {
   const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -599,6 +612,7 @@ checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkPricingToOrderCarriesGroupedOperationalFields();
 checkGroupedPricingVerifyUsesItemsJson();
+checkPricingSaveBypassesLegacyHiddenRequiredFields();
 checkOrderQuotationUsesLinkedPricingCard();
 checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();
