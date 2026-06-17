@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.17.02`
+`v2026.06.17.03`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Show width labels across multi-width order operations`
+
+## Latest Multi-Width Order Label Fix
+
+- Version: `v2026.06.17.03`.
+- Multi-width orders now show the related width label on each color-plan row instead of showing only the finished width number.
+- Operational movement history now keeps the same allocation label for receiving, raw returns, accessory receiving, and dyehouse transfers.
+- This makes orders that contain more than one عرض distinguishable in review screens and movement history.
+- Added regression coverage so receiving/returns/transfers cannot silently drop the width label in later UI refactors.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix multi-dyehouse dyeing document totals`
 

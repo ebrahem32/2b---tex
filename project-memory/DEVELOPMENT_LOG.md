@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Show Width Labels Across Multi-Width Order Operations
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.03`
+- Goal: make every operational row in orders with multiple widths clearly show which عرض it belongs to.
+- Change: added shared allocation width/movement label helpers in the frontend.
+- Change: color-plan rows now show the full allocation width label instead of only the finished width number.
+- Change: raw returns, finished receiving, accessory receiving, and dyehouse transfer history now include the related color/dyehouse/width label.
+- Verification coverage: added an operational-flow regression check for multi-width labels across plan rows and movement rows.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Fix Multi-Dyehouse Dyeing Document Totals
 
 - Date: 2026-06-17
