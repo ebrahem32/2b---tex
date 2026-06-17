@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.17.15`
+`v2026.06.17.16`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Show dyehouse transfer type choices first`
+
+## Latest Dyehouse Transfer Type Choice Fix
+
+- Version: `v2026.06.17.16`.
+- The `نقل مصبغة` action now starts by asking for one of two explicit choices:
+  - `نقل خام`
+  - `نقل لون`
+- This keeps physical raw-balance movement separate from moving/splitting the color allocation.
+- Added regression coverage so the transfer button keeps showing the raw/color choices before saving.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Split order detail dyehouse balances`
 

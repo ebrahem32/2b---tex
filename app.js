@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.15';
-const APP_BUILD_TIME = '2026-06-17 21:55';
+const APP_VERSION = 'v2026.06.17.16';
+const APP_BUILD_TIME = '2026-06-17 22:10';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -5428,14 +5428,20 @@ async function transferAllocationDyehouse(id) {
   const order = calculateOrder(orders.find((item)=>item.id===allocation.orderId));
   const calculated = order.allocations.find((item)=>item.id===id) || calculateAllocation(allocation);
   const currentDyehouse = allocation.dyehouse || order.dyehouse || '';
+  const transferTypeValue = prompt('\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646', '1');
+  if (transferTypeValue === null) return;
+  const normalizedTransferType = String(transferTypeValue).trim();
+  const isRawTransfer = /^1\b|\u062e\u0627\u0645/.test(normalizedTransferType);
+  const isAllocationTransfer = /^2\b|\u0644\u0648\u0646/.test(normalizedTransferType);
+  if (!isRawTransfer && !isAllocationTransfer) {
+    alert('\u0627\u062e\u062a\u0631 1 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0623\u0648 2 \u0644\u0646\u0642\u0644 \u0644\u0648\u0646.');
+    return;
+  }
   const newDyehouseValue = prompt('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629', currentDyehouse);
   if (newDyehouseValue === null) return;
   const newDyehouse = newDyehouseValue.trim();
   if (!newDyehouse) return;
   if (newDyehouse === currentDyehouse) { alert('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0644\u0645 \u062a\u062a\u063a\u064a\u0631.'); return; }
-  const transferTypeValue = prompt('\u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645 \u0641\u0639\u0644\u064a \u0645\u0646 \u0645\u0635\u0628\u063a\u0629 \u0644\u0645\u0635\u0628\u063a\u0629\n2 - \u0646\u0642\u0644 \u0627\u0644\u0644\u0648\u0646 / \u0627\u0644\u0628\u0646\u062f \u062f\u0627\u062e\u0644 \u0627\u0644\u0623\u0648\u0631\u062f\u0631', '2');
-  if (transferTypeValue === null) return;
-  const isRawTransfer = /^1\b|\u062e\u0627\u0645/.test(String(transferTypeValue).trim());
   const originalQuantity = Number(allocation.plannedQuantity || 0);
   const suggestedQuantity = isRawTransfer
     ? (Number(calculated.remainingAtDyehouse || 0) || Number(calculated.sentToDyehouse || 0) || originalQuantity || '')

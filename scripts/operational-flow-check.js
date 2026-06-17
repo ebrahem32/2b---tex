@@ -560,6 +560,7 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes("text.includes('\\u062e\\u0631\\u0648\\u062c \\u062e\\u0627\\u0645')"), 'transfers: legacy خروج خام notes must be treated as raw transfer');
   assert(appSource.includes("allocation.dyehouse = fromDyehouse"), 'transfers: raw transfer repair must keep the allocation at its original dyehouse');
   assert(appSource.includes('const isRawTransfer = /^1'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
+  assert(appSource.includes('1 - \\u0646\\u0642\\u0644 \\u062e\\u0627\\u0645\\n2 - \\u0646\\u0642\\u0644 \\u0644\\u0648\\u0646'), 'transfers: transfer button must first show clear raw/color choices');
   assert(appSource.includes("mode:'raw'"), 'transfers: raw transfer must be saved without allocation splitting');
   assert(documentsSource.includes('const transferTextLooksRaw = (value) =>'), 'documents: legacy raw-transfer notes must be recognized');
   assert(documentsSource.includes("if (text.includes('[allocation-transfer]')) return false"), 'documents: allocation transfer must not be counted as physical raw transfer');

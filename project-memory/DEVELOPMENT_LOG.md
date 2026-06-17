@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Show Dyehouse Transfer Type Choices First
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.16`
+- Goal: prevent confusion between physical raw transfer and color/allocation transfer.
+- Change: pressing `نقل مصبغة` now first asks the user to choose either `نقل خام` or `نقل لون`.
+- Change: the existing save logic remains separated by transfer mode: raw transfers keep the allocation in the source dyehouse, while color transfers can move/split the allocation.
+- Verification coverage: added a regression assertion for the visible raw/color choice prompt.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Split Order Detail Dyehouse Balances
 
 - Date: 2026-06-17
