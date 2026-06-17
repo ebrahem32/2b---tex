@@ -250,6 +250,36 @@
         .filter((transfer) => transferBelongsToOrder(order, transfer) && clean(transfer.toDyehouse) === name);
     }
 
+    function orderAllocationIdSet(order) {
+      return new Set(orderAllocations(order).map((line) => line.id).filter(Boolean));
+    }
+
+    function transferLinkedIds(transfer = {}) {
+      return [
+        transferAllocationId(transfer),
+        transfer?.newAllocationId,
+        transfer?.toAllocationId,
+        transfer?.to_allocation_id,
+      ].filter(Boolean);
+    }
+
+    function transferHasLinkedAllocation(order, transfer = {}) {
+      const allocationIds = orderAllocationIdSet(order);
+      return transferLinkedIds(transfer).some((id) => allocationIds.has(id));
+    }
+
+    function baseDyehouseNamesForOrder(order) {
+      return new Set(uniqueNonEmpty([
+        order?.dyehouse,
+        ...orderAllocations(order).map((allocation) => allocation.dyehouse || order?.dyehouse),
+      ]).map((name) => clean(name)));
+    }
+
+    function transferTouchesKnownOrderDyehouse(order, transfer = {}) {
+      const baseNames = baseDyehouseNamesForOrder(order);
+      return baseNames.has(clean(transfer.fromDyehouse)) || baseNames.has(clean(transfer.toDyehouse));
+    }
+
     function allocationMatchesDyehouse(order, allocation, dyehouseName, transfersToDyehouse = []) {
       const name = clean(dyehouseName);
       const allocationDyehouse = clean(allocation?.dyehouse || order?.dyehouse);
@@ -269,8 +299,14 @@
     function rawTransfersForAllocation(order, allocation) {
       const allocationId = allocation?.id;
       if (!allocationId) return [];
+      const allocations = orderAllocations(order);
       return (Array.isArray(order?.dyehouseTransfers) ? order.dyehouseTransfers : [])
-        .filter((transfer) => transferBelongsToOrder(order, transfer) && transferAllocationId(transfer) === allocationId && isRawTransfer(transfer, order));
+        .filter((transfer) => {
+          if (!transferBelongsToOrder(order, transfer) || !isRawTransfer(transfer, order)) return false;
+          const transferAllocation = transferAllocationId(transfer);
+          if (transferAllocation) return transferAllocation === allocationId;
+          return allocations.length === 1;
+        });
     }
 
     function scopedAllocationQuantity(order, allocation, dyehouseName) {
@@ -445,15 +481,14 @@
     function transferBelongsToOrder(order, transfer = {}) {
       const orderId = clean(order?.id);
       const transferOrderId = clean(transfer.orderId || transfer.order_id);
-      if (orderId && transferOrderId) return transferOrderId === orderId;
-      const allocationIds = new Set(orderAllocations(order).map((line) => line.id).filter(Boolean));
-      const linkedIds = [
-        transferAllocationId(transfer),
-        transfer?.newAllocationId,
-        transfer?.toAllocationId,
-        transfer?.to_allocation_id,
-      ].filter(Boolean);
-      return linkedIds.some((id) => allocationIds.has(id));
+      const linkedIds = transferLinkedIds(transfer);
+      const hasLinkedAllocation = transferHasLinkedAllocation(order, transfer);
+      if (orderId && transferOrderId) {
+        if (transferOrderId !== orderId) return false;
+        if (linkedIds.length) return hasLinkedAllocation;
+        return transferTouchesKnownOrderDyehouse(order, transfer);
+      }
+      return hasLinkedAllocation;
     }
 
     function dyehouseTransfersSection(order) {

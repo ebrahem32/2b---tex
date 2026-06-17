@@ -493,6 +493,62 @@ function checkDetailedReportSplitsRawTransferByDyehouse() {
   assert(fullHtml.includes('<td>New Geima</td><td>300</td><td>300</td>'), 'document: detailed report target dyehouse must show 300 after receiving transfer');
 }
 
+function checkDetailedReportRejectsForeignDyehouseTransfers() {
+  const builders = createDocumentBuilders();
+  const order = {
+    id: 'order-locarno-scope',
+    orderNumber: '1008',
+    customer: 'Locarno',
+    fabricType: 'Fabric',
+    dyehouse: 'Star',
+    totalRawOrdered: 4100,
+    totalRawReceived: 4180,
+    rawAtDyehouseAvailable: 4100,
+    allocations: [
+      { id: 'locarno-width-75', orderId: 'order-locarno-scope', color: 'off white', plannedQuantity: 2100, dyehouse: 'Biko', sentToDyehouse: 2100, remainingAtDyehouse: 2100, targetFinishedWidth: 75, targetFinishedWeight: 140 },
+    ],
+    rawBatches: [{ orderId: 'order-locarno-scope', allocationId: null, date: '2026-05-20', quantity: 4180, noteNumber: '1008-note' }],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [
+      { orderId: 'order-locarno-scope', allocationId: 'locarno-width-75', fromDyehouse: 'Star', toDyehouse: 'Biko', quantity: 380.8, date: '2026-05-20', reason: 'تحويل مصبغة' },
+      { orderId: 'order-gharbawy-scope', allocationId: 'gharbawy-white', fromDyehouse: 'Geima', toDyehouse: 'New Geima', quantity: 593.6, date: '2026-05-23', noteNumber: '5454', reason: 'تحويل مصبغة' },
+      { orderId: 'order-locarno-scope', allocationId: 'gharbawy-white', fromDyehouse: 'Geima', toDyehouse: 'New Geima', quantity: 300, date: '2026-06-17', noteNumber: '5454', reason: 'bad migrated foreign transfer' },
+    ],
+  };
+  const fullHtml = builders.buildCompactFullReportDocument(order);
+  assert(fullHtml.includes('380.8'), 'document: detailed report must keep the current order transfer');
+  assert(!fullHtml.includes('593.6'), 'document: detailed report must reject transfers from another order id');
+  assert(!fullHtml.includes('bad migrated foreign transfer'), 'document: detailed report must reject transfers with invalid allocation links even if order id was migrated incorrectly');
+  assert(!fullHtml.includes('Geima') && !fullHtml.includes('New Geima'), 'document: foreign dyehouses must not leak into the current order report');
+}
+
+function checkOrderLevelRawTransferCanStillSplitSingleAllocationDyehouseBalance() {
+  const builders = createDocumentBuilders();
+  const order = {
+    id: 'order-single-allocation-raw-transfer',
+    orderNumber: 'RAW-SINGLE',
+    customer: 'Customer',
+    fabricType: 'Fabric',
+    dyehouse: 'Geima',
+    totalRawOrdered: 1000,
+    totalRawReceived: 1000,
+    rawAtDyehouseAvailable: 1000,
+    allocations: [
+      { id: 'single-allocation', orderId: 'order-single-allocation-raw-transfer', color: 'main', plannedQuantity: 1000, dyehouse: 'Geima', sentToDyehouse: 1000, remainingAtDyehouse: 1000, targetFinishedWidth: 160, targetFinishedWeight: 270 },
+    ],
+    rawBatches: [{ orderId: 'order-single-allocation-raw-transfer', allocationId: null, date: '2026-06-17', quantity: 1000, noteNumber: '1' }],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [
+      { orderId: 'order-single-allocation-raw-transfer', fromDyehouse: 'Geima', toDyehouse: 'New Geima', quantity: 300, date: '2026-06-17', reason: 'نقل خام' },
+    ],
+  };
+  const fullHtml = builders.buildCompactFullReportDocument(order);
+  assert(fullHtml.includes('<td>Geima</td><td>700</td><td>700</td>'), 'document: order-level raw transfer source dyehouse must keep 700 for a single-allocation order');
+  assert(fullHtml.includes('<td>New Geima</td><td>300</td><td>300</td>'), 'document: order-level raw transfer target dyehouse must show 300 for a single-allocation order');
+}
+
 function checkDyehouseTransferKindsAreSeparated() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
@@ -746,6 +802,8 @@ checkDyeingDocumentShowsPhysicalRawBalance();
 checkDyeingDocumentSplitsMultiDyehouseOrder();
 checkLegacyPartialTransferUsesActualQuantity();
 checkDetailedReportSplitsRawTransferByDyehouse();
+checkDetailedReportRejectsForeignDyehouseTransfers();
+checkOrderLevelRawTransferCanStillSplitSingleAllocationDyehouseBalance();
 checkDyehouseTransferKindsAreSeparated();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();

@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.17.13`
+`v2026.06.17.14`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Harden detailed report transfer ownership`
+
+## Latest Detailed Report Transfer Ownership Fix
+
+- Version: `v2026.06.17.14`.
+- Detailed reports now reject dyehouse transfers unless they belong to the current internal order id and, when allocation links exist, to one of the current order allocations.
+- This protects repeated order numbers from leaking unrelated dyehouse transfers into each other.
+- Physical raw transfer distribution still shows both source and target dyehouse balances, including order-level raw transfers for single-allocation orders.
+- Added regression coverage for:
+  - Locarno-style reports rejecting foreign Geima/New Geima transfers from another order.
+  - Bad migrated transfer rows with the current order id but a foreign allocation being rejected.
+  - Single-allocation order-level raw transfer splitting 1,000 kg into 700/300 by dyehouse.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Show dyehouse balance distribution in detailed report`
 

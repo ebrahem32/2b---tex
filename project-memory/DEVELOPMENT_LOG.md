@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Harden Detailed Report Transfer Ownership
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.14`
+- Goal: stop detailed reports from showing dyehouse transfers that belong to another operational order, especially when order numbers are repeated.
+- Change: tightened document transfer ownership checks to require the current internal order id and valid allocation links when transfer rows carry allocation ids.
+- Change: kept physical raw transfer distribution for the current order so source and target dyehouse balances both remain visible.
+- Verification coverage: added regression assertions for foreign transfer rejection, bad migrated transfer rejection, and single-allocation 1,000 -> 700/300 dyehouse split.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Show Dyehouse Balance Distribution In Detailed Report
 
 - Date: 2026-06-17
