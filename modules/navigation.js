@@ -133,7 +133,15 @@
       if (action === 'users') deps.openUsersDialog();
       if (action === 'systemStatus') deps.openSystemStatusDialog();
       if (action === 'dyehousePrices') deps.renderDyehousePricesDialog();
-      if (action === 'pricingList') { setWorkspaceModule('pricing'); deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); deps.closeOrderFocusMode(); document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      if (action === 'pricingList') {
+        setWorkspaceModule('pricing');
+        deps.closeDashboardFocusMode();
+        deps.closeAiFocusMode();
+        deps.closeOrderFocusMode();
+        deps.renderPricings?.();
+        document.querySelector('.pricing-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+        return;
+      }
       if (action === 'orderDetails') { setWorkspaceModule('order-details'); deps.closeDashboardFocusMode(); deps.closeAiFocusMode(); refs.orderDetailsPanel?.scrollIntoView({ behavior:'smooth', block:'start' }); }
     }
 

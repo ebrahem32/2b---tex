@@ -2,13 +2,24 @@
 
 ## Current Version
 
-`v2026.06.17.16`
+`v2026.06.17.17`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix pricing list navigation`
+
+## Latest Pricing List Navigation Fix
+
+- Version: `v2026.06.17.17`.
+- The sidebar `عروض الأسعار` action now explicitly opens the pricing workspace, closes focus modes, and re-renders the pricing table.
+- Added regression coverage so pricing list navigation cannot only switch panels without refreshing the list.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Show dyehouse transfer type choices first`
 

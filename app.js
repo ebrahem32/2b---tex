@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.16';
-const APP_BUILD_TIME = '2026-06-17 22:10';
+const APP_VERSION = 'v2026.06.17.17';
+const APP_BUILD_TIME = '2026-06-17 23:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -4329,6 +4329,7 @@ async function refreshOperationFollowPanel() {
   openDashboardFocusMode: () => openDashboardFocusMode(),
   openAiFocusMode: () => openAiFocusMode(),
   renderOrders,
+  renderPricings,
   renderTodayOrdersPanel: () => renderTodayOrdersPanel?.(),
   openManagementReport: (...args) => openManagementReport(...args),
   refreshOperationFollowPanel,

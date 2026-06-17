@@ -4,6 +4,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Pricing List Navigation
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.17`
+- Goal: make the `عروض الأسعار` sidebar action reliably open the pricing list screen.
+- Change: pricing list navigation now explicitly renders the pricing table after switching to the pricing workspace.
+- Verification coverage: added a regression assertion that the pricing list navigation calls `renderPricings`.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Show Dyehouse Transfer Type Choices First
 
 - Date: 2026-06-17

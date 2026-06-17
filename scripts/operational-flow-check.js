@@ -692,11 +692,13 @@ function checkPricingListFiltersAndOrderNumber() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  const navigationSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'navigation.js'), 'utf8');
   assert(pricingUiSource.includes('pricingNumber: calculated.orderNumber || nextOrderPricingNumber(calculated)'), 'pricing ui: cards opened from existing orders must keep the order number');
   assert(pricingUiSource.includes('pricingRowsForReport'), 'pricing ui: filtered pricing rows must be exposed for printing');
   assert(indexSource.includes('pricingSearchInput') && indexSource.includes('pricingCustomerFilter') && indexSource.includes('pricingStatusFilter'), 'pricing ui: pricing list must have standalone filters');
   assert(indexSource.includes('printFilteredPricingsBtn'), 'pricing ui: filtered pricing list must be printable');
   assert(appSource.includes('openFilteredPricingsReport'), 'pricing ui: filtered pricing print report must be wired');
+  assert(navigationSource.includes("action === 'pricingList'") && navigationSource.includes('deps.renderPricings?.()'), 'pricing ui: pricing list navigation must render the pricing table');
   assert(indexSource.includes('<th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية'), 'pricing ui: list must use the unified order number label');
   assert(!appSource.includes('<th>رقم الكرت</th><th>رقم الطلب</th>'), 'pricing print: card and order numbers must not appear as separate columns');
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
