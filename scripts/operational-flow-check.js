@@ -801,6 +801,25 @@ function checkMultiWidthOrderRowsKeepWidthLabels() {
   assert(appSource.includes('transferAllocationLabel(batch)'), 'multi-width orders: dyehouse transfer rows must keep the related width label');
 }
 
+function checkOperationalAiManagerRules() {
+  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
+  const aiUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'aiUi.js'), 'utf8');
+  const operationalAiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'operationalAiManager.js'), 'utf8');
+  assert(serverSource.includes('function buildOperationalDashboardReport'), 'ai: backend must have deterministic operational manager report');
+  assert(serverSource.includes("source: 'railway-operational-manager'"), 'ai: general employee report must identify operational manager source');
+  assert(serverSource.includes('function compactAiEmployeeModelPayload'), 'ai: model calls must use a compact 2B operational payload');
+  assert(serverSource.includes('function runAiEmployeeModelReport'), 'ai: employee report must call the configured AI model when available');
+  assert(serverSource.includes('if (process.env.GEMINI_API_KEY)'), 'ai: Gemini must be supported for the real 2B AI employee');
+  assert(serverSource.includes('if (process.env.OPENAI_API_KEY)'), 'ai: OpenAI fallback must be supported for the real 2B AI employee');
+  assert(serverSource.includes('rulesBaseline'), 'ai: model output must be grounded by deterministic 2B operational rules');
+  assert(serverSource.includes('questionFocus.active ? buildFocusedEmployeeReport(data) : buildOperationalDashboardReport(data)'), 'ai: focused and general reports must have separate baselines');
+  assert(serverSource.includes('compactOperationalOrder'), 'ai: backend response must include concrete operational order facts');
+  assert(serverSource.includes('لا توجد أوامر مطابقة للسؤال'), 'ai: focused no-match response must not fall back to a generic report');
+  assert(aiUiSource.includes('buildLocalAiEmployeeResponse'), 'ai: frontend must keep local fallback if the AI endpoint is unavailable');
+  assert(operationalAiSource.includes('data-ai-open-order'), 'ai: dashboard rows must open the selected operational order');
+  assert(operationalAiSource.includes('أهم إجراء اليوم'), 'ai: dashboard must show a concrete daily action');
+}
+
 checkBackendFlow();
 checkFrontendFlow();
 checkFrontendBackendParity();
@@ -832,5 +851,6 @@ checkOrderQuotationUsesLinkedPricingCard();
 checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();
 checkMultiWidthOrderRowsKeepWidthLabels();
+checkOperationalAiManagerRules();
 
 console.log('Operational flow check passed.');

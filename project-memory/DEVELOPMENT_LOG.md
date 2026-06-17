@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Enable Real AI Employee Model Grounding
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.01`
+- Goal: make the smart employee use a real AI model for 2B when credentials are available, without returning generic or invented answers.
+- Change: Railway variables were checked by name only and include `GEMINI_API_KEY`, `GEMINI_MODEL`, and `OPENAI_API_KEY`.
+- Change: `/api/ai/employee-report` now builds a compact 2B operational payload and uses Gemini first, OpenAI second, and deterministic operational rules as fallback.
+- Change: model answers are grounded by `rulesBaseline`, so calculated quantities, order scope, and focused-question limits remain controlled by the system.
+- Verification coverage: added operational-flow assertions for the real AI model path, Gemini/OpenAI support, and grounding rules.
+- Not touched: backend calculations, SQLite schema/data, WhatsApp, A5.
+
 ### Fix Pricing List Navigation
 
 - Date: 2026-06-17

@@ -2,13 +2,28 @@
 
 ## Current Version
 
-`v2026.06.17.18`
+`v2026.06.18.01`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Enable real AI employee model grounding`
+
+## Latest Real AI Employee Grounding
+
+- Version: `v2026.06.18.01`.
+- Railway variables were checked safely by name only; `GEMINI_API_KEY`, `GEMINI_MODEL`, and `OPENAI_API_KEY` exist on Railway.
+- Local process/user/machine environment does not currently expose `GEMINI_API_KEY`; local env files only expose OpenAI entries without printing secrets.
+- `/api/ai/employee-report` now uses a compact 2B operational payload and calls Gemini first when available, then OpenAI, then deterministic operational rules.
+- AI model output is grounded by `rulesBaseline`, which remains the official calculated 2B operating baseline.
+- Focused questions keep their own scoped baseline and must not fall back to a generic system report.
+- Added regression coverage for the real AI employee path and grounding rules.
+- Not touched: backend calculations, SQLite schema/data, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix scoped dyehouse transfer ledger`
 

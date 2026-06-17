@@ -871,9 +871,13 @@ function buildOperationalEmployeeReport(context = {}) {
       orderNumber: order.orderNumber || '-',
       customer: order.customer || '-',
       fabricType: order.fabricType || '-',
+      dyehouse: order.dyehouse || '-',
       stage: order.stage?.label || '-',
       daysInStage: Number(order.stage?.days || 0),
       reason: operationalDecisionText(order),
+      requestedRaw: Number(order.quantities?.totalRequestedQuantity || 0),
+      dyehouseBalance: Number(order.quantities?.remainingAtDyehouse || 0),
+      warehouseBalance: Number(order.quantities?.warehouseBalance || 0),
     }));
   const failedReports = reportOutbox.filter((item) => ['pending', 'queued', 'failed'].includes(item.status));
   const dyehouseBalance = Math.round(Number(snapshot.dyehouseBalance || 0));
@@ -883,8 +887,8 @@ function buildOperationalEmployeeReport(context = {}) {
     executiveSummary: `يوجد ${Number(snapshot.ordersCount || 0).toLocaleString('en-US')} طلب داخل النظام، منها ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')} طلب مفتوح. توزيع الوقوف الحالي: ${stageLine}. رصيد المصبغة ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم. أهم إجراء: ${watch[0] ? `طلب ${watch[0].orderNumber} - ${watch[0].customer}: ${watch[0].reason}` : 'لا توجد أولوية حرجة الآن.'}`,
     keyFindings: [
       `طلبات مفتوحة: ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')}`,
-      `رصيد داخل المصابغ حسب استلام المجهز: ${dyehouseBalance.toLocaleString('en-US')} كجم`,
-      `رصيد جاهز أو واقف بالمخزن: ${warehouseBalance.toLocaleString('en-US')} كجم`,
+      `رصيد داخل المصابغ: ${dyehouseBalance.toLocaleString('en-US')} كجم`,
+      `رصيد مجهز جاهز للتسليم: ${warehouseBalance.toLocaleString('en-US')} كجم`,
       `مجهز مستلم: ${Math.round(Number(snapshot.finishedReceived || 0)).toLocaleString('en-US')} كجم`,
       `تقارير واتساب تحتاج متابعة: ${failedReports.length}`,
     ],
@@ -908,6 +912,141 @@ function buildOperationalEmployeeReport(context = {}) {
       ],
     whatsappMessage: `ملخص 2B: الطلبات المفتوحة ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')}. رصيد المصابغ ${dyehouseBalance.toLocaleString('en-US')} كجم، ورصيد المخزن ${warehouseBalance.toLocaleString('en-US')} كجم. الأولوية حسب المرحلة المحسوبة من حركات التشغيل الفعلية.`,
   };
+}
+
+function compactOperationalOrder(order = {}) {
+  const quantities = order.quantities || {};
+  return {
+    orderNumber: order.orderNumber || '-',
+    customer: order.customer || '-',
+    fabricType: order.fabricType || '-',
+    dyehouse: order.dyehouse || '-',
+    stage: order.stage?.label || '-',
+    days: Number(order.stage?.days || 0),
+    reason: order.stage?.reason || '-',
+    requestedRaw: Number(quantities.totalRequestedQuantity || 0),
+    dyehouseBalance: Number(quantities.remainingAtDyehouse || 0),
+    warehouseBalance: Number(quantities.warehouseBalance || 0),
+    finishedReceived: Number(quantities.totalFinishedReceived || 0),
+    delivered: Number(quantities.customerDeliveredQuantity || 0),
+    wastePercent: Number(quantities.totalWastePercent || 0),
+    action: operationalDecisionText(order),
+  };
+}
+
+function buildOperationalDashboardReport(context = {}) {
+  const snapshot = context.factorySnapshot || {};
+  const orders = normalizeAiArray(context.orders)
+    .filter((order) => !order.isClosed && !['completed', 'closed'].includes(String(order.status || '').toLowerCase()));
+  const delayed = orders
+    .filter((order) => Number(order.stage?.days || 0) >= 7)
+    .sort((a, b) => Number(b.stage?.days || 0) - Number(a.stage?.days || 0));
+  const dyehouse = orders
+    .filter((order) => Number(order.quantities?.remainingAtDyehouse || 0) > 0)
+    .sort((a, b) => Number(b.quantities?.remainingAtDyehouse || 0) - Number(a.quantities?.remainingAtDyehouse || 0));
+  const ready = orders
+    .filter((order) => Number(order.quantities?.warehouseBalance || 0) > 0)
+    .sort((a, b) => Number(b.quantities?.warehouseBalance || 0) - Number(a.quantities?.warehouseBalance || 0));
+  const highWaste = orders
+    .filter((order) => Number(order.quantities?.totalWastePercent || 0) >= Math.max(8, Number(order.quantities?.expectedWastePercent || 0) + 2))
+    .sort((a, b) => Number(b.quantities?.totalWastePercent || 0) - Number(a.quantities?.totalWastePercent || 0));
+  const priority = [...delayed, ...dyehouse, ...ready, ...highWaste]
+    .filter((order, index, list) => list.findIndex((candidate) => candidate.id === order.id) === index)
+    .slice(0, 12);
+  const top = priority[0];
+  return {
+    source: 'railway-operational-manager',
+    executiveSummary: `قراءة تشغيل اليوم: ${Number(snapshot.openOrdersCount || 0).toLocaleString('en-US')} طلب مفتوح، داخل المصابغ ${Math.round(Number(snapshot.dyehouseBalance || 0)).toLocaleString('en-US')} كجم، جاهز للتسليم ${Math.round(Number(snapshot.warehouseBalance || 0)).toLocaleString('en-US')} كجم. أهم إجراء: ${top ? `طلب ${top.orderNumber} - ${top.customer}: ${operationalDecisionText(top)}` : 'لا توجد أولوية حرجة الآن.'}`,
+    keyFindings: [
+      `طلبات متأخرة: ${delayed.length}`,
+      `طلبات بها رصيد داخل المصابغ: ${dyehouse.length}`,
+      `طلبات بها رصيد مجهز جاهز للتسليم: ${ready.length}`,
+      `طلبات هالكها أعلى من المتوقع: ${highWaste.length}`,
+    ],
+    ordersToWatch: priority.map(compactOperationalOrder),
+    risks: [
+      delayed[0] ? `أقدم وقوف: طلب ${delayed[0].orderNumber} - ${delayed[0].customer} منذ ${Number(delayed[0].stage?.days || 0)} يوم في ${delayed[0].stage?.label || '-'}.` : 'لا يوجد وقوف متأخر حسب حد 7 أيام.',
+      dyehouse[0] ? `أكبر رصيد مصبغة: طلب ${dyehouse[0].orderNumber} - ${dyehouse[0].customer} / ${Math.round(Number(dyehouse[0].quantities?.remainingAtDyehouse || 0)).toLocaleString('en-US')} كجم داخل ${dyehouse[0].dyehouse || '-'}.` : 'لا يوجد رصيد مصبغة مفتوح.',
+      ready[0] ? `أكبر جاهز للتسليم: طلب ${ready[0].orderNumber} - ${ready[0].customer} / ${Math.round(Number(ready[0].quantities?.warehouseBalance || 0)).toLocaleString('en-US')} كجم.` : 'لا يوجد رصيد مجهز جاهز للتسليم.',
+    ],
+    recommendations: [
+      'ابدأ بالأقدم وقوفا ثم الأكبر كمية، وليس بالعروض العامة.',
+      'أي رصيد داخل المصبغة يحتاج متابعة باسم المصبغة والكمية الفعلية.',
+      'أي رصيد مخزن هو جاهز للتسليم ويحتاج قرار تسليم أو حجز للعميل.',
+    ],
+    priorityActions: priority.slice(0, 5).map((order) => `طلب ${order.orderNumber} - ${order.customer}: ${operationalDecisionText(order)}`),
+    whatsappMessage: `متابعة 2B اليوم: متأخر ${delayed.length}، داخل المصابغ ${dyehouse.length}، جاهز للتسليم ${ready.length}. ${top ? `الأولوية: ${top.orderNumber} - ${top.customer}: ${operationalDecisionText(top)}` : 'لا توجد أولوية حرجة.'}`,
+  };
+}
+
+function compactAiEmployeeModelPayload(data = {}, rulesBaseline = {}) {
+  const focus = data.questionFocus || {};
+  const focusedOrders = normalizeAiArray(focus.orders).slice(0, 80).map(compactOperationalOrder);
+  const priorityOrders = normalizeAiArray(data.priorityOrders).slice(0, 40).map(compactOperationalOrder);
+  const allOrders = normalizeAiArray(data.orders).slice(0, 120).map(compactOperationalOrder);
+  return {
+    generatedAt: data.generatedAt,
+    role: data.role,
+    mission: data.mission,
+    userRequest: data.userRequest,
+    focusInstruction: data.focusInstruction,
+    questionFocus: {
+      active: Boolean(focus.active),
+      keywords: focus.keywords || [],
+      intent: focus.intent || {},
+      matchesCount: Number(focus.matchesCount || 0),
+      orders: focusedOrders,
+    },
+    factorySnapshot: data.factorySnapshot,
+    stageGroups: data.stageGroups,
+    dyehouseBalances: normalizeAiArray(data.dyehouseBalances).slice(0, 30),
+    priorityOrders,
+    orders: focus.active ? focusedOrders : allOrders,
+    rulesBaseline,
+    responseRules: [
+      'أجب كموظف تشغيل داخل 2B Tex وليس كمساعد عام.',
+      'لا تستخدم معلومات من خارج البيانات المرسلة.',
+      'أي أمر تذكره يجب أن يحتوي على رقم الطلب والعميل والصنف والمرحلة والكمية أو الأيام عند توفرها.',
+      'لو السؤال محدد وquestionFocus.active=true لا تخرج عن questionFocus.orders.',
+      'لو لا توجد أوامر مطابقة قل ذلك صراحة ولا تعرض أوامر بديلة.',
+      'لا تعتبر الرصيد داخل المصبغة هالكا إلا إذا كان الطلب مغلقا أو الهالك مسجل فعليا.',
+      'رصيد المخزن هو مجهز جاهز للتسليم.',
+    ],
+  };
+}
+
+function mergeAiEmployeeModelReport(modelReport = {}, rulesBaseline = {}, source = '') {
+  return {
+    source: source || modelReport.source || rulesBaseline.source || 'ai-model',
+    executiveSummary: modelReport.executiveSummary || rulesBaseline.executiveSummary || '',
+    keyFindings: normalizeAiArray(modelReport.keyFindings).length ? normalizeAiArray(modelReport.keyFindings) : normalizeAiArray(rulesBaseline.keyFindings),
+    ordersToWatch: normalizeAiArray(modelReport.ordersToWatch).length ? normalizeAiArray(modelReport.ordersToWatch) : normalizeAiArray(rulesBaseline.ordersToWatch),
+    risks: normalizeAiArray(modelReport.risks).length ? normalizeAiArray(modelReport.risks) : normalizeAiArray(rulesBaseline.risks),
+    recommendations: normalizeAiArray(modelReport.recommendations).length ? normalizeAiArray(modelReport.recommendations) : normalizeAiArray(rulesBaseline.recommendations),
+    priorityActions: normalizeAiArray(modelReport.priorityActions).length ? normalizeAiArray(modelReport.priorityActions) : normalizeAiArray(rulesBaseline.priorityActions),
+    whatsappMessage: modelReport.whatsappMessage || rulesBaseline.whatsappMessage || '',
+  };
+}
+
+async function runAiEmployeeModelReport(data = {}, rulesBaseline = {}) {
+  const payload = compactAiEmployeeModelPayload(data, rulesBaseline);
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const result = await runGeminiAnalysis(payload);
+      return mergeAiEmployeeModelReport(result, rulesBaseline, 'gemini');
+    } catch (error) {
+      console.warn('[2B Tex] Gemini employee report failed, using operational rules:', error.message);
+    }
+  }
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const result = await runOpenAiAnalysis(payload);
+      return mergeAiEmployeeModelReport(result, rulesBaseline, 'openai');
+    } catch (error) {
+      console.warn('[2B Tex] OpenAI employee report failed, using operational rules:', error.message);
+    }
+  }
+  return rulesBaseline;
 }
 
 function daysBetween(startValue, endValue = new Date()) {
@@ -1051,7 +1190,11 @@ async function buildAiEmployeeContext() {
     const key = order.stage.key;
     acc[key] = acc[key] || { key, label: order.stage.label, count: 0, quantity: 0, oldestDays: 0 };
     acc[key].count += 1;
-    acc[key].quantity += Number(order.quantities.totalRequestedQuantity || 0);
+    acc[key].quantity += Number(
+      key === 'dyehouse' ? order.quantities.remainingAtDyehouse
+        : key === 'warehouse' || key === 'delivery' ? order.quantities.warehouseBalance
+          : order.quantities.totalRequestedQuantity
+    ) || 0;
     acc[key].oldestDays = Math.max(acc[key].oldestDays, Number(order.stage.days || 0));
     return acc;
   }, {});
@@ -1139,6 +1282,9 @@ async function runOpenAiAnalysis(data) {
             'اكتب عربي واضح مختصر وعملي، واعتمد على الأرقام فقط.',
             'إذا كان payload يحتوي على questionFocus.active=true فالإجابة يجب أن تكون عن questionFocus.orders فقط. لا تعرض ملخصًا عامًا للنظام إلا إذا طلب المستخدم ذلك صراحة.',
             'إذا كان questionFocus.active=true و questionFocus.matchesCount=0 فقل بوضوح أنه لا توجد أوامر مطابقة للسؤال ولا تختر أوامر أخرى بديلة.',
+            'إذا كان payload يحتوي على rulesBaseline فاعتبره حساب النظام الرسمي، واستخدمه كمرجع أرقام لا يتم تغييره.',
+            'دورك إضافة فهم وتشخيص وتوصية تشغيلية فوق rulesBaseline، وليس اختراع طلبات أو كميات جديدة.',
+            'لا تذكر أي طلب إلا إذا كان موجودًا داخل questionFocus.orders أو orders أو priorityOrders في payload.',
             'أرجع JSON فقط بالمفاتيح: source, executiveSummary, keyFindings, ordersToWatch, risks, recommendations, priorityActions, whatsappMessage.',
           ].join('\n'),
         },
@@ -1181,6 +1327,9 @@ async function runGeminiAnalysis(data) {
             'اكتب عربي واضح مختصر وعملي، واعتمد على الأرقام فقط.',
             'إذا كان payload يحتوي على questionFocus.active=true فالإجابة يجب أن تكون عن questionFocus.orders فقط. لا تعرض ملخصًا عامًا للنظام إلا إذا طلب المستخدم ذلك صراحة.',
             'إذا كان questionFocus.active=true و questionFocus.matchesCount=0 فقل بوضوح أنه لا توجد أوامر مطابقة للسؤال ولا تختر أوامر أخرى بديلة.',
+            'إذا كان payload يحتوي على rulesBaseline فاعتبره حساب النظام الرسمي، واستخدمه كمرجع أرقام لا يتم تغييره.',
+            'دورك إضافة فهم وتشخيص وتوصية تشغيلية فوق rulesBaseline، وليس اختراع طلبات أو كميات جديدة.',
+            'لا تذكر أي طلب إلا إذا كان موجودًا داخل questionFocus.orders أو orders أو priorityOrders في payload.',
             'أرجع JSON فقط بالمفاتيح: source, executiveSummary, keyFindings, ordersToWatch, risks, recommendations, priorityActions, whatsappMessage.',
           ].join('\n'),
         }],
@@ -1332,8 +1481,11 @@ function operationalDecisionText(order = {}) {
   const warehouseBalance = Number(quantities.warehouseBalance || 0);
   const wastePercent = Number(quantities.totalWastePercent || order.totalWastePercent || 0);
   const expectedWaste = Number(quantities.expectedWastePercent || order.expectedWastePercent || 0);
-  if (stageKey === 'dyehouse' || dyehouseBalance > 0) return `اتصل بالمصبغة ${order.dyehouse || '-'} لمتابعة ${Math.round(dyehouseBalance).toLocaleString('en-US')} كجم داخل المصبغة.`;
-  if (warehouseBalance > 0) return `نسق تسليم ${Math.round(warehouseBalance).toLocaleString('en-US')} كجم للعميل قبل فتح تشغيل جديد.`;
+  if (stageKey === 'dyehouse' || dyehouseBalance > 0) {
+    const readyNote = warehouseBalance > 0 ? ` ويوجد أيضا ${Math.round(warehouseBalance).toLocaleString('en-US')} كجم جاهز للتسليم.` : '';
+    return `اتصل بالمصبغة ${order.dyehouse || '-'} لمتابعة ${Math.round(dyehouseBalance).toLocaleString('en-US')} كجم داخل المصبغة.${readyNote}`;
+  }
+  if (warehouseBalance > 0) return `نسق تسليم ${Math.round(warehouseBalance).toLocaleString('en-US')} كجم للعميل؛ هذا رصيد مجهز فعلي في المخزن.`;
   if (wastePercent >= Math.max(8, expectedWaste + 2)) return `راجع الهالك ${wastePercent.toLocaleString('en-US', { maximumFractionDigits: 1 })}% قبل اعتماد الإغلاق.`;
   if (stageKey === 'weaving') return 'تابع خروج الخام من النسيج أو سجل الإذن الناقص.';
   return order.stage?.reason || 'راجع آخر حركة تشغيل وحدد الإجراء التالي.';
@@ -1471,22 +1623,8 @@ app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
         : 'سؤال المستخدم محدد لكن لا توجد أوامر مطابقة في قاعدة البيانات. قل ذلك بوضوح ولا تعرض تقريرًا عامًا بدل الإجابة.')
       : 'سؤال المستخدم عام، اعرض ملخص التشغيل والأولويات.',
   };
-  if (questionFocus.active) return res.json(buildFocusedEmployeeReport(data));
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      return res.json({ ...(await runGeminiAnalysis(data)), userRequest: data.userRequest });
-    } catch (error) {
-      console.warn('[2B Tex] Gemini employee report failed, trying next provider:', error.message);
-    }
-  }
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      return res.json({ ...(await runOpenAiAnalysis(data)), userRequest: data.userRequest });
-    } catch (error) {
-      console.warn('[2B Tex] OpenAI employee report failed, using operational rules:', error.message);
-    }
-  }
-  return res.json({ ...buildOperationalEmployeeReport(data), userRequest: data.userRequest });
+  const rulesBaseline = questionFocus.active ? buildFocusedEmployeeReport(data) : buildOperationalDashboardReport(data);
+  return res.json({ ...(await runAiEmployeeModelReport(data, rulesBaseline)), userRequest: data.userRequest });
 }));
 
 app.post('/api/backup', requireRole('admin'), asyncHandler(async (_req, res) => {
