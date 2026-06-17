@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Restore Individual Order Movement Forms
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.08`
+- Goal: keep raw returns, finished receiving, and customer delivery visible after adding combined movement shortcuts.
+- Change: combined movement shortcuts no longer hide the original single-entry movement forms.
+- Change: added a small UI note that individual forms remain available for returns or quick movement.
+- Change: updated `app.js` cache busting so the browser loads the corrected frontend.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Scope Legacy Partial Dyehouse Transfers By Quantity
 
 - Date: 2026-06-17

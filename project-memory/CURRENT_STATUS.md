@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.17.07`
+`v2026.06.17.08`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Restore individual order movement forms`
+
+## Latest Order Movement Visibility Fix
+
+- Version: `v2026.06.17.08`.
+- Individual order movement forms are visible again beside the combined movement shortcuts.
+- Restored visible access to raw return, finished receiving, and customer delivery forms inside order details.
+- Combined movement buttons remain available as shortcuts and no longer replace the original movement forms.
+- Updated frontend cache busting for `app.js` so browsers load the fixed version.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Scope legacy partial dyehouse transfers by quantity`
 

@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.07';
-const APP_BUILD_TIME = '2026-06-17 14:55';
+const APP_VERSION = 'v2026.06.17.08';
+const APP_BUILD_TIME = '2026-06-17 15:31';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -4151,10 +4151,8 @@ function installBulkEntryButtons() {
   const panel = refs.orderDetailsPanel;
   if (!panel) return;
   panel.querySelectorAll('form.batch-form').forEach((form) => {
-    if (['raw', 'production', 'customer', 'accessory', 'accessoryReceived'].includes(form.dataset.form)) {
-      form.classList.add('single-entry-form-hidden');
-      form.setAttribute('aria-hidden', 'true');
-    }
+    form.classList.remove('single-entry-form-hidden');
+    form.removeAttribute('aria-hidden');
     form.querySelectorAll('[data-open-bulk-entry]').forEach((button)=>button.remove());
   });
   const batchGrid = panel.querySelector('.batch-grid.compact');
@@ -4163,6 +4161,7 @@ function installBulkEntryButtons() {
     <div>
       <p class="eyebrow">أوامر الحركة المجمعة</p>
       <h3>القماش والإكسسوار في إذن واحد</h3>
+      <p class="eyebrow">النماذج الفردية أسفلها متاحة للمرتجعات أو الحركة السريعة.</p>
     </div>
     <div class="combined-movement-actions">
       <button class="mini-btn gold" type="button" data-open-combined-movement="dyehouse">أمر صرف للمصبغة</button>
