@@ -103,7 +103,15 @@
       } else if (type === 'waste') {
         body = deps.buildWasteReportDocument({ ...order, reportNotesText:deps.combinedOperationNotes(order) }, fmt, safe);
       } else if (type === 'fullreport') {
-        body = deps.buildCompactFullReportDocument({ ...order, reportNotesText:deps.combinedOperationNotes(order) }, fmt, safe);
+        body = deps.buildCompactFullReportDocument({
+          ...order,
+          rawBatches:deps.getRawBatches(),
+          finishedBatches:deps.getFinishedBatches(),
+          customerBatches:deps.getCustomerBatches(),
+          rawReturns:deps.getRawReturns(),
+          dyehouseTransfers:deps.getDyehouseTransfers(),
+          reportNotesText:deps.combinedOperationNotes(order),
+        }, fmt, safe);
       } else if (type === 'labSamples') {
         body = deps.buildLabSamplesDocument(order, fmt, safe);
         alreadyWrapped = true;

@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.17.10`
+`v2026.06.17.11`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix detailed report movements and balances`
+
+## Latest Detailed Report Movements And Balances Fix
+
+- Version: `v2026.06.17.11`.
+- Detailed order reports now receive the live movement collections from the UI layer: raw batches, finished batches, customer batches, raw returns, and dyehouse transfers.
+- The detailed color plan now shows dyehouse, finished received, customer delivered, warehouse balance, and actual waste in addition to planned quantity and dimensions.
+- The summary now shows actual dyehouse balance, warehouse balance, delivered quantity, and waste values.
+- Added regression coverage for color plan, dyehouse balance, warehouse balance, and transfer history visibility.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Restore transfer history in detailed report`
 

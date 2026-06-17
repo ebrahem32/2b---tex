@@ -430,8 +430,14 @@ function checkLegacyPartialTransferUsesActualQuantity() {
     fabricType: 'Mixed',
     dyehouse: 'Star',
     totalRawOrdered: 4100,
+    totalRawReceived: 4180,
+    rawAtDyehouseAvailable: 1719.2,
+    totalFinishedReceived: 100,
+    totalDeliveredToCustomer: 40,
+    warehouseBalance: 60,
+    totalWaste: 0,
     allocations: [
-      { id: 'alloc-width-75', orderId: 'order-document-legacy-transfer', color: 'off white', plannedQuantity: 2100, dyehouse: 'Biko', sentToDyehouse: 2100, remainingAtDyehouse: 2100, targetFinishedWidth: 75, targetFinishedWeight: 140 },
+      { id: 'alloc-width-75', orderId: 'order-document-legacy-transfer', color: 'off white', plannedQuantity: 2100, dyehouse: 'Biko', sentToDyehouse: 2100, remainingAtDyehouse: 2100, finishedReceived:100, deliveredToCustomer:40, targetFinishedWidth: 75, targetFinishedWeight: 140 },
     ],
     rawBatches: [{ orderId: 'order-document-legacy-transfer', allocationId: null, date: '2026-05-20', quantity: 4180, noteNumber: '5454' }],
     productionBatches: [],
@@ -451,6 +457,9 @@ function checkLegacyPartialTransferUsesActualQuantity() {
   assert(fullHtml.includes('2026-05-20'), 'document: detailed report transfer section must show transfer date');
   assert(fullHtml.includes('Star') && fullHtml.includes('Biko'), 'document: detailed report transfer section must show source and target dyehouse');
   assert(fullHtml.includes('380.8'), 'document: detailed report transfer section must show transfer quantity');
+  assert(fullHtml.includes('off white') && fullHtml.includes('2,100'), 'document: detailed report must show color plan quantities');
+  assert(fullHtml.includes('رصيد المخزن') && fullHtml.includes('60'), 'document: detailed report must show warehouse balance');
+  assert(fullHtml.includes('داخل المصبغة') && fullHtml.includes('1,719.2'), 'document: detailed report must show dyehouse balance');
 }
 
 function checkDyehouseTransferKindsAreSeparated() {

@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Detailed Report Movements And Balances
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.11`
+- Goal: make the detailed report show the real operational state, not an empty or partial report.
+- Change: full report rendering now receives the live movement collections from the documents UI.
+- Change: the detailed color plan now includes dyehouse, finished received, customer delivered, warehouse balance, and actual waste.
+- Change: the report summary now includes actual dyehouse balance, warehouse balance, delivered quantity, and waste values.
+- Verification coverage: added regression assertions for color plan, dyehouse balance, warehouse balance, and transfer history.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Restore Transfer History In Detailed Report
 
 - Date: 2026-06-17

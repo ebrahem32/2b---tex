@@ -72,6 +72,9 @@
     const movementAccessoryParts = (order, allocation, movement) => (
       typeof accessoryFlowPartsForOrder === 'function' ? accessoryFlowPartsForOrder(order, allocation, movement) : []
     );
+    const balanceAccessoryParts = (order, allocation) => (
+      typeof accessoryBalancePartsForOrder === 'function' ? accessoryBalancePartsForOrder(order, allocation) : movementAccessoryParts(order, allocation, 'balance')
+    );
 
     function uniqueBy(rows, keyFactory) {
       const seen = new Set();
@@ -153,6 +156,7 @@
       const includeFinished = options.includeFinished !== false;
       const includeReceived = !!options.includeReceived;
       const includeCustomerDelivered = !!options.includeCustomerDelivered;
+      const includeWarehouseBalance = !!options.includeWarehouseBalance;
       const includeWaste = !!options.includeWaste;
       const headers = [
         'اللون',
@@ -161,6 +165,7 @@
         includeDyehouse ? 'المصبغة' : '',
         includeReceived ? 'دخل المخزن' : '',
         includeCustomerDelivered ? 'تسليم العميل' : '',
+        includeWarehouseBalance ? 'رصيد المخزن' : '',
         includeWaste ? 'الهالك الفعلي' : '',
         includeFinished ? 'الوزن المجهز' : '',
         'العرض',
@@ -173,6 +178,7 @@
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
           includeReceived ? flowCell(line.finishedReceived, movementAccessoryParts(order, line, 'received')) : '',
           includeCustomerDelivered ? flowCell(line.deliveredToCustomer || line.customerDelivered, movementAccessoryParts(order, line, 'customer')) : '',
+          includeWarehouseBalance ? flowCell(Number(line.finishedReceived || 0) - Number(line.deliveredToCustomer || line.customerDelivered || 0), balanceAccessoryParts(order, line)) : '',
           includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(Number(line.wastePercent || 0), 1)}%)` : '',
           includeFinished ? safeText(line.targetFinishedWeight) : '',
           safeText(line.targetFinishedWidth || line.rawWidth),
@@ -450,8 +456,9 @@
     }
 
     function buildCompactFullReportDocument(order) {
-      const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام مستلم</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>مرسل للمصبغة</th><td>${fmt(order?.totalSentToDyehouse)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td></tr></tbody></table></section>`;
-      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeCustomerDelivered:true, includeWaste:true })}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
+      const dyehouseBalance = Number(order?.rawAtDyehouseAvailable ?? order?.remainingAtDyehouse ?? 0);
+      const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام خرج للمصبغة</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>داخل المصبغة</th><td>${fmt(dyehouseBalance)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order?.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td></tr><tr><th>هالك فعلي</th><td>${fmt(order?.totalWaste)}</td><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td></tr></tbody></table></section>`;
+      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${colorRows(order, orderAllocations(order), { includeDyehouse:true, includeReceived:true, includeCustomerDelivered:true, includeWarehouseBalance:true, includeWaste:true })}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
     }
 
     function buildWasteReportDocument(order) {
