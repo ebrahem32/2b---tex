@@ -26,6 +26,13 @@
     const safeText = (value) => escapeHtml(value === undefined || value === null || value === '' ? '-' : value);
     const fmt = (value, digits = 3) => formatNumber(Number(value || 0), digits);
     const clean = (value) => String(value || '').trim();
+    const transferKind = (transfer) => {
+      const text = clean(`${transfer?.mode || ''} ${transfer?.reason || ''} ${transfer?.notes || ''}`);
+      if (text.includes('[raw-transfer]')) return 'raw';
+      if (text.includes('[allocation-transfer]')) return 'allocation';
+      return 'allocation';
+    };
+    const isRawTransfer = (transfer) => transferKind(transfer) === 'raw';
     const customerName = (order) => clean(order?.customer || order?.customerName || order?.clientName || '');
     const fallbackAccessoryName = (line, order) => clean(line?.type || order?.accessoryType || 'إكسسوار');
     const resolvedAccessoryName = (line, order) => (
@@ -268,17 +275,18 @@
       const name = clean(dyehouseName);
       const rowAllocationIds = new Set(rows.map((allocation) => allocation.id).filter(Boolean));
       const rowBatchSum = (items) => sum((Array.isArray(items) ? items : []).filter((batch) => rowAllocationIds.has(batch.allocationId)));
-      const transferredOut = sum((order?.dyehouseTransfers || []).filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
+      const transferredOut = sum((order?.dyehouseTransfers || []).filter((transfer) => isRawTransfer(transfer) && clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
+      const transferredIn = sum((transfersToDyehouse || []).filter(isRawTransfer));
       const sentFromRows = roundNumber(sum(rows.map((allocation) => ({ quantity: Number(allocation.sentToDyehouse || 0) }))));
-      const sentToDyehouse = sentFromRows || (isOriginalDyehouse
+      const sentToDyehouse = transferredIn || sentFromRows || (isOriginalDyehouse
         ? roundNumber(Math.max(rowBatchSum(rawBatchesFor(order)) - transferredOut, 0))
-        : roundNumber(sum(transfersToDyehouse)));
+        : 0);
       const receivedFromDyehouse = rowBatchSum(order?.productionBatches || order?.finishedBatches);
       const returnedFromDyehouse = rowBatchSum(order?.rawReturns);
       const wasteInRows = sum(rows.map((allocation) => ({ quantity: Number(allocation.wasteQuantity || allocation.actualWasteQuantity || 0) })));
       const operationalBalance = roundNumber(sum(rows.map((allocation) => ({ quantity: Number(allocation.remainingAtDyehouse || 0) }))));
       const movementBalance = roundNumber(Math.max(sentToDyehouse - receivedFromDyehouse - returnedFromDyehouse - wasteInRows, 0));
-      return roundNumber(movementBalance || operationalBalance);
+      return roundNumber(operationalBalance || movementBalance);
     }
 
     function todayIsoDate() {
@@ -322,10 +330,11 @@
       const reportDate = firstDyehouseOperationDate(dates);
       const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
+      const documentOrder = { ...order, totalRawOrdered:plannedTotal, totalRawQuantity:plannedTotal };
       const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
       const operationStages = dyeingOperationStagesSection(order);
       const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
-      return reportShell('أمر تشغيل صباغة', order, `${summary}${operationStages}${colorRows(order, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...order, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
+      return reportShell('أمر تشغيل صباغة', documentOrder, `${summary}${operationStages}${colorRows(documentOrder, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection({ ...documentOrder, allocations:rows })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
     }
 
     function buildDyeingSummaryDocument(order) {

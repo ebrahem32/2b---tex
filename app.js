@@ -19,8 +19,10 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.17.03';
-const APP_BUILD_TIME = '2026-06-17 13:05';
+const APP_VERSION = 'v2026.06.17.04';
+const APP_BUILD_TIME = '2026-06-17 13:45';
+const TRANSFER_RAW_MARKER = '[raw-transfer]';
+const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -194,6 +196,7 @@ function ensureRecordIds(collection) {
 function repairTransferredAllocationDyehouses() {
   let changed = false;
   (dyehouseTransfers || []).forEach((transfer)=>{
+    if (transfer.mode === 'raw' || String(transfer.reason || transfer.notes || '').includes(TRANSFER_RAW_MARKER)) return;
     const targetId = transfer.newAllocationId || transfer.allocationId;
     const toDyehouse = String(transfer.toDyehouse || '').trim();
     if (!targetId || !toDyehouse) return;
@@ -524,6 +527,13 @@ function mapDbBatch(row) {
   };
 }
 function mapDbTransfer(row) {
+  const reason = row.notes || '';
+  const text = String(reason || '');
+  const mode = text.includes(TRANSFER_RAW_MARKER)
+    ? 'raw'
+    : text.includes(TRANSFER_ALLOCATION_MARKER)
+      ? (row.to_allocation_id ? 'split' : 'full')
+      : (row.to_allocation_id ? 'split' : 'full');
   return {
     id: row.id,
     orderId: row.order_id,
@@ -533,10 +543,10 @@ function mapDbTransfer(row) {
     toDyehouse: row.to_dyehouse || '',
     quantity: Number(row.quantity || 0),
     date: dbDate(row),
-    reason: row.notes || '',
+    reason,
     noteNumber: row.note_number || '',
     transferDate: row.transfer_date || dbDate(row),
-    mode: row.to_allocation_id ? 'split' : 'full',
+    mode,
   };
 }
 function mapDbPricing(row, customers) {
@@ -5400,8 +5410,13 @@ async function transferAllocationDyehouse(id) {
   const newDyehouse = newDyehouseValue.trim();
   if (!newDyehouse) return;
   if (newDyehouse === currentDyehouse) { alert('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0644\u0645 \u062a\u062a\u063a\u064a\u0631.'); return; }
+  const transferTypeValue = prompt('\u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645 \u0641\u0639\u0644\u064a \u0645\u0646 \u0645\u0635\u0628\u063a\u0629 \u0644\u0645\u0635\u0628\u063a\u0629\n2 - \u0646\u0642\u0644 \u0627\u0644\u0644\u0648\u0646 / \u0627\u0644\u0628\u0646\u062f \u062f\u0627\u062e\u0644 \u0627\u0644\u0623\u0648\u0631\u062f\u0631', '2');
+  if (transferTypeValue === null) return;
+  const isRawTransfer = /^1\b|\u062e\u0627\u0645/.test(String(transferTypeValue).trim());
   const originalQuantity = Number(allocation.plannedQuantity || 0);
-  const suggestedQuantity = Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0) || originalQuantity || '';
+  const suggestedQuantity = isRawTransfer
+    ? (Number(calculated.remainingAtDyehouse || 0) || Number(calculated.sentToDyehouse || 0) || originalQuantity || '')
+    : (Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0) || originalQuantity || '');
   const quantityValue = prompt('\u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062d\u0648\u0644\u0629', suggestedQuantity);
   if (quantityValue === null) return;
   const quantity = Number(quantityValue);
@@ -5420,16 +5435,18 @@ async function transferAllocationDyehouse(id) {
   let newAllocation = null;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
-  if (roundedQuantity >= originalQuantity) {
+  if (isRawTransfer) {
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason:[TRANSFER_RAW_MARKER, reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'raw' };
+  } else if (roundedQuantity >= originalQuantity) {
     allocationUpdate = { ...allocation, dyehouse:newDyehouse };
-    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundNumber(originalQuantity), date:dateValue, reason: [reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'full' };
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundNumber(originalQuantity), date:dateValue, reason: [TRANSFER_ALLOCATION_MARKER, reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'full' };
   } else {
     const ratio = originalQuantity ? roundedQuantity / originalQuantity : 0;
     const originalAccessory = Number(allocation.accessoryQuantityManual || 0);
     const newAccessory = originalAccessory ? roundNumber(originalAccessory * ratio) : allocation.accessoryQuantityManual;
     allocationUpdate = { ...allocation, plannedQuantity:roundNumber(originalQuantity - roundedQuantity), accessoryQuantityManual:originalAccessory ? roundNumber(originalAccessory - Number(newAccessory || 0)) : allocation.accessoryQuantityManual };
     newAllocation = { ...allocation, id:newAllocationId, plannedQuantity:roundedQuantity, dyehouse:newDyehouse, accessoryQuantityManual:newAccessory };
-    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason, noteNumber, mode:'split' };
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason:[TRANSFER_ALLOCATION_MARKER, reason].filter(Boolean).join(' - '), noteNumber, mode:'split' };
   }
   if (backendSaveRequired) {
     const updatedAllocation = allocationUpdate ? await putBackend(`/allocations/${id}`, allocationToApi(allocationUpdate)) : true;
@@ -5542,7 +5559,7 @@ async function editBatch(type, id) {
   const quantity = Number(prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
   updatedBatch.date = prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
   if (type === 'raw') { updatedBatch.supplier = prompt('الجهة / المصدر', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; }
+  if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; if (updatedBatch.mode === 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_RAW_MARKER)) updatedBatch.reason = [TRANSFER_RAW_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode !== 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_ALLOCATION_MARKER)) updatedBatch.reason = [TRANSFER_ALLOCATION_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); }
   if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'accessory') { updatedBatch.accessoryType = prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('مصدر الدمج / العملية', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('اسم المنتج الناتج', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }

@@ -409,6 +409,7 @@ function checkDyeingDocumentSplitsMultiDyehouseOrder() {
   const newGeimaHtml = builders.buildDyeingOrderDocument(order, 'New Geima');
   assert(newGeimaHtml.includes('600'), 'document: New Geima planned total must include its two colors only');
   assert(newGeimaHtml.includes('611.82'), 'document: New Geima raw balance must use its two color sent quantities only');
+  assert(!newGeimaHtml.includes('1,500'), 'document: New Geima header must not show the full order raw total');
   assert(newGeimaHtml.includes('white') && newGeimaHtml.includes('black'), 'document: New Geima must show white and black');
   assert(!newGeimaHtml.includes('red'), 'document: New Geima must not include Geima colors');
 
@@ -417,6 +418,18 @@ function checkDyeingDocumentSplitsMultiDyehouseOrder() {
   assert(geimaHtml.includes('929.6'), 'document: Geima raw balance must use its six color sent quantities only');
   assert(geimaHtml.includes('red') && geimaHtml.includes('grey'), 'document: Geima must show Geima colors');
   assert(!geimaHtml.includes('white'), 'document: Geima must not include New Geima colors');
+}
+
+function checkDyehouseTransferKindsAreSeparated() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
+  assert(appSource.includes('TRANSFER_RAW_MARKER'), 'transfers: raw-transfer marker must exist');
+  assert(appSource.includes('TRANSFER_ALLOCATION_MARKER'), 'transfers: allocation-transfer marker must exist');
+  assert(appSource.includes('const isRawTransfer = /^1'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
+  assert(appSource.includes("mode:'raw'"), 'transfers: raw transfer must be saved without allocation splitting');
+  assert(documentsSource.includes('const isRawTransfer = (transfer) => transferKind(transfer) ==='), 'documents: dyeing documents must distinguish physical raw transfers');
+  assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
+  assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');
 }
 
 function checkBodyLabelOnlyAppearsWithAccessories() {
@@ -650,6 +663,7 @@ checkAllocationLinkedRawDispatchStaysPerColor();
 checkOrderLevelRawDispatchDistributesByColorPlan();
 checkDyeingDocumentShowsPhysicalRawBalance();
 checkDyeingDocumentSplitsMultiDyehouseOrder();
+checkDyehouseTransferKindsAreSeparated();
 checkBodyLabelOnlyAppearsWithAccessories();
 checkWarehouseTabKeepsInventorySection();
 checkNoRawWarehouseDashboardTerminology();

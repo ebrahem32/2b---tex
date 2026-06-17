@@ -2,13 +2,29 @@
 
 ## Current Version
 
-`v2026.06.17.03`
+`v2026.06.17.04`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Separate dyehouse transfer types and scoped dyeing totals`
+
+## Latest Dyehouse Transfer Separation Fix
+
+- Version: `v2026.06.17.04`.
+- Dyeing operation document headers now show the selected dyehouse quantity, not the full order raw total.
+- Dyeing raw balance now prefers the selected dyehouse allocation balance so split dyehouse documents do not mix unrelated colors.
+- Dyehouse transfer action now separates two concepts:
+  - physical raw transfer between dyehouses.
+  - allocation/color transfer inside the order.
+- Raw transfer is recorded without changing allocation ownership.
+- Allocation/color transfer keeps the previous split/full allocation behavior.
+- Not touched: backend calculations, backend server endpoints, SQLite schema, local SQLite data, stock formulas outside the selected document/transfer UI, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Show width labels across multi-width order operations`
 

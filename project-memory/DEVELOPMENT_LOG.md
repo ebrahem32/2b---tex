@@ -4,6 +4,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Separate Dyehouse Transfer Types And Scoped Dyeing Totals
+
+- Date: 2026-06-17
+- Version: `v2026.06.17.04`
+- Goal: prevent dyeing operation documents and dyehouse balances from mixing physical raw movement with allocation/color reassignment.
+- Change: dyeing operation document header raw total is now scoped to the selected dyehouse rows.
+- Change: dyeing operation raw balance now prefers the operational balance of the selected dyehouse rows before movement fallback.
+- Change: dyehouse transfer UI now asks whether the user is moving raw physically or moving the color/allocation inside the order.
+- Change: physical raw transfer records do not update/split allocations; allocation transfer records keep the existing split/full allocation behavior.
+- Verification coverage: added regression checks for scoped dyeing totals and separated transfer kinds.
+- Not touched: backend calculations, backend server endpoints, SQLite schema/data, AI backend, WhatsApp, A5.
+
 ### Show Width Labels Across Multi-Width Order Operations
 
 - Date: 2026-06-17
