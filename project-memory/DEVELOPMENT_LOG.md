@@ -4,6 +4,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Improve Mobile-First Workspace Layout
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.16`
+- Goal: make the current system easier to operate on mobile without changing operational behavior.
+- Change: added a mobile-only CSS layer that keeps the main workspace inside the phone viewport and reduces horizontal scrolling.
+- Change: mobile card tables now receive missing `data-label` values from their headers automatically, so rendered rows become readable cards on phones.
+- Change: filters, actions, dialogs, order detail tabs, pricing forms, operation cards, and AI panels collapse to safer single-column mobile layouts.
+- Change: mobile menu button text is now `القائمة`, and CSS/app cache keys were updated.
+- Verification: `npm run check` passes and operational flow check passes.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
 ### Expand AI Employee Direct Operational Commands
 
 - Date: 2026-06-18

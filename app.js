@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.18.15';
+const APP_VERSION = 'v2026.06.18.16';
 const APP_BUILD_TIME = '2026-06-18 16:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -6884,6 +6884,29 @@ function handleOrderTableClick(event) {
 [refs.ordersTableBody, refs.weavingOrdersTableBody, refs.dyehouseOrdersTableBody, refs.warehouseOrdersTableBody]
   .filter(Boolean)
   .forEach((body) => { body.onclick = handleOrderTableClick; });
+
+function syncMobileTableLabels(root = document) {
+  root.querySelectorAll?.('table.mobile-card-table').forEach((table) => {
+    const labels = [...table.querySelectorAll('thead th')].map((cell) => cell.textContent.trim());
+    if (!labels.length) return;
+    table.querySelectorAll('tbody tr').forEach((row) => {
+      [...row.children].forEach((cell, index) => {
+        if (cell.tagName !== 'TD' || cell.dataset.label || !labels[index]) return;
+        cell.dataset.label = labels[index];
+      });
+    });
+  });
+}
+
+function installMobileTableLabelSync() {
+  syncMobileTableLabels();
+  const observer = new MutationObserver((mutations) => {
+    if (!mutations.some((mutation) => mutation.addedNodes.length)) return;
+    syncMobileTableLabels(document);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
 document.getElementById('refreshOperationFollowBtn')?.addEventListener('click', refreshOperationFollowPanel);
 document.getElementById('erpCockpit')?.addEventListener('click', (event) => {
   const viewButton = event.target.closest('[data-view]');
@@ -6982,6 +7005,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
 });
 installDocumentsUiHandlers();
 installTodayOrdersUiHandlers?.();
+installMobileTableLabelSync();
 if (refs.weavingSlipDialog) {
   refs.closeWeavingSlipBtn.onclick = () => refs.weavingSlipDialog.close();
   refs.weavingSlipType.onchange = () => { updateDocumentReviewFields(); if ((refs.weavingSlipType.value === 'amalOrder' || refs.weavingSlipType.value === 'deltexIssue') && refs.weavingSlipFile.files?.[0]) applyAmalSuggestionFromFile(refs.weavingSlipFile.files[0]); };

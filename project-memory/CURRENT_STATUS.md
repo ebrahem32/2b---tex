@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.18.15`
+`v2026.06.18.16`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Improve mobile-first workspace layout`
+
+## Latest Mobile Workspace Pass
+
+- Version: `v2026.06.18.16`.
+- Added a mobile-only layout layer that prevents the main workspace from overflowing horizontally on phone screens.
+- Existing `mobile-card-table` tables now receive column labels automatically from their table headers, so list views can render as readable cards on mobile even when individual renderers do not set labels manually.
+- Mobile filters, actions, dialogs, order details, pricing forms, AI panels, and operation cards now collapse to single-column layouts.
+- The mobile sidebar remains an off-canvas menu with a clearer `القائمة` button.
+- Updated CSS/app cache keys in `index.html`.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock/waste formulas, AI backend, WhatsApp service internals, A5 service internals.
+
+## Previous Commit Message
 
 `Expand AI employee direct operational commands`
 
