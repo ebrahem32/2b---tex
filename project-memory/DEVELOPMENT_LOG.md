@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Unify Dyehouse Document Balance Ledger
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.13`
+- Goal: make dyeing documents and detailed reports read raw dyehouse transfers from one source/target ledger.
+- Change: added a document-side dyehouse ledger that starts with the allocation quantity in the source dyehouse, subtracts raw transfers out, and adds raw transfers into target dyehouses.
+- Change: scoped dyehouse quantities now come from this ledger instead of separate raw-in/raw-out branches.
+- Verification: added operational-flow assertion for the unified document ledger and kept existing source/target split tests.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Recover Unreadable Order Fabric Names From Pricing Cards
 
 - Date: 2026-06-18

@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.18.12`
+`v2026.06.18.13`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Unify dyehouse document balance ledger`
+
+## Latest Dyehouse Document Ledger Unification
+
+- Version: `v2026.06.18.13`.
+- Dyeing documents now use one ledger-style distribution for raw dyehouse transfers.
+- The ledger starts from the allocation planned quantity at its source dyehouse, subtracts raw transferred out, and adds raw transferred into the target dyehouse.
+- Dyeing orders and detailed reports now share the same source/target balance logic for split dyehouse work.
+- Regression coverage was added so document builders keep the unified ledger function.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock/waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Recover unreadable order fabric names from pricing cards`
 

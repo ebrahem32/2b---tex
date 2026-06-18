@@ -570,6 +570,7 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(documentsSource.includes('const transferTextLooksRaw = (value) =>'), 'documents: legacy raw-transfer notes must be recognized');
   assert(documentsSource.includes("if (text.includes('[allocation-transfer]')) return false"), 'documents: allocation transfer must not be counted as physical raw transfer');
   assert(documentsSource.includes('const isRawTransfer = (transfer, order = null) => transferKind(transfer, order) ==='), 'documents: dyeing documents must distinguish physical raw transfers with order context');
+  assert(documentsSource.includes('function dyehouseLedgerSegmentsForAllocation(order, allocation)'), 'documents: dyehouse documents must use one ledger for source and target raw balances');
   assert(documentsSource.includes('function dyehouseScopedAllocations(order, dyehouseName)'), 'documents: dyeing documents must scope color rows by dyehouse transfer quantities');
   assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
   assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');

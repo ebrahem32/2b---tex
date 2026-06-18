@@ -309,17 +309,39 @@
         });
     }
 
+    function dyehouseLedgerSegmentsForAllocation(order, allocation) {
+      const planned = Number(allocation?.plannedQuantity || 0);
+      const rawTransfers = rawTransfersForAllocation(order, allocation);
+      const allocationDyehouse = clean(allocation?.dyehouse || order?.dyehouse);
+      const firstSourceDyehouse = clean(rawTransfers.find((transfer) => clean(transfer.fromDyehouse))?.fromDyehouse);
+      const baseDyehouse = firstSourceDyehouse || allocationDyehouse;
+      const ledger = new Map();
+      const add = (dyehouseName, quantity) => {
+        const name = clean(dyehouseName);
+        if (!name) return;
+        ledger.set(name, roundNumber(Number(ledger.get(name) || 0) + Number(quantity || 0)));
+      };
+      add(baseDyehouse, planned);
+      rawTransfers.forEach((transfer) => {
+        const quantity = Number(transfer.quantity || 0);
+        const fromName = clean(transfer.fromDyehouse);
+        const toName = clean(transfer.toDyehouse);
+        if (!quantity || !fromName || !toName || fromName === toName) return;
+        add(fromName, -quantity);
+        add(toName, quantity);
+      });
+      if (!ledger.size) add(allocationDyehouse, planned);
+      return [...ledger.entries()]
+        .map(([dyehouse, quantity]) => ({ dyehouse, quantity: roundNumber(Math.max(Number(quantity || 0), 0)) }))
+        .filter((segment) => segment.quantity > 0);
+    }
+
     function scopedAllocationQuantity(order, allocation, dyehouseName) {
       const name = clean(dyehouseName);
-      const planned = Number(allocation?.plannedQuantity || 0);
-      const allocationDyehouse = clean(allocation?.dyehouse || order?.dyehouse);
-      const rawTransfers = rawTransfersForAllocation(order, allocation);
-      const rawIn = sum(rawTransfers.filter((transfer) => clean(transfer.toDyehouse) === name));
-      const rawOut = sum(rawTransfers.filter((transfer) => clean(transfer.fromDyehouse) === name && clean(transfer.toDyehouse) !== name));
-      if (rawIn > 0) return roundNumber(rawIn);
-      if (rawOut > 0) return roundNumber(Math.max(planned - rawOut, 0));
-      if (!name || allocationDyehouse === name) return roundNumber(planned);
-      return 0;
+      if (!name) return roundNumber(Number(allocation?.plannedQuantity || 0));
+      const segment = dyehouseLedgerSegmentsForAllocation(order, allocation)
+        .find((item) => clean(item.dyehouse) === name);
+      return roundNumber(segment?.quantity || 0);
     }
 
     function dyehouseScopedAllocations(order, dyehouseName) {
