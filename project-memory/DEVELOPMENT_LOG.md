@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Show Accessories In Raw Dyehouse Transfer Context
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.11`
+- Goal: keep accessories visible when moving raw balance between dyehouses.
+- Change: split dyehouse rows now scale accessory quantities according to the displayed raw quantity.
+- Change: raw dyehouse transfer buttons carry and confirm the related accessory summary before saving.
+- Change: the transfer reason stores the accessory summary as an operational reference.
+- Verification: `npm run check` passes and operational flow check passes.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Fix Raw Dyehouse Transfer Source Context
 
 - Date: 2026-06-18

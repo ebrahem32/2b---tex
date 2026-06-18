@@ -577,6 +577,9 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes('transferBelongsToOrderScope(order, transfer)'), 'ui: order detail dyehouse rows must reject foreign order transfers');
   assert(appSource.includes('data-transfer-source-dyehouse'), 'ui: raw transfer button must carry the displayed row source dyehouse');
   assert(appSource.includes('data-transfer-available-quantity'), 'ui: raw transfer button must carry the displayed row available quantity');
+  assert(appSource.includes('data-transfer-accessory-summary'), 'ui: raw transfer button must carry the displayed row accessory summary');
+  assert(appSource.includes('function accessoryPlannedPartsForScopedQuantity(order, allocation, scopedQuantity)'), 'ui: split dyehouse rows must scale accessory quantities with scoped raw quantities');
+  assert(appSource.includes('const accessoryReason = isRawTransfer && accessorySummary'), 'ui: raw transfer reason must preserve the related accessory summary');
   assert(appSource.includes('async function transferAllocationDyehouse(id, context = {})'), 'ui: transfer handler must accept row context for scoped raw transfers');
   assert(appSource.includes('const currentDyehouse = scopedSourceDyehouse || allocation.dyehouse || order.dyehouse ||'), 'ui: raw transfer must compare against displayed source dyehouse before allocation dyehouse');
 }

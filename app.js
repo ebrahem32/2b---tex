@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.18.10';
-const APP_BUILD_TIME = '2026-06-18 13:55';
+const APP_VERSION = 'v2026.06.18.11';
+const APP_BUILD_TIME = '2026-06-18 14:15';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -4243,6 +4243,17 @@ function accessoryPlannedPartsForOrder(order, allocation) {
     return quantity ? `${formatNumber(quantity)} ${accessoryLineName(line, order)}` : '';
   }).filter(Boolean);
 }
+function accessoryPlannedPartsForScopedQuantity(order, allocation, scopedQuantity) {
+  const planned = Number(allocation?.plannedQuantity || 0);
+  const quantity = Number(scopedQuantity || 0);
+  const ratio = planned ? quantity / planned : 0;
+  if (!ratio) return [];
+  return (order?.accessoryLines || []).map((line) => {
+    const baseQuantity = accessoryPlannedQuantityForLine(order, allocation, line);
+    const scopedAccessory = roundNumber(Number(baseQuantity || 0) * ratio);
+    return scopedAccessory ? `${formatNumber(scopedAccessory)} ${accessoryLineName(line, order)}` : '';
+  }).filter(Boolean);
+}
 function accessoryFlowQuantityForLine(order, allocation, movement, line) {
   const direct = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement===movement && accessoryTypeMatches(batch, line, order)));
   if (direct || movement !== 'sent') return roundNumber(direct);
@@ -4911,13 +4922,15 @@ function consolidateOrderDetailView(order) {
           const returnedGlue = isReceiptDyehouse ? sum(gluingBatches.filter((batch)=>batch.allocationId===sourceAllocation.id && batch.movement === 'return')) : 0;
           const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue);
           const wasteLabel = `${formatNumber(allocation.wasteQuantity || 0)} (${formatNumber(allocation.wastePercent || 0, 1)}%)`;
-          const plannedCell = stockFlowCell(allocation.plannedQuantity || 0, accessoryPlannedPartsForOrder(order, sourceAllocation));
-          const sentCell = stockFlowCell(allocation.sentToDyehouse || 0, accessoryFlowPartsForOrder(order, sourceAllocation, 'sent'));
+          const scopedAccessoryParts = accessoryPlannedPartsForScopedQuantity(order, sourceAllocation, allocation.scopedQuantity || allocation.plannedQuantity || 0);
+          const plannedCell = stockFlowCell(allocation.plannedQuantity || 0, scopedAccessoryParts);
+          const sentCell = stockFlowCell(allocation.sentToDyehouse || 0, scopedAccessoryParts.length ? scopedAccessoryParts : accessoryFlowPartsForOrder(order, sourceAllocation, 'sent'));
           const deliveredCell = stockFlowCell(delivered || 0, accessoryFlowPartsForOrder(order, sourceAllocation, 'customer'));
           const balanceCell = stockFlowCell(balance || 0, accessoryBalancePartsForOrder(order, sourceAllocation));
           const transferSourceDyehouse = allocation.scopedDyehouse || allocation.dyehouse || sourceAllocation.dyehouse || order.dyehouse || '';
           const transferAvailableQuantity = Number(allocation.scopedQuantity || allocation.sentToDyehouse || allocation.plannedQuantity || 0);
-          const actions = `<div class="batch-actions"><button class="mini-btn" data-edit-allocation="${sourceAllocation.id}">\u062a\u0639\u062f\u064a\u0644 \u0644\u0648\u0646</button><button class="mini-btn" data-transfer-allocation="${sourceAllocation.id}" data-transfer-source-dyehouse="${escapeHtml(transferSourceDyehouse)}" data-transfer-available-quantity="${escapeHtml(transferAvailableQuantity)}">\u0646\u0642\u0644 \u0645\u0635\u0628\u063a\u0629</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${sourceAllocation.id}">\u062d\u0630\u0641 \u0644\u0648\u0646</button>` : ''}</div>`;
+          const transferAccessorySummary = scopedAccessoryParts.join(' + ');
+          const actions = `<div class="batch-actions"><button class="mini-btn" data-edit-allocation="${sourceAllocation.id}">\u062a\u0639\u062f\u064a\u0644 \u0644\u0648\u0646</button><button class="mini-btn" data-transfer-allocation="${sourceAllocation.id}" data-transfer-source-dyehouse="${escapeHtml(transferSourceDyehouse)}" data-transfer-available-quantity="${escapeHtml(transferAvailableQuantity)}" data-transfer-accessory-summary="${escapeHtml(transferAccessorySummary)}">\u0646\u0642\u0644 \u0645\u0635\u0628\u063a\u0629</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${sourceAllocation.id}">\u062d\u0630\u0641 \u0644\u0648\u0646</button>` : ''}</div>`;
           return `<tr><td>${escapeHtml(allocation.color || '-')}</td><td>${plannedCell}</td><td>${escapeHtml(allocation.dyehouse || order.dyehouse || '-')}</td><td>${escapeHtml(allocationWidthLabel(order, allocation))}</td><td>${escapeHtml(allocation.targetFinishedWeight || '-')}</td><td>${sentCell}</td><td>${deliveredCell}</td><td><strong>${balanceCell}</strong></td><td>${wasteLabel}</td><td>${actions}</td></tr>`;
         }).join('');
       }
@@ -5663,10 +5676,13 @@ async function transferAllocationDyehouse(id, context = {}) {
   if (quantity > originalQuantity) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062e\u0637\u0637\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.');
   if (isRawTransfer && scopedAvailableQuantity && quantity > scopedAvailableQuantity + 0.01) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0646\u0642\u0644 \u0627\u0644\u062e\u0627\u0645 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0631\u0635\u064a\u062f \u0647\u0630\u0647 \u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0641\u064a \u0627\u0644\u0635\u0641 \u0627\u0644\u0645\u0639\u0631\u0648\u0636.');
   if (quantity > Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0)) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u062e\u0627\u0645 \u0627\u0644\u0645\u062a\u0627\u062d \u063a\u064a\u0631 \u0627\u0644\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629.');
+  const accessorySummary = String(context.accessorySummary || '').trim();
+  if (isRawTransfer && accessorySummary && !confirm(`\u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0627\u0644\u0645\u0631\u062a\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0635\u0641:\n${accessorySummary}\n\n\u0647\u0644 \u062a\u0645\u0631\u0631 \u0646\u0642\u0644 \u0627\u0644\u062e\u0627\u0645 \u0645\u0639 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631\u061f`)) return;
   const dateValue = prompt('\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062a\u062d\u0648\u064a\u0644', new Date().toISOString().slice(0,10));
   if (dateValue === null) return;
   const noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '') || '';
   const reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '\u062a\u062d\u0648\u064a\u0644 \u0645\u0635\u0628\u063a\u0629') || '';
+  const accessoryReason = isRawTransfer && accessorySummary ? `\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0631\u062a\u0628\u0637: ${accessorySummary}` : '';
   const newAllocationId = uid();
   const roundedQuantity = roundNumber(quantity);
   let transferRecord = null;
@@ -5675,7 +5691,7 @@ async function transferAllocationDyehouse(id, context = {}) {
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   if (isRawTransfer) {
-    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason:[TRANSFER_RAW_MARKER, reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'raw' };
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason:[TRANSFER_RAW_MARKER, reason, accessoryReason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'raw' };
   } else if (roundedQuantity >= originalQuantity) {
     allocationUpdate = { ...allocation, dyehouse:newDyehouse };
     transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundNumber(originalQuantity), date:dateValue, reason: [TRANSFER_ALLOCATION_MARKER, reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'full' };
@@ -6906,6 +6922,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
     const transferContext = {
       sourceDyehouse: target.dataset.transferSourceDyehouse || '',
       availableQuantity: target.dataset.transferAvailableQuantity || '',
+      accessorySummary: target.dataset.transferAccessorySummary || '',
     };
     transferAllocationDyehouse(target.dataset.transferAllocation, transferContext).catch((error)=>{ console.error('allocation-transfer-error', error); alert('تعذر حفظ تحويل المصبغة.'); });
   }

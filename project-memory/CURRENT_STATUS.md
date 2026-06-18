@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.18.10`
+`v2026.06.18.11`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Show accessories in raw dyehouse transfer context`
+
+## Latest Accessory Transfer Context Fix
+
+- Version: `v2026.06.18.11`.
+- Split dyehouse rows now scale and display the related accessory quantities under the cloth quantity.
+- The `نقل مصبغة` action now carries an accessory summary for the displayed row.
+- `نقل خام` now confirms and records the related accessory summary in the transfer reason so the operator can review accessories with the raw movement.
+- Regression coverage was added to keep accessory context visible in scoped raw transfers.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock/waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Fix raw dyehouse transfer source context`
 
