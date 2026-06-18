@@ -974,3 +974,12 @@ For Phase 3.1 local verification before commit:
 - The scheduled report is text-based for now because PDF/PNG generation still depends on the frontend document screen.
 - Manual PDF/PNG sharing remains unchanged.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, WhatsApp service internals, A5 service.
+
+## Latest Sticker Printing Choice
+
+- Version: `v2026.06.18.03`.
+- Pressing `استيكرات التشغيل` now opens a choice screen instead of opening the current order stickers directly.
+- Option 1 prints stickers for the currently opened order.
+- Option 2 creates manual stickers from user-entered order/customer/fabric/color/quantity/width/weight data.
+- Manual sticker printing is document-only and does not save an order, movement, allocation, or stock change.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

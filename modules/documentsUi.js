@@ -126,8 +126,102 @@
       refs.documentDialog.showModal();
     }
 
+    function manualStickerRowHtml(index = Date.now()) {
+      return `<tr data-manual-sticker-row>
+        <td><input data-manual-sticker="color" placeholder="اللون"></td>
+        <td><input data-manual-sticker="quantity" type="number" step="0.01" placeholder="الكمية"></td>
+        <td><input data-manual-sticker="inch" placeholder="البوصة"></td>
+        <td><input data-manual-sticker="width" placeholder="العرض"></td>
+        <td><input data-manual-sticker="weight" placeholder="الوزن"></td>
+        <td><button class="mini-btn danger" type="button" data-remove-manual-sticker-row="${index}">حذف</button></td>
+      </tr>`;
+    }
+
+    function openStickerChoiceDialog() {
+      const refs = deps.refs;
+      const sourceOrder = deps.getOrders().find((item)=>item.id === deps.getSelectedOrderId());
+      refs.documentTitle.textContent = 'استيكرات التشغيل';
+      refs.documentBody.dataset.documentType = 'sticker-choice';
+      refs.documentBody.innerHTML = `<div class="document-sheet sticker-choice-sheet">
+        <div class="subsection-head">
+          <div>
+            <p class="eyebrow">طباعة الاستيكر</p>
+            <h2>اختار مصدر بيانات الاستيكر</h2>
+          </div>
+        </div>
+        <section class="report-section">
+          <h3>الأوردر الحالي</h3>
+          <p class="muted">${sourceOrder ? `سيتم فتح استيكرات الطلب ${deps.escapeHtml(sourceOrder.orderNumber || '-')} / ${deps.escapeHtml(sourceOrder.customer || '-')}.` : 'لا يوجد طلب مفتوح حاليًا.'}</p>
+          <button class="primary-btn" type="button" data-open-current-stickers ${sourceOrder ? '' : 'disabled'}>طباعة استيكر للأوردر الحالي</button>
+        </section>
+        <section class="report-section">
+          <h3>استيكر يدوي</h3>
+          <p class="muted">استخدمه لطباعة استيكر سريع بدون حفظ طلب أو حركة في النظام.</p>
+          <div class="form-grid">
+            <label><span>رقم الطلب</span><input data-manual-sticker-order="orderNumber" placeholder="مثال: 1020"></label>
+            <label><span>العميل</span><input data-manual-sticker-order="customer" placeholder="اسم العميل"></label>
+            <label><span>الصنف</span><input data-manual-sticker-order="fabricType" placeholder="الصنف"></label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>اللون</th><th>الكمية</th><th>البوصة</th><th>العرض</th><th>الوزن</th><th>إجراء</th></tr></thead>
+              <tbody data-manual-sticker-rows>${manualStickerRowHtml(1)}</tbody>
+            </table>
+          </div>
+          <div class="document-actions no-print">
+            <button class="mini-btn" type="button" data-add-manual-sticker-row>+ لون</button>
+            <button class="primary-btn" type="button" data-print-manual-stickers>فتح الاستيكر اليدوي</button>
+          </div>
+        </section>
+      </div>`;
+      if (refs.documentDialog.open) refs.documentDialog.close();
+      refs.documentDialog.showModal();
+    }
+
+    function buildManualStickerOrderFromDialog() {
+      const refs = deps.refs;
+      const orderValue = (name) => refs.documentBody.querySelector(`[data-manual-sticker-order="${name}"]`)?.value.trim() || '';
+      const rows = [...refs.documentBody.querySelectorAll('[data-manual-sticker-row]')].map((row, index) => {
+        const value = (name) => row.querySelector(`[data-manual-sticker="${name}"]`)?.value.trim() || '';
+        return {
+          id: `manual-sticker-${Date.now()}-${index}`,
+          color: value('color'),
+          pantoneCode: value('color'),
+          plannedQuantity: Number(value('quantity') || 0),
+          rawInch: value('inch'),
+          targetFinishedWidth: value('width'),
+          rawWidth: value('width'),
+          targetFinishedWeight: value('weight'),
+        };
+      }).filter((row)=>row.color || row.plannedQuantity || row.rawInch || row.targetFinishedWidth || row.targetFinishedWeight);
+      return {
+        id: `manual-sticker-order-${Date.now()}`,
+        orderNumber: orderValue('orderNumber') || 'يدوي',
+        customer: orderValue('customer') || 'يدوي',
+        fabricType: orderValue('fabricType') || 'يدوي',
+        allocations: rows.length ? rows : [{ id:'manual-sticker-empty', color:'-', plannedQuantity:0 }],
+      };
+    }
+
+    function openManualStickersDocument() {
+      const refs = deps.refs;
+      const order = buildManualStickerOrderFromDialog();
+      deps.setCurrentDocumentType('stickers');
+      refs.documentTitle.textContent = 'استيكرات تشغيل يدوية';
+      refs.documentBody.dataset.documentType = 'stickers';
+      refs.documentBody.dataset.reportTitle = 'استيكرات تشغيل يدوية';
+      refs.documentBody.dataset.reportSubtitle = `رقم الطلب: ${order.orderNumber || '-'} - العميل: ${order.customer || '-'}`;
+      refs.documentBody.innerHTML = deps.buildStickersDocument(order, (value)=>deps.formatNumber(Number(value || 0)), (value)=>deps.escapeHtml(value || '-'));
+      if (refs.documentDialog.open) refs.documentDialog.close();
+      refs.documentDialog.showModal();
+    }
+
     async function safeOpenDocument(type) {
       try {
+        if (type === 'stickers') {
+          openStickerChoiceDialog();
+          return;
+        }
         await openDocument(type === 'labsamples' ? 'labSamples' : type);
       } catch (error) {
         console.error('document-open-error', error);
@@ -262,6 +356,23 @@
     function installDocumentsUiHandlers() {
       const refs = deps.refs;
       refs.documentBody.addEventListener('click', (event) => {
+        if (event.target.closest('[data-open-current-stickers]')) {
+          openDocument('stickers');
+          return;
+        }
+        if (event.target.closest('[data-add-manual-sticker-row]')) {
+          refs.documentBody.querySelector('[data-manual-sticker-rows]')?.insertAdjacentHTML('beforeend', manualStickerRowHtml(Date.now()));
+          return;
+        }
+        if (event.target.closest('[data-remove-manual-sticker-row]')) {
+          const rows = refs.documentBody.querySelectorAll('[data-manual-sticker-row]');
+          if (rows.length > 1) event.target.closest('[data-manual-sticker-row]')?.remove();
+          return;
+        }
+        if (event.target.closest('[data-print-manual-stickers]')) {
+          openManualStickersDocument();
+          return;
+        }
         if (event.target.dataset.printSticker) printCurrentDocument(event.target.dataset.printSticker);
         if (event.target.dataset.editPricingDoc) deps.editPricing(event.target.dataset.editPricingDoc);
         if (event.target.dataset.convertPricing) deps.convertPricingToOrder(event.target.dataset.convertPricing);

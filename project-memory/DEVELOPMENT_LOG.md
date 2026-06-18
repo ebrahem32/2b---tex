@@ -1120,6 +1120,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: `backend/calculations.js`, `backend/server.js`, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, WhatsApp service internals, A5 service.
 
+### Add Sticker Printing Choice
+
+- Date: 2026-06-18
+- Commit: pending.
+- Version: `v2026.06.18.03`
+- Goal: let the user print stickers either from the currently opened order or from manually entered data.
+- Change: `استيكرات التشغيل` now opens a choice screen.
+- Change: manual sticker rows accept color, quantity, inch, width, and weight, then render the same sticker document layout without saving operational data.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
 ### Stabilize Workflow Screens And Mobile Layout
 
 - Date: 2026-06-16
