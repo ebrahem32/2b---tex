@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.18.14`
+`v2026.06.18.15`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Expand AI employee direct operational commands`
+
+## Latest AI Employee Direct Commands
+
+- Version: `v2026.06.18.15`.
+- The employee AI endpoint now routes clear factory questions through a deterministic operational query layer before Gemini/OpenAI.
+- Added direct reports for: order number lookup, dyehouse balance, ready-to-deliver/warehouse balance, delayed orders, and waste.
+- Existing direct commands for customer account, dyehouse transfers, and WhatsApp diagnostics remain available.
+- Regression coverage was added so `/api/ai/employee-report` keeps using the enhanced direct command layer.
+- Not touched: `backend/calculations.js`, SQLite schema/data, stock/waste formulas, WhatsApp service internals, A5 service internals.
+
+## Previous Commit Message
 
 `Expose dyehouse ledger helper in frontend UI`
 

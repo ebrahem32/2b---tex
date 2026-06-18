@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Expand AI Employee Direct Operational Commands
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.15`
+- Goal: make the 2B smart employee answer factory commands from system data instead of falling back to generic model responses.
+- Change: added deterministic direct reports for order lookup, dyehouse balance, ready-to-deliver/warehouse balance, delayed orders, and waste.
+- Change: `/api/ai/employee-report` now uses the enhanced direct command layer before Gemini/OpenAI.
+- Verification: added operational-flow assertions to keep the direct command layer wired into the employee endpoint.
+- Not touched: `backend/calculations.js`, SQLite schema/data, stock formulas, waste formulas, WhatsApp service internals, A5 service internals.
+
 ### Expose Dyehouse Ledger Helper In Frontend UI
 
 - Date: 2026-06-18

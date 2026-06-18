@@ -1848,6 +1848,195 @@ function buildWhatsappCommandReport(context = {}, userRequest = '') {
   };
 }
 
+function aiOrderDisplayLine(order = {}) {
+  const q = order.quantities || {};
+  return [
+    `طلب ${order.orderNumber || '-'}`,
+    order.customer || '-',
+    order.fabricType || '-',
+    order.dyehouse ? `المصبغة ${order.dyehouse}` : '',
+    order.stage?.label ? `${order.stage.label} منذ ${Number(order.stage.days || 0)} يوم` : '',
+    `خام مطلوب ${aiFormatNumber(q.totalRequestedQuantity)} كجم`,
+    `مرسل للمصبغة ${aiFormatNumber(q.totalSentToDyehouse)} كجم`,
+    `داخل المصبغة ${aiFormatNumber(q.remainingAtDyehouse)} كجم`,
+    `مخزن ${aiFormatNumber(q.warehouseBalance)} كجم`,
+    `مسلم ${aiFormatNumber(q.customerDeliveredQuantity)} كجم`,
+    `هالك ${aiFormatNumber(q.totalWaste)} كجم (${aiFormatNumber(q.totalWastePercent, 1)}%)`,
+  ].filter(Boolean).join(' - ');
+}
+
+function aiOrderWatchRow(order = {}, reason = '') {
+  const q = order.quantities || {};
+  return {
+    orderNumber: order.orderNumber || '-',
+    customer: order.customer || '-',
+    fabricType: order.fabricType || '-',
+    dyehouse: order.dyehouse || '-',
+    stage: order.stage?.label || '-',
+    daysInStage: Number(order.stage?.days || 0),
+    requestedRaw: Number(q.totalRequestedQuantity || 0),
+    dyehouseBalance: Number(q.remainingAtDyehouse || 0),
+    warehouseBalance: Number(q.warehouseBalance || 0),
+    reason: reason || operationalDecisionText(order),
+  };
+}
+
+function aiExtractNumbers(value = '') {
+  return Array.from(new Set(String(value || '').match(/\d+/g) || []));
+}
+
+function aiSortByQuantityThenDays(rows = [], quantityGetter = (row) => row.quantities?.totalRequestedQuantity) {
+  return rows.slice().sort((a, b) => {
+    const quantityDiff = Number(quantityGetter(b) || 0) - Number(quantityGetter(a) || 0);
+    if (quantityDiff) return quantityDiff;
+    return Number(b.stage?.days || 0) - Number(a.stage?.days || 0);
+  });
+}
+
+function buildOrderLookupCommandReport(context = {}, userRequest = '') {
+  const orders = normalizeAiArray(context.orders);
+  const numbers = aiExtractNumbers(userRequest);
+  if (!numbers.length) return null;
+  const matches = orders.filter((order) => {
+    const orderNumber = normalizeAiSearchText(order.orderNumber || '');
+    return numbers.some((number) => orderNumber.includes(normalizeAiSearchText(number)));
+  });
+  if (!matches.length) return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `لم أجد طلب مطابق للأرقام: ${numbers.join(', ')} داخل بيانات النظام الحالية.`,
+    keyFindings: ['اكتب رقم الطلب كما يظهر في لوحة التشغيل أو كرت التسعير.'],
+    ordersToWatch: [],
+    risks: [],
+    recommendations: ['لو الطلب موجود في الشاشة وغير ظاهر هنا، راجع مزامنة Railway أو رقم الطلب الرسمي.'],
+    priorityActions: [],
+    whatsappMessage: `لم أجد طلب مطابق للأرقام: ${numbers.join(', ')}.`,
+    userRequest,
+  };
+  const totals = matches.reduce((acc, order) => {
+    const q = order.quantities || {};
+    acc.raw += Number(q.totalRequestedQuantity || 0);
+    acc.sent += Number(q.totalSentToDyehouse || 0);
+    acc.dyehouse += Number(q.remainingAtDyehouse || 0);
+    acc.warehouse += Number(q.warehouseBalance || 0);
+    acc.delivered += Number(q.customerDeliveredQuantity || 0);
+    acc.waste += Number(q.totalWaste || 0);
+    return acc;
+  }, { raw: 0, sent: 0, dyehouse: 0, warehouse: 0, delivered: 0, waste: 0 });
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `تقرير طلب ${numbers.join(', ')}: وجدت ${matches.length} بند/صنف. خام مطلوب ${aiFormatNumber(totals.raw)} كجم، مرسل للمصبغة ${aiFormatNumber(totals.sent)} كجم، داخل المصبغة ${aiFormatNumber(totals.dyehouse)} كجم، رصيد مخزن ${aiFormatNumber(totals.warehouse)} كجم، مسلم ${aiFormatNumber(totals.delivered)} كجم، هالك ${aiFormatNumber(totals.waste)} كجم.`,
+    keyFindings: matches.map(aiOrderDisplayLine),
+    ordersToWatch: matches.map((order) => aiOrderWatchRow(order)),
+    risks: matches
+      .filter((order) => Number(order.stage?.days || 0) >= 7 || Number(order.quantities?.totalWastePercent || 0) >= 8 || Number(order.quantities?.warehouseBalance || 0) < 0)
+      .map((order) => `طلب ${order.orderNumber} - ${order.customer}: ${order.stage?.label || '-'} منذ ${Number(order.stage?.days || 0)} يوم / هالك ${aiFormatNumber(order.quantities?.totalWastePercent, 1)}% / مخزن ${aiFormatNumber(order.quantities?.warehouseBalance)} كجم`),
+    recommendations: [
+      'راجع مرحلة كل بند من نفس رقم الطلب قبل اتخاذ قرار التسليم أو الإغلاق.',
+      'لو الطلب مقسم على أكثر من مصبغة، اعتمد على تقرير التحويلات وخطة الألوان لكل مصبغة.',
+      'رصيد المخزن هو فقط الجاهز فعليًا للتسليم، ورصيد المصبغة لا يعتبر هالكًا أثناء التشغيل.',
+    ],
+    priorityActions: matches.slice(0, 5).map((order) => `طلب ${order.orderNumber} - ${order.customer}: ${operationalDecisionText(order)}`),
+    whatsappMessage: `طلب ${numbers.join(', ')}: خام ${aiFormatNumber(totals.raw)} كجم، داخل المصبغة ${aiFormatNumber(totals.dyehouse)} كجم، مخزن ${aiFormatNumber(totals.warehouse)} كجم، مسلم ${aiFormatNumber(totals.delivered)} كجم.`,
+    userRequest,
+  };
+}
+
+function buildDyehouseBalanceCommandReport(context = {}, userRequest = '') {
+  const orders = normalizeAiArray(context.orders);
+  const dyehouseNames = normalizeAiArray(context.dyehouseNames);
+  const matchedDyehouse = aiBestNameMatch(userRequest, dyehouseNames, ['رصيد', 'داخل', 'مصبغة', 'المصبغة']);
+  const wantsAnyDyehouse = aiCommandHasAny(userRequest, ['رصيد مصبغة', 'رصيد المصبغة', 'داخل المصبغة', 'داخل المصابغ', 'المصابغ']);
+  if (!matchedDyehouse && !wantsAnyDyehouse) return null;
+  const rows = orders.filter((order) => {
+    const balance = Number(order.quantities?.remainingAtDyehouse || 0);
+    if (balance <= 0) return false;
+    if (!matchedDyehouse) return true;
+    const names = [
+      order.dyehouse,
+      ...normalizeAiArray(order.colors).map((color) => color.dyehouse),
+    ].filter(Boolean).join(' ');
+    return aiIncludesText(names, matchedDyehouse);
+  });
+  const sorted = aiSortByQuantityThenDays(rows, (order) => order.quantities?.remainingAtDyehouse);
+  const totalBalance = sorted.reduce((total, order) => total + Number(order.quantities?.remainingAtDyehouse || 0), 0);
+  const scopedTitle = matchedDyehouse ? `رصيد ${matchedDyehouse}` : 'رصيد المصابغ';
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `${scopedTitle}: ${sorted.length} طلب بها رصيد داخل المصبغة، بإجمالي ${aiFormatNumber(totalBalance)} كجم. الترتيب من الأعلى للأقل حسب الرصيد.`,
+    keyFindings: sorted.slice(0, 15).map((order) => `${order.orderNumber} - ${order.customer} - ${order.fabricType} - ${order.dyehouse || matchedDyehouse || '-'}: داخل المصبغة ${aiFormatNumber(order.quantities?.remainingAtDyehouse)} كجم / منذ ${Number(order.stage?.days || 0)} يوم`),
+    ordersToWatch: sorted.slice(0, 15).map((order) => aiOrderWatchRow(order, `داخل المصبغة ${aiFormatNumber(order.quantities?.remainingAtDyehouse)} كجم`)),
+    risks: sorted.filter((order) => Number(order.stage?.days || 0) >= 7).slice(0, 5).map((order) => `طلب ${order.orderNumber} واقف ${Number(order.stage?.days || 0)} يوم داخل ${order.dyehouse || matchedDyehouse || '-'}.`),
+    recommendations: [
+      matchedDyehouse ? `ابدأ بأكبر رصيد داخل ${matchedDyehouse} ثم الأقدم وقوفًا.` : 'ابدأ بأكبر رصيد داخل المصابغ ثم الأقدم وقوفًا.',
+      'قارن الرصيد مع أوامر استلام المجهز والتحويلات قبل اعتبار أي فرق هالك.',
+    ],
+    priorityActions: sorted.slice(0, 3).map((order) => `تابع طلب ${order.orderNumber} - ${order.customer}: ${aiFormatNumber(order.quantities?.remainingAtDyehouse)} كجم داخل ${order.dyehouse || matchedDyehouse || '-'}.`),
+    whatsappMessage: `${scopedTitle}: ${aiFormatNumber(totalBalance)} كجم داخل المصبغة في ${sorted.length} طلب. أكبر طلب: ${sorted[0] ? `${sorted[0].orderNumber} / ${sorted[0].customer} / ${aiFormatNumber(sorted[0].quantities?.remainingAtDyehouse)} كجم` : '-'}.`,
+    userRequest,
+  };
+}
+
+function buildWarehouseReadyCommandReport(context = {}, userRequest = '') {
+  if (!aiCommandHasAny(userRequest, ['جاهز للتسليم', 'رصيد المخزن', 'المخزن', 'جاهز', 'يتسلم'])) return null;
+  const orders = normalizeAiArray(context.orders)
+    .filter((order) => Number(order.quantities?.warehouseBalance || 0) !== 0)
+    .sort((a, b) => Number(b.quantities?.warehouseBalance || 0) - Number(a.quantities?.warehouseBalance || 0));
+  const total = orders.reduce((sumValue, order) => sumValue + Number(order.quantities?.warehouseBalance || 0), 0);
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `رصيد المخزن الجاهز للتسليم: ${aiFormatNumber(total)} كجم موزعة على ${orders.length} طلب/بند. أي رقم سالب ظاهر هنا يظل مشكلة محفوظة للمراجعة ولا يتم إخفاؤه.`,
+    keyFindings: orders.slice(0, 20).map((order) => `${order.orderNumber} - ${order.customer} - ${order.fabricType}: مخزن ${aiFormatNumber(order.quantities?.warehouseBalance)} كجم / مسلم ${aiFormatNumber(order.quantities?.customerDeliveredQuantity)} كجم`),
+    ordersToWatch: orders.slice(0, 20).map((order) => aiOrderWatchRow(order, `رصيد مخزن ${aiFormatNumber(order.quantities?.warehouseBalance)} كجم`)),
+    risks: orders.filter((order) => Number(order.quantities?.warehouseBalance || 0) < 0).map((order) => `طلب ${order.orderNumber} لديه رصيد مخزن سالب ${aiFormatNumber(order.quantities?.warehouseBalance)} كجم ويحتاج مراجعة حركة التسليم.`),
+    recommendations: [
+      'رتب التسليم حسب أكبر رصيد ثم أقدم تاريخ دخول مخزن.',
+      'لا تفتح أمر تشغيل جديد لعميل لديه رصيد مجهز متاح قبل مراجعة التسليم.',
+    ],
+    priorityActions: orders.slice(0, 3).map((order) => `نسق تسليم طلب ${order.orderNumber} - ${order.customer}: ${aiFormatNumber(order.quantities?.warehouseBalance)} كجم.`),
+    whatsappMessage: `جاهز للتسليم: ${aiFormatNumber(total)} كجم في ${orders.length} طلب. أكبر رصيد: ${orders[0] ? `${orders[0].orderNumber} / ${orders[0].customer} / ${aiFormatNumber(orders[0].quantities?.warehouseBalance)} كجم` : '-'}.`,
+    userRequest,
+  };
+}
+
+function buildDelayedOrdersCommandReport(context = {}, userRequest = '') {
+  if (!aiCommandHasAny(userRequest, ['متأخر', 'متاخر', 'الطلبات المتأخرة', 'الطلبات المتاخره', 'واقف من زمان', 'أقدم', 'اقدم'])) return null;
+  const orders = normalizeAiArray(context.orders)
+    .filter((order) => !order.isClosed && !['completed', 'closed'].includes(String(order.status || '').toLowerCase()) && Number(order.stage?.days || 0) >= 7)
+    .sort((a, b) => Number(b.stage?.days || 0) - Number(a.stage?.days || 0));
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `الطلبات المتأخرة: ${orders.length} طلب واقف 7 أيام أو أكثر. الترتيب من الأقدم للأحدث.`,
+    keyFindings: orders.slice(0, 20).map((order) => `${order.orderNumber} - ${order.customer} - ${order.fabricType}: ${order.stage?.label || '-'} منذ ${Number(order.stage?.days || 0)} يوم / ${order.stage?.reason || '-'}`),
+    ordersToWatch: orders.slice(0, 20).map((order) => aiOrderWatchRow(order)),
+    risks: orders.slice(0, 5).map((order) => `طلب ${order.orderNumber} متأخر ${Number(order.stage?.days || 0)} يوم في ${order.dyehouse || order.stage?.label || '-'}.`),
+    recommendations: ['ابدأ بالأقدم وقوفًا، ثم الأكبر كمية، ثم الطلب الذي لديه رصيد مخزن جاهز للتسليم.'],
+    priorityActions: orders.slice(0, 5).map((order) => `راجع ${order.orderNumber} - ${order.customer}: ${operationalDecisionText(order)}`),
+    whatsappMessage: `الطلبات المتأخرة: ${orders.length}. ${orders.slice(0, 3).map((order) => `${order.orderNumber}/${order.customer}/${Number(order.stage?.days || 0)} يوم`).join(' | ')}`,
+    userRequest,
+  };
+}
+
+function buildWasteCommandReport(context = {}, userRequest = '') {
+  if (!aiCommandHasAny(userRequest, ['هالك', 'الهالك', 'اعلى هالك', 'أعلى هالك', 'فاقد'])) return null;
+  const orders = normalizeAiArray(context.orders)
+    .filter((order) => Number(order.quantities?.totalWaste || 0) > 0 || Number(order.quantities?.totalWastePercent || 0) > 0)
+    .sort((a, b) => Number(b.quantities?.totalWastePercent || 0) - Number(a.quantities?.totalWastePercent || 0));
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `تقرير الهالك: ${orders.length} طلب بها هالك فعلي/نسبة هالك ظاهرة. الترتيب من أعلى نسبة للأقل.`,
+    keyFindings: orders.slice(0, 20).map((order) => `${order.orderNumber} - ${order.customer} - ${order.fabricType}: هالك ${aiFormatNumber(order.quantities?.totalWaste)} كجم / ${aiFormatNumber(order.quantities?.totalWastePercent, 1)}% / المتوقع ${aiFormatNumber(order.quantities?.expectedWastePercent, 1)}%`),
+    ordersToWatch: orders.slice(0, 20).map((order) => aiOrderWatchRow(order, `هالك ${aiFormatNumber(order.quantities?.totalWaste)} كجم (${aiFormatNumber(order.quantities?.totalWastePercent, 1)}%)`)),
+    risks: orders
+      .filter((order) => Number(order.quantities?.totalWastePercent || 0) >= Math.max(8, Number(order.quantities?.expectedWastePercent || 0) + 2))
+      .slice(0, 8)
+      .map((order) => `طلب ${order.orderNumber}: الهالك ${aiFormatNumber(order.quantities?.totalWastePercent, 1)}% أعلى من المتوقع ${aiFormatNumber(order.quantities?.expectedWastePercent, 1)}%.`),
+    recommendations: ['لا تعتمد الهالك النهائي إلا بعد مطابقة المرسل للمصبغة، المستلم مجهز، المرتجعات، والتسليم.'],
+    priorityActions: orders.slice(0, 5).map((order) => `راجع هالك طلب ${order.orderNumber} - ${order.customer}: ${aiFormatNumber(order.quantities?.totalWastePercent, 1)}%.`),
+    whatsappMessage: `أعلى هالك: ${orders[0] ? `${orders[0].orderNumber}/${orders[0].customer}/${aiFormatNumber(orders[0].quantities?.totalWastePercent, 1)}%` : 'لا يوجد هالك ظاهر'}.`,
+    userRequest,
+  };
+}
+
 function buildOperationalCommandReport(context = {}, userRequest = '') {
   if (aiCommandHasAny(userRequest, ['حساب', 'كشف حساب', 'رصيد عميل', 'حساب فلان'])) {
     return buildCustomerAccountCommandReport(context, userRequest);
@@ -1859,6 +2048,29 @@ function buildOperationalCommandReport(context = {}, userRequest = '') {
     return buildWhatsappCommandReport(context, userRequest);
   }
   return null;
+}
+
+function buildEnhancedOperationalCommandReport(context = {}, userRequest = '') {
+  if (aiCommandHasAny(userRequest, ['حساب', 'كشف حساب', 'رصيد عميل'])) {
+    return buildCustomerAccountCommandReport(context, userRequest);
+  }
+  const orderReport = buildOrderLookupCommandReport(context, userRequest);
+  if (orderReport) return orderReport;
+  if (aiCommandHasAny(userRequest, ['تحويل', 'تحويلات', 'نقل مصبغة', 'نقل لون'])) {
+    return buildDyehouseTransferCommandReport(context, userRequest);
+  }
+  const dyehouseReport = buildDyehouseBalanceCommandReport(context, userRequest);
+  if (dyehouseReport) return dyehouseReport;
+  const warehouseReport = buildWarehouseReadyCommandReport(context, userRequest);
+  if (warehouseReport) return warehouseReport;
+  const delayedReport = buildDelayedOrdersCommandReport(context, userRequest);
+  if (delayedReport) return delayedReport;
+  const wasteReport = buildWasteCommandReport(context, userRequest);
+  if (wasteReport) return wasteReport;
+  if (aiCommandHasAny(userRequest, ['واتساب', 'واتس اب', 'ارسال التقارير', 'إرسال التقارير'])) {
+    return buildWhatsappCommandReport(context, userRequest);
+  }
+  return buildOperationalCommandReport(context, userRequest);
 }
 
 app.get('/api/ai/health', (_req, res) => {
@@ -1892,7 +2104,7 @@ app.get('/api/ai/employee-context', asyncHandler(async (_req, res) => {
 app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
   const context = await buildAiEmployeeContext();
   const userRequest = String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim();
-  const commandReport = buildOperationalCommandReport(context, userRequest);
+  const commandReport = buildEnhancedOperationalCommandReport(context, userRequest);
   if (commandReport) return res.json(commandReport);
   const questionFocus = buildAiQuestionFocus(userRequest, context.orders || context.priorityOrders || []);
   const data = {

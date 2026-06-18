@@ -822,6 +822,13 @@ function checkOperationalAiManagerRules() {
   assert(serverSource.includes("source: 'railway-operational-manager'"), 'ai: general employee report must identify operational manager source');
   assert(serverSource.includes('function compactAiEmployeeModelPayload'), 'ai: model calls must use a compact 2B operational payload');
   assert(serverSource.includes('function runAiEmployeeModelReport'), 'ai: employee report must call the configured AI model when available');
+  assert(serverSource.includes('function buildEnhancedOperationalCommandReport'), 'ai: employee report must route direct operational commands before model calls');
+  assert(serverSource.includes('buildEnhancedOperationalCommandReport(context, userRequest)'), 'ai: employee endpoint must use the enhanced direct command layer');
+  assert(serverSource.includes('function buildOrderLookupCommandReport'), 'ai: direct command layer must answer order-number questions deterministically');
+  assert(serverSource.includes('function buildDyehouseBalanceCommandReport'), 'ai: direct command layer must answer dyehouse balance questions deterministically');
+  assert(serverSource.includes('function buildWarehouseReadyCommandReport'), 'ai: direct command layer must answer ready-to-deliver and warehouse questions deterministically');
+  assert(serverSource.includes('function buildDelayedOrdersCommandReport'), 'ai: direct command layer must answer delayed-order questions deterministically');
+  assert(serverSource.includes('function buildWasteCommandReport'), 'ai: direct command layer must answer waste questions deterministically');
   assert(serverSource.includes('if (process.env.GEMINI_API_KEY)'), 'ai: Gemini must be supported for the real 2B AI employee');
   assert(serverSource.includes('if (process.env.OPENAI_API_KEY)'), 'ai: OpenAI fallback must be supported for the real 2B AI employee');
   assert(serverSource.includes('rulesBaseline'), 'ai: model output must be grounded by deterministic 2B operational rules');
