@@ -1131,6 +1131,19 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
 
+### Split Operation Stickers And Showroom Cards
+
+- Date: 2026-06-18
+- Commit: pending.
+- Version: `v2026.06.18.06`
+- Goal: keep operational stickers unchanged while adding simplified showroom cards.
+- Change: `طباعة استيكرات` now offers `استيكر تشغيل` for the current order and `كرتيلات المعرض` for manual showroom cards.
+- Change: showroom cards hide order number, customer name, color, and quantity.
+- Change: manual showroom entry now keeps only item/fabric and measurement fields.
+- Change: showroom cards can now be printed under either `2B` or `Deltex.co`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
 ### Stabilize Workflow Screens And Mobile Layout
 
 - Date: 2026-06-16

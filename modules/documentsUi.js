@@ -18,7 +18,7 @@
           <button class="mini-btn gold" data-doc="weaving">أمر تشغيل نسيج</button>
           <button class="mini-btn gold" data-doc="dyeing">أمر تشغيل صباغة</button>
           <button class="mini-btn gold" data-doc="labSamples">عينات معمل</button>
-          <button class="mini-btn gold" data-doc="stickers">استيكرات التشغيل</button>
+          <button class="mini-btn gold" data-doc="stickers">طباعة استيكرات</button>
         </div>
         <div class="document-action-group">
           <h3>التقارير والكشوفات</h3>
@@ -128,8 +128,6 @@
 
     function manualStickerRowHtml(index = Date.now()) {
       return `<tr data-manual-sticker-row>
-        <td><input data-manual-sticker="color" placeholder="اللون"></td>
-        <td><input data-manual-sticker="quantity" type="number" step="0.01" placeholder="الكمية"></td>
         <td><input data-manual-sticker="inch" placeholder="البوصة"></td>
         <td><input data-manual-sticker="width" placeholder="العرض"></td>
         <td><input data-manual-sticker="weight" placeholder="الوزن"></td>
@@ -145,32 +143,31 @@
       refs.documentBody.innerHTML = `<div class="document-sheet sticker-choice-sheet">
         <div class="subsection-head">
           <div>
-            <p class="eyebrow">طباعة الاستيكر</p>
-            <h2>اختار مصدر بيانات الاستيكر</h2>
+            <p class="eyebrow">طباعة استيكرات</p>
+            <h2>اختار نوع الاستيكر</h2>
           </div>
         </div>
         <section class="report-section">
-          <h3>الأوردر الحالي</h3>
+          <h3>استيكر تشغيل</h3>
           <p class="muted">${sourceOrder ? `سيتم فتح استيكرات الطلب ${deps.escapeHtml(sourceOrder.orderNumber || '-')} / ${deps.escapeHtml(sourceOrder.customer || '-')}.` : 'لا يوجد طلب مفتوح حاليًا.'}</p>
-          <button class="primary-btn" type="button" data-open-current-stickers ${sourceOrder ? '' : 'disabled'}>طباعة استيكر للأوردر الحالي</button>
+          <button class="primary-btn" type="button" data-open-current-stickers ${sourceOrder ? '' : 'disabled'}>طباعة استيكر تشغيل للأوردر الحالي</button>
         </section>
         <section class="report-section">
-          <h3>استيكر يدوي</h3>
-          <p class="muted">استخدمه لطباعة استيكر سريع بدون حفظ طلب أو حركة في النظام.</p>
+          <h3>كرتيلات المعرض</h3>
+          <p class="muted">استخدمها لطباعة كرتيلة معرض بدون رقم طلب أو عميل أو لون أو كمية، وبدون حفظ أي بيانات تشغيل.</p>
           <div class="form-grid">
-            <label><span>رقم الطلب</span><input data-manual-sticker-order="orderNumber" placeholder="مثال: 1020"></label>
-            <label><span>العميل</span><input data-manual-sticker-order="customer" placeholder="اسم العميل"></label>
+            <label><span>البراند</span><select data-manual-sticker-order="showroomBrand"><option value="2B">2B</option><option value="Deltex.co">Deltex.co</option></select></label>
             <label><span>الصنف</span><input data-manual-sticker-order="fabricType" placeholder="الصنف"></label>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>اللون</th><th>الكمية</th><th>البوصة</th><th>العرض</th><th>الوزن</th><th>إجراء</th></tr></thead>
+              <thead><tr><th>البوصة</th><th>العرض</th><th>الوزن</th><th>إجراء</th></tr></thead>
               <tbody data-manual-sticker-rows>${manualStickerRowHtml(1)}</tbody>
             </table>
           </div>
           <div class="document-actions no-print">
-            <button class="mini-btn" type="button" data-add-manual-sticker-row>+ لون</button>
-            <button class="primary-btn" type="button" data-print-manual-stickers>فتح الاستيكر اليدوي</button>
+            <button class="mini-btn" type="button" data-add-manual-sticker-row>+ كرتيلة</button>
+            <button class="primary-btn" type="button" data-print-manual-stickers>فتح كرتيلات المعرض</button>
           </div>
         </section>
       </div>`;
@@ -185,21 +182,20 @@
         const value = (name) => row.querySelector(`[data-manual-sticker="${name}"]`)?.value.trim() || '';
         return {
           id: `manual-sticker-${Date.now()}-${index}`,
-          color: value('color'),
-          pantoneCode: value('color'),
-          plannedQuantity: Number(value('quantity') || 0),
+          plannedQuantity: 0,
           rawInch: value('inch'),
           targetFinishedWidth: value('width'),
           rawWidth: value('width'),
           targetFinishedWeight: value('weight'),
         };
-      }).filter((row)=>row.color || row.plannedQuantity || row.rawInch || row.targetFinishedWidth || row.targetFinishedWeight);
+      }).filter((row)=>row.rawInch || row.targetFinishedWidth || row.targetFinishedWeight);
       return {
         id: `manual-sticker-order-${Date.now()}`,
-        orderNumber: orderValue('orderNumber') || 'يدوي',
-        customer: orderValue('customer') || 'يدوي',
+        orderNumber: '',
+        customer: '',
         fabricType: orderValue('fabricType') || 'يدوي',
-        allocations: rows.length ? rows : [{ id:'manual-sticker-empty', color:'-', plannedQuantity:0 }],
+        showroomBrand: orderValue('showroomBrand') || '2B',
+        allocations: rows.length ? rows : [{ id:'manual-sticker-empty', plannedQuantity:0 }],
       };
     }
 
@@ -207,11 +203,11 @@
       const refs = deps.refs;
       const order = buildManualStickerOrderFromDialog();
       deps.setCurrentDocumentType('stickers');
-      refs.documentTitle.textContent = 'استيكرات تشغيل يدوية';
+      refs.documentTitle.textContent = 'كرتيلات المعرض';
       refs.documentBody.dataset.documentType = 'stickers';
-      refs.documentBody.dataset.reportTitle = 'استيكرات تشغيل يدوية';
-      refs.documentBody.dataset.reportSubtitle = `رقم الطلب: ${order.orderNumber || '-'} - العميل: ${order.customer || '-'}`;
-      refs.documentBody.innerHTML = deps.buildStickersDocument(order, (value)=>deps.formatNumber(Number(value || 0)), (value)=>deps.escapeHtml(value || '-'));
+      refs.documentBody.dataset.reportTitle = 'كرتيلات المعرض';
+      refs.documentBody.dataset.reportSubtitle = `الصنف: ${order.fabricType || '-'}`;
+      refs.documentBody.innerHTML = deps.buildStickersDocument(order, { showroom:true });
       if (refs.documentDialog.open) refs.documentDialog.close();
       refs.documentDialog.showModal();
     }

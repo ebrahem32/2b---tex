@@ -983,3 +983,14 @@ For Phase 3.1 local verification before commit:
 - Option 2 creates manual stickers from user-entered order/customer/fabric/color/quantity/width/weight data.
 - Manual sticker printing is document-only and does not save an order, movement, allocation, or stock change.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+## Latest Sticker Split: Operation vs Showroom Cards
+
+- Version: `v2026.06.18.06`.
+- The documents menu now shows `طباعة استيكرات`.
+- Pressing it opens two clear options:
+  - `استيكر تشغيل`: keeps the original operational sticker with order number, customer, color, quantity, and measurements for the currently opened order.
+  - `كرتيلات المعرض`: prints showroom cards without order number, customer name, color, or quantity.
+- Showroom card manual entry now asks only for item/fabric and measurement fields.
+- Showroom card manual entry has a brand selector with two print headers: `2B` and `Deltex.co`.
+- Manual showroom cards remain document-only and do not save orders, movements, allocations, or stock changes.
