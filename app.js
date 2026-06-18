@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.18.13';
-const APP_BUILD_TIME = '2026-06-18 15:35';
+const APP_VERSION = 'v2026.06.18.14';
+const APP_BUILD_TIME = '2026-06-18 16:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -6093,7 +6093,7 @@ function scopedDyehouseTransfersForAllocation(order, allocation) {
     && isRawTransferForScopedDyehouse(transfer, allocation)
   ));
 }
-function scopedDyehouseSegmentsForAllocation(order, allocation) {
+function dyehouseLedgerSegmentsForAllocation(order, allocation) {
   const planned = Number(allocation?.plannedQuantity || 0);
   const rawTransfers = scopedDyehouseTransfersForAllocation(order, allocation);
   const allocationDyehouse = String(allocation?.dyehouse || order?.dyehouse || '').trim();
@@ -6119,6 +6119,9 @@ function scopedDyehouseSegmentsForAllocation(order, allocation) {
   return [...ledger.entries()]
     .map(([dyehouse, quantity])=>({ dyehouse, quantity:roundNumber(Math.max(Number(quantity || 0), 0)) }))
     .filter((item)=>item.quantity > 0);
+}
+function scopedDyehouseSegmentsForAllocation(order, allocation) {
+  return dyehouseLedgerSegmentsForAllocation(order, allocation);
 }
 function scopedDyehouseRowsForPicker(order, dyehouseName) {
   return (order?.allocations || [])

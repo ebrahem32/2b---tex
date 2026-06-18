@@ -562,6 +562,7 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes('function transferRecordMode(transfer)'), 'transfers: repair must use normalized transfer kind, not stale mode values');
   assert(appSource.includes("text.includes('\\u062e\\u0631\\u0648\\u062c \\u062e\\u0627\\u0645')"), 'transfers: legacy خروج خام notes must be treated as raw transfer');
   assert(appSource.includes("allocation.dyehouse = fromDyehouse"), 'transfers: raw transfer repair must keep the allocation at its original dyehouse');
+  assert(appSource.includes('function dyehouseLedgerSegmentsForAllocation(order, allocation)'), 'ui: order detail must use an explicit dyehouse ledger helper');
   assert(appSource.includes('function chooseDyehouseTransferType()'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
   assert(appSource.includes('data-transfer-choice="raw"'), 'transfers: transfer dialog must expose a raw movement choice');
   assert(appSource.includes('data-transfer-choice="allocation"'), 'transfers: transfer dialog must expose a color/allocation movement choice');
@@ -576,6 +577,7 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');
   assert(appSource.includes('function scopedOrderDetailAllocationRows(order)'), 'ui: order detail color plan must split balances by scoped dyehouse rows');
   assert(appSource.includes('function scopedDyehouseSegmentsForAllocation(order, allocation)'), 'ui: order detail must build a dyehouse balance ledger for each color');
+  assert(appSource.includes('return dyehouseLedgerSegmentsForAllocation(order, allocation);'), 'ui: legacy scoped dyehouse helper must delegate to the explicit ledger');
   assert(appSource.includes('const firstSourceDyehouse = String(rawTransfers.find'), 'ui: legacy partial transfers must keep the original source dyehouse visible');
   assert(appSource.includes('body.innerHTML = scopedOrderDetailAllocationRows(order).map'), 'ui: order detail color plan must render scoped dyehouse rows');
   assert(appSource.includes('transferBelongsToOrderScope(order, transfer)'), 'ui: order detail dyehouse rows must reject foreign order transfers');

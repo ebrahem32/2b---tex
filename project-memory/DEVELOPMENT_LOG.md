@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Expose Dyehouse Ledger Helper In Frontend UI
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.14`
+- Goal: make the order-details UI use an explicit dyehouse ledger helper instead of hiding the source/target transfer logic inside scoped row naming.
+- Change: added `dyehouseLedgerSegmentsForAllocation()` in `app.js`.
+- Change: the legacy `scopedDyehouseSegmentsForAllocation()` wrapper now delegates to the explicit ledger helper to preserve current call sites.
+- Verification: added operational-flow assertions so UI ledger logic cannot drift from the explicit helper.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Unify Dyehouse Document Balance Ledger
 
 - Date: 2026-06-18

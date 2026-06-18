@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.18.13`
+`v2026.06.18.14`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Expose dyehouse ledger helper in frontend UI`
+
+## Latest Frontend Dyehouse Ledger Helper
+
+- Version: `v2026.06.18.14`.
+- The order-details UI now has an explicit `dyehouseLedgerSegmentsForAllocation()` helper.
+- Existing scoped dyehouse rows delegate to that helper, keeping old call sites stable while making the source of truth clearer.
+- The helper uses the same ledger concept as documents: source quantity, raw transfers out, and raw transfers into target dyehouses.
+- Regression coverage was added so the UI cannot drift away from the explicit ledger helper.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock/waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Unify dyehouse document balance ledger`
 
