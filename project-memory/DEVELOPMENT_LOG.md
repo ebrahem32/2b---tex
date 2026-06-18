@@ -1144,6 +1144,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
 
+### Polish Showroom Card Print Layout
+
+- Date: 2026-06-18
+- Commit: pending.
+- Version: `v2026.06.18.07`
+- Goal: improve the visual layout of `كرتيلات المعرض` without changing operational sticker behavior.
+- Change: showroom cards now have a dedicated CSS class and print layout.
+- Change: brand header, fabric name area, and measurement cells are tighter and more readable.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
 ### Stabilize Workflow Screens And Mobile Layout
 
 - Date: 2026-06-16

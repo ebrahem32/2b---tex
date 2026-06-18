@@ -994,3 +994,10 @@ For Phase 3.1 local verification before commit:
 - Showroom card manual entry now asks only for item/fabric and measurement fields.
 - Showroom card manual entry has a brand selector with two print headers: `2B` and `Deltex.co`.
 - Manual showroom cards remain document-only and do not save orders, movements, allocations, or stock changes.
+
+## Latest Showroom Card Layout Polish
+
+- Version: `v2026.06.18.07`.
+- Showroom cards now use a dedicated print layout separate from operational stickers.
+- The brand header, fabric name, and measurement cells were tightened to reduce empty space.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
