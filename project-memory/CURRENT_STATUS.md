@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.18.11`
+`v2026.06.18.12`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Recover unreadable order fabric names from pricing cards`
+
+## Latest Unreadable Fabric Name Recovery
+
+- Version: `v2026.06.18.12`.
+- Orders whose fabric name is returned as unreadable placeholder text such as `???` are repaired in frontend memory after pricing cards load.
+- The recovery uses the matching pricing card by order number and customer, or the direct pricing id when available.
+- If the same order number has multiple pricing cards and no safe customer match, the system does not guess.
+- The fix is display/state hydration only; it does not rewrite SQLite data and does not alter calculations.
+- Regression coverage was added so the repair functions and load hook cannot be removed accidentally.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock/waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Show accessories in raw dyehouse transfer context`
 

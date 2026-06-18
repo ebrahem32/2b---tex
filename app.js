@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.18.11';
-const APP_BUILD_TIME = '2026-06-18 14:15';
+const APP_VERSION = 'v2026.06.18.12';
+const APP_BUILD_TIME = '2026-06-18 15:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -683,6 +683,7 @@ async function loadBackendData(options = {}) {
     })).filter((customer)=>customer.name);
     orders = (data.orders || []).map((row)=>mapDbOrder(row, customers));
     pricings = (data.pricings || []).map((row)=>mapDbPricing(row, customers));
+    repairUnreadableOrderFabricTypesFromPricings();
     allocations = (data.allocations || []).map(mapDbAllocation);
     rawBatches = (data.dyehouseDeliveryBatches || []).map(mapDbBatch);
     finishedBatches = [];
@@ -1107,6 +1108,51 @@ function compatibleFabricForMatch(left, right) {
   let shared = 0;
   aTokens.forEach((token)=>{ if (bTokens.has(token)) shared += 1; });
   return shared >= Math.min(2, aTokens.size, bTokens.size);
+}
+function isUnreadableOperationalText(value) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  if (text.includes('\uFFFD') || /[?]{3,}/.test(text)) return true;
+  const questionMarks = (text.match(/\?/g) || []).length;
+  const nonSpace = text.replace(/\s+/g, '').length || 1;
+  return questionMarks >= 3 && questionMarks / nonSpace >= 0.35;
+}
+function readablePricingFabricName(pricing) {
+  if (!pricing) return '';
+  const direct = String(pricing.fabricType || '').trim();
+  if (direct && !isUnreadableOperationalText(direct)) return direct;
+  const readableItem = pricingItemsFor(pricing).find((item)=>{
+    const name = String(item.fabricType || item.materialType || '').trim();
+    return name && !isUnreadableOperationalText(name);
+  });
+  return String(readableItem?.fabricType || readableItem?.materialType || '').trim();
+}
+function pricingCandidateForUnreadableOrder(order) {
+  const orderNo = String(order?.orderNumber || '').trim();
+  const pricingId = String(order?.pricingId || '').trim();
+  if (!orderNo && !pricingId) return null;
+  const candidates = pricings.filter((pricing)=>{
+    const sameId = pricingId && String(pricing.id || '').trim() === pricingId;
+    const sameNumber = orderNo && String(pricing.pricingNumber || '').trim() === orderNo;
+    return (sameId || sameNumber) && readablePricingFabricName(pricing);
+  });
+  if (!candidates.length) return null;
+  const exactCustomer = candidates.find((pricing)=>compatibleNameForMatch(order.customer, pricing.customer));
+  if (exactCustomer) return exactCustomer;
+  if (pricingId) return candidates[0] || null;
+  return candidates.length === 1 ? candidates[0] : null;
+}
+function repairUnreadableOrderFabricTypesFromPricings() {
+  if (!Array.isArray(orders) || !Array.isArray(pricings)) return 0;
+  let repaired = 0;
+  orders = orders.map((order)=>{
+    if (!isUnreadableOperationalText(order.fabricType)) return order;
+    const recoveredFabric = readablePricingFabricName(pricingCandidateForUnreadableOrder(order));
+    if (!recoveredFabric) return order;
+    repaired += 1;
+    return { ...order, fabricType: recoveredFabric, recoveredFabricType: true };
+  });
+  return repaired;
 }
 function pricingMatchesOrder(pricing, order) {
   if (!pricing || !order) return false;

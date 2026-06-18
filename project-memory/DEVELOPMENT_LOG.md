@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Recover Unreadable Order Fabric Names From Pricing Cards
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.12`
+- Goal: prevent order lists and operational screens from showing unreadable `???` fabric names when production data returns corrupted display text.
+- Change: added unreadable-text detection for operational names.
+- Change: after backend load, orders with unreadable fabric names recover the readable fabric name from their matching pricing card by order number and customer.
+- Safety: if an order number has multiple pricing cards and no safe customer match, the system does not guess.
+- Verification: added operational-flow assertions for the recovery hook.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Show Accessories In Raw Dyehouse Transfer Context
 
 - Date: 2026-06-18

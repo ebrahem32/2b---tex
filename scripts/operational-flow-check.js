@@ -555,6 +555,9 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes('TRANSFER_RAW_MARKER'), 'transfers: raw-transfer marker must exist');
   assert(appSource.includes('TRANSFER_ALLOCATION_MARKER'), 'transfers: allocation-transfer marker must exist');
   assert(appSource.includes('function transferTextLooksRaw(value)'), 'transfers: legacy raw-transfer text must be classified as raw transfer');
+  assert(appSource.includes('function isUnreadableOperationalText(value)'), 'data repair: unreadable operational names must be detected');
+  assert(appSource.includes('function repairUnreadableOrderFabricTypesFromPricings()'), 'data repair: unreadable order fabric names must be recovered from pricing cards');
+  assert(appSource.includes('repairUnreadableOrderFabricTypesFromPricings();'), 'data repair: order fabric recovery must run after pricing cards load');
   assert(appSource.includes('if (text.includes(TRANSFER_ALLOCATION_MARKER)) return false'), 'transfers: explicit allocation transfer must override legacy raw-transfer text');
   assert(appSource.includes('function transferRecordMode(transfer)'), 'transfers: repair must use normalized transfer kind, not stale mode values');
   assert(appSource.includes("text.includes('\\u062e\\u0631\\u0648\\u062c \\u062e\\u0627\\u0645')"), 'transfers: legacy خروج خام notes must be treated as raw transfer');
