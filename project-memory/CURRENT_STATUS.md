@@ -1001,3 +1001,11 @@ For Phase 3.1 local verification before commit:
 - Showroom cards now use a dedicated print layout separate from operational stickers.
 - The brand header, fabric name, and measurement cells were tightened to reduce empty space.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+## Latest Showroom Card Field Cleanup
+
+- Version: `v2026.06.18.08`.
+- Removed the `البوصة` field from showroom card entry and print output.
+- Showroom cards now show only brand, item/fabric, width, and weight.
+- Operational stickers still keep their original fields including `البوصة`.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.

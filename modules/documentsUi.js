@@ -128,7 +128,6 @@
 
     function manualStickerRowHtml(index = Date.now()) {
       return `<tr data-manual-sticker-row>
-        <td><input data-manual-sticker="inch" placeholder="البوصة"></td>
         <td><input data-manual-sticker="width" placeholder="العرض"></td>
         <td><input data-manual-sticker="weight" placeholder="الوزن"></td>
         <td><button class="mini-btn danger" type="button" data-remove-manual-sticker-row="${index}">حذف</button></td>
@@ -161,7 +160,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>البوصة</th><th>العرض</th><th>الوزن</th><th>إجراء</th></tr></thead>
+              <thead><tr><th>العرض</th><th>الوزن</th><th>إجراء</th></tr></thead>
               <tbody data-manual-sticker-rows>${manualStickerRowHtml(1)}</tbody>
             </table>
           </div>
@@ -183,12 +182,11 @@
         return {
           id: `manual-sticker-${Date.now()}-${index}`,
           plannedQuantity: 0,
-          rawInch: value('inch'),
           targetFinishedWidth: value('width'),
           rawWidth: value('width'),
           targetFinishedWeight: value('weight'),
         };
-      }).filter((row)=>row.rawInch || row.targetFinishedWidth || row.targetFinishedWeight);
+      }).filter((row)=>row.targetFinishedWidth || row.targetFinishedWeight);
       return {
         id: `manual-sticker-order-${Date.now()}`,
         orderNumber: '',

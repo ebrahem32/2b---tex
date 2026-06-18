@@ -1155,6 +1155,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
 
+### Remove Inch From Showroom Cards
+
+- Date: 2026-06-18
+- Commit: pending.
+- Version: `v2026.06.18.08`
+- Goal: simplify `كرتيلات المعرض` by removing the `البوصة` field.
+- Change: manual showroom card entry no longer asks for inch.
+- Change: showroom card print output now shows only brand, item/fabric, width, and weight.
+- Change: operational stickers still keep the original inch field.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
 ### Stabilize Workflow Screens And Mobile Layout
 
 - Date: 2026-06-16
