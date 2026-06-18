@@ -2,13 +2,32 @@
 
 ## Current Version
 
-`v2026.06.18.01`
+`v2026.06.18.09`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Add operational AI command reports and WhatsApp diagnostics`
+
+## Latest Operational AI Command Reports
+
+- Version: `v2026.06.18.09`.
+- `/api/ai/employee-report` now checks direct operational commands before Gemini/OpenAI.
+- Supported direct commands:
+  - `حساب + اسم العميل`: customer ledger summary from invoices, payments, opening balance, and finished-stock sales.
+  - `تحويل / تحويلات + اسم المصبغة`: dyehouse transfer history and balance context.
+  - `واتساب / إرسال التقارير`: outbox status and send diagnostics.
+- WhatsApp service `/api/status` now exposes:
+  - `sendingEnabled`.
+  - pending/failed/sent outbox counts.
+  - blocker reason such as sending disabled, WhatsApp not connected, no pending reports, or target group not linked.
+- WhatsApp settings UI now displays the send diagnostic instead of only showing connected/disconnected.
+- Not touched: `backend/calculations.js`, SQLite schema/data, A5 service, stock/waste formulas.
+
+## Previous Commit Message
 
 `Enable real AI employee model grounding`
 

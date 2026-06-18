@@ -53,10 +53,20 @@ Do not expand or depend on it without reviewing the current integrated AI backen
 
 ## Known AI Limitations
 
-- Some responses can still be general.
-- Question focus partly depends on keywords.
+- General dashboard questions can still use model/rules summarization, but direct operational commands now bypass the model.
+- Question focus partly depends on keywords for non-command questions.
 - There are no complete AI evaluation tests yet.
-- The system needs an operational query engine later.
+- The first operational query engine is active for customer accounts, dyehouse transfers, and WhatsApp/outbox diagnosis.
+
+## Operational Query Engine
+
+`/api/ai/employee-report` now checks direct 2B commands before Gemini/OpenAI:
+
+- `حساب + اسم العميل`: returns a customer account summary from customer account settings, delivery invoices, finished-stock sales, payments, and opening balance.
+- `تحويل / تحويلات + اسم المصبغة`: returns dyehouse transfer history and current dyehouse balance context.
+- `واتساب / إرسال التقارير`: returns outbox status, pending/failed/sent counts, and send-risk recommendations.
+
+This layer is read-only and does not write to orders, stock, waste, WhatsApp, A5, or SQLite schema.
 
 ## Future Goal
 
@@ -70,4 +80,3 @@ The smart employee should become an operational manager that answers with:
 - Delay reasons.
 - Waste risk.
 - Recommended next action.
-

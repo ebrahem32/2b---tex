@@ -79,6 +79,39 @@ function publicWhatsappState() {
     qrDataUrl: whatsapp.status === 'waiting_for_qr' ? whatsapp.qrDataUrl || '' : '',
   };
 }
+
+function outboxSummary() {
+  return outbox.reduce((acc, row) => {
+    const status = statuses.has(row.status) ? row.status : 'pending';
+    acc[status] = (acc[status] || 0) + 1;
+    acc.total += 1;
+    return acc;
+  }, { total: 0, pending: 0, sending: 0, sent: 0, failed: 0, cancelled: 0 });
+}
+
+function processingDiagnosis() {
+  const pending = outbox.find((item) => item.status === 'pending');
+  let blockedReason = '';
+  if (!settings.sendingEnabled) blockedReason = 'الإرسال التلقائي غير مفعل من إعدادات واتساب.';
+  else if (!clientReady || whatsapp.status !== 'connected') blockedReason = 'واتساب غير متصل أو لم يكتمل الربط.';
+  else if (isProcessing) blockedReason = 'الخدمة ترسل تقريرًا آخر الآن.';
+  else if (!pending) blockedReason = 'لا توجد تقارير pending في قائمة الإرسال.';
+  else if (!isTargetAllowed(pending)) blockedReason = 'الجروب المستهدف غير مربوط يدويًا في إعدادات واتساب.';
+  return {
+    readyToSend: !blockedReason,
+    blockedReason,
+    sendingEnabled: Boolean(settings.sendingEnabled),
+    clientReady: Boolean(clientReady),
+    nextPending: pending ? {
+      id: pending.id,
+      reportType: pending.reportType,
+      orderNumber: pending.orderNumber,
+      targetGroup: pending.targetGroup,
+      status: pending.status,
+      errorMessage: pending.errorMessage || '',
+    } : null,
+  };
+}
 function mergeOutbox(incoming = []) {
   const byId = new Map(outbox.map((item) => [item.id, item]));
   for (const row of incoming) {
@@ -131,7 +164,14 @@ app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 
 app.get('/api/status', (req, res) => {
-  res.json({ whatsapp: publicWhatsappState(), outbox, attempts: attempts.slice(-50) });
+  res.json({
+    whatsapp: publicWhatsappState(),
+    settings: { sendingEnabled: Boolean(settings.sendingEnabled) },
+    processing: processingDiagnosis(),
+    outboxSummary: outboxSummary(),
+    outbox,
+    attempts: attempts.slice(-50)
+  });
 });
 app.get('/api/groups', async (req, res) => {
   try {
@@ -153,7 +193,7 @@ app.get('/api/outbox', (req, res) => res.json({ outbox }));
 app.post('/api/outbox/sync', (req, res) => {
   if (req.body && req.body.settings) settings = { ...settings, ...req.body.settings };
   mergeOutbox(Array.isArray(req.body?.outbox) ? req.body.outbox : []);
-  res.json({ ok: true, whatsapp: publicWhatsappState(), outbox });
+  res.json({ ok: true, whatsapp: publicWhatsappState(), settings: { sendingEnabled: Boolean(settings.sendingEnabled) }, processing: processingDiagnosis(), outboxSummary: outboxSummary(), outbox });
 });
 app.post('/api/outbox/:id/retry', (req, res) => {
   const row = outbox.find((item) => item.id === req.params.id);

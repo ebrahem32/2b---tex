@@ -1087,6 +1087,23 @@ function groupSum(rows, key = 'quantity') {
   return (rows || []).reduce((total, row) => total + Number(row?.[key] || 0), 0);
 }
 
+function roundAiNumber(value, digits = 2) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return 0;
+  const factor = 10 ** digits;
+  return Math.round(num * factor) / factor;
+}
+
+function aiFormatNumber(value, digits = 2) {
+  return roundAiNumber(value, digits).toLocaleString('en-US');
+}
+
+function aiIncludesText(haystack = '', needle = '') {
+  const normalizedNeedle = normalizeAiSearchText(needle);
+  if (!normalizedNeedle) return false;
+  return normalizeAiSearchText(haystack).includes(normalizedNeedle);
+}
+
 async function buildAiEmployeeContext() {
   await repairMissingCustomersFromReferences();
   const today = new Date();
@@ -1104,6 +1121,7 @@ async function buildAiEmployeeContext() {
     dyehouseTransfers,
     reportOutbox,
     auditLog,
+    customerAccountsRow,
   ] = await Promise.all([
     all('SELECT * FROM customers ORDER BY name'),
     all('SELECT * FROM orders ORDER BY created_at DESC'),
@@ -1118,8 +1136,12 @@ async function buildAiEmployeeContext() {
     all('SELECT * FROM dyehouse_transfers ORDER BY created_at'),
     all('SELECT * FROM report_outbox ORDER BY created_at DESC LIMIT 100'),
     all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 80'),
+    get('SELECT value_json FROM system_settings WHERE key = ?', ['customerAccounts']),
   ]);
   const customersById = new Map(customers.map((customer) => [customer.id, customer]));
+  const ordersById = new Map(orders.map((order) => [order.id, order]));
+  const allocationsById = new Map(allocations.map((allocation) => [allocation.id, allocation]));
+  const customerAccounts = safeJsonParse(customerAccountsRow?.value_json, {}) || {};
   const byOrder = (rows) => rows.reduce((acc, row) => {
     const key = row.order_id;
     if (!key) return acc;
@@ -1165,6 +1187,7 @@ async function buildAiEmployeeContext() {
       fabricType: order.fabric_type || '-',
       dyehouse: order.dyehouse || '-',
       orderDate: order.order_date,
+      kiloPrice: Number(order.kilo_price || 0),
       status: order.status,
       isClosed: Number(order.is_closed || 0) === 1,
       stage: { ...stage, days: daysBetween(stage.since, today) },
@@ -1182,6 +1205,86 @@ async function buildAiEmployeeContext() {
       dyehouseNotes: (buckets.dyehouseDeliveryBatches[order.id] || []).map((row) => row.note_number).filter(Boolean),
       operationNotes: safeJsonParse(order.operation_notes_json, null) || order.notes || '',
       notes: order.notes || '',
+    };
+  });
+
+  const customerAccountNames = Array.from(new Set([
+    ...customers.map((customer) => customer.name),
+    ...orderCards.map((order) => order.customer),
+    ...customerDeliveryBatches.map((batch) => batch.customer_name),
+    ...Object.keys(customerAccounts || {}),
+  ].map((name) => String(name || '').trim()).filter(Boolean)));
+  const customerAccountSummaries = customerAccountNames.map((customerName) => {
+    const account = customerAccounts[customerName] || { openingBalance: 0, payments: [] };
+    const payments = Array.isArray(account.payments) ? account.payments : [];
+    const orderInvoices = orderCards
+      .filter((order) => aiIncludesText(order.customer, customerName) || aiIncludesText(customerName, order.customer))
+      .map((order) => {
+        const quantity = Number(order.quantities?.customerDeliveredQuantity || 0) || (order.isClosed ? Number(order.quantities?.totalRequestedQuantity || 0) : 0);
+        const unitPrice = Number(order.kiloPrice || 0);
+        return {
+          orderNumber: order.orderNumber,
+          date: order.orderDate,
+          item: order.fabricType,
+          quantity,
+          unitPrice,
+          amount: roundAiNumber(quantity * unitPrice),
+          status: Number(order.quantities?.customerDeliveredQuantity || 0) > 0 ? 'تم التسليم' : (order.isClosed ? 'مغلق تشغيليا' : 'تحت التشغيل'),
+        };
+      });
+    const stockSaleInvoices = customerDeliveryBatches
+      .filter((batch) => String(batch.movement || '').trim() === 'finished_sale' && aiIncludesText(batch.customer_name, customerName))
+      .map((batch) => {
+        const order = ordersById.get(batch.order_id) || {};
+        const allocation = allocationsById.get(batch.allocation_id) || {};
+        const quantity = Number(batch.quantity || 0);
+        const unitPrice = Number(batch.unit_price || order.kilo_price || 0);
+        return {
+          orderNumber: order.order_number || batch.order_id || '-',
+          date: batch.batch_date || batch.created_at,
+          item: [order.fabric_type, allocation.color].filter(Boolean).join(' / ') || 'بيع مجهز',
+          quantity,
+          unitPrice,
+          amount: roundAiNumber(Number(batch.total_price || 0) || (quantity * unitPrice)),
+          status: 'بيع مجهز من المخزن',
+        };
+      });
+    const invoices = [...orderInvoices, ...stockSaleInvoices].filter((invoice) => Number(invoice.amount || 0) || Number(invoice.quantity || 0));
+    const invoiceTotal = roundAiNumber(invoices.reduce((total, invoice) => total + Number(invoice.amount || 0), 0));
+    const paymentTotal = roundAiNumber(payments.reduce((total, payment) => total + Number(payment.amount || 0), 0));
+    const openingBalance = roundAiNumber(Number(account.openingBalance || 0));
+    return {
+      customerName,
+      openingBalance,
+      invoiceTotal,
+      paymentTotal,
+      balance: roundAiNumber(openingBalance + invoiceTotal - paymentTotal),
+      invoices: invoices.slice(-20),
+      payments: payments.slice(-20),
+    };
+  });
+
+  const recentDyehouseTransfers = dyehouseTransfers.map((transfer) => {
+    const order = ordersById.get(transfer.order_id) || {};
+    const customer = customersById.get(order.customer_id);
+    const fromAllocation = allocationsById.get(transfer.from_allocation_id) || {};
+    const toAllocation = allocationsById.get(transfer.to_allocation_id) || {};
+    const allocation = Object.keys(toAllocation).length ? toAllocation : fromAllocation;
+    return {
+      id: transfer.id,
+      date: transfer.transfer_date || transfer.created_at,
+      orderId: transfer.order_id,
+      orderNumber: order.order_number || '-',
+      customer: customer?.name || readableCustomerNameFromId(order.customer_id) || '-',
+      fabricType: order.fabric_type || '-',
+      fromDyehouse: transfer.from_dyehouse || '-',
+      toDyehouse: transfer.to_dyehouse || '-',
+      quantity: Number(transfer.quantity || 0),
+      color: allocation.color || '-',
+      width: allocation.raw_width || allocation.finished_width || '',
+      noteNumber: transfer.note_number || '',
+      notes: transfer.notes || '',
+      transferType: transfer.from_allocation_id || transfer.to_allocation_id ? 'نقل لون' : 'نقل خام',
     };
   });
 
@@ -1240,6 +1343,12 @@ async function buildAiEmployeeContext() {
       .slice(0, 20),
     orders: orderCards,
     dyehouseBalances: Object.values(dyehouseBalances).sort((a, b) => b.balance - a.balance),
+    customerAccounts: customerAccountSummaries.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)),
+    dyehouseTransfers: recentDyehouseTransfers.slice(-250).reverse(),
+    dyehouseNames: Array.from(new Set([
+      ...Object.keys(dyehouseBalances),
+      ...recentDyehouseTransfers.flatMap((transfer) => [transfer.fromDyehouse, transfer.toDyehouse]),
+    ].map((name) => String(name || '').trim()).filter((name) => name && name !== '-'))).sort((a, b) => a.localeCompare(b, 'ar')),
     recentAudit: auditLog.map((row) => ({
       action: row.action,
       entityType: row.entity_type,
@@ -1575,6 +1684,183 @@ function buildFocusedEmployeeReport(data = {}) {
   };
 }
 
+function aiCommandHasAny(question = '', words = []) {
+  const text = normalizeAiSearchText(question);
+  return words.some((word) => text.includes(normalizeAiSearchText(word)));
+}
+
+function aiCommandSearchTokens(question = '', extraStopWords = []) {
+  const stopWords = new Set([
+    ...aiQuestionKeywords('').map(normalizeAiSearchText),
+    'حساب', 'كشف', 'رصيد', 'عميل', 'العميل', 'فلان', 'حسابات',
+    'تحويل', 'تحويلات', 'حول', 'نقل', 'مصابغ', 'مصبغه', 'مصبغة', 'المصبغه', 'المصبغة',
+    'واتساب', 'واتس', 'whatsapp', 'ارسل', 'ارسال', 'يبعت', 'ابعت', 'تقرير',
+    ...extraStopWords,
+  ].map(normalizeAiSearchText));
+  return normalizeAiSearchText(question)
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length >= 2 && !stopWords.has(word) && !/^\d+$/.test(word));
+}
+
+function aiBestNameMatch(question = '', names = [], extraStopWords = []) {
+  const normalizedQuestion = normalizeAiSearchText(question);
+  const tokens = aiCommandSearchTokens(question, extraStopWords);
+  const scored = (names || [])
+    .map((name) => {
+      const clean = String(name || '').trim();
+      if (!clean) return null;
+      const normalizedName = normalizeAiSearchText(clean);
+      let score = 0;
+      if (normalizedQuestion.includes(normalizedName)) score += 100;
+      if (normalizedName.includes(normalizedQuestion)) score += 40;
+      for (const token of tokens) {
+        if (normalizedName.includes(token)) score += 12;
+      }
+      return score ? { name: clean, score } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'ar'));
+  return scored[0]?.name || '';
+}
+
+function buildCustomerAccountCommandReport(context = {}, userRequest = '') {
+  const accounts = normalizeAiArray(context.customerAccounts);
+  const matchedName = aiBestNameMatch(userRequest, accounts.map((account) => account.customerName));
+  if (!matchedName) {
+    return {
+      source: '2b-operational-query-engine',
+      executiveSummary: 'لم أجد عميل مطابق داخل حسابات النظام. اكتب جزء من اسم العميل كما هو مسجل في شاشة العملاء.',
+      keyFindings: accounts.slice(0, 8).map((account) => `${account.customerName}: رصيد ${aiFormatNumber(account.balance)} جنيه`),
+      ordersToWatch: [],
+      risks: ['لو الاسم مكتوب بأكثر من صيغة، راجع شاشة العملاء ووحد الاسم الرسمي.'],
+      recommendations: ['اكتب: حساب + اسم العميل، مثال: حساب أمل فاشون.'],
+      priorityActions: [],
+      whatsappMessage: 'لم أجد عميل مطابق لطلب كشف الحساب.',
+      userRequest,
+    };
+  }
+  const account = accounts.find((item) => item.customerName === matchedName) || {};
+  const invoices = normalizeAiArray(account.invoices);
+  const payments = normalizeAiArray(account.payments);
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `كشف حساب ${matchedName}: الرصيد الحالي ${aiFormatNumber(account.balance)} جنيه. مستحقات ${aiFormatNumber(account.invoiceTotal)} جنيه، مدفوعات ${aiFormatNumber(account.paymentTotal)} جنيه، رصيد افتتاحي ${aiFormatNumber(account.openingBalance)} جنيه.`,
+    keyFindings: [
+      `عدد فواتير/حركات العميل الظاهرة: ${invoices.length}`,
+      `إجمالي المستحقات: ${aiFormatNumber(account.invoiceTotal)} جنيه`,
+      `إجمالي المدفوعات: ${aiFormatNumber(account.paymentTotal)} جنيه`,
+      `الرصيد الحالي: ${aiFormatNumber(account.balance)} جنيه`,
+    ],
+    ordersToWatch: invoices.slice(-10).reverse().map((invoice) => ({
+      orderNumber: invoice.orderNumber || '-',
+      customer: matchedName,
+      fabricType: invoice.item || '-',
+      reason: `${invoice.status || '-'} / كمية ${aiFormatNumber(invoice.quantity)} / سعر ${aiFormatNumber(invoice.unitPrice)} / إجمالي ${aiFormatNumber(invoice.amount)} جنيه`,
+    })),
+    risks: Number(account.balance || 0) > 0
+      ? [`يوجد رصيد مستحق على ${matchedName} بقيمة ${aiFormatNumber(account.balance)} جنيه.`]
+      : ['لا يظهر رصيد مستحق موجب حسب البيانات الحالية.'],
+    recommendations: [
+      payments.length ? `آخر دفعة مسجلة: ${payments[payments.length - 1]?.date || '-'} / ${aiFormatNumber(payments[payments.length - 1]?.amount)} جنيه.` : 'لا توجد دفعات مسجلة في حساب العميل.',
+      'طابق كشف الحساب مع A5 إذا كان العميل له رصيد خارجي قبل الاعتماد النهائي.',
+    ],
+    priorityActions: Number(account.balance || 0) > 0 ? [`راجع تحصيل ${matchedName} أو أرسل له كشف الحساب.`] : [`راجع آخر تسليمات ${matchedName} للتأكد من عدم وجود حركة غير مسعرة.`],
+    whatsappMessage: `كشف حساب ${matchedName}: الرصيد ${aiFormatNumber(account.balance)} جنيه، مستحقات ${aiFormatNumber(account.invoiceTotal)}، مدفوعات ${aiFormatNumber(account.paymentTotal)}.`,
+    userRequest,
+  };
+}
+
+function buildDyehouseTransferCommandReport(context = {}, userRequest = '') {
+  const transfers = normalizeAiArray(context.dyehouseTransfers);
+  const dyehouseNames = normalizeAiArray(context.dyehouseNames);
+  const matchedDyehouse = aiBestNameMatch(userRequest, dyehouseNames);
+  const scoped = matchedDyehouse
+    ? transfers.filter((transfer) => aiIncludesText(transfer.fromDyehouse, matchedDyehouse) || aiIncludesText(transfer.toDyehouse, matchedDyehouse))
+    : transfers;
+  const incoming = scoped
+    .filter((transfer) => matchedDyehouse && aiIncludesText(transfer.toDyehouse, matchedDyehouse))
+    .reduce((total, transfer) => total + Number(transfer.quantity || 0), 0);
+  const outgoing = scoped
+    .filter((transfer) => matchedDyehouse && aiIncludesText(transfer.fromDyehouse, matchedDyehouse))
+    .reduce((total, transfer) => total + Number(transfer.quantity || 0), 0);
+  const balanceRows = normalizeAiArray(context.dyehouseBalances)
+    .filter((row) => !matchedDyehouse || aiIncludesText(row.dyehouse, matchedDyehouse))
+    .sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: matchedDyehouse
+      ? `تحويلات ${matchedDyehouse}: عدد ${scoped.length} حركة. داخل إلى ${matchedDyehouse}: ${aiFormatNumber(incoming)} كجم، خارج منها: ${aiFormatNumber(outgoing)} كجم.`
+      : `تحويلات المصابغ: عدد ${scoped.length} حركة ظاهرة في النظام. اكتب اسم مصبغة مثل: تحويل جيما لتصفية النتيجة.`,
+    keyFindings: [
+      ...(matchedDyehouse ? [`المصبغة المطلوبة: ${matchedDyehouse}`, `إجمالي الداخل: ${aiFormatNumber(incoming)} كجم`, `إجمالي الخارج: ${aiFormatNumber(outgoing)} كجم`] : []),
+      ...balanceRows.slice(0, 5).map((row) => `${row.dyehouse}: مرسل ${aiFormatNumber(row.sent)} / مستلم ${aiFormatNumber(row.finished)} / رصيد ${aiFormatNumber(row.balance)} كجم`),
+    ],
+    ordersToWatch: scoped.slice(0, 15).map((transfer) => ({
+      orderNumber: transfer.orderNumber || '-',
+      customer: transfer.customer || '-',
+      fabricType: transfer.fabricType || '-',
+      dyehouse: `${transfer.fromDyehouse || '-'} -> ${transfer.toDyehouse || '-'}`,
+      reason: `${transfer.transferType || 'تحويل'} / ${transfer.date || '-'} / ${transfer.color || '-'}${transfer.width ? ` عرض ${transfer.width}` : ''} / ${aiFormatNumber(transfer.quantity)} كجم / إذن ${transfer.noteNumber || '-'}`,
+    })),
+    risks: scoped.length ? [] : ['لا توجد تحويلات مطابقة. لو التحويل موجود في شاشة الطلب، راجع ربط order_id أو allocation_id للحركة.'],
+    recommendations: [
+      matchedDyehouse ? `راجع رصيد ${matchedDyehouse} بعد التحويلات للتأكد أن الداخل والخارج مطابقان لأوامر التشغيل.` : 'اكتب اسم المصبغة بعد كلمة تحويل للحصول على تقرير مصبغة محددة.',
+      'حركات نقل اللون يجب ألا تغير رصيد الخام المادي إلا إذا كانت الحركة نقل خام صريحة.',
+    ],
+    priorityActions: scoped.slice(0, 3).map((transfer) => `راجع أمر ${transfer.orderNumber} - ${transfer.fromDyehouse} إلى ${transfer.toDyehouse} - ${aiFormatNumber(transfer.quantity)} كجم.`),
+    whatsappMessage: matchedDyehouse
+      ? `تحويلات ${matchedDyehouse}: داخل ${aiFormatNumber(incoming)} كجم، خارج ${aiFormatNumber(outgoing)} كجم، عدد الحركات ${scoped.length}.`
+      : `تحويلات المصابغ: ${scoped.length} حركة. اكتب اسم المصبغة للتفصيل.`,
+    userRequest,
+  };
+}
+
+function buildWhatsappCommandReport(context = {}, userRequest = '') {
+  const rows = normalizeAiArray(context.reportOutbox);
+  const pending = rows.filter((row) => ['pending', 'queued'].includes(String(row.status || '').toLowerCase()));
+  const failed = rows.filter((row) => String(row.status || '').toLowerCase() === 'failed');
+  const sent = rows.filter((row) => String(row.status || '').toLowerCase() === 'sent');
+  return {
+    source: '2b-operational-query-engine',
+    executiveSummary: `حالة واتساب من طابور النظام: pending/queued ${pending.length}، failed ${failed.length}، sent ${sent.length}. الاتصال نفسه يتم تشخيصه من إعدادات واتساب لأن الخدمة قد تكون متصلة لكن الإرسال غير مفعل أو الجروب غير مربوط.`,
+    keyFindings: [
+      `رسائل منتظرة: ${pending.length}`,
+      `رسائل فاشلة: ${failed.length}`,
+      `رسائل مرسلة: ${sent.length}`,
+      ...failed.slice(0, 5).map((row) => `${row.reportType || '-'} / ${row.orderNumber || '-'} / ${row.targetGroup || '-'}: ${row.errorMessage || '-'}`),
+    ],
+    ordersToWatch: pending.slice(0, 10).map((row) => ({
+      orderNumber: row.orderNumber || '-',
+      customer: row.customerName || '-',
+      dyehouse: row.targetGroup || '-',
+      reason: `${row.reportType || '-'} / ${row.status || '-'} / ${row.errorMessage || 'بانتظار الإرسال'}`,
+    })),
+    risks: failed.length ? ['يوجد تقارير فشلت في الإرسال وتحتاج مراجعة اسم الجروب أو الربط اليدوي.'] : [],
+    recommendations: [
+      'افتح إعدادات واتساب وتأكد من تفعيل الإرسال التلقائي.',
+      'تأكد أن كل مصبغة/عميل/مصدر نسيج مربوط باسم جروب واتساب مطابق.',
+      'لو الخدمة متصلة ولا ترسل، راجع رسالة التشخيص الجديدة في لوحة إعدادات واتساب.',
+    ],
+    priorityActions: failed.slice(0, 3).map((row) => `أعد محاولة ${row.reportType || '-'} للطلب ${row.orderNumber || '-'} بعد تصحيح الجروب ${row.targetGroup || '-'}.`),
+    whatsappMessage: `واتساب 2B: pending ${pending.length}، failed ${failed.length}، sent ${sent.length}.`,
+    userRequest,
+  };
+}
+
+function buildOperationalCommandReport(context = {}, userRequest = '') {
+  if (aiCommandHasAny(userRequest, ['حساب', 'كشف حساب', 'رصيد عميل', 'حساب فلان'])) {
+    return buildCustomerAccountCommandReport(context, userRequest);
+  }
+  if (aiCommandHasAny(userRequest, ['تحويل', 'تحويلات', 'نقل مصبغة', 'نقل لون'])) {
+    return buildDyehouseTransferCommandReport(context, userRequest);
+  }
+  if (aiCommandHasAny(userRequest, ['واتساب', 'واتس اب', 'whatsapp', 'ارسال التقارير', 'إرسال التقارير'])) {
+    return buildWhatsappCommandReport(context, userRequest);
+  }
+  return null;
+}
+
 app.get('/api/ai/health', (_req, res) => {
   const provider = process.env.GEMINI_API_KEY ? 'gemini' : (process.env.OPENAI_API_KEY ? 'openai' : 'local-rules');
   const model = process.env.GEMINI_API_KEY ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite') : (process.env.OPENAI_MODEL || 'gpt-4.1-mini');
@@ -1606,6 +1892,8 @@ app.get('/api/ai/employee-context', asyncHandler(async (_req, res) => {
 app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
   const context = await buildAiEmployeeContext();
   const userRequest = String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim();
+  const commandReport = buildOperationalCommandReport(context, userRequest);
+  if (commandReport) return res.json(commandReport);
   const questionFocus = buildAiQuestionFocus(userRequest, context.orders || context.priorityOrders || []);
   const data = {
     ...context,

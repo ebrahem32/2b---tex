@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.18.08';
-const APP_BUILD_TIME = '2026-06-18 11:25';
+const APP_VERSION = 'v2026.06.18.09';
+const APP_BUILD_TIME = '2026-06-18 12:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -93,7 +93,7 @@ const defaults = {
   whatsappSettings: { weavingGroupName: '2B - النسيج', dyeingGroupName: '2B - المصبغة', dyehousesReportGroupName: 'اوردارات 2B', dyehouseGroups: {}, weavingGroups: {}, customerGroups: {}, sendingEnabled: false, scheduledReports: { enabled:false, time:'09:00', groupName:'', includeOperations:true, includeDyehouse:true, includeReady:true, includeDelayed:true, includeWaste:true, lastRunKey:'' } },
   fabricMaster: [],
   auditLog: [],
-  whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '', qrDataUrl: '' },
+  whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '', qrDataUrl: '', processing:null, outboxSummary:null },
 };
 
 let orders = clone(defaults.orders);
@@ -1464,8 +1464,19 @@ function startWhatsappScheduleTimer() {
 }
 async function syncOutboxToWhatsappService() {
   try {
-    await fetch(`${WHATSAPP_SERVICE_URL}/api/outbox/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ outbox:reportOutbox, settings:whatsappSettings }) });
-  } catch {}
+    const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/outbox/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ outbox:reportOutbox, settings:whatsappSettings }) });
+    if (!response.ok) throw new Error('service-offline');
+    const data = await response.json();
+    whatsappStatus = { ...(data.whatsapp || whatsappStatus), processing:data.processing || null, outboxSummary:data.outboxSummary || null };
+    save();
+    updateWhatsappStatusBadge();
+    return data;
+  } catch (error) {
+    whatsappStatus = { ...whatsappStatus, errorMessage:'خدمة واتساب غير متاحة للمزامنة', processing:{ blockedReason:error.message || String(error) } };
+    save();
+    updateWhatsappStatusBadge();
+    return null;
+  }
 }
 async function pollWhatsappService() {
   ensureRuntimeCollections();
@@ -1473,7 +1484,7 @@ async function pollWhatsappService() {
     const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/status`);
     if (!response.ok) throw new Error('service-offline');
     const data = await response.json();
-    whatsappStatus = data.whatsapp || { status:'disconnected', updatedAt:nowIso(), errorMessage:'' };
+    whatsappStatus = { ...(data.whatsapp || { status:'disconnected', updatedAt:nowIso(), errorMessage:'' }), processing:data.processing || null, outboxSummary:data.outboxSummary || null };
     if (Array.isArray(data.outbox)) {
       const localById = new Map(reportOutbox.map((item)=>[item.id,item]));
       data.outbox.forEach((remote)=>{ localById.set(remote.id, { ...(localById.get(remote.id) || {}), ...remote }); });
@@ -1483,7 +1494,7 @@ async function pollWhatsappService() {
     updateWhatsappStatusBadge();
     if (selectedOrderId && refs.orderDetailsPanel?.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
   } catch {
-    whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا' };
+    whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا', processing:null, outboxSummary:null };
     updateWhatsappStatusBadge();
   }
 }
@@ -1492,10 +1503,15 @@ function whatsappConnectionStatusText() {
 }
 function whatsappConnectionPanelHtml() {
   const statusText = whatsappConnectionStatusText();
-  const qrHtml = whatsappStatus?.qrDataUrl
-    ? `<div class="notice"><strong>امسح كود واتساب من الموبايل</strong><br><span class="muted">لو ظهر تعذر ربط الجهاز، امسح الكود الحالي فقط لأن الكود يتحدث تلقائيًا.</span><br><img data-whatsapp-qr src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>`
+  const blockedReason = whatsappStatus?.processing?.blockedReason || '';
+  const summary = whatsappStatus?.outboxSummary || {};
+  const diagnosticHtml = blockedReason || summary.total
+    ? `<div class="notice ${blockedReason ? 'warning' : 'success'}"><strong>????? ???????:</strong> ${escapeHtml(blockedReason || '???? ??????? ??? ???? ?????? pending.')}<br><span class="muted">Pending: ${formatNumber(summary.pending || 0)} / Failed: ${formatNumber(summary.failed || 0)} / Sent: ${formatNumber(summary.sent || 0)}</span></div>`
     : '';
-  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${qrHtml}`;
+  const qrHtml = whatsappStatus?.qrDataUrl
+    ? `<div class="notice"><strong>???? ??? ?????? ?? ????????</strong><br><span class="muted">?? ??? ???? ??? ??????? ???? ????? ?????? ??? ??? ????? ????? ????????.</span><br><img data-whatsapp-qr src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>`
+    : '';
+  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>???? ??????:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${diagnosticHtml}${qrHtml}`;
 }
 function stopWhatsappSettingsAutoRefresh() {
   if (whatsappSettingsRefreshTimer) clearInterval(whatsappSettingsRefreshTimer);
@@ -1516,12 +1532,12 @@ function startWhatsappSettingsAutoRefresh() {
       const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/status`, { cache:'no-store' });
       if (!response.ok) throw new Error('service-offline');
       const data = await response.json();
-      whatsappStatus = data.whatsapp || { status:'disconnected', updatedAt:nowIso(), errorMessage:'' };
+      whatsappStatus = { ...(data.whatsapp || { status:'disconnected', updatedAt:nowIso(), errorMessage:'' }), processing:data.processing || null, outboxSummary:data.outboxSummary || null };
       save();
       updateWhatsappStatusBadge();
       updateWhatsappSettingsConnectionPanel();
     } catch {
-      whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا' };
+      whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا', processing:null, outboxSummary:null };
       updateWhatsappStatusBadge();
       updateWhatsappSettingsConnectionPanel();
     }

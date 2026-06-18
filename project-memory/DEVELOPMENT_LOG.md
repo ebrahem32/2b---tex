@@ -4,6 +4,20 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Add Operational AI Command Reports And WhatsApp Diagnostics
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.09`
+- Goal: make the 2B smart employee answer real operational commands instead of generic chat.
+- Change: `/api/ai/employee-report` now detects direct commands before Gemini/OpenAI.
+- Change: `حساب + اسم العميل` returns a customer ledger-style summary from system customer accounts, delivery invoices, finished-stock sales, payments, and opening balance.
+- Change: `تحويل / تحويلات + اسم المصبغة` returns dyehouse transfer history and balance context.
+- Change: `واتساب / إرسال التقارير` returns outbox status and send-risk recommendations.
+- Change: WhatsApp service status now reports sending blockers: automatic sending disabled, WhatsApp not connected, no pending reports, or target group not linked.
+- Change: WhatsApp settings UI displays send diagnostics and outbox counts.
+- Verification: `npm run check` passes and operational flow check passes.
+- Not touched: `backend/calculations.js`, SQLite schema/data, stock formulas, waste formulas, A5 service.
+
 ### Enable Real AI Employee Model Grounding
 
 - Date: 2026-06-18
