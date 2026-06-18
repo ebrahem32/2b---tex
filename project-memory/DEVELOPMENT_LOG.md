@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Raw Dyehouse Transfer Source Context
+
+- Date: 2026-06-18
+- Version: `v2026.06.18.10`
+- Goal: make `نقل خام` work from the actual dyehouse row shown in order details.
+- Change: scoped order-detail transfer buttons now carry the displayed source dyehouse and available row quantity.
+- Change: raw dyehouse transfer prompts and validation use that displayed source context before falling back to the allocation dyehouse.
+- Verification: `npm run check` passes and operational flow check passes.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock formulas, waste formulas, AI backend, WhatsApp, A5.
+
 ### Add Operational AI Command Reports And WhatsApp Diagnostics
 
 - Date: 2026-06-18

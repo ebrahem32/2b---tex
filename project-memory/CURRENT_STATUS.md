@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.18.09`
+`v2026.06.18.10`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix raw dyehouse transfer source context`
+
+## Latest Raw Dyehouse Transfer Source Context Fix
+
+- Version: `v2026.06.18.10`.
+- The `نقل مصبغة` button in the order color/balance table now carries the displayed row dyehouse and row quantity.
+- `نقل خام` now compares the new dyehouse against the actual source dyehouse shown in the row, not only the original allocation dyehouse.
+- This prevents the false `المصبغة لم تتغير` message when moving remaining raw balance from one dyehouse row to another.
+- Regression coverage was added to the operational flow check.
+- Not touched: `backend/calculations.js`, SQLite schema/data, backend endpoints, stock/waste formulas, AI backend, WhatsApp, A5.
+
+## Previous Commit Message
 
 `Add operational AI command reports and WhatsApp diagnostics`
 

@@ -575,6 +575,10 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes('const firstSourceDyehouse = String(rawTransfers.find'), 'ui: legacy partial transfers must keep the original source dyehouse visible');
   assert(appSource.includes('body.innerHTML = scopedOrderDetailAllocationRows(order).map'), 'ui: order detail color plan must render scoped dyehouse rows');
   assert(appSource.includes('transferBelongsToOrderScope(order, transfer)'), 'ui: order detail dyehouse rows must reject foreign order transfers');
+  assert(appSource.includes('data-transfer-source-dyehouse'), 'ui: raw transfer button must carry the displayed row source dyehouse');
+  assert(appSource.includes('data-transfer-available-quantity'), 'ui: raw transfer button must carry the displayed row available quantity');
+  assert(appSource.includes('async function transferAllocationDyehouse(id, context = {})'), 'ui: transfer handler must accept row context for scoped raw transfers');
+  assert(appSource.includes('const currentDyehouse = scopedSourceDyehouse || allocation.dyehouse || order.dyehouse ||'), 'ui: raw transfer must compare against displayed source dyehouse before allocation dyehouse');
 }
 
 function checkBodyLabelOnlyAppearsWithAccessories() {
