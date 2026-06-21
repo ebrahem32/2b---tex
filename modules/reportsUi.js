@@ -32,6 +32,23 @@
       getRawReturns,
     } = deps;
 
+function reportAllocationWidthLine(order, allocation) {
+  const widthLines = Array.isArray(order?.widthLines) ? order.widthLines : [];
+  if (!widthLines.length || !allocation) return {};
+  const byId = widthLines.find((item) => item.id && item.id === allocation.widthLineId);
+  if (byId) return byId;
+  const allocationWidth = Number(allocation.rawWidth || allocation.targetFinishedWidth || 0);
+  if (!allocationWidth) return {};
+  return widthLines.find((item) => Number(item.width || 0) === allocationWidth) || {};
+}
+function reportAllocationWidthInfo(order, allocation) {
+  const widthLine = reportAllocationWidthLine(order, allocation);
+  return {
+    inch: allocation?.rawInch || widthLine.inch || order?.inchWidth || '-',
+    width: allocation?.rawWidth || allocation?.targetFinishedWidth || widthLine.width || '-',
+  };
+}
+
 function openManagementReportsMenu() {
   refs.documentTitle.textContent = 'التقارير الإدارية';
   refs.documentBody.dataset.documentType = 'management-reports-menu';
@@ -71,7 +88,8 @@ function openManagementReport(type) {
     list.forEach((order)=>order.allocations.forEach((allocation)=>{
       const delivered = sum(getCustomerBatches().filter((batch)=>batch.allocationId===allocation.id));
       const balance = reportNumber(Number(allocation.finishedReceived || 0) - delivered);
-      if (balance > 0) clothRows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${order.fabricType || '-'}</td><td>${allocation.color || '-'}</td><td>${allocation.rawInch || order.inchWidth || '-'}</td><td>${allocation.rawWidth || allocation.targetFinishedWidth || '-'}</td><td>${reportFmt(allocation.finishedReceived)}</td><td>${reportFmt(delivered)}</td><td><strong>${reportFmt(balance)}</strong></td></tr>`);
+      const widthInfo = reportAllocationWidthInfo(order, allocation);
+      if (balance > 0) clothRows.push(`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${order.fabricType || '-'}</td><td>${allocation.color || '-'}</td><td>${widthInfo.inch}</td><td>${widthInfo.width}</td><td>${reportFmt(allocation.finishedReceived)}</td><td>${reportFmt(delivered)}</td><td><strong>${reportFmt(balance)}</strong></td></tr>`);
       if (order.accessoryLines.length) {
         order.accessoryLines.forEach((line)=>{
           const received = accessoryFlowQuantityForLine(order, allocation, 'received', line);
