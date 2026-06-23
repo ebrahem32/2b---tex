@@ -693,6 +693,7 @@ async function loadBackendData(options = {}) {
     rawReturns = (data.rawReturns || []).map(mapDbBatch);
     gluingBatches = (data.gluingBatches || []).map(mapDbBatch);
     dyehouseTransfers = (data.dyehouseTransfers || []).map(mapDbTransfer);
+    repairUnreadableOperationalFields();
     purgeLegacyTestOrdersFromMemory();
     if (!orders.some((order)=>order.id === selectedOrderId)) selectedOrderId = orders[0]?.id || null;
     const settings = data.systemSettings || {};
@@ -1127,6 +1128,16 @@ function readablePricingFabricName(pricing) {
   });
   return String(readableItem?.fabricType || readableItem?.materialType || '').trim();
 }
+function readablePricingField(pricing, fieldName) {
+  if (!pricing || !fieldName) return '';
+  const direct = String(pricing[fieldName] || '').trim();
+  if (direct && !isUnreadableOperationalText(direct)) return direct;
+  const readableItem = pricingItemsFor(pricing).find((item)=>{
+    const value = String(item[fieldName] || '').trim();
+    return value && !isUnreadableOperationalText(value);
+  });
+  return String(readableItem?.[fieldName] || '').trim();
+}
 function pricingCandidateForUnreadableOrder(order) {
   const orderNo = String(order?.orderNumber || '').trim();
   const pricingId = String(order?.pricingId || '').trim();
@@ -1151,6 +1162,51 @@ function repairUnreadableOrderFabricTypesFromPricings() {
     if (!recoveredFabric) return order;
     repaired += 1;
     return { ...order, fabricType: recoveredFabric, recoveredFabricType: true };
+  });
+  return repaired;
+}
+function firstReadableValue(values = []) {
+  return (values || []).map((value)=>String(value || '').trim()).find((value)=>value && !isUnreadableOperationalText(value)) || '';
+}
+function repairUnreadableOperationalFields() {
+  if (!Array.isArray(orders)) return 0;
+  let repaired = 0;
+  orders = orders.map((order)=>{
+    const pricing = pricingCandidateForUnreadableOrder(order) || pricingForOrder(order);
+    const orderAllocations = allocations.filter((allocation)=>allocation.orderId === order.id);
+    const orderRawBatches = rawBatches.filter((batch)=>batch.orderId === order.id);
+    const recoveredFabric = isUnreadableOperationalText(order.fabricType)
+      ? readablePricingFabricName(pricing)
+      : '';
+    const recoveredDyehouse = isUnreadableOperationalText(order.dyehouse)
+      ? firstReadableValue([
+          readablePricingField(pricing, 'dyehouse'),
+          ...orderAllocations.map((allocation)=>allocation.dyehouse),
+          ...orderRawBatches.map((batch)=>batch.dyehouse),
+        ])
+      : '';
+    const recoveredWeavingSource = isUnreadableOperationalText(order.weavingSource)
+      ? firstReadableValue([
+          readablePricingField(pricing, 'weavingSource'),
+          ...orderRawBatches.map((batch)=>batch.supplier),
+        ])
+      : '';
+    const next = {
+      ...order,
+      fabricType: recoveredFabric || order.fabricType,
+      dyehouse: recoveredDyehouse || order.dyehouse,
+      weavingSource: recoveredWeavingSource || order.weavingSource,
+    };
+    if (recoveredFabric || recoveredDyehouse || recoveredWeavingSource) repaired += 1;
+    return next;
+  });
+  allocations = allocations.map((allocation)=>{
+    if (!isUnreadableOperationalText(allocation.dyehouse)) return allocation;
+    const order = orders.find((item)=>item.id === allocation.orderId);
+    const dyehouse = firstReadableValue([order?.dyehouse, readablePricingField(pricingForOrder(order), 'dyehouse')]);
+    if (!dyehouse) return allocation;
+    repaired += 1;
+    return { ...allocation, dyehouse };
   });
   return repaired;
 }
