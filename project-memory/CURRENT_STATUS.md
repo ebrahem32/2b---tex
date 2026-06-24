@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.24.01`
+`v2026.06.24.02`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Refresh pricing cards from operational waste percent`
+
+## Latest Pricing Waste Follow-Up
+
+- Version: `v2026.06.24.02`.
+- Review found no remaining live calculation that divides actual waste by raw sent to dyehouse.
+- Follow-up fix: pricing cards opened from an operating/closed order now prefer the calculated actual waste percent when actual waste exists.
+- If the order has no actual waste yet, pricing cards still fall back to the expected waste percent as before.
+- Added regression coverage so linked pricing cards keep reading the order-calculated actual waste percent.
+- Not touched: SQLite schema/data, stock balance formulas, movement save/rollback flows, WhatsApp service, A5 service.
+
+## Previous Commit Message
 
 `Calculate actual waste percent on finished weight`
 

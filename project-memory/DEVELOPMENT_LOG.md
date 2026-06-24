@@ -4,6 +4,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Refresh Pricing Cards From Operational Waste Percent
+
+- Date: 2026-06-24
+- Version: `v2026.06.24.02`
+- Goal: complete the waste-basis review so pricing cards opened from running/closed orders do not keep using only expected waste.
+- Change: `pricingDraftFromOrder()` now prefers calculated actual waste percent when actual waste exists, then falls back to expected waste.
+- Change: linked/matched pricing cards shown from an order refresh their displayed waste percent from the order calculation.
+- Verification: added operational-flow assertions that protect this pricing UI route.
+- Not touched: SQLite schema/data, stock balance formulas, movement save/rollback flows, WhatsApp service, A5 service.
+
 ### Calculate Actual Waste Percent On Finished Weight
 
 - Date: 2026-06-24

@@ -331,6 +331,13 @@ function checkFrontendBackendParity() {
   assertClose(frontend.totalWastePercent, backend.wastePercentage, 'parity: actual waste percent');
 }
 
+function checkPricingUiUsesOperationalWaste() {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  assert(source.includes('function pricingWastePercentFromOrder'), 'pricing-ui: order pricing cards must derive waste percent from the calculated order');
+  assert(source.includes('calculated.totalWastePercent'), 'pricing-ui: order pricing cards must prefer actual operational waste percent');
+  assert(source.includes('pricingWithOrderWastePercent(linkedPricing, calculated)'), 'pricing-ui: linked pricing cards must refresh displayed waste percent from the order');
+}
+
 function checkMultiColorOperationalEntry() {
   const frontend = frontendMultiColorSummary();
   assertClose(frontend.totalSentToDyehouse, 100, 'multi-color: sent quantities are combined');
@@ -846,6 +853,7 @@ function checkOperationalAiManagerRules() {
 checkBackendFlow();
 checkFrontendFlow();
 checkFrontendBackendParity();
+checkPricingUiUsesOperationalWaste();
 checkMultiColorOperationalEntry();
 checkOversentFinishedOrderKeepsExtraAtDyehouse();
 checkAllocationLinkedRawDispatchStaysPerColor();

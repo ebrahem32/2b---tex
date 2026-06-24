@@ -294,12 +294,29 @@ function nextOrderPricingNumber(order) {
   return String(Number(base) + index - 1);
 }
 
+function pricingWastePercentFromOrder(calculated = {}) {
+  const actualWastePercent = Number(calculated.totalWastePercent || 0);
+  const actualWasteQuantity = Number(calculated.totalWaste || 0);
+  if (actualWasteQuantity > 0 && actualWastePercent > 0) return actualWastePercent;
+  return Number(calculated.expectedWastePercent || 0);
+}
+
+function pricingWithOrderWastePercent(pricing = {}, calculated = {}) {
+  const wastePercent = pricingWastePercentFromOrder(calculated);
+  if (!wastePercent) return pricing;
+  const priceItems = Array.isArray(pricing.priceItems) && pricing.priceItems.length
+    ? pricing.priceItems.map((item)=>({ ...item, wastePercent }))
+    : pricing.priceItems;
+  return { ...pricing, wastePercent, priceItems };
+}
+
 function pricingDraftFromOrder(order) {
   const calculated = calculateOrder(order);
   const linkedPricing = calculated?.pricingId ? getPricings().find((pricing)=>pricing.id === calculated.pricingId) : null;
-  if (linkedPricing) return linkedPricing;
+  if (linkedPricing) return pricingWithOrderWastePercent(linkedPricing, calculated);
   const matchedPricing = pricingForOrder(calculated);
-  if (matchedPricing) return matchedPricing;
+  if (matchedPricing) return pricingWithOrderWastePercent(matchedPricing, calculated);
+  const operationalWastePercent = pricingWastePercentFromOrder(calculated);
   return {
     pricingNumber: calculated.orderNumber || nextOrderPricingNumber(calculated),
     productCode: calculated.productCode || buildItemCode(calculated.orderNumber),
@@ -312,7 +329,7 @@ function pricingDraftFromOrder(order) {
     rawCost: calculated.rawCost || orderRawCost(calculated) || '',
     dyehouse: calculated.dyehouse || calculated.allocations?.[0]?.dyehouse || '',
     weavingSource: calculated.weavingSource || '',
-    wastePercent: calculated.expectedWastePercent || '',
+    wastePercent: operationalWastePercent || '',
     profitPerKg: Number(calculated.kiloPrice || 0) ? Math.max(0, Number(calculated.kiloPrice || 0) - Number(calculated.rawCost || orderRawCost(calculated) || 0)) : '',
     paymentTerms: calculated.paymentTerms || '',
     currency: calculated.currency || 'EGP',
@@ -329,7 +346,7 @@ function pricingDraftFromOrder(order) {
       dyeCost: 0,
       dyeStages: [],
       accessoryLines: calculated.accessoryLines || [],
-      wastePercent: calculated.expectedWastePercent || '',
+      wastePercent: operationalWastePercent || '',
       wasteBasis: 'net',
       deferredPercent: 0,
       profitPerKg: Number(calculated.kiloPrice || 0) ? Math.max(0, Number(calculated.kiloPrice || 0) - Number(calculated.rawCost || orderRawCost(calculated) || 0)) : '',
