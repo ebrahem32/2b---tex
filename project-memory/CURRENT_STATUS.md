@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.24.04`
+`v2026.06.24.05`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,17 @@
 
 ## Latest Commit Message
 
-`Document official workspace and memory rule`
+`Recalculate displayed waste percent from finished weight`
+
+## Latest Displayed Waste Percent Fix
+
+- Version: `v2026.06.24.05`.
+- Fixed the remaining display paths that could still show old/stored waste percentages on legacy orders.
+- Order detail allocation rows, waste documents, and management reports now calculate the displayed actual waste percent from `actual waste / finished received`.
+- Existing saved old percentages remain in SQLite as historical values, but display falls back to them only when there is no actual waste/finished received basis.
+- Example: waste `71.1` kg over finished `480` kg displays about `14.8%`, matching the approved finished-weight method.
+- Added regression coverage so document/report/order-detail display layers do not print stale allocation waste percent again.
+- Not touched: SQLite schema/data, backend endpoints, movement save/rollback flows, stock balance formulas, WhatsApp service, A5 service.
 
 ## Latest Workspace Consolidation And Memory Rule
 

@@ -48,6 +48,12 @@ function reportAllocationWidthInfo(order, allocation) {
     width: allocation?.rawWidth || allocation?.targetFinishedWidth || widthLine.width || '-',
   };
 }
+function actualWastePercentForReport(row) {
+  const waste = Number(row?.wasteQuantity || row?.totalWaste || 0);
+  const finished = Number(row?.finishedReceived || row?.totalFinishedReceived || 0);
+  if (waste > 0 && finished > 0) return reportNumber((waste / finished) * 100);
+  return Number(row?.wastePercent || row?.totalWastePercent || 0);
+}
 
 function openManagementReportsMenu() {
   refs.documentTitle.textContent = 'التقارير الإدارية';
@@ -106,7 +112,7 @@ function openManagementReport(type) {
     return showManagementReport('تقرير التأخيرات', 'الطلبات المفتوحة أو المتأخرة حسب مرحلة التشغيل وآخر حركة مسجلة.', `<section class="report-section"><h3>تفاصيل التأخير</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>المرحلة</th><th>تاريخ المرحلة</th><th>أيام الانتظار</th><th>خام مطلوب</th><th>دخل المخزن</th><th>تسليم العميل</th></tr></thead><tbody>${rows || '<tr><td colspan="10">لا توجد طلبات متأخرة حاليًا.</td></tr>'}</tbody></table></section>`, type);
   }
   if (type === 'waste-analysis') {
-    const rows = list.flatMap((order)=>order.allocations.map((allocation)=>`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${order.fabricType || '-'}</td><td>${allocation.color || '-'}</td><td>${allocation.dyehouse || '-'}</td><td>${reportFmt(allocation.plannedQuantity)}</td><td>${reportFmt(allocation.finishedReceived)}</td><td>${reportFmt(allocation.expectedWasteQuantity)} (${reportFmt(allocation.expectedWastePercent,2)}%)</td><td>${reportFmt(allocation.wasteQuantity)} (${reportFmt(allocation.wastePercent,2)}%)</td><td>${reportFmt(Number(allocation.wasteQuantity || 0) - Number(allocation.expectedWasteQuantity || 0))}</td></tr>`)).join('');
+    const rows = list.flatMap((order)=>order.allocations.map((allocation)=>`<tr><td>${order.orderNumber}</td><td>${order.customer}</td><td>${order.fabricType || '-'}</td><td>${allocation.color || '-'}</td><td>${allocation.dyehouse || '-'}</td><td>${reportFmt(allocation.plannedQuantity)}</td><td>${reportFmt(allocation.finishedReceived)}</td><td>${reportFmt(allocation.expectedWasteQuantity)} (${reportFmt(allocation.expectedWastePercent,2)}%)</td><td>${reportFmt(allocation.wasteQuantity)} (${reportFmt(actualWastePercentForReport(allocation),2)}%)</td><td>${reportFmt(Number(allocation.wasteQuantity || 0) - Number(allocation.expectedWasteQuantity || 0))}</td></tr>`)).join('');
     return showManagementReport('تحليل الهالك', 'مقارنة الهالك التقديري بالهالك الفعلي حسب كل لون.', `<section class="report-section"><h3>تفاصيل الهالك</h3><table class="follow-table"><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>اللون</th><th>المصبغة</th><th>المخطط</th><th>دخل المخزن</th><th>هالك تقديري</th><th>هالك فعلي</th><th>الفرق</th></tr></thead><tbody>${rows || '<tr><td colspan="10">لا توجد بيانات هالك حاليًا.</td></tr>'}</tbody></table></section>`, type);
   }
   if (type === 'customer-account') {
@@ -179,7 +185,7 @@ function openOrdersReport(sourceList = null, title = 'تقرير متابعة ا
     ['مخزن', (order)=>fmt(order.totalFinishedReceived)],
     ['رصيد', (order)=>fmt(order.warehouseBalance)],
     ['تسليم', (order)=>fmt(order.totalDeliveredToCustomer)],
-    ['هالك', (order)=>`${fmt(order.totalWaste)} (${formatNumber(order.totalWastePercent || 0, 1)}%)`],
+    ['هالك', (order)=>`${fmt(order.totalWaste)} (${formatNumber(actualWastePercentForReport(order), 1)}%)`],
   ];
   const rows = list.map((order)=>`<tr>${columns.map(([, getter])=>`<td>${getter(order)}</td>`).join('')}</tr>`).join('');
   const table = `<section class="report-section"><h3>تفاصيل الطلبات</h3><table class="follow-table filtered-follow-table"><thead><tr>${columns.map(([label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${rows || emptyRow(columns.length, 'لا توجد طلبات مسجلة.')}</tbody></table></section>`;

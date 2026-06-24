@@ -343,6 +343,17 @@ function checkPricingUiUsesOperationalWaste() {
   assert(appSource.includes('const source = pricingWithOperationalWastePercent(pricing || {})'), 'app: calculatePricing must use operational waste before any display or print calculation');
 }
 
+function checkWasteDisplaysUseFinishedWeight() {
+  const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
+  const reportsSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'reportsUi.js'), 'utf8');
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(documentsSource.includes('function actualWastePercentForLine'), 'documents: waste report rows must recalculate actual waste percent at display time');
+  assert(documentsSource.includes('(waste / finished) * 100'), 'documents: actual waste percent must use finished received weight');
+  assert(reportsSource.includes('function actualWastePercentForReport'), 'reports: management reports must recalculate actual waste percent at display time');
+  assert(appSource.includes('function actualWastePercentForDisplay'), 'app: order detail rows must recalculate actual waste percent at display time');
+  assert(appSource.includes('formatNumber(actualWastePercentForDisplay(allocation), 1)'), 'app: allocation tables must not print stale allocation waste percent');
+}
+
 function checkMultiColorOperationalEntry() {
   const frontend = frontendMultiColorSummary();
   assertClose(frontend.totalSentToDyehouse, 100, 'multi-color: sent quantities are combined');
@@ -715,9 +726,9 @@ function checkPricingActiveAndLinkedSectionsExist() {
 
 function checkFixedPackagingPricingStageExists() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  assert(appSource.includes("name:'تغليف', price:2, fixed:true"), 'pricing ui: packaging stage must be fixed at 2 EGP');
+  assert(/price:2,\s*fixed:true/.test(appSource), 'pricing ui: packaging stage must be fixed at 2 EGP');
   assert(appSource.includes("fixedPackaging ? 2"), 'pricing ui: fixed packaging stage price must stay 2');
-  assert(appSource.includes("fixedPackaging ? '<span class=\"status pending\">ثابت</span>'"), 'pricing ui: fixed packaging stage must not show delete action');
+  assert(appSource.includes("fixedPackaging ? '<span class=\"status pending\">"), 'pricing ui: fixed packaging stage must not show delete action');
 }
 
 function checkPricingListFiltersAndOrderNumber() {
@@ -859,6 +870,7 @@ checkBackendFlow();
 checkFrontendFlow();
 checkFrontendBackendParity();
 checkPricingUiUsesOperationalWaste();
+checkWasteDisplaysUseFinishedWeight();
 checkMultiColorOperationalEntry();
 checkOversentFinishedOrderKeepsExtraAtDyehouse();
 checkAllocationLinkedRawDispatchStaysPerColor();

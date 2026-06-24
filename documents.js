@@ -98,6 +98,13 @@
       ].join('|'));
     }
 
+    function actualWastePercentForLine(line) {
+      const waste = Number(line?.wasteQuantity || line?.actualWasteQuantity || 0);
+      const finished = Number(line?.finishedReceived || line?.totalFinishedReceived || 0);
+      if (waste > 0 && finished > 0) return roundNumber((waste / finished) * 100);
+      return Number(line?.wastePercent || line?.actualWastePercent || 0);
+    }
+
     function orderAccessoryLines(order) {
       const configuredLines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
       const normalized = configuredLines
@@ -179,7 +186,7 @@
           includeReceived ? flowCell(line.finishedReceived, movementAccessoryParts(order, line, 'received')) : '',
           includeCustomerDelivered ? flowCell(line.deliveredToCustomer || line.customerDelivered, movementAccessoryParts(order, line, 'customer')) : '',
           includeWarehouseBalance ? flowCell(Number(line.finishedReceived || 0) - Number(line.deliveredToCustomer || line.customerDelivered || 0), balanceAccessoryParts(order, line)) : '',
-          includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(Number(line.wastePercent || 0), 1)}%)` : '',
+          includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(actualWastePercentForLine(line), 1)}%)` : '',
           includeFinished ? safeText(line.targetFinishedWeight) : '',
           safeText(line.targetFinishedWidth || line.rawWidth),
         ].filter((cell) => cell !== '');

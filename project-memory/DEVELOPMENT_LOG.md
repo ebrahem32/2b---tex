@@ -4,6 +4,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Recalculate Displayed Waste Percent From Finished Weight
+
+- Date: 2026-06-24
+- Commit: pending.
+- Version: `v2026.06.24.05`
+- Goal: remove the remaining stale display path that could show old waste percent logic on existing orders.
+- Change: order detail allocation rows, waste documents, and management reports now calculate displayed actual waste percent from actual waste / finished received.
+- Change: existing stored old percentages are still kept as historical data, but are not used for display when actual waste and finished received are available.
+- Change: regression check now fails if display layers print stale stored allocation waste percent.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, movement save/rollback flows, stock balance formulas, WhatsApp service, A5 service.
+
 ### Document Official Workspace And Memory Rule
 
 - Date: 2026-06-24
