@@ -20,6 +20,7 @@
 ## Required Before Changes
 
 - Read `project-memory/`.
+- Work from the official local workspace: `D:\Codex\2B TEX`.
 - Run `git status`.
 - Understand the current requested scope.
 - Keep edits scoped.
@@ -29,6 +30,7 @@
 
 - Run `npm run check`.
 - Confirm `Operational flow check passed`.
+- Update `project-memory/` with the completed change, files touched, verification result, and any important operational rule learned.
 - Commit with a clear message.
 - Push to `origin/main` when requested.
 - Report:
@@ -51,4 +53,3 @@
 Backend refactor is not current priority unless explicitly requested.
 
 Do not begin backend refactor while frontend Phase 1 is still in progress.
-

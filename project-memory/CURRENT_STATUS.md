@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.24.03`
+`v2026.06.24.04`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,17 @@
 
 ## Latest Commit Message
 
-`Apply operational waste to legacy pricing cards`
+`Document official workspace and memory rule`
+
+## Latest Workspace Consolidation And Memory Rule
+
+- Version: `v2026.06.24.04`.
+- Official local workspace is now `D:\Codex\2B TEX`.
+- The previous project folder `D:\2B Tex نظام التشغيل` was deleted after confirming the official workspace had the latest GitHub commit and `project-memory/`.
+- One old-folder file could not be deleted because it is locked by the Windows service `Cloudflared agent`: `D:\2B Tex نظام التشغيل\cloudflared.exe`.
+- To remove the remaining service file, run PowerShell as Administrator and stop/delete `Cloudflared`, then remove the old folder path.
+- Permanent working rule added: every future code, UI, operational, documentation, or configuration change must update `project-memory/` before commit.
+- Not touched: SQLite schema/data, production data, backend calculations, stock formulas, movement save/rollback flows.
 
 ## Latest Legacy Pricing Waste Runtime Cleanup
 

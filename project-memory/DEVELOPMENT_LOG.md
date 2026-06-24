@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Document Official Workspace And Memory Rule
+
+- Date: 2026-06-24
+- Version: `v2026.06.24.04`
+- Goal: consolidate development around one clean local project folder and make project-memory updates mandatory.
+- Change: official local workspace is now `D:\Codex\2B TEX`.
+- Change: previous project folder `D:\2B Tex نظام التشغيل` was deleted after verifying the official workspace, except for locked `cloudflared.exe`.
+- Note: the remaining old `cloudflared.exe` is owned by the Windows service `Cloudflared agent` and requires Administrator PowerShell to stop/delete.
+- Change: `README_FOR_CODEX.md` and `SAFE_CHANGE_RULES.md` now require updating `project-memory/` after every future change.
+- Not touched: SQLite schema/data, production data, backend calculations, stock formulas, movement save/rollback flows.
+
 ### Apply Operational Waste To Legacy Pricing Cards
 
 - Date: 2026-06-24
