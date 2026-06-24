@@ -158,9 +158,9 @@
       const receivedFromGluing = gluingMetrics.received;
       const planned = Number(allocation.plannedQuantity || 0);
       const dyehouseTarget = sent;
-      const actualBase = dyehouseTarget || planned;
+      const actualWastePercentBase = finished;
       const actualWaste = order.operationClosed && (sent || finished || rawReturned) ? Math.max(sent - finished - rawReturned, 0) : 0;
-      const actualWastePercent = actualBase ? roundNumber(actualWaste / actualBase * 100) : 0;
+      const actualWastePercent = actualWastePercentBase ? roundNumber(actualWaste / actualWastePercentBase * 100) : 0;
       const transfers = data.dyehouseTransfers.filter((batch) => batch.allocationId === allocation.id);
       const rawTransfers = transfers.filter((transfer) => transferKindForAllocation(transfer, allocation) === 'raw');
       const allocationDyehouse = String(allocation.dyehouse || order.dyehouse || '').trim();
@@ -234,6 +234,7 @@
       const deliveredFromGluing = 0;
       const deliveredToCustomer = sum(data.customerBatches.filter((batch) => orderAllocations.some((allocation) => allocation.id === batch.allocationId)));
       const waste = isClosed ? Math.max(rawToDyehouse - warehouseReceived - rawReturnedToWeaving, 0) : 0;
+      const wastePercentBase = warehouseReceived;
       const widthLines = order.widthMode === 'multiple' ? (order.widthLines || []) : [{ inch:order.inchWidth || '', width:Number(order.inchWidth || 0), quantity:Number(order.totalRawQuantity || 0) }];
       const totalWidthQuantity = roundNumber(widthLines.reduce((total, item)=>total + Number(item.quantity || 0), 0));
       const totalRawOrdered = order.widthMode === 'multiple' && totalWidthQuantity > 0 ? totalWidthQuantity : roundNumber(order.totalRawQuantity);
@@ -290,9 +291,9 @@
         remainingToCustomer: roundNumber(remainingToCustomer),
         remainingAtDyehouse: remainingPhysical(dyehouseTarget || operated, warehouseReceived + rawReturnedToWeaving + waste),
         totalWaste: roundNumber(waste),
-        totalWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
+        totalWastePercent: wastePercentBase ? roundNumber(waste / wastePercentBase * 100) : 0,
         totalActualWaste: roundNumber(waste),
-        totalActualWastePercent: rawToDyehouse ? roundNumber(waste / rawToDyehouse * 100) : 0,
+        totalActualWastePercent: wastePercentBase ? roundNumber(waste / wastePercentBase * 100) : 0,
         accessoryRequired,
         accessorySent: roundNumber(accessorySent),
         accessoryReceived: roundNumber(accessoryReceived),

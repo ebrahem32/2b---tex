@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Calculate Actual Waste Percent On Finished Weight
+
+- Date: 2026-06-24
+- Version: `v2026.06.24.01`
+- Goal: make operational waste match factory costing by calculating the actual waste percentage on the finished received kilo, not on raw sent to the dyehouse.
+- Change: frontend order/allocation waste percent now uses `actual waste kg / finished received kg`.
+- Change: backend order summaries now use the same finished-weight denominator.
+- Rule: actual waste kg remains `raw sent to dyehouse - finished received - raw returned`; only the percentage denominator changed.
+- Verification: added operational-flow assertions for frontend/backend parity on the new waste percentage basis.
+- Not touched: SQLite schema/data, movement save/rollback flows, stock balance formulas, pricing cost-basis options, WhatsApp service, A5 service.
+
 ### Improve Mobile-First Workspace Layout
 
 - Date: 2026-06-18

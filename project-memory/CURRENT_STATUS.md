@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.18.16`
+`v2026.06.24.01`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Calculate actual waste percent on finished weight`
+
+## Latest Finished-Weight Waste Basis
+
+- Version: `v2026.06.24.01`.
+- The actual waste quantity is still the operational difference: raw sent to dyehouse minus finished received minus raw returned.
+- The actual waste percentage now uses finished received weight as its denominator, not raw sent to dyehouse.
+- This applies to frontend order summaries, allocation waste percentages, backend order summaries, AI/report consumers that read the calculated waste percentage, and linked pricing cards that take the order waste percent.
+- Example: sent `536.6` kg, finished `465.5` kg, waste `71.1` kg now displays about `15.3%` instead of `13.3%`.
+- Not touched: SQLite schema/data, movement save/rollback flows, stock balance formulas, pricing cost basis options (`صافي`/`قائم`), WhatsApp service, A5 service.
+
+## Previous Commit Message
 
 `Improve mobile-first workspace layout`
 

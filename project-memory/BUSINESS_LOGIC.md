@@ -151,6 +151,11 @@ Validation:
 
 - Waste is not calculated when raw fabric is sent to the dyehouse.
 - Remaining dyehouse balance stays active until it is received, returned, or confirmed as waste.
+- Actual waste quantity is the confirmed operational difference:
+  `raw sent to dyehouse - finished received - raw returned`.
+- Actual waste percentage is calculated on finished received weight:
+  `actual waste quantity / finished received`.
+- Pricing cards that use operational waste should use this finished-weight percentage, while the pricing cost basis (`صافي` or `قائم`) still controls which costs receive that percentage.
 - Waste is recorded when it is proven or when the operational cycle is closed.
 
 ## Dyehouse Balance Rule

@@ -298,6 +298,7 @@ function checkBackendFlow() {
 
   const closed = backendSummary({ rawReceived: 100, sent: 100, finished: 92, delivered: 50, closed: true });
   assertClose(closed.wasteQuantity, 8, 'backend: closed order turns missing finished into actual waste');
+  assertClose(closed.wastePercentage, 8.7, 'backend: actual waste percent uses finished received weight');
   assertClose(closed.remainingAtDyehouse, 0, 'backend: closed order clears dyehouse balance through actual waste');
   assertClose(closed.warehouseBalance, 42, 'backend: closed order keeps warehouse balance unchanged');
 }
@@ -313,6 +314,7 @@ function checkFrontendFlow() {
 
   const closed = frontendSummary({ sent: 100, finished: 92, delivered: 50, closed: true });
   assertClose(closed.totalWaste, 8, 'frontend: closed order turns missing finished into actual waste');
+  assertClose(closed.totalWastePercent, 8.7, 'frontend: actual waste percent uses finished received weight');
   assertClose(closed.remainingAtDyehouse, 0, 'frontend: closed order clears dyehouse balance through actual waste');
   assertClose(closed.warehouseBalance, 42, 'frontend: closed order keeps warehouse balance unchanged');
 }
@@ -326,6 +328,7 @@ function checkFrontendBackendParity() {
   assertClose(frontend.remainingAtDyehouse, backend.remainingAtDyehouse, 'parity: dyehouse balance');
   assertClose(frontend.warehouseBalance, backend.warehouseBalance, 'parity: warehouse balance');
   assertClose(frontend.totalWaste, backend.wasteQuantity, 'parity: actual waste');
+  assertClose(frontend.totalWastePercent, backend.wastePercentage, 'parity: actual waste percent');
 }
 
 function checkMultiColorOperationalEntry() {
