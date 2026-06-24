@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.24.02';
-const APP_BUILD_TIME = '2026-06-24 11:45';
+const APP_VERSION = 'v2026.06.24.03';
+const APP_BUILD_TIME = '2026-06-24 12:41';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
@@ -2914,8 +2914,68 @@ function allocationAccessoryQuantity(order, allocation) {
 function calculateOrder(order) {
   return orderDomain.calculateOrder(order);
 }
+
+function orderActualWastePercentForPricing(order) {
+  if (!order) return 0;
+  const calculated = calculateOrder(order);
+  const actualWastePercent = Number(calculated.totalWastePercent || 0);
+  const actualWasteQuantity = Number(calculated.totalWaste || 0);
+  return actualWasteQuantity > 0 && actualWastePercent > 0 ? actualWastePercent : 0;
+}
+
+function pricingOrderCandidates(pricing = {}) {
+  const pricingId = String(pricing.id || '').trim();
+  return orders.filter((order) => {
+    if (pricingId && String(order.pricingId || '').trim() === pricingId) return true;
+    return pricingMatchesOrder(pricing, order);
+  });
+}
+
+function pricingItemMatchesOrder(item = {}, order = {}) {
+  const fabric = item.fabricType || item.materialType || '';
+  const dyehouse = item.dyehouse || '';
+  const quantity = Number(item.quantity || 0);
+  const orderQuantity = Number(order.totalRawQuantity || order.totalRawOrdered || 0);
+  const fabricOk = !fabric || compatibleFabricForMatch(order.fabricType, fabric);
+  const orderDyehouses = uniqueNonEmpty([
+    order.dyehouse,
+    ...(Array.isArray(order.allocations) ? order.allocations.map((allocation)=>allocation.dyehouse) : []),
+  ]);
+  const dyehouseOk = !dyehouse || orderDyehouses.some((name)=>normalizeForCompare(name) === normalizeForCompare(dyehouse));
+  const quantityOk = !quantity || !orderQuantity || Math.abs(quantity - orderQuantity) <= Math.max(0.01, orderQuantity * 0.05);
+  return fabricOk && dyehouseOk && quantityOk;
+}
+
+function pricingOrderForItem(pricing = {}, item = {}) {
+  const candidates = pricingOrderCandidates(pricing);
+  if (!candidates.length) return null;
+  return candidates.find((order)=>pricingItemMatchesOrder(item, order))
+    || candidates.find((order)=>compatibleFabricForMatch(order.fabricType, item.fabricType || item.materialType || pricing.fabricType || ''))
+    || candidates[0];
+}
+
+function pricingWithOperationalWastePercent(pricing = {}) {
+  if (!pricing || typeof pricing !== 'object') return pricing;
+  const items = Array.isArray(pricing.priceItems) ? pricing.priceItems : [];
+  if (items.length) {
+    let changed = false;
+    const priceItems = items.map((item) => {
+      const wastePercent = orderActualWastePercentForPricing(pricingOrderForItem(pricing, item));
+      if (!wastePercent) return item;
+      changed = true;
+      return { ...item, wastePercent };
+    });
+    const primaryWastePercent = orderActualWastePercentForPricing(pricingOrderForItem(pricing, priceItems[0] || pricing));
+    return changed || primaryWastePercent
+      ? { ...pricing, wastePercent: primaryWastePercent || pricing.wastePercent, priceItems }
+      : pricing;
+  }
+  const wastePercent = orderActualWastePercentForPricing(pricingOrderForItem(pricing, pricing));
+  return wastePercent ? { ...pricing, wastePercent } : pricing;
+}
+
 function calculatePricing(pricing) {
-  const source = pricing || {};
+  const source = pricingWithOperationalWastePercent(pricing || {});
   const items = pricingItemsFor(source);
   if (items.length <= 1 && !Array.isArray(source.priceItems)) return pricingDomain.calculatePricing(source, activeDyehousePriceLibrary());
   const calculatedItems = items.map((item)=>pricingDomain.calculatePricing({ ...source, ...item }, activeDyehousePriceLibrary()));
@@ -3490,6 +3550,7 @@ function ensurePricingItemsUi() {
   uniqueNonEmpty,
   getSuggestedDyeCost,
   calculatePricing,
+  pricingWithOperationalWastePercent,
   buildItemCode,
   setPaymentFields,
   pricingForOrder,

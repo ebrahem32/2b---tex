@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.24.02`
+`v2026.06.24.03`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,16 @@
 
 ## Latest Commit Message
 
-`Refresh pricing cards from operational waste percent`
+`Apply operational waste to legacy pricing cards`
+
+## Latest Legacy Pricing Waste Runtime Cleanup
+
+- Version: `v2026.06.24.03`.
+- Old linked pricing cards now refresh their waste percent from the calculated order at runtime before display, edit, printing, or reporting.
+- Multi-item pricing cards try to match each item to its real linked order by fabric, dyehouse, and quantity, so old grouped cards do not keep one stale waste percent for every item.
+- The saved old percentage remains in SQLite as historical input, but live calculations no longer depend on it when actual order waste exists.
+- Synced the current workspace to `D:\Codex\2B TEX` as a full non-destructive copy for the user's requested Codex project folder.
+- Not touched: SQLite schema/data, stock balance formulas, movement save/rollback flows, WhatsApp service, A5 service.
 
 ## Latest Pricing Waste Follow-Up
 

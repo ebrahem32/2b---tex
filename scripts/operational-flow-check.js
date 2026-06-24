@@ -333,9 +333,14 @@ function checkFrontendBackendParity() {
 
 function checkPricingUiUsesOperationalWaste() {
   const source = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(source.includes('function pricingWastePercentFromOrder'), 'pricing-ui: order pricing cards must derive waste percent from the calculated order');
   assert(source.includes('calculated.totalWastePercent'), 'pricing-ui: order pricing cards must prefer actual operational waste percent');
   assert(source.includes('pricingWithOrderWastePercent(linkedPricing, calculated)'), 'pricing-ui: linked pricing cards must refresh displayed waste percent from the order');
+  assert(source.includes('pricingWithOperationalWastePercent(sourcePricing)'), 'pricing-ui: old pricing list rows must refresh linked order waste at runtime');
+  assert(source.includes('pricingWithOperationalWastePercent(pricing)'), 'pricing-ui: editing an old linked pricing card must refresh operational waste');
+  assert(appSource.includes('function pricingWithOperationalWastePercent'), 'app: pricing calculations must normalize old linked pricing cards with operational waste');
+  assert(appSource.includes('const source = pricingWithOperationalWastePercent(pricing || {})'), 'app: calculatePricing must use operational waste before any display or print calculation');
 }
 
 function checkMultiColorOperationalEntry() {

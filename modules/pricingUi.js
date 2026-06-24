@@ -9,6 +9,7 @@
       uniqueNonEmpty,
       getSuggestedDyeCost,
       calculatePricing,
+      pricingWithOperationalWastePercent,
       buildItemCode,
       setPaymentFields,
       pricingForOrder,
@@ -96,7 +97,10 @@ function pricingListRows() {
     const state = pricingState(sourcePricing);
     const listMode = state.linked ? 'linked' : 'active';
     if (listMode === 'active' && !isActivePricing(sourcePricing)) return [];
-    const pricing = calculatePricing(sourcePricing);
+    const effectiveSourcePricing = typeof pricingWithOperationalWastePercent === 'function'
+      ? pricingWithOperationalWastePercent(sourcePricing)
+      : sourcePricing;
+    const pricing = calculatePricing(effectiveSourcePricing);
     const items = Array.isArray(pricing.priceItems) && pricing.priceItems.length ? pricing.priceItems : [pricing];
     return items.map((item, index) => ({
       ...calculatePricing({ ...pricing, ...item, priceItems:null }),
@@ -280,7 +284,10 @@ function editPricing(id) {
   setEditingPricingId(id);
   setPendingPricingOrderId(null);
   if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'inline-flex';
-  fillPricingForm(pricing);
+  const effectivePricing = typeof pricingWithOperationalWastePercent === 'function'
+    ? pricingWithOperationalWastePercent(pricing)
+    : pricing;
+  fillPricingForm(effectivePricing);
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.pricingDialog.showModal();
 }

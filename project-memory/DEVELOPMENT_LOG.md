@@ -4,6 +4,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Apply Operational Waste To Legacy Pricing Cards
+
+- Date: 2026-06-24
+- Version: `v2026.06.24.03`
+- Goal: remove the old pricing-card waste behavior from existing/legacy orders without migrating or rewriting SQLite data.
+- Change: `calculatePricing()` now normalizes linked pricing cards with the order-calculated actual waste percent before any pricing display, print, edit, or report path uses them.
+- Change: multi-item pricing cards match each pricing item to its linked order by fabric, dyehouse, and quantity where possible.
+- Change: direct pricing-list rows and pricing edit forms use the same runtime normalization.
+- Note: copied the full current project workspace to `D:\Codex\2B TEX` as requested, without deleting extra destination files.
+- Not touched: SQLite schema/data, stock balance formulas, movement save/rollback flows, WhatsApp service, A5 service.
+
 ### Refresh Pricing Cards From Operational Waste Percent
 
 - Date: 2026-06-24
