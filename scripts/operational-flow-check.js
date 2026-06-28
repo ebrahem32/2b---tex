@@ -580,6 +580,7 @@ function checkDyehouseTransferKindsAreSeparated() {
   const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
   assert(appSource.includes('TRANSFER_RAW_MARKER'), 'transfers: raw-transfer marker must exist');
   assert(appSource.includes('TRANSFER_ALLOCATION_MARKER'), 'transfers: allocation-transfer marker must exist');
+  assert(appSource.includes('TRANSFER_ACCESSORY_MARKER'), 'transfers: accessory raw-transfer marker must exist');
   assert(appSource.includes('function transferTextLooksRaw(value)'), 'transfers: legacy raw-transfer text must be classified as raw transfer');
   assert(appSource.includes('function isUnreadableOperationalText(value)'), 'data repair: unreadable operational names must be detected');
   assert(appSource.includes('function repairUnreadableOrderFabricTypesFromPricings()'), 'data repair: unreadable order fabric names must be recovered from pricing cards');
@@ -589,13 +590,15 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes("text.includes('\\u062e\\u0631\\u0648\\u062c \\u062e\\u0627\\u0645')"), 'transfers: legacy خروج خام notes must be treated as raw transfer');
   assert(appSource.includes("allocation.dyehouse = fromDyehouse"), 'transfers: raw transfer repair must keep the allocation at its original dyehouse');
   assert(appSource.includes('function dyehouseLedgerSegmentsForAllocation(order, allocation)'), 'ui: order detail must use an explicit dyehouse ledger helper');
-  assert(appSource.includes('function chooseDyehouseTransferType()'), 'transfers: UI must ask whether the transfer is raw movement or allocation movement');
+  assert(appSource.includes('function chooseDyehouseTransferType(hasAccessories = false)'), 'transfers: UI must ask whether the transfer is cloth raw, accessory raw, or allocation movement');
   assert(appSource.includes('data-transfer-choice="raw"'), 'transfers: transfer dialog must expose a raw movement choice');
   assert(appSource.includes('data-transfer-choice="allocation"'), 'transfers: transfer dialog must expose a color/allocation movement choice');
+  assert(appSource.includes('data-transfer-choice="accessory"'), 'transfers: transfer dialog must expose an accessory raw movement choice');
   assert(appSource.includes('1 - \\u0646\\u0642\\u0644 \\u062e\\u0627\\u0645\\n2 - \\u0646\\u0642\\u0644 \\u0644\\u0648\\u0646'), 'transfers: fallback prompt must keep clear raw/color choices');
   assert(appSource.includes("mode:'raw'"), 'transfers: raw transfer must be saved without allocation splitting');
   assert(documentsSource.includes('const transferTextLooksRaw = (value) =>'), 'documents: legacy raw-transfer notes must be recognized');
   assert(documentsSource.includes("if (text.includes('[allocation-transfer]')) return false"), 'documents: allocation transfer must not be counted as physical raw transfer');
+  assert(documentsSource.includes("text.includes('[accessory-transfer]')"), 'documents: accessory raw transfer must be reported separately from cloth raw transfer');
   assert(documentsSource.includes('const isRawTransfer = (transfer, order = null) => transferKind(transfer, order) ==='), 'documents: dyeing documents must distinguish physical raw transfers with order context');
   assert(documentsSource.includes('function dyehouseLedgerSegmentsForAllocation(order, allocation)'), 'documents: dyehouse documents must use one ledger for source and target raw balances');
   assert(documentsSource.includes('function dyehouseScopedAllocations(order, dyehouseName)'), 'documents: dyeing documents must scope color rows by dyehouse transfer quantities');
@@ -612,6 +615,8 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(appSource.includes('data-transfer-accessory-summary'), 'ui: raw transfer button must carry the displayed row accessory summary');
   assert(appSource.includes('function accessoryPlannedPartsForScopedQuantity(order, allocation, scopedQuantity)'), 'ui: split dyehouse rows must scale accessory quantities with scoped raw quantities');
   assert(appSource.includes('const accessoryReason = isRawTransfer && accessorySummary'), 'ui: raw transfer reason must preserve the related accessory summary');
+  assert(appSource.includes("transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:`${accessoryType}"), 'ui: accessory raw transfer must save a transfer row linked to the same color');
+  assert(appSource.includes("accessoryFlowQuantityForLine(order, calculated, 'sent', accessoryLine)"), 'ui: accessory raw transfer availability must use actual sent accessory movements');
   assert(appSource.includes('async function transferAllocationDyehouse(id, context = {})'), 'ui: transfer handler must accept row context for scoped raw transfers');
   assert(appSource.includes('const currentDyehouse = scopedSourceDyehouse || allocation.dyehouse || order.dyehouse ||'), 'ui: raw transfer must compare against displayed source dyehouse before allocation dyehouse');
 }

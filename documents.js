@@ -41,6 +41,7 @@
 
     const transferKind = (transfer, order = null) => {
       const text = clean(`${transfer?.mode || ''} ${transfer?.reason || ''} ${transfer?.notes || ''}`);
+      if (text.includes('[accessory-transfer]')) return 'accessory';
       if (text.includes('[allocation-transfer]')) return 'allocation';
       if (transferTextLooksRaw(text)) return 'raw';
       if (transfer?.newAllocationId || transfer?.toAllocationId || transfer?.to_allocation_id) return 'allocation';
@@ -533,7 +534,8 @@
         .slice()
         .sort((a, b) => clean(a.transferDate || a.date).localeCompare(clean(b.transferDate || b.date)))
         .map((transfer) => {
-          const kind = isRawTransfer(transfer, order) ? 'نقل خام' : 'نقل لون';
+          const currentKind = transferKind(transfer, order);
+          const kind = currentKind === 'accessory' ? 'نقل خام إكسسوار' : isRawTransfer(transfer, order) ? 'نقل خام' : 'نقل لون';
           const date = transfer.transferDate || transfer.date || '-';
           return `<tr><td>${safeText(date)}</td><td>${safeText(kind)}</td><td>${safeText(transfer.fromDyehouse)}</td><td>${safeText(transfer.toDyehouse)}</td><td>${transferAllocationLabel(order, transfer)}</td><td>${fmt(transfer.quantity)}</td><td>${safeText(transferNoteNumber(transfer))}</td><td>${safeText(transfer.reason || transfer.notes)}</td></tr>`;
         }).join('');

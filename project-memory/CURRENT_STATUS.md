@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.24.05`
+`v2026.06.28.01`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,17 @@
 
 ## Latest Commit Message
 
-`Recalculate displayed waste percent from finished weight`
+`Add accessory raw dyehouse transfer path`
+
+## Latest Accessory Raw Transfer Path
+
+- Version: `v2026.06.28.01`.
+- Added a separate dyehouse transfer path for accessory raw material such as rib.
+- The transfer dialog now shows `نقل خام إكسسوار` when the order has accessory lines.
+- Accessory raw transfer quantity is based only on actual sent accessory movements, not planned/estimated accessory quantities.
+- Accessory raw transfers are stored in the transfer log with an internal `[accessory-transfer]` marker so reports can show them while cloth raw balance ignores them.
+- This keeps rib transfer operationally real without mixing accessory kilograms into cloth raw calculations.
+- Not touched: SQLite schema/data, backend endpoints, stock save/rollback flows, cloth raw transfer logic, waste formulas, WhatsApp service, A5 service.
 
 ## Latest Displayed Waste Percent Fix
 

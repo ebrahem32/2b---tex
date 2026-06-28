@@ -4,6 +4,19 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Add Accessory Raw Dyehouse Transfer Path
+
+- Date: 2026-06-28
+- Commit: pending.
+- Version: `v2026.06.28.01`
+- Goal: allow rib/accessory raw material to move between dyehouses without mixing it into cloth raw transfer calculations.
+- Change: transfer dialog now exposes `نقل خام إكسسوار` when the order contains accessory lines.
+- Change: accessory transfer availability uses actual sent accessory movements only; planned accessory quantities are not used as fallback.
+- Change: accessory raw transfers are saved in the transfer log with `[accessory-transfer]` and shown separately in order movements and detailed reports.
+- Change: cloth raw ledgers and dyehouse balances ignore accessory raw transfers.
+- Test: regression check added for accessory transfer marker, UI choice, actual accessory source, and report separation.
+- Not touched: SQLite schema/data, backend endpoints, stock save/rollback flows, cloth raw transfer logic, waste formulas, WhatsApp service, A5 service.
+
 ### Recalculate Displayed Waste Percent From Finished Weight
 
 - Date: 2026-06-24

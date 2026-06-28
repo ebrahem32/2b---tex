@@ -19,10 +19,11 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.24.05';
-const APP_BUILD_TIME = '2026-06-24 14:15';
+const APP_VERSION = 'v2026.06.28.01';
+const APP_BUILD_TIME = '2026-06-28 14:30';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
+const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -198,6 +199,7 @@ function ensureRecordIds(collection) {
 }
 function transferTextLooksRaw(value) {
   const text = String(value || '');
+  if (text.includes(TRANSFER_ACCESSORY_MARKER)) return false;
   if (text.includes(TRANSFER_ALLOCATION_MARKER)) return false;
   return text.includes(TRANSFER_RAW_MARKER)
     || /\braw\b/i.test(text)
@@ -205,6 +207,7 @@ function transferTextLooksRaw(value) {
     || text.includes('\u0646\u0642\u0644 \u062e\u0627\u0645');
 }
 function transferModeFromText(reason, toAllocationId) {
+  if (String(reason || '').includes(TRANSFER_ACCESSORY_MARKER)) return 'accessory';
   if (String(reason || '').includes(TRANSFER_ALLOCATION_MARKER)) return toAllocationId ? 'split' : 'full';
   if (transferTextLooksRaw(reason)) return 'raw';
   return toAllocationId ? 'split' : 'full';
@@ -5206,7 +5209,7 @@ function renderDetails() {
   const accessoryReceivedItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'), (batch)=>batchItemHtml('accessory', batch, movementLine('استلام إكسسوار', batch.date, accessoryAllocationLabel(batch), batch.quantity, batch.accessoryType || 'إكسسوار') + noteSuffix(batch)));
   const productionItems = listHtml(productionBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('production', batch, movementLine('استلام مجهز', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch)); });
   const customerItems = (()=>{ const cloth = customerBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : '-'; return { type:'customer', batch, label:movementLine('تسليم قماش للعميل', batch.date, label, batch.quantity) }; }); const accessories = accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer').map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : accessoryColor(batch); return { type:'accessory', batch, label:movementLine('تسليم إكسسوار للعميل', batch.date, label, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'إكسسوار') + noteSuffix(batch) }; }); const rows = cloth.concat(accessories).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">لا توجد دفعات بعد.</div>'; })();
-  const transferItems = listHtml(dyehouseTransfers.filter((batch)=>batch.orderId===order.id), (batch)=>batchItemHtml('transfer', batch, movementLine('تحويل مصبغة', batch.date, transferAllocationLabel(batch), batch.fromDyehouse || '-', batch.toDyehouse || '-', batch.quantity) + noteSuffix(batch)));
+  const transferItems = listHtml(dyehouseTransfers.filter((batch)=>batch.orderId===order.id), (batch)=>{ const transferTitle = transferRecordMode(batch) === 'accessory' ? 'نقل خام إكسسوار' : 'تحويل مصبغة'; return batchItemHtml('transfer', batch, movementLine(transferTitle, batch.date, transferAllocationLabel(batch), batch.fromDyehouse || '-', batch.toDyehouse || '-', batch.quantity) + noteSuffix(batch)); });
   const rawReturnItems = listHtml(rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('rawReturn', batch, movementLine('مرتجع خام للنسيج', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch)); });
   const stockRows = order.allocations.map((allocation)=>{ const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===allocation.id)); const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent')); const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return')); const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue); const widthInfo = allocationInchWidthLabel(order, allocation); return `<tr><td>${allocation.color}</td><td>${widthInfo}</td><td>${formatNumber(allocation.finishedReceived || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; }).join('');
   const accessoryStockRows = order.accessoryLines.length ? order.allocations.flatMap((allocation)=>order.accessoryLines.map((line)=>{ const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type)); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type)); const balance = roundNumber(received - delivered); return `<tr><td>${allocation.color}</td><td>${line.type}</td><td>${formatNumber(received || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; })).join('') : '';
@@ -5783,14 +5786,15 @@ async function editAllocation(id) {
   await loadBackendData();
 }
 
-function chooseDyehouseTransferType() {
+function chooseDyehouseTransferType(hasAccessories = false) {
   const fallbackPrompt = () => {
-    const value = prompt('\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646', '1');
+    const value = prompt(`\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646${hasAccessories ? '\n3 - \u0646\u0642\u0644 \u062e\u0627\u0645 \u0625\u0643\u0633\u0633\u0648\u0627\u0631' : ''}`, '1');
     if (value === null) return null;
     const normalized = String(value).trim();
     if (/^1\b|\u062e\u0627\u0645/.test(normalized)) return 'raw';
     if (/^2\b|\u0644\u0648\u0646/.test(normalized)) return 'allocation';
-    alert('\u0627\u062e\u062a\u0631 1 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0623\u0648 2 \u0644\u0646\u0642\u0644 \u0644\u0648\u0646.');
+    if (hasAccessories && (/^3\b|\u0625\u0643\u0633\u0633\u0648\u0627\u0631|\u0627\u0643\u0633\u0633\u0648\u0627\u0631|\u0631\u064a\u0628/.test(normalized))) return 'accessory';
+    alert(hasAccessories ? '\u0627\u062e\u062a\u0631 1 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0623\u0648 2 \u0644\u0646\u0642\u0644 \u0644\u0648\u0646 \u0623\u0648 3 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0625\u0643\u0633\u0633\u0648\u0627\u0631.' : '\u0627\u062e\u062a\u0631 1 \u0644\u0646\u0642\u0644 \u062e\u0627\u0645 \u0623\u0648 2 \u0644\u0646\u0642\u0644 \u0644\u0648\u0646.');
     return null;
   };
   if (typeof document === 'undefined' || !document.createElement || typeof HTMLDialogElement === 'undefined') {
@@ -5807,6 +5811,7 @@ function chooseDyehouseTransferType() {
         <div class="transfer-choice-actions">
           <button class="mini-btn gold" type="button" data-transfer-choice="raw">\u0646\u0642\u0644 \u062e\u0627\u0645</button>
           <button class="mini-btn" type="button" data-transfer-choice="allocation">\u0646\u0642\u0644 \u0644\u0648\u0646</button>
+          ${hasAccessories ? '<button class="mini-btn" type="button" data-transfer-choice="accessory">\u0646\u0642\u0644 \u062e\u0627\u0645 \u0625\u0643\u0633\u0633\u0648\u0627\u0631</button>' : ''}
         </div>
       </form>`;
     const finish = (value) => {
@@ -5840,10 +5845,11 @@ async function transferAllocationDyehouse(id, context = {}) {
   const calculated = order.allocations.find((item)=>item.id===id) || calculateAllocation(allocation);
   const scopedSourceDyehouse = String(context.sourceDyehouse || '').trim();
   const currentDyehouse = scopedSourceDyehouse || allocation.dyehouse || order.dyehouse || '';
-  const normalizedTransferType = await chooseDyehouseTransferType();
+  const normalizedTransferType = await chooseDyehouseTransferType(Boolean(order.accessoryLines?.length));
   if (!normalizedTransferType) return;
   const isRawTransfer = normalizedTransferType === 'raw';
   const isAllocationTransfer = normalizedTransferType === 'allocation';
+  const isAccessoryTransfer = normalizedTransferType === 'accessory';
   const newDyehouseValue = prompt('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629', currentDyehouse);
   if (newDyehouseValue === null) return;
   const newDyehouse = newDyehouseValue.trim();
@@ -5851,7 +5857,25 @@ async function transferAllocationDyehouse(id, context = {}) {
   if (newDyehouse === currentDyehouse) { alert('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0644\u0645 \u062a\u062a\u063a\u064a\u0631.'); return; }
   const originalQuantity = Number(allocation.plannedQuantity || 0);
   const scopedAvailableQuantity = Number(context.availableQuantity || 0);
-  const suggestedQuantity = isRawTransfer
+  let accessoryLine = null;
+  let accessoryType = '';
+  let accessoryAvailable = 0;
+  if (isAccessoryTransfer) {
+    const accessoryNames = (order.accessoryLines || []).map((line)=>accessoryLineName(line, order));
+    const selectedAccessoryValue = prompt('\u0646\u0648\u0639 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631', accessoryNames[0] || '\u0631\u064a\u0628');
+    if (selectedAccessoryValue === null) return;
+    accessoryType = selectedAccessoryValue.trim();
+    if (!accessoryType) return;
+    accessoryLine = (order.accessoryLines || []).find((line)=>normalizeForCompare(accessoryLineName(line, order)) === normalizeForCompare(accessoryType)) || order.accessoryLines?.[0] || null;
+    accessoryAvailable = accessoryLine ? accessoryFlowQuantityForLine(order, calculated, 'sent', accessoryLine) : 0;
+    if (!accessoryAvailable) {
+      alert('\u0644\u0627 \u064a\u0648\u062c\u062f \u062e\u0631\u0648\u062c \u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0641\u0639\u0644\u064a \u0645\u0633\u062c\u0644 \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646. \u0633\u062c\u0644 \u062e\u0631\u0648\u062c \u0627\u0644\u0631\u064a\u0628 \u0623\u0648\u0644\u0627\u064b \u062b\u0645 \u0627\u0646\u0642\u0644\u0647.');
+      return;
+    }
+  }
+  const suggestedQuantity = isAccessoryTransfer
+    ? (accessoryAvailable || '')
+    : isRawTransfer
     ? (scopedAvailableQuantity || Number(calculated.remainingAtDyehouse || 0) || Number(calculated.sentToDyehouse || 0) || originalQuantity || '')
     : (Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0) || originalQuantity || '');
   const quantityValue = prompt('\u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062d\u0648\u0644\u0629', suggestedQuantity);
@@ -5859,9 +5883,10 @@ async function transferAllocationDyehouse(id, context = {}) {
   const quantity = Number(quantityValue);
   if (!quantity || quantity <= 0) { alert('\u0627\u062f\u062e\u0644 \u0643\u0645\u064a\u0629 \u0635\u062d\u064a\u062d\u0629 \u0644\u0644\u062a\u062d\u0648\u064a\u0644.'); return; }
   const transferWarnings = [];
-  if (quantity > originalQuantity) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062e\u0637\u0637\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.');
+  if (!isAccessoryTransfer && quantity > originalQuantity) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062e\u0637\u0637\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.');
   if (isRawTransfer && scopedAvailableQuantity && quantity > scopedAvailableQuantity + 0.01) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0646\u0642\u0644 \u0627\u0644\u062e\u0627\u0645 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0631\u0635\u064a\u062f \u0647\u0630\u0647 \u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0641\u064a \u0627\u0644\u0635\u0641 \u0627\u0644\u0645\u0639\u0631\u0648\u0636.');
-  if (quantity > Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0)) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u062e\u0627\u0645 \u0627\u0644\u0645\u062a\u0627\u062d \u063a\u064a\u0631 \u0627\u0644\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629.');
+  if (!isAccessoryTransfer && quantity > Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0)) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u062e\u0627\u0645 \u0627\u0644\u0645\u062a\u0627\u062d \u063a\u064a\u0631 \u0627\u0644\u0645\u0631\u0633\u0644 \u0644\u0644\u0645\u0635\u0628\u063a\u0629.');
+  if (isAccessoryTransfer && quantity > accessoryAvailable + 0.01) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0646\u0642\u0644 \u062e\u0627\u0645 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0645\u062e\u0631\u0648\u062c \u0641\u0639\u0644\u064a\u0627\u064b \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.');
   const accessorySummary = String(context.accessorySummary || '').trim();
   if (isRawTransfer && accessorySummary && !confirm(`\u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0627\u0644\u0645\u0631\u062a\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0635\u0641:\n${accessorySummary}\n\n\u0647\u0644 \u062a\u0645\u0631\u0631 \u0646\u0642\u0644 \u0627\u0644\u062e\u0627\u0645 \u0645\u0639 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631\u061f`)) return;
   const dateValue = prompt('\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062a\u062d\u0648\u064a\u0644', new Date().toISOString().slice(0,10));
@@ -5876,7 +5901,9 @@ async function transferAllocationDyehouse(id, context = {}) {
   let newAllocation = null;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
-  if (isRawTransfer) {
+  if (isAccessoryTransfer) {
+    transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:`${accessoryType} / ${allocation.color || allocation.pantoneCode || ''}`.trim(), fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason:[TRANSFER_ACCESSORY_MARKER, '\u0646\u0642\u0644 \u062e\u0627\u0645 \u0625\u0643\u0633\u0633\u0648\u0627\u0631', reason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'accessory' };
+  } else if (isRawTransfer) {
     transferRecord = { id:uid(), orderId:allocation.orderId, allocationId:id, newAllocationId:null, color:allocation.color || allocation.pantoneCode || '', fromDyehouse:currentDyehouse, toDyehouse:newDyehouse, quantity:roundedQuantity, date:dateValue, reason:[TRANSFER_RAW_MARKER, reason, accessoryReason, ...transferWarnings].filter(Boolean).join(' - '), noteNumber, mode:'raw' };
   } else if (roundedQuantity >= originalQuantity) {
     allocationUpdate = { ...allocation, dyehouse:newDyehouse };
@@ -6000,7 +6027,7 @@ async function editBatch(type, id) {
   const quantity = Number(prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
   updatedBatch.date = prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
   if (type === 'raw') { updatedBatch.supplier = prompt('الجهة / المصدر', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; if (updatedBatch.mode === 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_RAW_MARKER)) updatedBatch.reason = [TRANSFER_RAW_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode !== 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_ALLOCATION_MARKER)) updatedBatch.reason = [TRANSFER_ALLOCATION_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); }
+  if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; if (updatedBatch.mode === 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ACCESSORY_MARKER)) updatedBatch.reason = [TRANSFER_ACCESSORY_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode === 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_RAW_MARKER)) updatedBatch.reason = [TRANSFER_RAW_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode !== 'raw' && updatedBatch.mode !== 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ALLOCATION_MARKER)) updatedBatch.reason = [TRANSFER_ALLOCATION_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); }
   if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'accessory') { updatedBatch.accessoryType = prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('مصدر الدمج / العملية', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('اسم المنتج الناتج', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
@@ -6215,6 +6242,7 @@ function transferBelongsToOrderScope(order, transfer = {}) {
 }
 function isRawTransferForScopedDyehouse(transfer = {}, allocation = {}) {
   const text = `${transfer.mode || ''} ${transfer.reason || ''} ${transfer.notes || ''}`;
+  if (text.includes(TRANSFER_ACCESSORY_MARKER) || transferRecordMode(transfer) === 'accessory') return false;
   if (text.includes(TRANSFER_ALLOCATION_MARKER) || transfer.newAllocationId) return false;
   if (transferRecordMode(transfer) === 'raw') return true;
   const planned = Number(allocation?.plannedQuantity || 0);

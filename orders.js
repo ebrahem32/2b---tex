@@ -126,6 +126,7 @@
 
     function transferKindForAllocation(transfer = {}, allocation = null) {
       const text = transferText(transfer);
+      if (text.includes('[accessory-transfer]')) return 'accessory';
       if (text.includes('[allocation-transfer]')) return 'allocation';
       if (transferTextLooksRaw(transfer)) return 'raw';
       if (transfer.newAllocationId) return 'allocation';
