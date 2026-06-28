@@ -4,6 +4,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Fix Document Print Preview Layout
+
+- Date: 2026-06-28
+- Commit: pending.
+- Version: `v2026.06.28.02`
+- Goal: repair the shared print/document preview that could show documents shifted, cropped, and mixed with nested scrollbars.
+- Change: document dialog now uses one fixed viewport with a separate action bar and a scrollable document body.
+- Change: printable sheets are centered in the preview and no longer own the horizontal scroll container.
+- Change: mobile preview rules were aligned with the same document dialog model.
+- Change: cache keys were updated for `styles.css` and `app.js`.
+- Not touched: SQLite schema/data, backend endpoints, stock/waste formulas, movement save/rollback flows, WhatsApp service, A5 service.
+
 ### Add Accessory Raw Dyehouse Transfer Path
 
 - Date: 2026-06-28

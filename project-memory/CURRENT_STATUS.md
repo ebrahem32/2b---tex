@@ -2,13 +2,26 @@
 
 ## Current Version
 
-`v2026.06.28.01`
+`v2026.06.28.02`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Fix document print preview layout`
+
+## Latest Document Print Preview Layout Fix
+
+- Version: `v2026.06.28.02`.
+- Fixed the shared document preview dialog so operational documents, reports, and print/PDF previews open centered inside one controlled viewport.
+- The document action bar is now separated from the printable sheet and remains outside the printed content.
+- The preview scroll now belongs to the dialog body, not to the paper sheet itself, preventing the sheet from being shifted/cropped with nested horizontal scrollbars.
+- Updated CSS/app cache keys so browsers load the corrected print-preview layout immediately.
+- Not touched: SQLite schema/data, backend endpoints, stock/waste formulas, movement save/rollback flows, WhatsApp service, A5 service.
+
+## Previous Commit Message
 
 `Add accessory raw dyehouse transfer path`
 
