@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.29.02';
-const APP_BUILD_TIME = '2026-06-29 00:58';
+const APP_VERSION = 'v2026.06.29.03';
+const APP_BUILD_TIME = '2026-06-29 01:12';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -4039,12 +4039,10 @@ function finishedStockSaleFabricOptions() {
   return fabrics.map((fabric)=>`<option value="${escapeHtml(fabric)}">${escapeHtml(fabric)}</option>`).join('');
 }
 function finishedTransferTargetOptions(selectedFabric = '') {
-  const sourceKeys = new Set(finishedStockSaleSources().map((item)=>`${item.order.id}|${item.allocation.id}`));
   return allOrders()
     .filter((order)=>!isMainWarehouseStockOrder(order))
     .flatMap((order)=>(order.allocations || []).map((allocation)=>{
       const key = `${order.id}|${allocation.id}`;
-      if (sourceKeys.has(key)) return '';
       if (selectedFabric && !finishedSaleFabricMatches(order.fabricType, selectedFabric)) return '';
       const label = [
         order.orderNumber || '-',
@@ -4087,6 +4085,14 @@ function renderFinishedSaleRows() {
       </tr>`)
     .join('');
   body.innerHTML = rows || '<tr><td colspan="7">لا يوجد رصيد مخزن متاح للبيع الجاهز.</td></tr>';
+}
+function renderFinishedTransferTargets() {
+  const select = document.querySelector('#finishedTransferForm select[name="targetKey"]');
+  if (!select) return;
+  const currentValue = select.value;
+  const fabric = selectedFinishedSaleFabric();
+  select.innerHTML = `<option value="">اختر الطلب / اللون المستلم للتحويل</option>${finishedTransferTargetOptions(fabric)}`;
+  if (currentValue && [...select.options].some((option)=>option.value === currentValue)) select.value = currentValue;
 }
 function renderFinishedSalePanel() {
   const panel = document.getElementById('finishedSalePanel');
@@ -4174,6 +4180,7 @@ function renderFinishedSalePanel() {
   const select = document.getElementById('finishedSaleFabric');
   if (select && currentFabric && [...select.options].some((option)=>option.value === currentFabric)) select.value = currentFabric;
   renderFinishedSaleRows();
+  renderFinishedTransferTargets();
 }
 function finishedStockSaleHistoryRows() {
   const stockOutRows = customerBatches
@@ -7398,7 +7405,10 @@ document.getElementById('operationFollowPanel')?.addEventListener('click', (even
   if (viewButton?.dataset.view) openOrderFocusMode(viewButton.dataset.view);
 });
 document.addEventListener('change', (event) => {
-  if (event.target?.id === 'finishedSaleFabric') renderFinishedSaleRows();
+  if (event.target?.id === 'finishedSaleFabric') {
+    renderFinishedSaleRows();
+    renderFinishedTransferTargets();
+  }
 });
 document.addEventListener('submit', (event) => {
   if (event.target?.id === 'mainWarehouseStockForm') {

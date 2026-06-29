@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.29.02`
+`v2026.06.29.03`
 
 ## Last Known Commit Before Project Memory
 
@@ -20,6 +20,8 @@
 - Internal finished-stock transfers use `finished_transfer_out` on the source and a marked finished-receiving row on the target with `[finished-stock-transfer]`.
 - `warehouseOut` now represents all stock leaving the warehouse balance, while `deliveredToCustomer` stays limited to real customer delivery/invoices.
 - Detailed reports and backend summaries use `warehouseOut` for warehouse balance, preventing internal transfers from being counted as customer delivery.
+- Updated transfer target selection so another open order/allocation can receive finished stock even if it already has warehouse balance; only transferring to the same exact source allocation is blocked at save time.
+- Changing the selected fabric in the warehouse transfer screen now refreshes both available source rows and valid target orders.
 - Not touched: SQLite schema/data, backend endpoints, dyehouse transfer logic, waste formulas, WhatsApp service, A5 service.
 
 ## Latest Main Warehouse Stock Intake
