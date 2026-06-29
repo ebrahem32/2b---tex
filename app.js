@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.29.01';
-const APP_BUILD_TIME = '2026-06-29 00:25';
+const APP_VERSION = 'v2026.06.29.02';
+const APP_BUILD_TIME = '2026-06-29 00:58';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -28,6 +28,7 @@ const MAIN_WAREHOUSE_STOCK_MARKER = '[main-warehouse-stock]';
 const MAIN_WAREHOUSE_CUSTOMER = '2B';
 const MAIN_WAREHOUSE_DYEHOUSE = 'المخزن الرئيسي';
 const MAIN_WAREHOUSE_PREFIX = 'WH-';
+const FINISHED_TRANSFER_MARKER = '[finished-stock-transfer]';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1903,10 +1904,16 @@ function ensureCustomerAccount(customerName) {
 function isFinishedStockSale(batch = {}) {
   return String(batch.movement || '').trim() === 'finished_sale' && String(batch.customerName || '').trim();
 }
+function isFinishedStockTransferOut(batch = {}) {
+  return String(batch.movement || '').trim() === 'finished_transfer_out';
+}
+function isInternalWarehouseMovement(batch = {}) {
+  return isFinishedStockSale(batch) || isFinishedStockTransferOut(batch);
+}
 function orderLedgerDeliveredQuantity(order) {
   const allocationIds = allocations.filter((allocation)=>allocation.orderId === order.id).map((allocation)=>allocation.id);
   return roundNumber(customerBatches
-    .filter((batch)=>allocationIds.includes(batch.allocationId) && !isFinishedStockSale(batch))
+    .filter((batch)=>allocationIds.includes(batch.allocationId) && !isInternalWarehouseMovement(batch))
     .reduce((total, batch)=>total + Number(batch.quantity || 0), 0));
 }
 function finishedStockSaleInvoices(customerName) {
@@ -3986,9 +3993,10 @@ function mainWarehouseStockOrders() {
 function mainWarehouseStockRows() {
   return mainWarehouseStockOrders()
     .flatMap((order)=>(order.allocations || []).map((allocation)=>{
+      const warehouseOut = Number(allocation.warehouseOut ?? allocation.deliveredToCustomer ?? 0);
       const balance = roundNumber(
         Number(allocation.finishedReceived || 0)
-        - Number(allocation.deliveredToCustomer || 0)
+        - warehouseOut
         - Number(allocation.sentToGluing || 0)
         + Number(allocation.returnedFromGluing || 0)
       );
@@ -4007,16 +4015,17 @@ function renderMainWarehouseRows() {
       <td>${escapeHtml(allocation.color || '-')}</td>
       <td>${escapeHtml(allocation.targetFinishedWidth || allocation.rawWidth || order.inchWidth || '-')}</td>
       <td>${formatNumber(allocation.finishedReceived || 0)}</td>
-      <td>${formatNumber(allocation.deliveredToCustomer || 0)}</td>
+      <td>${formatNumber(allocation.warehouseOut ?? allocation.deliveredToCustomer ?? 0)}</td>
       <td><strong>${formatNumber(balance)}</strong></td>
     </tr>`).join('');
 }
 function finishedStockSaleSources() {
   return allOrders()
     .flatMap((order)=>(order.allocations || []).map((allocation)=>{
+      const warehouseOut = Number(allocation.warehouseOut ?? allocation.deliveredToCustomer ?? 0);
       const balance = roundNumber(
         Number(allocation.finishedReceived || 0)
-        - Number(allocation.deliveredToCustomer || 0)
+        - warehouseOut
         - Number(allocation.sentToGluing || 0)
         + Number(allocation.returnedFromGluing || 0)
       );
@@ -4028,6 +4037,25 @@ function finishedStockSaleSources() {
 function finishedStockSaleFabricOptions() {
   const fabrics = uniqueNonEmpty(finishedStockSaleSources().map((item)=>item.order.fabricType));
   return fabrics.map((fabric)=>`<option value="${escapeHtml(fabric)}">${escapeHtml(fabric)}</option>`).join('');
+}
+function finishedTransferTargetOptions(selectedFabric = '') {
+  const sourceKeys = new Set(finishedStockSaleSources().map((item)=>`${item.order.id}|${item.allocation.id}`));
+  return allOrders()
+    .filter((order)=>!isMainWarehouseStockOrder(order))
+    .flatMap((order)=>(order.allocations || []).map((allocation)=>{
+      const key = `${order.id}|${allocation.id}`;
+      if (sourceKeys.has(key)) return '';
+      if (selectedFabric && !finishedSaleFabricMatches(order.fabricType, selectedFabric)) return '';
+      const label = [
+        order.orderNumber || '-',
+        order.customer || '-',
+        order.fabricType || '-',
+        allocation.color || '-',
+        allocation.targetFinishedWidth || allocation.rawWidth || order.inchWidth || '',
+      ].filter(Boolean).join(' / ');
+      return `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`;
+    }).filter(Boolean))
+    .join('');
 }
 function selectedFinishedSaleFabric() {
   return document.getElementById('finishedSaleFabric')?.value || '';
@@ -4119,11 +4147,26 @@ function renderFinishedSalePanel() {
       </div>
       <button class="primary-btn full" type="submit">حفظ بيع مجهز</button>
     </form>
+    <form id="finishedTransferForm" class="batch-form finished-sale-form">
+      <div class="full">
+        <h3>تحويل رصيد مجهز من طلب لطلب</h3>
+        <p class="muted">حركة داخلية تنقل رصيد مخزن فعلي من الطلب المصدر إلى طلب آخر بدون تسجيل بيع أو فاتورة عميل.</p>
+      </div>
+      <select name="targetKey" required>
+        <option value="">اختر الطلب / اللون المستلم للتحويل</option>
+        ${finishedTransferTargetOptions(currentFabric)}
+      </select>
+      <input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>
+      <input name="noteNumber" placeholder="رقم إذن التحويل">
+      <input class="full" name="notes" placeholder="ملاحظات التحويل">
+      <p class="muted full">اكتب كمية التحويل في جدول الرصيد بالأعلى، ثم اضغط حفظ التحويل. نفس الجدول يستخدم لاختيار الرصيد المصدر.</p>
+      <button class="mini-btn full" type="submit">حفظ تحويل رصيد مجهز</button>
+    </form>
     <div class="subsection">
-      <div class="subsection-head"><h3>آخر حركات بيع مجهز</h3></div>
+      <div class="subsection-head"><h3>آخر حركات المخزن</h3></div>
       <div class="table-wrap">
         <table class="mobile-card-table allocation-table">
-          <thead><tr><th>التاريخ</th><th>العميل</th><th>المصدر</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+          <thead><tr><th>التاريخ</th><th>الحركة</th><th>الطرف</th><th>المصدر</th><th>الصنف</th><th>الكمية</th><th>القيمة</th></tr></thead>
           <tbody>${finishedStockSaleHistoryRows()}</tbody>
         </table>
       </div>
@@ -4133,17 +4176,29 @@ function renderFinishedSalePanel() {
   renderFinishedSaleRows();
 }
 function finishedStockSaleHistoryRows() {
-  return customerBatches
-    .filter(isFinishedStockSale)
-    .slice()
+  const stockOutRows = customerBatches
+    .filter((batch)=>isFinishedStockSale(batch) || isFinishedStockTransferOut(batch))
+    .map((batch)=>({ ...batch, __historyType:isFinishedStockSale(batch) ? 'sale' : 'transfer-out' }));
+  const stockInRows = productionBatches
+    .filter((batch)=>String(batch.notes || '').includes(FINISHED_TRANSFER_MARKER))
+    .map((batch)=>({ ...batch, __historyType:'transfer-in' }));
+  return stockOutRows
+    .concat(stockInRows)
     .sort((a, b)=>String(b.date || '').localeCompare(String(a.date || '')))
     .slice(0, 12)
     .map((batch)=>{
       const order = orders.find((item)=>item.id === batch.orderId) || {};
       const allocation = allocations.find((item)=>item.id === batch.allocationId) || {};
-      return `<tr><td>${escapeHtml(batch.date || '-')}</td><td>${escapeHtml(batch.customerName || '-')}</td><td>${escapeHtml(order.orderNumber || '-')}</td><td>${escapeHtml([order.fabricType, allocation.color].filter(Boolean).join(' / ') || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${formatNumber(batch.unitPrice || 0)}</td><td>${formatNumber(batch.totalPrice || Number(batch.quantity || 0) * Number(batch.unitPrice || 0))}</td></tr>`;
+      const typeLabel = batch.__historyType === 'sale' ? 'بيع مجهز' : (batch.__historyType === 'transfer-in' ? 'تحويل وارد' : 'تحويل صادر');
+      const party = batch.__historyType === 'sale'
+        ? (batch.customerName || '-')
+        : ((batch.notes || '').split(' - ').find((part)=>part.includes('تحويل')) || '-');
+      const amount = batch.__historyType === 'sale'
+        ? formatNumber(batch.totalPrice || Number(batch.quantity || 0) * Number(batch.unitPrice || 0))
+        : '-';
+      return `<tr><td>${escapeHtml(batch.date || '-')}</td><td>${escapeHtml(typeLabel)}</td><td>${escapeHtml(party)}</td><td>${escapeHtml(order.orderNumber || '-')}</td><td>${escapeHtml([order.fabricType, allocation.color].filter(Boolean).join(' / ') || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${amount}</td></tr>`;
     })
-    .join('') || '<tr><td colspan="7">لا توجد حركات بيع مجهز مسجلة.</td></tr>';
+    .join('') || '<tr><td colspan="7">لا توجد حركات مخزن مسجلة.</td></tr>';
 }
 function openFinishedSalePanel() {
   openMainWorkspace();
@@ -4229,6 +4284,83 @@ async function saveFinishedStockSale(event) {
   await loadBackendData();
   renderFinishedSalePanel();
   alert('تم حفظ بيع مجهز وخصم الكمية من رصيد المخزن.');
+}
+async function saveFinishedStockTransfer(event) {
+  event.preventDefault();
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ تحويل الرصيد المجهز.'))) return;
+  const form = event.target.closest('#finishedTransferForm');
+  if (!form) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const [targetOrderId, targetAllocationId] = String(data.targetKey || '').split('|');
+  const targetOrder = orders.find((order)=>order.id === targetOrderId);
+  const targetAllocation = allocations.find((allocation)=>allocation.id === targetAllocationId);
+  if (!targetOrder || !targetAllocation) { alert('اختر الطلب / اللون المستلم للتحويل.'); return; }
+  const rows = [...document.querySelectorAll('#finishedSaleRows [data-finished-sale-row]')]
+    .map((row)=>{
+      const quantity = roundNumber(Number(row.querySelector('[data-finished-sale-quantity]')?.value || 0));
+      return {
+        orderId: row.dataset.orderId,
+        allocationId: row.dataset.allocationId,
+        available: Number(row.dataset.available || 0),
+        quantity,
+      };
+    })
+    .filter((item)=>item.quantity > 0);
+  if (!rows.length) { alert('اكتب كمية تحويل واحدة على الأقل في جدول الرصيد.'); return; }
+  const date = data.date || new Date().toISOString().slice(0, 10);
+  const noteNumber = data.noteNumber || '';
+  const transferId = uid();
+  for (const item of rows) {
+    if (item.orderId === targetOrderId && item.allocationId === targetAllocationId) {
+      alert('لا يمكن تحويل الرصيد إلى نفس الطلب / اللون المصدر.');
+      return;
+    }
+    const sourceOrder = orders.find((order)=>order.id === item.orderId) || {};
+    const sourceAllocation = allocations.find((allocation)=>allocation.id === item.allocationId) || {};
+    const warning = item.quantity > item.available + 0.001
+      ? `تنبيه: كمية التحويل ${formatNumber(item.quantity)} أكبر من الرصيد المتاح ${formatNumber(item.available)} كجم`
+      : '';
+    const sourceLabel = `${sourceOrder.orderNumber || '-'} / ${sourceOrder.customer || '-'} / ${sourceOrder.fabricType || '-'} / ${sourceAllocation.color || '-'}`;
+    const targetLabel = `${targetOrder.orderNumber || '-'} / ${targetOrder.customer || '-'} / ${targetOrder.fabricType || '-'} / ${targetAllocation.color || '-'}`;
+    const outSaved = await postBackend('/batches/customer', batchToApi({
+      id: uid(),
+      orderId: item.orderId,
+      allocationId: item.allocationId,
+      date,
+      quantity: item.quantity,
+      customerName: targetOrder.customer || '',
+      unitPrice: 0,
+      totalPrice: 0,
+      paymentTerms: '',
+      noteNumber,
+      movement: 'finished_transfer_out',
+      notes: [FINISHED_TRANSFER_MARKER, `تحويل رصيد مجهز إلى ${targetLabel}`, `مرجع ${transferId}`, warning, data.notes || ''].filter(Boolean).join(' - '),
+    }));
+    if (!outSaved) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ خروج تحويل الرصيد المجهز من الطلب المصدر. لم يتم اعتماد التحويل.');
+      return;
+    }
+    const inSaved = await postBackend('/batches/finished', batchToApi({
+      id: uid(),
+      orderId: targetOrderId,
+      allocationId: targetAllocationId,
+      date,
+      quantity: item.quantity,
+      noteNumber,
+      finishedWidth: targetAllocation.targetFinishedWidth || targetAllocation.rawWidth || '',
+      finishedWeight: targetAllocation.targetFinishedWeight || '',
+      notes: [FINISHED_TRANSFER_MARKER, `تحويل رصيد مجهز من ${sourceLabel}`, `مرجع ${transferId}`, data.notes || ''].filter(Boolean).join(' - '),
+    }));
+    if (!inSaved) {
+      await rollbackAfterBackendWriteFailure('تم حفظ خروج التحويل من المصدر لكن تعذر حفظ دخوله على الطلب الهدف. راجع الحركات قبل المتابعة.');
+      return;
+    }
+  }
+  recordAudit('create', 'finishedStockTransfer', targetOrder.orderNumber || targetOrderId, null, { rows: rows.length, targetOrder: targetOrder.orderNumber, transferId }, 'تحويل رصيد مجهز من طلب لطلب');
+  await saveBackendSetting('auditLog', auditLog);
+  await loadBackendData();
+  renderFinishedSalePanel();
+  alert('تم حفظ تحويل الرصيد المجهز بين الطلبات.');
 }
 async function saveMainWarehouseStock(event) {
   event.preventDefault();
@@ -5136,7 +5268,7 @@ function allocationMovementLabel(order, allocation) {
   return `${allocation.color || '-'} / ${allocation.dyehouse || '-'} / ${allocationWidthLabel(order, allocation)}`;
 }
 function allocationAvailableToCustomer(allocation) {
-  return roundNumber(Math.max(Number(allocation?.finishedReceived || 0) - Number(allocation?.deliveredToCustomer || 0), 0));
+  return roundNumber(Math.max(Number(allocation?.finishedReceived || 0) - Number(allocation?.warehouseOut ?? allocation?.deliveredToCustomer ?? 0), 0));
 }
 function allocationOrdinalLabel(order, allocation) {
   const index = (order?.allocations || []).findIndex((item)=>item.id === allocation?.id);
@@ -7279,6 +7411,12 @@ document.addEventListener('submit', (event) => {
     saveFinishedStockSale(event).catch((error)=>{
       console.error('finished-sale-save-error', error);
       alert(error.message || 'تعذر حفظ بيع مجهز.');
+    });
+  }
+  if (event.target?.id === 'finishedTransferForm') {
+    saveFinishedStockTransfer(event).catch((error)=>{
+      console.error('finished-transfer-save-error', error);
+      alert(error.message || 'تعذر حفظ تحويل رصيد مجهز.');
     });
   }
 });

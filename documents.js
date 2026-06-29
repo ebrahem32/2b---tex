@@ -186,7 +186,7 @@
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
           includeReceived ? flowCell(line.finishedReceived, movementAccessoryParts(order, line, 'received')) : '',
           includeCustomerDelivered ? flowCell(line.deliveredToCustomer || line.customerDelivered, movementAccessoryParts(order, line, 'customer')) : '',
-          includeWarehouseBalance ? flowCell(Number(line.finishedReceived || 0) - Number(line.deliveredToCustomer || line.customerDelivered || 0), balanceAccessoryParts(order, line)) : '',
+          includeWarehouseBalance ? flowCell(Number(line.finishedReceived || 0) - Number(line.warehouseOut ?? line.deliveredToCustomer ?? line.customerDelivered ?? 0), balanceAccessoryParts(order, line)) : '',
           includeWaste ? `${fmt(line.wasteQuantity)} (${formatNumber(actualWastePercentForLine(line), 1)}%)` : '',
           includeFinished ? safeText(line.targetFinishedWeight) : '',
           safeText(line.targetFinishedWidth || line.rawWidth),

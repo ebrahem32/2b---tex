@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.29.01`
+`v2026.06.29.02`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,16 @@
 ## Latest Commit Message
 
 `Add main warehouse stock intake`
+
+## Latest Finished Stock Transfer
+
+- Version: `v2026.06.29.02`.
+- Added an internal finished-stock transfer flow from one order/allocation to another inside the warehouse screen.
+- Warehouse movements now stay with warehouse stock: finished sale, internal transfer out, and internal transfer in are shown from the warehouse movement area.
+- Internal finished-stock transfers use `finished_transfer_out` on the source and a marked finished-receiving row on the target with `[finished-stock-transfer]`.
+- `warehouseOut` now represents all stock leaving the warehouse balance, while `deliveredToCustomer` stays limited to real customer delivery/invoices.
+- Detailed reports and backend summaries use `warehouseOut` for warehouse balance, preventing internal transfers from being counted as customer delivery.
+- Not touched: SQLite schema/data, backend endpoints, dyehouse transfer logic, waste formulas, WhatsApp service, A5 service.
 
 ## Latest Main Warehouse Stock Intake
 

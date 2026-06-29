@@ -41,6 +41,19 @@ function gluingQuantity(batch = {}) {
   return Number(batch.quantity || 0);
 }
 
+function customerMovement(batch = {}) {
+  return String(batch.movement || '').trim();
+}
+
+function isInternalWarehouseOut(batch = {}) {
+  const movement = customerMovement(batch);
+  return movement === 'finished_sale' || movement === 'finished_transfer_out';
+}
+
+function isCustomerDeliveryMovement(batch = {}) {
+  return !isInternalWarehouseOut(batch);
+}
+
 function gluingMetricsForOrder(order, rows = []) {
   const orderId = order?.id || order?.order_id || order?.orderId || '';
   const groups = rows.reduce((acc, row) => {
@@ -83,7 +96,8 @@ function calculateOrderSummary(order, data = {}) {
   const sentToDyehouse = sum(data.dyehouseDeliveryBatches || []);
   const rawReceived = Math.max(rawReceivedRecorded, sentToDyehouse);
   const finishedReceived = sum(data.finishedReceivingBatches || []);
-  const customerDelivered = sum(data.customerDeliveryBatches || []);
+  const warehouseOut = sum(data.customerDeliveryBatches || []);
+  const customerDelivered = sum((data.customerDeliveryBatches || []).filter(isCustomerDeliveryMovement));
   const rawReturned = sum(data.rawReturns || []);
   const gluingMetrics = gluingMetricsForOrder(order, data.gluingBatches || []);
   const sentToGluing = gluingMetrics.sent;
@@ -103,7 +117,7 @@ function calculateOrderSummary(order, data = {}) {
   const remainingNotSentToDyehouse = remainingWithTolerance(rawReceived, sentToDyehouse);
   const remainingAtDyehouse = remainingPhysical(dyehouseTarget, finishedReceived + rawReturned + wasteQuantity);
   const customerRemainingQuantity = remainingWithTolerance(requested, customerDelivered);
-  const warehouseBalance = remainingWithTolerance(finishedReceived + returnedFromGluing, customerDelivered + sentToGluing);
+  const warehouseBalance = remainingWithTolerance(finishedReceived + returnedFromGluing, warehouseOut + sentToGluing);
   const operationallyComplete = sentToDyehouse > 0
     && remainingRawToReceive === 0
     && remainingNotSentToDyehouse === 0
@@ -126,6 +140,7 @@ function calculateOrderSummary(order, data = {}) {
     remainingNotSentToDyehouse: round(remainingNotSentToDyehouse),
     totalFinishedReceived: round(finishedReceived),
     remainingAtDyehouse: round(remainingAtDyehouse),
+    warehouseOut: round(warehouseOut),
     customerDeliveredQuantity: round(customerDelivered),
     customerRemainingQuantity: round(customerRemainingQuantity),
     gluedProductBalance: round(gluedProductBalance),

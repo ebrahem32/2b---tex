@@ -1,5 +1,18 @@
 # Development Log
 
+### Add Finished Stock Transfer Between Orders
+
+- Date: 2026-06-29
+- Commit: pending.
+- Version: `v2026.06.29.02`
+- Goal: allow transferring finished warehouse balance from one order/allocation to another without recording a customer sale.
+- Change: added a warehouse transfer form that reuses the available finished-stock rows as the transfer source and a target order/allocation selector as the receiving side.
+- Change: source movements are saved as `finished_transfer_out`; target movements are saved as finished receiving rows marked with `[finished-stock-transfer]`.
+- Change: `warehouseOut` is now separate from actual `deliveredToCustomer`, so internal warehouse movement reduces stock but does not enter customer account delivery.
+- Change: detailed reports, frontend summaries, and backend summaries use `warehouseOut` for warehouse balance while keeping customer delivery clean.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, dyehouse transfer logic, waste formulas, WhatsApp service, A5 service.
+
 This file records important system changes. New entries should follow `CHANGE_TEMPLATE.md`.
 
 ## Known Important Changes
