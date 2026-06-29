@@ -19,11 +19,15 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.28.02';
-const APP_BUILD_TIME = '2026-06-28 17:35';
+const APP_VERSION = 'v2026.06.29.01';
+const APP_BUILD_TIME = '2026-06-29 00:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
+const MAIN_WAREHOUSE_STOCK_MARKER = '[main-warehouse-stock]';
+const MAIN_WAREHOUSE_CUSTOMER = '2B';
+const MAIN_WAREHOUSE_DYEHOUSE = 'المخزن الرئيسي';
+const MAIN_WAREHOUSE_PREFIX = 'WH-';
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -3960,6 +3964,53 @@ function openPricingQuotation(id) {
   refs.documentDialog.showModal();
 }
 function allOrders() { return orders.map(calculateOrder); }
+function isMainWarehouseStockOrder(order) {
+  return String(order?.notes || '').includes(MAIN_WAREHOUSE_STOCK_MARKER)
+    || String(order?.orderNumber || '').startsWith(MAIN_WAREHOUSE_PREFIX);
+}
+function nextMainWarehouseOrderNumber() {
+  const maxNumber = Math.max(
+    10000,
+    ...orders
+      .filter(isMainWarehouseStockOrder)
+      .map((order)=>numericPart(order.orderNumber))
+      .filter(Boolean)
+  );
+  return `${MAIN_WAREHOUSE_PREFIX}${maxNumber + 1}`;
+}
+function mainWarehouseStockOrders() {
+  return allOrders()
+    .filter(isMainWarehouseStockOrder)
+    .sort((a, b)=>String(b.orderDate || '').localeCompare(String(a.orderDate || '')) || String(a.fabricType || '').localeCompare(String(b.fabricType || ''), 'ar'));
+}
+function mainWarehouseStockRows() {
+  return mainWarehouseStockOrders()
+    .flatMap((order)=>(order.allocations || []).map((allocation)=>{
+      const balance = roundNumber(
+        Number(allocation.finishedReceived || 0)
+        - Number(allocation.deliveredToCustomer || 0)
+        - Number(allocation.sentToGluing || 0)
+        + Number(allocation.returnedFromGluing || 0)
+      );
+      return { order, allocation, balance };
+    }))
+    .filter((item)=>Math.abs(Number(item.balance || 0)) > 0.001)
+    .sort((a, b)=>String(a.order.fabricType || '').localeCompare(String(b.order.fabricType || ''), 'ar') || Number(b.balance || 0) - Number(a.balance || 0));
+}
+function renderMainWarehouseRows() {
+  const rows = mainWarehouseStockRows();
+  if (!rows.length) return '<tr><td colspan="7">لا توجد أصناف مسجلة مباشرة في المخزن الرئيسي حتى الآن.</td></tr>';
+  return rows.map(({ order, allocation, balance })=>`
+    <tr>
+      <td>${escapeHtml(order.orderNumber || '-')}</td>
+      <td>${escapeHtml(order.fabricType || '-')}</td>
+      <td>${escapeHtml(allocation.color || '-')}</td>
+      <td>${escapeHtml(allocation.targetFinishedWidth || allocation.rawWidth || order.inchWidth || '-')}</td>
+      <td>${formatNumber(allocation.finishedReceived || 0)}</td>
+      <td>${formatNumber(allocation.deliveredToCustomer || 0)}</td>
+      <td><strong>${formatNumber(balance)}</strong></td>
+    </tr>`).join('');
+}
 function finishedStockSaleSources() {
   return allOrders()
     .flatMap((order)=>(order.allocations || []).map((allocation)=>{
@@ -4021,6 +4072,34 @@ function renderFinishedSalePanel() {
       <div class="metric compact"><span>رصيد متاح للبيع</span><strong>${formatNumber(total)}</strong></div>
     </div>
     <datalist id="customerNamesList">${knownCustomerNames().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('')}</datalist>
+    <div class="subsection main-warehouse-entry">
+      <div class="subsection-head">
+        <div>
+          <h3>المخزن الرئيسي</h3>
+          <p class="muted">إضافة صنف جاهز مباشرة للمخزن بدون كرت تسعير أو طلب عميل. بعد الحفظ يظهر الرصيد في بيع مجهز.</p>
+        </div>
+        <span class="status warehouse">رصيد داخلي</span>
+      </div>
+      <form id="mainWarehouseStockForm" class="batch-form finished-sale-form">
+        <input name="fabricType" list="fabricNamesList" placeholder="الصنف" required>
+        <input name="color" placeholder="اللون" required>
+        <input name="quantity" type="number" step="0.01" min="0" placeholder="كمية المخزن" required>
+        <input name="finishedWeight" type="number" step="0.01" min="0" placeholder="الوزن مجهز">
+        <input name="width" placeholder="العرض">
+        <input name="inch" placeholder="البوصة">
+        <input name="unitPrice" type="number" step="0.01" min="0" placeholder="سعر الكيلو">
+        <input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>
+        <input name="noteNumber" placeholder="رقم إذن / مرجع">
+        <input class="full" name="notes" placeholder="ملاحظات">
+        <button class="mini-btn full" type="submit">إضافة رصيد للمخزن الرئيسي</button>
+      </form>
+      <div class="table-wrap">
+        <table class="mobile-card-table allocation-table">
+          <thead><tr><th>رقم المصدر</th><th>الصنف</th><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>مباع</th><th>الرصيد</th></tr></thead>
+          <tbody>${renderMainWarehouseRows()}</tbody>
+        </table>
+      </div>
+    </div>
     <form id="finishedSaleForm" class="batch-form finished-sale-form">
       <input name="customerName" list="customerNamesList" placeholder="العميل المستلم" required>
       <select id="finishedSaleFabric" name="fabricType" required>
@@ -4151,6 +4230,96 @@ async function saveFinishedStockSale(event) {
   renderFinishedSalePanel();
   alert('تم حفظ بيع مجهز وخصم الكمية من رصيد المخزن.');
 }
+async function saveMainWarehouseStock(event) {
+  event.preventDefault();
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ رصيد المخزن الرئيسي.'))) return;
+  const form = event.target.closest('#mainWarehouseStockForm');
+  if (!form) return;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const fabricType = canonicalFabricName(data.fabricType);
+  const color = String(data.color || '').trim();
+  const quantity = roundNumber(Number(data.quantity || 0));
+  const finishedWeight = data.finishedWeight ? roundNumber(Number(data.finishedWeight || 0)) : quantity;
+  const unitPrice = roundNumber(Number(data.unitPrice || 0));
+  if (!fabricType) { alert('اكتب اسم الصنف قبل حفظ رصيد المخزن.'); return; }
+  if (!color) { alert('اكتب اللون قبل حفظ رصيد المخزن.'); return; }
+  if (!(quantity > 0)) { alert('اكتب كمية مخزن أكبر من صفر.'); return; }
+  const orderId = uid();
+  const allocationId = uid();
+  const orderNumber = nextMainWarehouseOrderNumber();
+  const date = data.date || new Date().toISOString().slice(0, 10);
+  const backendCustomer = await ensureBackendCustomer(MAIN_WAREHOUSE_CUSTOMER);
+  const order = {
+    id: orderId,
+    orderNumber,
+    productCode: buildItemCode(orderNumber),
+    customer: MAIN_WAREHOUSE_CUSTOMER,
+    orderDate: date,
+    fabricType,
+    totalRawQuantity: quantity,
+    expectedWastePercent: 0,
+    widthMode: 'single',
+    inchWidth: data.inch || '',
+    widthLines: [],
+    kiloPrice: unitPrice,
+    rawCost: unitPrice,
+    paymentTerms: '',
+    accessoryType: '',
+    accessoryPercent: 0,
+    accessoryLines: [],
+    dyehouse: MAIN_WAREHOUSE_DYEHOUSE,
+    weavingSource: MAIN_WAREHOUSE_DYEHOUSE,
+    notes: [MAIN_WAREHOUSE_STOCK_MARKER, 'رصيد مخزن رئيسي مباشر', data.notes || ''].filter(Boolean).join(' - '),
+    operationNotes: {},
+    status: 'pending',
+    operationClosed: false,
+  };
+  const allocation = {
+    id: allocationId,
+    orderId,
+    color,
+    pantoneCode: '',
+    plannedQuantity: quantity,
+    dyehouse: MAIN_WAREHOUSE_DYEHOUSE,
+    widthLineId: '',
+    rawInch: data.inch || '',
+    rawWidth: data.width || '',
+    targetFinishedWidth: data.width || '',
+    targetFinishedWeight: finishedWeight,
+    accessoryQuantityManual: null,
+    notes: 'رصيد مخزن رئيسي مباشر',
+  };
+  const savedOrder = await postBackend('/orders', orderToApi(order, backendCustomer));
+  if (!savedOrder) {
+    await rollbackAfterBackendWriteFailure('تعذر حفظ أمر المخزن الرئيسي في قاعدة البيانات. لم يتم اعتماد الرصيد.');
+    return;
+  }
+  const savedAllocation = await postBackend(`/orders/${orderId}/allocations`, allocationToApi(allocation));
+  if (!savedAllocation) {
+    await rollbackAfterBackendWriteFailure('تم حفظ أمر المخزن، لكن تعذر حفظ بند الصنف/اللون. راجع الرصيد قبل المتابعة.');
+    return;
+  }
+  const savedFinished = await postBackend('/batches/finished', batchToApi({
+    id: uid(),
+    orderId,
+    allocationId,
+    date,
+    quantity,
+    noteNumber: data.noteNumber || '',
+    notes: [MAIN_WAREHOUSE_STOCK_MARKER, 'إضافة مباشرة للمخزن الرئيسي', data.notes || ''].filter(Boolean).join(' - '),
+    finishedWidth: data.width || '',
+    finishedWeight,
+  }));
+  if (!savedFinished) {
+    await rollbackAfterBackendWriteFailure('تم حفظ الصنف، لكن تعذر حفظ حركة دخول المخزن. راجع الرصيد قبل البيع.');
+    return;
+  }
+  recordAudit('create', 'mainWarehouseStock', orderNumber, null, { orderNumber, fabricType, color, quantity }, 'إضافة رصيد مباشر للمخزن الرئيسي');
+  await saveBackendSetting('auditLog', auditLog);
+  await loadBackendData();
+  renderFinishedSalePanel();
+  alert('تمت إضافة الصنف إلى المخزن الرئيسي وأصبح متاحًا في بيع مجهز.');
+}
 function orderNoteNumbers(order) {
   const allocationIds = (order.allocations || []).map((allocation)=>allocation.id);
   return uniqueNonEmpty([
@@ -4199,7 +4368,9 @@ function filteredOrders() {
   const customer = refs.customerFilter.value;
   const dyehouse = refs.dyehouseFilter.value;
   const fabric = refs.fabricFilter.value;
+  const includeMainWarehouseStock = status === 'stage:warehouse' || !!query;
   return allOrders().filter((order) => {
+    if (isMainWarehouseStockOrder(order) && !includeMainWarehouseStock) return false;
     const stage = orderStageInfo(order);
     const statusMatch = status.startsWith('stage:')
       ? orderMatchesStageFilter(order, status.slice('stage:'.length), stage)
@@ -7098,6 +7269,12 @@ document.addEventListener('change', (event) => {
   if (event.target?.id === 'finishedSaleFabric') renderFinishedSaleRows();
 });
 document.addEventListener('submit', (event) => {
+  if (event.target?.id === 'mainWarehouseStockForm') {
+    saveMainWarehouseStock(event).catch((error)=>{
+      console.error('main-warehouse-stock-save-error', error);
+      alert(error.message || 'تعذر حفظ رصيد المخزن الرئيسي.');
+    });
+  }
   if (event.target?.id === 'finishedSaleForm') {
     saveFinishedStockSale(event).catch((error)=>{
       console.error('finished-sale-save-error', error);

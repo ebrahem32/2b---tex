@@ -2,13 +2,27 @@
 
 ## Current Version
 
-`v2026.06.28.02`
+`v2026.06.29.01`
 
 ## Last Known Commit Before Project Memory
 
 `282d516 Extract orders UI module`
 
 ## Latest Commit Message
+
+`Add main warehouse stock intake`
+
+## Latest Main Warehouse Stock Intake
+
+- Version: `v2026.06.29.01`.
+- Added a main warehouse intake section inside `بيع مجهز`.
+- The user can add finished stock directly to the main warehouse without creating a customer quotation or customer-facing order.
+- Internally, the system records the stock using the existing safe ledger: an internal `WH-` order, one allocation/color, and a finished-receiving movement marked with `[main-warehouse-stock]`.
+- The direct warehouse stock appears as a sellable source in `بيع مجهز`, customer sales still save through the existing customer-delivery movement, and customer account impact remains unchanged.
+- Internal main warehouse stock records are hidden from the normal orders list unless the user is viewing warehouse stock or searching directly.
+- Not touched: SQLite schema/data, backend endpoints, `backend/calculations.js`, waste formulas, dyehouse transfer logic, WhatsApp service, A5 service.
+
+## Previous Commit Message
 
 `Fix document print preview layout`
 

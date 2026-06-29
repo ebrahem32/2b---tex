@@ -4,6 +4,19 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ## Known Important Changes
 
+### Add Main Warehouse Stock Intake
+
+- Date: 2026-06-29
+- Commit: pending.
+- Version: `v2026.06.29.01`
+- Goal: let the operator start from the main warehouse when finished stock already exists, instead of forcing a quotation/customer order flow.
+- Change: added a main warehouse intake form inside `بيع مجهز` for fabric, color, quantity, finished weight, width, inch, price, date, reference, and notes.
+- Change: direct warehouse intake uses existing operational records internally: `WH-` order, allocation/color, and finished-receiving batch marked `[main-warehouse-stock]`.
+- Change: direct stock appears in sellable warehouse balance and can be sold to any customer through the existing `بيع مجهز` flow.
+- Change: internal warehouse stock records are hidden from the ordinary order list unless viewing warehouse stock or searching directly.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, `backend/calculations.js`, stock/waste formulas, dyehouse transfer logic, WhatsApp service, A5 service.
+
 ### Fix Document Print Preview Layout
 
 - Date: 2026-06-28
