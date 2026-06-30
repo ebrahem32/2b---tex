@@ -1,5 +1,16 @@
 # Development Log
 
+### Add Fixed Transport Pricing Stage
+
+- Date: 2026-06-30
+- Commit: pending.
+- Version: `v2026.06.30.03`
+- Goal: add a fixed transport cost row to pricing cards like the fixed packaging row.
+- Change: pricing cards now always include `نقل` at `0.5` جنيه/كيلو as a read-only fixed dyeing/service stage.
+- Change: stage normalization prevents duplicate fixed `تغليف` or `نقل` rows and corrects their fixed prices.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
+
 ### Remove Pricing Stages From Dyeing Orders
 
 - Date: 2026-06-30

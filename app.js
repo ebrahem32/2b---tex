@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.30.02';
-const APP_BUILD_TIME = '2026-06-30 01:05';
+const APP_VERSION = 'v2026.06.30.03';
+const APP_BUILD_TIME = '2026-06-30 01:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -3155,13 +3155,26 @@ function isFixedPackagingStageName(value) {
   return pricingStageKey(value) === pricingStageKey('تغليف');
 }
 
+function isFixedTransportStageName(value) {
+  return pricingStageKey(value) === pricingStageKey('نقل');
+}
+
+function fixedPricingStageDefinition(value) {
+  if (isFixedPackagingStageName(value)) return { name:'تغليف', price:2, fixed:true };
+  if (isFixedTransportStageName(value)) return { name:'نقل', price:0.5, fixed:true };
+  return null;
+}
+
 function normalizePricingDyeStages(stages = [], dyeCost = '') {
   const normalized = (Array.isArray(stages) ? stages : [])
-    .map((stage)=>({
-      name: String(stage?.name || '').trim(),
-      price: isFixedPackagingStageName(stage?.name) ? 2 : Number(stage?.price || 0),
-      fixed: Boolean(stage?.fixed) || isFixedPackagingStageName(stage?.name),
-    }))
+    .map((stage)=>{
+      const fixedStage = fixedPricingStageDefinition(stage?.name);
+      return {
+        name: fixedStage?.name || String(stage?.name || '').trim(),
+        price: fixedStage ? fixedStage.price : Number(stage?.price || 0),
+        fixed: Boolean(fixedStage),
+      };
+    })
     .filter((stage)=>stage.name || stage.price);
   if (!normalized.length && dyeCost !== '' && dyeCost !== null && dyeCost !== undefined) {
     normalized.push({ name:'صباغة', price:Number(dyeCost || 0), fixed:false });
@@ -3169,7 +3182,10 @@ function normalizePricingDyeStages(stages = [], dyeCost = '') {
   if (!normalized.some((stage)=>isFixedPackagingStageName(stage.name))) {
     normalized.push({ name:'تغليف', price:2, fixed:true });
   }
-  return normalized.map((stage)=>isFixedPackagingStageName(stage.name) ? { ...stage, name:'تغليف', price:2, fixed:true } : stage);
+  if (!normalized.some((stage)=>isFixedTransportStageName(stage.name))) {
+    normalized.push({ name:'نقل', price:0.5, fixed:true });
+  }
+  return normalized.map((stage)=>fixedPricingStageDefinition(stage.name) || stage);
 }
 
 function pricingDeferredPercentFromPaymentDetails() {
@@ -3253,11 +3269,12 @@ function pricingAccessoryRowHtml(line = {}, stages = []) {
 }
 
 function pricingStageRowHtml(stage = {}) {
-  const fixedPackaging = Boolean(stage.fixed) || isFixedPackagingStageName(stage.name);
+  const fixedStage = fixedPricingStageDefinition(stage.name);
+  const isFixedStage = Boolean(fixedStage);
   return `<div class="pricing-stage-row" data-pricing-stage-row>
-    <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(fixedPackaging ? 'تغليف' : (stage.name || ''))}" ${fixedPackaging ? 'readonly' : ''}>
-    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${fixedPackaging ? 2 : (stage.price || '')}" ${fixedPackaging ? 'readonly' : ''}><span data-pricing-currency-badge="egp">جنيه</span></div>
-    ${fixedPackaging ? '<span class="status pending">ثابت</span>' : '<button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>'}
+    <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(fixedStage?.name || stage.name || '')}" ${isFixedStage ? 'readonly' : ''}>
+    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${isFixedStage ? fixedStage.price : (stage.price || '')}" ${isFixedStage ? 'readonly' : ''}><span data-pricing-currency-badge="egp">جنيه</span></div>
+    ${isFixedStage ? '<span class="status pending">ثابت</span>' : '<button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>'}
   </div>`;
 }
 

@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.30.02`
+`v2026.06.30.03`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,14 @@
 
 ## Latest Commit Message
 
-`Remove pricing stages from dyeing orders`
+`Add fixed transport pricing stage`
+
+## Latest Fixed Transport Pricing Stage
+
+- Version: `v2026.06.30.03`.
+- Added a fixed `نقل` stage to pricing cards at `0.5` جنيه/كيلو, protected like the fixed `تغليف` row.
+- Pricing stage normalization prevents duplicate fixed rows and keeps old/new pricing cards consistent.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
 
 ## Latest Dyeing Order Pricing Separation
 

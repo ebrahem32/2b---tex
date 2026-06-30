@@ -732,8 +732,9 @@ function checkPricingActiveAndLinkedSectionsExist() {
 function checkFixedPackagingPricingStageExists() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(/price:2,\s*fixed:true/.test(appSource), 'pricing ui: packaging stage must be fixed at 2 EGP');
-  assert(appSource.includes("fixedPackaging ? 2"), 'pricing ui: fixed packaging stage price must stay 2');
-  assert(appSource.includes("fixedPackaging ? '<span class=\"status pending\">"), 'pricing ui: fixed packaging stage must not show delete action');
+  assert(/price:0\.5,\s*fixed:true/.test(appSource), 'pricing ui: transport stage must be fixed at 0.5 EGP');
+  assert(appSource.includes('fixedPricingStageDefinition'), 'pricing ui: fixed pricing stages must be normalized centrally');
+  assert(appSource.includes("isFixedStage ? '<span class=\"status pending\">"), 'pricing ui: fixed stages must not show delete action');
 }
 
 function checkPricingListFiltersAndOrderNumber() {
