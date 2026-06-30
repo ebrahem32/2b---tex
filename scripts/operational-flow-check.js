@@ -398,6 +398,7 @@ function checkDyeingDocumentShowsPhysicalRawBalance() {
     fabricType: 'Fabric',
     dyehouse: 'D',
     totalRawOrdered: 150,
+    operationNotes: { dyeingStages: ['Dyeing', 'Packaging', 'Ram'] },
     allocations: [{ id: 'alloc-document-balance', orderId: 'order-document-balance', color: 'main', plannedQuantity: 150, dyehouse: 'D', remainingAtDyehouse: 175.6 }],
     rawBatches: [{ orderId: 'order-document-balance', allocationId: 'alloc-document-balance', date: '2026-06-10', quantity: 175.6, noteNumber: '53645' }],
     productionBatches: [],
@@ -405,6 +406,9 @@ function checkDyeingDocumentShowsPhysicalRawBalance() {
     dyehouseTransfers: [],
   }, 'D');
   assert(html.includes('175.6'), 'document: dyeing order raw balance must show physical sent balance above planned quantity');
+  assert(!html.includes('Dyeing'), 'document: dyeing order must not show pricing dyeing stages');
+  assert(!html.includes('Packaging'), 'document: dyeing order must not show pricing packaging stages');
+  assert(!html.includes('Ram'), 'document: dyeing order must not show pricing ram stages');
 }
 
 function checkDyeingDocumentSplitsMultiDyehouseOrder() {

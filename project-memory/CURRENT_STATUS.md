@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.30.04`
+`v2026.06.30.05`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,15 @@
 
 ## Latest Commit Message
 
-`Hard-block pricing stages in dyeing orders`
+`Add dyeing document pricing-stage regression check`
+
+## Latest Dyeing Order Regression Guard
+
+- Version: `v2026.06.30.05`.
+- The old dyeing operation stage section function is now hard-disabled and always returns empty HTML.
+- Added an operational-flow regression check that builds a dyeing order containing old pricing stages and fails if those stages appear in the dyeing operation document.
+- Bumped `documents.js` and `app.js` cache keys.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
 
 ## Latest Dyeing Order Stage Block
 

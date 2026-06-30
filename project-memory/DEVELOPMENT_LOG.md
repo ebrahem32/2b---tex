@@ -1,5 +1,16 @@
 # Development Log
 
+### Add Dyeing Document Pricing-Stage Regression Check
+
+- Date: 2026-06-30
+- Commit: pending.
+- Version: `v2026.06.30.05`
+- Goal: make it impossible for pricing-card stages to reappear in dyeing operation documents.
+- Change: hard-disabled the legacy dyeing operation stages section function so it always returns empty HTML.
+- Change: added an operational-flow regression check that injects old pricing stages and asserts they do not appear in the dyeing document.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
+
 ### Hard-Block Pricing Stages In Dyeing Orders
 
 - Date: 2026-06-30

@@ -434,10 +434,7 @@
     }
 
     function dyeingOperationStagesSection(order) {
-      const stages = dyeingOperationStageNames(order);
-      if (!stages.length) return '';
-      const rows = stages.map((stage, index) => `<tr><td>${index + 1}</td><td>${safeText(stage)}</td></tr>`).join('');
-      return `<section class="report-section"><h3>مراحل التشغيل</h3><table class="summary-table"><thead><tr><th>م</th><th>المرحلة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+      return '';
     }
 
     function buildDyeingOrderDocument(order, dyehouseName) {
