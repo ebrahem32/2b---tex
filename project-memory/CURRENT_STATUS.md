@@ -17,6 +17,7 @@
 - Version: `v2026.06.30.05`.
 - The old dyeing operation stage section function is now hard-disabled and always returns empty HTML.
 - Added an operational-flow regression check that builds a dyeing order containing old pricing stages and fails if those stages appear in the dyeing operation document.
+- Synced the full operational test fixture so converted orders no longer store pricing dyeing stages in `operationNotes`.
 - Bumped `documents.js` and `app.js` cache keys.
 - Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
 

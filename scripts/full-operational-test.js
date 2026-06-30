@@ -322,7 +322,7 @@ async function seedOperationalCycle() {
     ]),
     dyehouse: 'جيما',
     weaving_source: 'قسم النسيج تيست',
-    operation_notes_json: JSON.stringify({ dyeingStages: pricingCardItems[0].dyeStages.map((stage) => stage.name) }),
+    operation_notes_json: JSON.stringify({}),
     notes: 'اختبار كامل: تسعير، أمر نسيج، صباغة، مرتجع خام، مخزن، تسليم، هالك.',
     status: 'in-progress',
     is_closed: 0,
@@ -343,7 +343,7 @@ async function seedOperationalCycle() {
     payment_terms: 'كاش',
     dyehouse: 'السلام',
     weaving_source: 'قسم النسيج تيست',
-    operation_notes_json: JSON.stringify({ dyeingStages: pricingCardItems[1].dyeStages.map((stage) => stage.name) }),
+    operation_notes_json: JSON.stringify({}),
     notes: 'الصنف الثاني لنفس رقم الطلب لاختبار الطلب المجمع بدون عرض سعر إضافي.',
     status: 'in-progress',
     is_closed: 0,
@@ -401,8 +401,8 @@ async function verifyOperationalCycle() {
   assert(grouped.length === 2, 'grouped-order-two-items', { count: grouped.length });
   assert(secondOrder.fabricType === pricingCardItems[1].fabricType, 'converted-second-order-fabric', secondOrder);
   assert(secondOrder.totalRawOrdered === 120 && secondOrder.dyehouse.includes('السلام'), 'converted-second-order-full-data', { totalRawOrdered: secondOrder.totalRawOrdered, dyehouse: secondOrder.dyehouse });
-  assert(Array.isArray(order.operationNotes?.dyeingStages) && order.operationNotes.dyeingStages.includes('صباغة'), 'converted-order-dyeing-stages', order.operationNotes);
-  assert(Array.isArray(secondOrder.operationNotes?.dyeingStages) && secondOrder.operationNotes.dyeingStages.includes('فنش'), 'converted-second-order-dyeing-stages', secondOrder.operationNotes);
+  assert(!Array.isArray(order.operationNotes?.dyeingStages), 'converted-order-must-not-store-pricing-dyeing-stages', order.operationNotes);
+  assert(!Array.isArray(secondOrder.operationNotes?.dyeingStages), 'converted-second-order-must-not-store-pricing-dyeing-stages', secondOrder.operationNotes);
   assert(order.totalSentToDyehouse === 500, 'frontend-sent', { value: order.totalSentToDyehouse });
   assert(order.totalFinishedReceived === 450, 'frontend-finished', { value: order.totalFinishedReceived });
   assert(order.totalDeliveredToCustomer === 420, 'frontend-delivered', { value: order.totalDeliveredToCustomer });
