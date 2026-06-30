@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.30.03`
+`v2026.06.30.04`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,15 @@
 
 ## Latest Commit Message
 
-`Add fixed transport pricing stage`
+`Hard-block pricing stages in dyeing orders`
+
+## Latest Dyeing Order Stage Block
+
+- Version: `v2026.06.30.04`.
+- Removed the dyeing operation stages section from dyeing order document composition.
+- Added a final UI guard in `modules/documentsUi.js` to strip any `مراحل التشغيل` section from dyeing documents before preview/print, protecting against older cached generated HTML paths.
+- Bumped `documents.js`, `documentsUi.js`, and `app.js` cache keys.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
 
 ## Latest Fixed Transport Pricing Stage
 

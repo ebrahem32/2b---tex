@@ -1,5 +1,16 @@
 # Development Log
 
+### Hard-Block Pricing Stages In Dyeing Orders
+
+- Date: 2026-06-30
+- Commit: pending.
+- Version: `v2026.06.30.04`
+- Goal: ensure dyeing operation orders never show pricing-card stages.
+- Change: removed the stages section from dyeing document composition.
+- Change: added a final UI guard that removes any `مراحل التشغيل` section from dyeing documents before preview/print, covering old cached/generated paths.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
+
 ### Add Fixed Transport Pricing Stage
 
 - Date: 2026-06-30

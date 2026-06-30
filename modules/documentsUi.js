@@ -1,5 +1,14 @@
 (function () {
   function createDocumentsUi(deps) {
+    function stripDyeingPricingStageSections() {
+      const body = deps.refs.documentBody;
+      if (!body || body.dataset.documentType !== 'dyeing') return;
+      [...body.querySelectorAll('.report-section')].forEach((section) => {
+        const title = String(section.querySelector('h3')?.textContent || '').replace(/\s+/g, ' ').trim();
+        if (title.includes('مراحل التشغيل')) section.remove();
+      });
+    }
+
     function renderDocuments() {
       const refs = deps.refs;
       const currentOrder = deps.getOrders().find((item)=>item.id === deps.getSelectedOrderId());
@@ -52,6 +61,7 @@
         rawReturns: deps.getRawReturns(),
         dyehouseTransfers: deps.getDyehouseTransfers(),
       }, name, fmt))}</div>`;
+      stripDyeingPricingStageSections();
       if (deps.refs.documentDialog.open) deps.refs.documentDialog.close();
       deps.refs.documentDialog.showModal();
       deps.queueDocumentReport('dyeing', reportOrder);
