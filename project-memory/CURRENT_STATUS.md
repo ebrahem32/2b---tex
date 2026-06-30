@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.29.03`
+`v2026.06.30.01`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,15 @@
 
 ## Latest Commit Message
 
-`Add main warehouse stock intake`
+`Fix document dialog preview isolation`
+
+## Latest Document Dialog Preview Isolation
+
+- Version: `v2026.06.30.01`.
+- Fixed the operational document preview dialog after broad mobile rules leaked into the document modal.
+- The document action bar is isolated from the printable sheet again, and scrolling is constrained to the preview body instead of the page itself.
+- Normal document print/PDF output excludes the dialog chrome while leaving sticker and orders-follow special print modes unchanged.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
 
 ## Latest Finished Stock Transfer
 

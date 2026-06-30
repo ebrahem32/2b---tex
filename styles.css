@@ -1099,3 +1099,110 @@ body[data-active-module="admin"] .main-workspace{display:block}
     gap:4px;
   }
 }
+
+/* Keep operational documents as a real page inside the dialog.
+   Later mobile rules are intentionally broad, so this scoped block must stay last. */
+#documentDialog{
+  padding:0!important;
+  border:0!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+#documentDialog .printable-card{
+  display:grid!important;
+  grid-template-rows:auto minmax(0,1fr)!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:22px!important;
+  overflow:hidden!important;
+}
+#documentDialog .dialog-head{
+  flex:0 0 auto!important;
+  background:#0f161d!important;
+}
+#documentDialog #documentBody{
+  min-height:0!important;
+  max-width:100%!important;
+  padding:18px!important;
+  overflow:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  gap:18px!important;
+}
+#documentDialog #documentBody .document-sheet{
+  flex:0 0 auto!important;
+  width:min(210mm,calc(100vw - 80px))!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0 auto 18px!important;
+  overflow:visible!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.28)!important;
+}
+#documentDialog #documentBody .document-sheet.orders-follow-report{
+  width:min(283mm,calc(100vw - 80px))!important;
+}
+@media(max-width:760px){
+  #documentDialog{
+    width:calc(100vw - 8px)!important;
+    height:calc(100dvh - 8px)!important;
+    max-width:calc(100vw - 8px)!important;
+    max-height:calc(100dvh - 8px)!important;
+  }
+  #documentDialog .printable-card{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    max-height:none!important;
+    padding:0!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+  }
+  #documentDialog #documentBody{
+    padding:8px!important;
+    overflow:auto!important;
+  }
+  #documentDialog #documentBody .document-sheet,
+  #documentDialog #documentBody .document-sheet.orders-follow-report{
+    width:min(210mm,calc(100vw - 24px))!important;
+    padding:12px!important;
+    border-radius:12px!important;
+  }
+}
+
+@media print{
+  body:not(.printing-stickers):not(.printing-orders-follow) #documentDialog,
+  body:not(.printing-stickers):not(.printing-orders-follow) #documentDialog .printable-card,
+  body:not(.printing-stickers):not(.printing-orders-follow) #documentBody{
+    display:block!important;
+    position:static!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    background:#fff!important;
+  }
+  body:not(.printing-stickers):not(.printing-orders-follow) #documentDialog .dialog-head{
+    display:none!important;
+  }
+  body:not(.printing-stickers):not(.printing-orders-follow) #documentBody .document-sheet{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+}

@@ -1,5 +1,16 @@
 # Development Log
 
+### Fix Document Dialog Preview Isolation
+
+- Date: 2026-06-30
+- Commit: pending.
+- Version: `v2026.06.30.01`
+- Goal: restore clean operational document previews and PDF/print layout after generic mobile dialog rules affected the document modal.
+- Change: added scoped final CSS overrides for `#documentDialog`, `#documentBody`, and `.document-sheet` so the toolbar stays outside the printable page and scrollbars stay on the preview body.
+- Change: added print-scoped safeguards for normal documents while preserving sticker and orders-follow print modes.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
+
 ### Add Finished Stock Transfer Between Orders
 
 - Date: 2026-06-29
