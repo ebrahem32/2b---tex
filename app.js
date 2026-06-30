@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.30.01';
-const APP_BUILD_TIME = '2026-06-30 00:45';
+const APP_VERSION = 'v2026.06.30.02';
+const APP_BUILD_TIME = '2026-06-30 01:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -3074,8 +3074,7 @@ function pricingDyeStageNames(item = {}) {
 }
 
 function pricingOperationNotesForItem(item = {}) {
-  const dyeingStages = pricingDyeStageNames(item);
-  return dyeingStages.length ? { dyeingStages } : {};
+  return {};
 }
 
 function pricingAccessoryLinesForOrder(item = {}) {
@@ -3109,7 +3108,7 @@ function pricingItemToOrderDraft(item = {}, pricing = {}) {
     accessoryType: firstAccessory.type || '',
     accessoryPercent: Number(firstAccessory.percent || 0),
     accessoryLines,
-    operationNotes: pricingOperationNotesForItem(item),
+    operationNotes: {},
   };
 }
 
@@ -3800,7 +3799,7 @@ function convertPricingToOrder(id) {
     accessoryPercent: primaryDraft.accessoryPercent || 0,
     accessoryLines: primaryDraft.accessoryLines || [],
     notes: pricing.notes || '',
-    operationNotes: primaryDraft.operationNotes || pricingOperationNotesForItem(sourceOrderItems[0] || primary)
+    operationNotes: {}
   });
   if (items.length > 1) {
     const rows = document.getElementById('groupedOrderRows');
@@ -5610,7 +5609,9 @@ async function addOrder(event) {
   const firstAccessory = accessoryLines[0] || {};
   const paymentTerms = composePaymentTerms(refs.paymentMode?.value, refs.paymentDetails?.value);
   if (refs.paymentTerms) refs.paymentTerms.value = paymentTerms;
-  const payloadOperationNotes = currentOrder?.operationNotes || pendingConvertedOrderDrafts[0]?.operationNotes || pricingOperationNotesForItem(pendingConvertedPricingItems[0] || {});
+  const payloadOperationNotes = currentOrder?.operationNotes && typeof currentOrder.operationNotes === 'object' && !Array.isArray(currentOrder.operationNotes)
+    ? { ...currentOrder.operationNotes, dyeingStages: undefined }
+    : {};
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
   const convertedDraftItems = !editingOrderId && refs.widthMode.value !== 'multiple' && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
   const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple'
@@ -5683,7 +5684,7 @@ async function addOrder(event) {
           accessoryType:firstGroupedAccessory.type || '',
           accessoryPercent:Number(firstGroupedAccessory.percent || 0),
           accessoryLines:groupedAccessoryLines,
-          operationNotes:pricingDraft.operationNotes || pricingOperationNotesForItem(pricingItem),
+          operationNotes:{},
         };
         return { id:uid(), status:'pending', ...groupedPayload };
       });

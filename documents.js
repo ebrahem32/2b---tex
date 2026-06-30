@@ -430,12 +430,7 @@
     }
 
     function dyeingOperationStageNames(order) {
-      const notes = order?.operationNotes && typeof order.operationNotes === 'object' && !Array.isArray(order.operationNotes)
-        ? order.operationNotes
-        : {};
-      return uniqueNonEmpty((Array.isArray(notes.dyeingStages) ? notes.dyeingStages : [])
-        .map((stage) => clean(typeof stage === 'string' ? stage : stage?.name))
-        .filter(Boolean));
+      return [];
     }
 
     function dyeingOperationStagesSection(order) {

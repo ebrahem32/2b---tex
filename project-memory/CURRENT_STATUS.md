@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.30.01`
+`v2026.06.30.02`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,15 @@
 
 ## Latest Commit Message
 
-`Fix document dialog preview isolation`
+`Remove pricing stages from dyeing orders`
+
+## Latest Dyeing Order Pricing Separation
+
+- Version: `v2026.06.30.02`.
+- Dyeing operation orders no longer print pricing-card dyeing stages.
+- New orders converted from pricing cards no longer store pricing stages inside `operationNotes`.
+- Existing old orders that already contain `operationNotes.dyeingStages` are ignored in dyeing order documents, so pricing data does not leak into operational dyeing instructions.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
 
 ## Latest Document Dialog Preview Isolation
 

@@ -1,5 +1,16 @@
 # Development Log
 
+### Remove Pricing Stages From Dyeing Orders
+
+- Date: 2026-06-30
+- Commit: pending.
+- Version: `v2026.06.30.02`
+- Goal: keep dyeing operation documents operational only, without showing pricing-card stage data.
+- Change: dyeing order documents ignore `operationNotes.dyeingStages`, including old orders that already had pricing stages saved.
+- Change: pricing-card conversion no longer writes dyeing stages into order `operationNotes`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, calculations, stock/waste formulas, WhatsApp service, A5 service.
+
 ### Fix Document Dialog Preview Isolation
 
 - Date: 2026-06-30
