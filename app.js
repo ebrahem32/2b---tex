@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.06.30.05';
-const APP_BUILD_TIME = '2026-06-30 02:15';
+const APP_VERSION = 'v2026.07.01.01';
+const APP_BUILD_TIME = '2026-07-01 02:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -3259,11 +3259,20 @@ function pricingAccessoryStageOptions(line = {}, stages = []) {
 
 function pricingAccessoryRowHtml(line = {}, stages = []) {
   const quantity = line.quantity ?? line.quantityManual ?? line.percent ?? '';
+  const wastePercent = line.wastePercent ?? '';
+  const profitPerKg = line.profitPerKg ?? '';
   return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
     <select data-pricing-accessory-type>${pricingAccessoryTypeOptions(line.type || '')}</select>
     <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="الكمية" value="${quantity || ''}">
     <div class="pricing-money-field"><input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
     <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
+    <input data-pricing-accessory-waste-percent type="number" step="0.01" placeholder="هالك %" value="${wastePercent}">
+    <select data-pricing-accessory-waste-basis>
+      <option value="">نفس هالك القماش</option>
+      <option value="net" ${(line.wasteBasis || line.waste_basis) === 'net' ? 'selected' : ''}>صافي</option>
+      <option value="gross" ${(line.wasteBasis || line.waste_basis) === 'gross' ? 'selected' : ''}>قائم</option>
+    </select>
+    <div class="pricing-money-field"><input data-pricing-accessory-profit type="number" step="0.01" placeholder="ربح / كجم" value="${profitPerKg}"><span data-pricing-currency-badge="egp">جنيه</span></div>
     <div class="pricing-accessory-stage-options" data-pricing-accessory-stage-options>${pricingAccessoryStageOptions(line, stages)}</div>
   </div>`;
 }
@@ -3303,6 +3312,9 @@ function pricingAccessoriesFromRow(row) {
       .reduce((total, stage)=>total + Number(stage.price || 0), 0);
     const quantity = Number(accessoryRow.querySelector('[data-pricing-accessory-quantity]')?.value || 0);
     const price = Number(accessoryRow.querySelector('[data-pricing-accessory-price]')?.value || 0);
+    const wasteInput = accessoryRow.querySelector('[data-pricing-accessory-waste-percent]')?.value;
+    const wasteBasis = accessoryRow.querySelector('[data-pricing-accessory-waste-basis]')?.value || '';
+    const profitInput = accessoryRow.querySelector('[data-pricing-accessory-profit]')?.value;
     const unitPrice = roundNumber(price + pricingConvertEgpCost(stageCost, currency, exchangeRate));
     return {
       type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
@@ -3313,6 +3325,9 @@ function pricingAccessoriesFromRow(row) {
       exchangeRate,
       stageNames,
       stageCost: roundNumber(stageCost),
+      wastePercent: wasteInput === '' ? undefined : Number(wasteInput || 0),
+      wasteBasis,
+      profitPerKg: profitInput === '' ? undefined : Number(profitInput || 0),
       unitPrice,
       total: roundNumber(quantity * unitPrice),
     };
@@ -3946,6 +3961,64 @@ function openCustomerPricingQuotation(id) {
   </div>`;
   refs.documentDialog.showModal();
 }
+function openPricingCostSheet(id) {
+  const sourcePricing = pricings.find((item)=>item.id===id);
+  const pricing = calculatePricing(sourcePricing);
+  if (!pricing) return;
+  const items = pricingItemsFor(sourcePricing || pricing)
+    .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
+    .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
+  const money = (value) => Number(value || 0).toLocaleString('en-US');
+  const currency = pricingCurrencyLabel(pricing.currency || pricing.priceItems?.find((item)=>item?.currency)?.currency || 'EGP');
+  const stageRows = (item) => Array.isArray(item.dyeStages) && item.dyeStages.length
+    ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)} جنيه`).join('<br>')
+    : `${money(item.dyeCost || 0)} جنيه`;
+  const accessoryCostRows = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
+    ? item.accessoryLines.map((line)=>`<tr>
+        <td>إكسسوار: ${escapeHtml(line.type || '-')}</td>
+        <td>${money(line.quantity)} كجم</td>
+        <td>${money(line.price)} ${currency}</td>
+        <td>${money(line.stageCostConverted ?? line.stageCost ?? 0)} ${currency}</td>
+        <td>${money(line.wasteCost)} ${currency} (${money(line.wastePercent)}%)</td>
+        <td>${money(line.deferredCost)} ${currency}</td>
+        <td>${money(line.profitCost ?? line.profitPerKg ?? 0)} ${currency}</td>
+        <td>${money(line.costPerKg)} ${currency}</td>
+        <td>${money(line.sellPrice ?? line.unitPrice)} ${currency}</td>
+        <td>${money(line.total)} ${currency}</td>
+      </tr>`).join('')
+    : '';
+  const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
+      <td>قماش: ${escapeHtml(item.fabricType || '-')}</td>
+      <td>${money(item.quantity)} كجم</td>
+      <td>${money(item.rawCost)} ${currency}</td>
+      <td>${stageRows(item)}</td>
+      <td>${money(item.wasteCost)} ${currency} (${money(item.wastePercent)}%)</td>
+      <td>${money(item.deferredCost)} ${currency}</td>
+      <td>${money(item.profitCost ?? item.profitPerKg ?? 0)} ${currency}</td>
+      <td>${money(item.costPerKg)} ${currency}</td>
+      <td>${money(item.sellPrice)} ${currency}</td>
+      <td>${money(item.clothTotal)} ${currency}</td>
+    </tr>${accessoryCostRows(item)}`).join('');
+  refs.documentTitle.textContent = 'تقرير تكلفة كرت التسعير';
+  refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
+    ${documentHeader()}
+    <div class="report-title quotation-title"><h2>تقرير تكلفة داخلي <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>مستند داخلي لمجموعة التكاليف ولا يرسل للعميل.</span></div>
+    <div class="document-meta quotation-meta">
+      <div><span>العميل</span>${escapeHtml(pricing.customer || '-')}</div>
+      <div><span>التاريخ</span>${escapeHtml(pricing.pricingDate || '-')}</div>
+      <div><span>العملة</span>${currency}</div>
+      <div><span>إجمالي العقد</span>${money(pricing.totalOffer)} ${currency}</div>
+    </div>
+    <section class="report-section">
+      <h3>تفصيل التكلفة</h3>
+      <table class="quotation-items-table"><thead><tr><th>البند</th><th>الكمية</th><th>سعر الخام</th><th>الصباغة / المراحل</th><th>الهالك</th><th>الأجل</th><th>الربح</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>الإجمالي</th></tr></thead><tbody>${itemRows}</tbody></table>
+    </section>
+    <section class="report-section quotation-notes"><h3>ملاحظات</h3><p>${escapeHtml(pricing.notes || 'لا توجد ملاحظات.')}</p></section>
+    ${documentFooter()}
+  </div>`;
+  refs.documentDialog.showModal();
+}
+
 function openPricingQuotation(id) {
   return openCustomerPricingQuotation(id);
   const pricing = calculatePricing(pricings.find((item)=>item.id===id));
@@ -7337,6 +7410,8 @@ refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.
 refs.pricingTableBody.onclick = (event) => {
   const pricingQuoteButton = event.target.closest('[data-pricing-quote]');
   if (pricingQuoteButton) { openPricingQuotation(pricingQuoteButton.dataset.pricingQuote); return; }
+  const pricingCostButton = event.target.closest('[data-pricing-cost]');
+  if (pricingCostButton) { openPricingCostSheet(pricingCostButton.dataset.pricingCost); return; }
   const openOrderButton = event.target.closest('[data-open-order]');
   if (openOrderButton) { openOrderFocusMode(openOrderButton.dataset.openOrder); return; }
   const convertPricingButton = event.target.closest('[data-convert-pricing]');

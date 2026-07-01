@@ -167,16 +167,121 @@
       return amount / pricingExchangeRate(pricing);
     }
 
-    function accessoryTotalForPricing(pricing = {}) {
+    function pricingDeferredPercent(pricing = {}) {
+      return Number(pricing.deferredPercent || pricing.deferred_percent || 0) * 3;
+    }
+
+    function accessoryWasteBasis(line = {}, pricing = {}, library = {}) {
+      return line.wasteBasis || line.waste_basis || pricing.wasteBasis || pricing.waste_basis || library.accountingMode || 'net';
+    }
+
+    function accessoryInputNumber(line = {}, key, fallback = 0) {
+      const value = line[key] ?? fallback;
+      const number = Number(value || 0);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function calculateAccessoryLine(line = {}, pricing = {}, library = {}) {
+      const currency = pricing.currency || line.currency || 'EGP';
+      const exchangeRate = pricingExchangeRate(pricing);
+      const quantity = accessoryInputNumber(line, 'quantity', line.percent ?? 0);
+      const rawPrice = accessoryInputNumber(line, 'price', line.rawPrice ?? 0);
+      const stageCostEgp = accessoryInputNumber(line, 'stageCost', 0);
+      const wastePercent = accessoryInputNumber(line, 'wastePercent', pricing.wastePercent ?? 0);
+      const wasteBasis = accessoryWasteBasis(line, pricing, library);
+      const deferredMonths = accessoryInputNumber(line, 'deferredPercent', pricing.deferredPercent ?? pricing.deferred_percent ?? 0);
+      const deferredPercent = deferredMonths * 3;
+      const profitPerKgEgp = accessoryInputNumber(line, 'profitPerKg', pricing.profitPerKg ?? 0);
+
+      if (currency === 'USD') {
+        const rawPriceEgp = rawPrice * exchangeRate;
+        const productionCostEgp = rawPriceEgp + stageCostEgp;
+        const wasteBaseEgp = wasteBasis === 'gross' ? productionCostEgp : rawPriceEgp;
+        const wasteCostEgp = wasteBaseEgp * wastePercent / 100;
+        const costBeforeDeferredEgp = productionCostEgp + wasteCostEgp;
+        const deferredCostEgp = costBeforeDeferredEgp * deferredPercent / 100;
+        const costPerKgEgp = costBeforeDeferredEgp + deferredCostEgp;
+        const roundedCostPerKgEgp = roundNumber(costPerKgEgp, 0);
+        const sellPriceEgp = roundedCostPerKgEgp + profitPerKgEgp;
+        const sellPrice = sellPriceEgp / exchangeRate;
+        const total = sellPrice * quantity;
+        return {
+          ...line,
+          currency,
+          exchangeRate,
+          quantity,
+          percent: quantity,
+          price: roundNumber(rawPrice),
+          rawCost: roundNumber(rawPrice),
+          rawCostEgp: roundNumber(rawPriceEgp),
+          stageCost: roundNumber(stageCostEgp),
+          stageCostConverted: roundNumber(stageCostEgp / exchangeRate),
+          productionCost: roundNumber(productionCostEgp / exchangeRate),
+          productionCostEgp: roundNumber(productionCostEgp),
+          wastePercent: roundNumber(wastePercent),
+          wasteBasis,
+          wasteCost: roundNumber(wasteCostEgp / exchangeRate),
+          wasteCostEgp: roundNumber(wasteCostEgp),
+          deferredMonths,
+          deferredPercent,
+          deferredCost: roundNumber(deferredCostEgp / exchangeRate),
+          deferredCostEgp: roundNumber(deferredCostEgp),
+          costPerKg: roundNumber(roundedCostPerKgEgp / exchangeRate),
+          costPerKgEgp: roundedCostPerKgEgp,
+          profitPerKg: roundNumber(profitPerKgEgp),
+          profitCost: roundNumber(profitPerKgEgp / exchangeRate),
+          profitCostEgp: roundNumber(profitPerKgEgp),
+          unitPrice: roundNumber(sellPrice),
+          sellPrice: roundNumber(sellPrice),
+          sellPriceEgp: roundNumber(sellPriceEgp),
+          total: roundNumber(total),
+        };
+      }
+
+      const stageCost = convertEgpCostForPricing(stageCostEgp, pricing);
+      const productionCost = rawPrice + stageCost;
+      const wasteBase = wasteBasis === 'gross' ? productionCost : rawPrice;
+      const wasteCost = wasteBase * wastePercent / 100;
+      const costBeforeDeferred = productionCost + wasteCost;
+      const deferredCost = costBeforeDeferred * deferredPercent / 100;
+      const costPerKg = costBeforeDeferred + deferredCost;
+      const sellPrice = costPerKg + profitPerKgEgp;
+      const total = sellPrice * quantity;
+      return {
+        ...line,
+        currency,
+        exchangeRate,
+        quantity,
+        percent: quantity,
+        price: roundNumber(rawPrice),
+        rawCost: roundNumber(rawPrice),
+        stageCost: roundNumber(stageCostEgp),
+        stageCostConverted: roundNumber(stageCost),
+        productionCost: roundNumber(productionCost),
+        wastePercent: roundNumber(wastePercent),
+        wasteBasis,
+        wasteCost: roundNumber(wasteCost),
+        deferredMonths,
+        deferredPercent,
+        deferredCost: roundNumber(deferredCost),
+        costPerKg: roundNumber(costPerKg),
+        profitPerKg: roundNumber(profitPerKgEgp),
+        profitCost: roundNumber(profitPerKgEgp),
+        unitPrice: roundNumber(sellPrice),
+        sellPrice: roundNumber(sellPrice),
+        total: roundNumber(total),
+      };
+    }
+
+    function accessoryLinesForPricing(pricing = {}, library = {}) {
+      const lines = Array.isArray(pricing.accessoryLines) ? pricing.accessoryLines : [];
+      return lines.map((line) => calculateAccessoryLine(line, pricing, library));
+    }
+
+    function accessoryTotalForPricing(pricing = {}, library = {}) {
       const lines = Array.isArray(pricing.accessoryLines) ? pricing.accessoryLines : [];
       if (!lines.length) return Number(pricing.accessoryCost || pricing.accessory_cost || 0);
-      return lines.reduce((total, line) => {
-        const quantity = Number(line.quantity ?? line.percent ?? 0);
-        const rawPrice = Number(line.price || 0);
-        const convertedStageCost = convertEgpCostForPricing(line.stageCost || 0, pricing);
-        const unitPrice = rawPrice + convertedStageCost;
-        return total + quantity * unitPrice;
-      }, 0);
+      return accessoryLinesForPricing(pricing, library).reduce((total, line) => total + Number(line.total || 0), 0);
     }
 
     function calculatePricing(pricing, librarySource) {
@@ -185,7 +290,8 @@
       const exchangeRate = pricingExchangeRate(pricing);
       const rawCostInput = Number(pricing.rawCost || 0);
       const profitPerKgInput = Number(pricing.profitPerKg || 0);
-      const deferredPercent = Number(pricing.deferredPercent || pricing.deferred_percent || 0) * 3;
+      const deferredPercent = pricingDeferredPercent(pricing);
+      const calculatedAccessoryLines = accessoryLinesForPricing(pricing, library);
       if ((pricing.currency || 'EGP') === 'USD') {
         const dyeCostEgp = Number(pricing.dyeCost || 0);
         const extraCostEgp = Number(pricing.extraCost || 0);
@@ -200,7 +306,7 @@
         const sellPriceEgp = roundedCostPerKgEgp + profitPerKgInput;
         const sellPrice = sellPriceEgp / exchangeRate;
         const clothTotal = sellPrice * Number(pricing.quantity || 0);
-        const accessoryTotal = accessoryTotalForPricing(pricing);
+        const accessoryTotal = accessoryTotalForPricing({ ...pricing, accessoryLines: calculatedAccessoryLines }, library);
         const totalOffer = clothTotal + accessoryTotal;
         return {
           ...pricing,
@@ -216,6 +322,7 @@
           profitPerKg: roundNumber(profitPerKgInput),
           profitCost: roundNumber(profitPerKgInput / exchangeRate),
           profitCostEgp: roundNumber(profitPerKgInput),
+          accessoryLines: calculatedAccessoryLines,
           accessoryCost: roundNumber(accessoryTotal),
           accessoryTotal: roundNumber(accessoryTotal),
           productionCost: roundNumber(productionCostEgp / exchangeRate),
@@ -238,7 +345,7 @@
       }
       const dyeCost = convertEgpCostForPricing(pricing.dyeCost || 0, pricing);
       const extraCost = convertEgpCostForPricing(pricing.extraCost || 0, pricing);
-      const accessoryTotal = accessoryTotalForPricing(pricing);
+      const accessoryTotal = accessoryTotalForPricing({ ...pricing, accessoryLines: calculatedAccessoryLines }, library);
       const productionCost = rawCostInput + dyeCost + extraCost;
       const wasteBase = wasteBasis === 'gross'
         ? productionCost
@@ -250,7 +357,7 @@
       const sellPrice = costPerKg + profitPerKgInput;
       const clothTotal = sellPrice * Number(pricing.quantity || 0);
       const totalOffer = clothTotal + accessoryTotal;
-      return { ...pricing, exchangeRate, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, dyeCost:roundNumber(dyeCost), extraCost:roundNumber(extraCost), profitPerKg:roundNumber(profitPerKgInput), profitCost:roundNumber(profitPerKgInput), accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
+      return { ...pricing, exchangeRate, productCode:pricing.productCode || buildItemCode(pricing.pricingNumber), accountingMode:wasteBasis, wasteBasis, dyeCost:roundNumber(dyeCost), extraCost:roundNumber(extraCost), profitPerKg:roundNumber(profitPerKgInput), profitCost:roundNumber(profitPerKgInput), accessoryLines:calculatedAccessoryLines, accessoryCost:roundNumber(accessoryTotal), accessoryTotal:roundNumber(accessoryTotal), productionCost:roundNumber(productionCost), wasteCost:roundNumber(wasteCost), costBeforeDeferred:roundNumber(costBeforeDeferred), deferredMonths:Number(pricing.deferredPercent || pricing.deferred_percent || 0), deferredPercent, deferredCost:roundNumber(deferredCost), costPerKg:roundNumber(costPerKg), sellPrice:roundNumber(sellPrice), clothTotal:roundNumber(clothTotal), totalOffer:roundNumber(totalOffer) };
     }
 
     return {

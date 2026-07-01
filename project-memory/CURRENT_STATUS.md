@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.06.30.05`
+`v2026.07.01.01`
 
 ## Last Known Commit Before Project Memory
 
@@ -10,7 +10,16 @@
 
 ## Latest Commit Message
 
-`Add dyeing document pricing-stage regression check`
+`Price accessories as full costing lines`
+
+## Latest Accessory Pricing Costing
+
+- Version: `v2026.07.01.01`.
+- Accessory lines inside pricing cards are now calculated like fabric/raw lines instead of being added as silent cost only.
+- Each accessory line can carry raw price, dyeing/finishing stages, waste percent/basis, deferred cost, profit, final kilo sale price, and total contract value.
+- Customer quotation output remains clean for the customer, while a separate internal `تقرير تكلفة` button prints the cost breakdown for the costing group.
+- Added an operational-flow regression check proving accessory total uses final sell price after waste and profit.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
 
 ## Latest Dyeing Order Regression Guard
 

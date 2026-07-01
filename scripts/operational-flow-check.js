@@ -708,6 +708,26 @@ function checkUsdPricingMatchesExcelSheet() {
   assertClose(pricing.sellPrice, 7.02, 'pricing: USD final sell price must match Excel after converting final EGP price');
 }
 
+function checkAccessoryPricingUsesWasteAndProfit() {
+  const pricingDomain = createPricingDomain();
+  const pricing = pricingDomain.calculatePricing({
+    currency: 'EGP',
+    rawCost: 200,
+    dyeCost: 50,
+    wastePercent: 10,
+    wasteBasis: 'gross',
+    deferredPercent: 0,
+    profitPerKg: 30,
+    quantity: 100,
+    accessoryLines: [{ type: 'ريب', quantity: 10, price: 100, stageCost: 20, wastePercent: 10, wasteBasis: 'gross', profitPerKg: 30 }],
+  }, {});
+  const accessory = pricing.accessoryLines[0] || {};
+  assertClose(accessory.costPerKg, 132, 'pricing: accessory kilo cost must include raw, stages, and waste');
+  assertClose(accessory.sellPrice, 162, 'pricing: accessory kilo sale price must include profit');
+  assertClose(accessory.total, 1620, 'pricing: accessory total must use final accessory sale price');
+  assertClose(pricing.accessoryTotal, 1620, 'pricing: accessory total must not be raw-plus-stage cost only');
+}
+
 function checkPricingCurrencyBadgesExist() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('data-pricing-currency-badge="pricing"'), 'pricing ui: selected currency badge must appear beside pricing-currency money inputs');
@@ -897,6 +917,7 @@ checkWarehouseTabKeepsInventorySection();
 checkNoRawWarehouseDashboardTerminology();
 checkUsdPricingConvertsEgpProfit();
 checkUsdPricingMatchesExcelSheet();
+checkAccessoryPricingUsesWasteAndProfit();
 checkPricingCurrencyBadgesExist();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();

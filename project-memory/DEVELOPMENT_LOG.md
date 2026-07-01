@@ -1431,3 +1431,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: improved mobile layout for grouped order rows, pricing cards, dialogs, forms, filters, and general workspace width.
 - Test: added operational-flow coverage for grouped pricing operational fields and the removed duplicated warehouse menu.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+
+### Price Accessories As Full Costing Lines
+
+- Date: 2026-07-01
+- Commit: pending.
+- Version: `v2026.07.01.01`
+- Goal: make pricing-card accessories behave like fabric/raw lines, not as hidden extra cost.
+- Change: accessory lines now calculate raw price, selected dyeing stages, waste, deferred cost, profit, sale price per kilo, and total value.
+- Change: pricing cards can print a customer quotation separately from an internal cost report.
+- Guard: added an operational-flow regression check for accessory waste/profit pricing.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
