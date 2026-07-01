@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.07.01.03`
+`v2026.07.01.04`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,17 @@
 ## Latest Commit Message
 
 `Price accessories as full costing lines`
+
+## Latest Weaving Document Layout Update
+
+- Version: `v2026.07.01.04`.
+- Updated `أمر تشغيل نسيج` to show the date on its own line, then customer and dyehouse together, then a unified item description.
+- The unified item description includes inch, fabric, quantity, prepared weight, and prepared width.
+- Removed `إذن الخام` from the weaving order document because raw issue has not been created at this stage.
+- Added prepared weight and prepared width to the weaving operation data section.
+- Updated frontend cache keys for `styles.css`, `documents.js`, and `app.js` to `20260701-04`, with visible build time `2026-07-01 19:08`.
+- Added an operational-flow regression check for the weaving document layout.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
 
 ## Latest Linked Pricing Cost Button
 

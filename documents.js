@@ -141,7 +141,8 @@
 
     function reportShell(title, order, body, options = {}) {
       const subtitle = options.subtitle ? `<span>${safeText(options.subtitle)}</span>` : '';
-      return `<div class="two-b-report">${documentHeader()}<div class="report-title"><h2>${safeText(title)}${order?.orderNumber ? ` <small># ${safeText(order.orderNumber)}</small>` : ''}</h2>${subtitle}</div>${basicInfoSection(order, options)}${body}${documentFooter()}</div>`;
+      const info = options.skipBasicInfo ? '' : basicInfoSection(order, options);
+      return `<div class="two-b-report">${documentHeader()}<div class="report-title"><h2>${safeText(title)}${order?.orderNumber ? ` <small># ${safeText(order.orderNumber)}</small>` : ''}</h2>${subtitle}</div>${info}${body}${documentFooter()}</div>`;
     }
 
     function basicInfoSection(order, options = {}) {
@@ -235,10 +236,42 @@
       return order?.inchWidth || '-';
     }
 
+    function firstAllocationValue(order, keys) {
+      const line = orderAllocations(order).find((allocation) => keys.some((key) => clean(allocation?.[key])));
+      if (!line) return '';
+      const key = keys.find((field) => clean(line?.[field]));
+      return key ? line[key] : '';
+    }
+
+    function finishedWidthSummary(order) {
+      const values = uniqueNonEmpty(orderAllocations(order).map((line) => line.targetFinishedWidth || line.rawWidth));
+      if (values.length) return values.join('، ');
+      return firstAllocationValue(order, ['targetFinishedWidth', 'rawWidth']) || order?.finishedWidth || '-';
+    }
+
+    function finishedWeightSummary(order) {
+      const values = uniqueNonEmpty(orderAllocations(order).map((line) => line.targetFinishedWeight));
+      if (values.length) return values.join('، ');
+      return order?.finishedWeight || firstAllocationValue(order, ['targetFinishedWeight']) || '-';
+    }
+
+    function weavingItemDescription(order) {
+      return [
+        `البوصة ${safeText(widthSummary(order))}`,
+        `الصنف ${safeText(order?.fabricType)}`,
+        `الكمية ${fmt(order?.totalRawOrdered || order?.totalRawQuantity)} كجم`,
+        `وزن مجهز ${safeText(finishedWeightSummary(order))}`,
+        `العرض مجهز ${safeText(finishedWidthSummary(order))}`,
+      ].join(' - ');
+    }
+
+    function weavingInfoSection(order) {
+      return `<div class="document-meta weaving-document-meta"><div class="document-meta-wide"><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>المصبغة</span>${safeText(order?.dyehouse)}</div><div class="document-meta-wide"><span>الصنف</span>${weavingItemDescription(order)}</div></div>`;
+    }
+
     function buildWeavingOrderDocument(order) {
-      const rawNotes = orderRawPermitNotes(order);
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>إذن الخام</th><td>${safeText(rawNotes)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
-      return reportShell('أمر تشغيل نسيج', order, `${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`);
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr><tr><th>سعر الخام</th><td colspan="3">${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
+      return reportShell('أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 
     function orderRawPermitNoteList(order) {

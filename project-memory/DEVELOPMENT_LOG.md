@@ -1,5 +1,18 @@
 # Development Log
 
+### Update Weaving Document Layout
+
+- Date: 2026-07-01
+- Commit: pending.
+- Version: `v2026.07.01.04`
+- Goal: align the weaving order document with the production request stage before a raw issue exists.
+- Change: removed `إذن الخام` from `أمر تشغيل نسيج`.
+- Change: added prepared weight and prepared width to weaving operation data.
+- Change: changed the weaving document header so the date appears alone, then customer and dyehouse, then the unified item descriptor.
+- Change: bumped `styles.css`, `documents.js`, and `app.js` cache keys to `20260701-04`.
+- Test: added operational-flow coverage for the new weaving document fields.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
+
 ### Add Linked Pricing Cost Button
 
 - Date: 2026-07-01

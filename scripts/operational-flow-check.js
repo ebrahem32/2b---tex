@@ -745,6 +745,29 @@ function checkPricingCurrencyBadgesExist() {
   assert(appSource.includes('pricingFormulaPreview'), 'pricing ui: formula preview must explain the visible pricing result');
 }
 
+function checkWeavingDocumentLayoutUsesPreparedSpecs() {
+  const builders = createDocumentBuilders();
+  const html = builders.buildWeavingOrderDocument({
+    orderNumber: '72084',
+    customer: 'مصنع بسناج',
+    orderDate: '2026-07-01',
+    fabricType: 'بيكا مخلوط 50-50',
+    dyehouse: 'بيكو',
+    weavingSource: 'دلتا تكستايل',
+    totalRawOrdered: 2000,
+    totalRawQuantity: 2000,
+    inchWidth: 30,
+    allocations: [
+      { id:'a1', color:'أسود', plannedQuantity:2000, targetFinishedWeight:240, targetFinishedWidth:125 },
+    ],
+  });
+  assert(html.includes('الوزن المجهز'), 'weaving document: prepared weight must be visible');
+  assert(html.includes('العرض المجهز'), 'weaving document: prepared width must be visible');
+  assert(html.includes('البوصة 30'), 'weaving document: item descriptor must include inch width');
+  assert(html.includes('الصنف بيكا مخلوط 50-50'), 'weaving document: item descriptor must include fabric');
+  assert(!html.includes('إذن الخام'), 'weaving document: raw permit number must not appear before raw issue exists');
+}
+
 function checkPricingGroupedPriceViewExists() {
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
   assert(pricingUiSource.includes('pricing-group-row'), 'pricing ui: pricing list must group prices by fabric/raw item');
@@ -929,6 +952,7 @@ checkUsdPricingMatchesExcelSheet();
 checkAccessoryPricingUsesWasteAndProfit();
 checkLegacyPricingItemsInheritCardTerms();
 checkPricingCurrencyBadgesExist();
+checkWeavingDocumentLayoutUsesPreparedSpecs();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
