@@ -1309,3 +1309,16 @@ For Phase 3.1 local verification before commit:
 - Showroom cards now show only brand, item/fabric, width, and weight.
 - Operational stickers still keep their original fields including `البوصة`.
 - Not touched: backend, SQLite schema/data, stock formulas, waste formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+## Latest Company Server Migration Preparation
+
+- Date: 2026-07-01.
+- Version observed in code: `v2026.07.01.04`.
+- Commit observed locally: `68a1cf8`.
+- Railway deployment is blocked by account/resource limits, so the active public Railway URL may still serve an older build.
+- Company server transfer folder prepared at `F:\2B Tex`.
+- Created `F:\2B Tex\2B-Tex-System-full-20260701-204414.tar` as a full project archive including source, `.git`, and `project-memory`.
+- Copied current SQLite database to `F:\2B Tex\data\2btex.sqlite`.
+- Created structure folders: `data`, `backups`, `logs`, and `server-tools`.
+- Important: the target folder currently blocks script/application extensions such as `.js`, `.ps1`, `.bat`, and `.zip`, so the live `system` folder was not extracted there to avoid an incomplete runtime copy.
+- Next operational step: IT must allow those extensions on the server path, then extract the archive and run the system with `DB_PATH` pointing to `F:\2B Tex\data\2btex.sqlite`.
+- Not touched: backend calculations, SQLite schema, production data contents, operational stock formulas, waste formulas, AI backend logic, WhatsApp internals, A5 service.

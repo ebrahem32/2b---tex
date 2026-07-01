@@ -1491,3 +1491,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Guard: added an operational-flow regression check for accessory waste/profit pricing.
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, operational save/rollback flows, AI backend, WhatsApp service, A5 service.
+### Prepare Company Server Migration Package
+
+- Date: 2026-07-01
+- Commit: pending.
+- Version observed in code: `v2026.07.01.04`
+- Goal: move away from Railway resource limits and prepare the system for deployment on the company server.
+- Change: prepared transfer folder `F:\2B Tex` with `data`, `backups`, `logs`, and `server-tools`.
+- Change: created full project archive `F:\2B Tex\2B-Tex-System-full-20260701-204414.tar` including source, `.git`, and project memory.
+- Change: copied the current SQLite database separately to `F:\2B Tex\data\2btex.sqlite`.
+- Finding: direct extraction/copy to `F:\2B Tex\system` is blocked by folder policy for `.js`, `.ps1`, `.bat`, and `.zip`, so the incomplete copy was removed.
+- Next: allow script/application extensions on the company server path, extract the archive, install npm dependencies, and run with `DB_PATH=F:\2B Tex\data\2btex.sqlite`.
+- Not touched: backend calculations, SQLite schema, data contents, stock formulas, waste formulas, AI backend logic, WhatsApp internals, A5 service.
