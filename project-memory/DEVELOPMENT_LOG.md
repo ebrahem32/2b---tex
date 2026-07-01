@@ -1,5 +1,17 @@
 # Development Log
 
+### Add Linked Pricing Cost Button
+
+- Date: 2026-07-01
+- Commit: pending.
+- Version: `v2026.07.01.03`
+- Goal: expose the internal costing card from the order documents sidebar beside the linked pricing-card actions.
+- Change: added `عرض كرت التكلفة` when the selected order has a linked or matched pricing card.
+- Change: wired the button to the existing `openPricingCostSheet` report.
+- Change: bumped frontend cache keys to `20260701-03` and visible build time to `2026-07-01 18:22`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
+
 ### Sync Frontend Cache Version
 
 - Date: 2026-07-01

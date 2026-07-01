@@ -16,11 +16,13 @@
       const orderPricing = currentOrder ? (linkedPricing || deps.pricingForOrder(currentOrder)) : null;
       const pricingActionLabel = orderPricing ? 'تعديل كرت التسعير المرتبط' : 'إنشاء كرت تسعير من الطلب';
       const quotationActionLabel = orderPricing ? 'عرض السعر المرتبط' : 'إنشاء عرض سعر من الطلب';
+      const costingAction = orderPricing ? `<button class="mini-btn gold" data-order-pricing-cost="${orderPricing.id}">عرض كرت التكلفة</button>` : '';
       refs.documentsPanel.innerHTML = `
         <div class="document-action-group">
           <h3>عرض العميل</h3>
           <button class="mini-btn gold" data-order-pricing>${pricingActionLabel}</button>
           <button class="mini-btn gold" data-doc="quotation">${quotationActionLabel}</button>
+          ${costingAction}
         </div>
         <div class="document-action-group">
           <h3>أوامر التشغيل</h3>
@@ -385,6 +387,11 @@
         const orderPricingButton = event.target.closest('[data-order-pricing]');
         if (orderPricingButton) {
           deps.openPricingForOrder();
+          return;
+        }
+        const orderPricingCostButton = event.target.closest('[data-order-pricing-cost]');
+        if (orderPricingCostButton) {
+          deps.openPricingCostSheet(orderPricingCostButton.dataset.orderPricingCost);
           return;
         }
         const type = event.target.dataset.doc;

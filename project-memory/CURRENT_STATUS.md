@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.07.01.02`
+`v2026.07.01.03`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,14 @@
 ## Latest Commit Message
 
 `Price accessories as full costing lines`
+
+## Latest Linked Pricing Cost Button
+
+- Version: `v2026.07.01.03`.
+- Added `عرض كرت التكلفة` under the linked pricing-card actions in the order documents panel.
+- The new button opens the internal costing card for the linked pricing record without changing customer quotation output.
+- Updated frontend cache keys to `20260701-03` and visible build time to `2026-07-01 18:22`.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
 
 ## Latest Frontend Cache Version Sync
 
