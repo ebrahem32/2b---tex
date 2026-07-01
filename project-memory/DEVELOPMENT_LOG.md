@@ -1,5 +1,17 @@
 # Development Log
 
+### Fix Legacy Pricing Card Term Inheritance
+
+- Date: 2026-07-01
+- Commit: pending.
+- Version: `v2026.07.01.02`
+- Goal: ensure old pricing cards receive the latest accessory costing behavior without manually editing saved records.
+- Change: grouped pricing-card items now inherit missing waste percent, deferred terms, and profit from the main card.
+- Change: old single-line cards keep card-level accessory lines during calculation.
+- Change: added an operational-flow regression guard for this backward compatibility.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
+
 ### Add Dyeing Document Pricing-Stage Regression Check
 
 - Date: 2026-06-30

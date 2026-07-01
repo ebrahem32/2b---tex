@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.01.01';
+const APP_VERSION = 'v2026.07.01.02';
 const APP_BUILD_TIME = '2026-07-01 02:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -3017,6 +3017,17 @@ function calculatePricing(pricing) {
     totalOffer,
   };
 }
+function pricingInheritedNumber(item = {}, keys = [], fallback = 0) {
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  for (const key of keyList) {
+    if (item[key] !== undefined && item[key] !== null && item[key] !== '') {
+      const number = Number(item[key] || 0);
+      return Number.isFinite(number) ? number : 0;
+    }
+  }
+  const fallbackNumber = Number(fallback || 0);
+  return Number.isFinite(fallbackNumber) ? fallbackNumber : 0;
+}
 function pricingItemsFor(pricing = {}) {
   const items = Array.isArray(pricing.priceItems) ? pricing.priceItems.filter(Boolean) : [];
   if (items.length) return items.map((item)=>({
@@ -3035,11 +3046,11 @@ function pricingItemsFor(pricing = {}) {
     dyeStages: Array.isArray(item.dyeStages) ? item.dyeStages : [],
     accessoryLines: Array.isArray(item.accessoryLines) ? item.accessoryLines : [],
     accessoryCost: Number(item.accessoryCost || 0),
-    wastePercent: Number(item.wastePercent || 0),
-    wasteBasis: item.wasteBasis || item.waste_basis || '',
-    deferredPercent: Number(item.deferredPercent || item.deferred_percent || 0),
+    wastePercent: pricingInheritedNumber(item, ['wastePercent', 'waste_percent'], pricing.wastePercent ?? pricing.waste_percent ?? 0),
+    wasteBasis: item.wasteBasis || item.waste_basis || pricing.wasteBasis || pricing.waste_basis || '',
+    deferredPercent: pricingInheritedNumber(item, ['deferredPercent', 'deferred_percent'], pricing.deferredPercent ?? pricing.deferred_percent ?? 0),
     extraCost: 0,
-    profitPerKg: Number(item.profitPerKg || 0),
+    profitPerKg: pricingInheritedNumber(item, ['profitPerKg', 'profit_per_kg'], pricing.profitPerKg ?? pricing.profit_per_kg ?? 0),
   }));
   const hasSingle = pricing.fabricType || pricing.quantity || pricing.rawCost || pricing.dyeCost || pricing.profitPerKg;
   if (!hasSingle) return [];
@@ -3057,8 +3068,8 @@ function pricingItemsFor(pricing = {}) {
     rawCost: Number(pricing.rawCost || 0),
     dyeCost: Number(pricing.dyeCost || 0),
     dyeStages: [],
-    accessoryLines: [],
-    accessoryCost: 0,
+    accessoryLines: Array.isArray(pricing.accessoryLines) ? pricing.accessoryLines : [],
+    accessoryCost: Number(pricing.accessoryCost || pricing.accessory_total || 0),
     wastePercent: Number(pricing.wastePercent || 0),
     wasteBasis: pricing.wasteBasis || pricing.waste_basis || '',
     deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),

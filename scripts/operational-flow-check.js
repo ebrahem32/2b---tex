@@ -728,6 +728,15 @@ function checkAccessoryPricingUsesWasteAndProfit() {
   assertClose(pricing.accessoryTotal, 1620, 'pricing: accessory total must not be raw-plus-stage cost only');
 }
 
+function checkLegacyPricingItemsInheritCardTerms() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('function pricingInheritedNumber'), 'pricing: legacy grouped card items must inherit missing numeric terms safely');
+  assert(appSource.includes("pricingInheritedNumber(item, ['wastePercent', 'waste_percent'], pricing.wastePercent ?? pricing.waste_percent ?? 0)"), 'pricing: old item rows without waste percent must inherit the card waste percent');
+  assert(appSource.includes("pricingInheritedNumber(item, ['profitPerKg', 'profit_per_kg'], pricing.profitPerKg ?? pricing.profit_per_kg ?? 0)"), 'pricing: old item rows without profit must inherit the card profit');
+  assert(appSource.includes("pricingInheritedNumber(item, ['deferredPercent', 'deferred_percent'], pricing.deferredPercent ?? pricing.deferred_percent ?? 0)"), 'pricing: old item rows without deferred terms must inherit the card deferred terms');
+  assert(appSource.includes('accessoryLines: Array.isArray(pricing.accessoryLines) ? pricing.accessoryLines : []'), 'pricing: old single-card accessory lines must not be dropped');
+}
+
 function checkPricingCurrencyBadgesExist() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('data-pricing-currency-badge="pricing"'), 'pricing ui: selected currency badge must appear beside pricing-currency money inputs');
@@ -918,6 +927,7 @@ checkNoRawWarehouseDashboardTerminology();
 checkUsdPricingConvertsEgpProfit();
 checkUsdPricingMatchesExcelSheet();
 checkAccessoryPricingUsesWasteAndProfit();
+checkLegacyPricingItemsInheritCardTerms();
 checkPricingCurrencyBadgesExist();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();

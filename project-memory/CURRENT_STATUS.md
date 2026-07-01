@@ -2,7 +2,7 @@
 
 ## Current Version
 
-`v2026.07.01.01`
+`v2026.07.01.02`
 
 ## Last Known Commit Before Project Memory
 
@@ -11,6 +11,14 @@
 ## Latest Commit Message
 
 `Price accessories as full costing lines`
+
+## Latest Legacy Pricing Compatibility Fix
+
+- Version: `v2026.07.01.02`.
+- Old grouped pricing-card items now inherit missing waste percent, deferred terms, and profit from the main pricing card instead of silently becoming zero.
+- Old single-line pricing cards that still carry accessory lines at card level keep those accessories during calculation.
+- Added an operational-flow regression guard so old pricing cards keep the new accessory-as-priced-raw-line behavior.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
 
 ## Latest Accessory Pricing Costing
 
