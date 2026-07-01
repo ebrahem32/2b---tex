@@ -25,6 +25,8 @@ backend/data/*
 !backend/data/
 !backend/data/2btex.sqlite
 backend/backups/
+server-data/
+server-backups/
 *.sqlite3
 *.db
 

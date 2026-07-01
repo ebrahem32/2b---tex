@@ -1322,3 +1322,12 @@ For Phase 3.1 local verification before commit:
 - Important: the target folder currently blocks script/application extensions such as `.js`, `.ps1`, `.bat`, and `.zip`, so the live `system` folder was not extracted there to avoid an incomplete runtime copy.
 - Next operational step: IT must allow those extensions on the server path, then extract the archive and run the system with `DB_PATH` pointing to `F:\2B Tex\data\2btex.sqlite`.
 - Not touched: backend calculations, SQLite schema, production data contents, operational stock formulas, waste formulas, AI backend logic, WhatsApp internals, A5 service.
+
+## Latest Production Data Safety Copy
+
+- Date: 2026-07-01.
+- The current SQLite database was copied to `D:\2B Tex نظام التشغيل\server-data\2btex.sqlite` as an additional local server-safe data copy.
+- A timestamped backup was created under `D:\2B Tex نظام التشغيل\server-backups`.
+- The database copy at `F:\2B Tex\data\2btex.sqlite`, the `D:` server-data copy, the timestamped backup, and the source database have identical SHA256 hashes.
+- Added `server-data/` and `server-backups/` to `.gitignore` to prevent production data/backups from being committed accidentally.
+- Not touched: SQLite schema, production database contents, backend calculations, stock formulas, waste formulas.

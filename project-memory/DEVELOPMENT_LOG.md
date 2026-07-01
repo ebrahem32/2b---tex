@@ -1503,3 +1503,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Finding: direct extraction/copy to `F:\2B Tex\system` is blocked by folder policy for `.js`, `.ps1`, `.bat`, and `.zip`, so the incomplete copy was removed.
 - Next: allow script/application extensions on the company server path, extract the archive, install npm dependencies, and run with `DB_PATH=F:\2B Tex\data\2btex.sqlite`.
 - Not touched: backend calculations, SQLite schema, data contents, stock formulas, waste formulas, AI backend logic, WhatsApp internals, A5 service.
+
+### Add Redundant Production Data Safety Copy
+
+- Date: 2026-07-01
+- Commit: pending.
+- Goal: prevent any data loss during the move from Railway/company transfer storage to a company server.
+- Change: copied the active SQLite database to `D:\2B Tex نظام التشغيل\server-data\2btex.sqlite`.
+- Change: created a timestamped SQLite backup under `D:\2B Tex نظام التشغيل\server-backups`.
+- Change: added `server-data/` and `server-backups/` to `.gitignore` so production data and backups do not enter Git accidentally.
+- Verification: source database, `D:` data copy, `F:` data copy, and timestamped backup have identical SHA256 hashes.
+- Not touched: SQLite schema, data contents, backend calculations, stock formulas, waste formulas.
