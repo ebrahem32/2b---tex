@@ -12,6 +12,14 @@
 
 `Price accessories as full costing lines`
 
+## Latest Frontend Cache Version Sync
+
+- Version: `v2026.07.01.02`.
+- Updated `index.html` script cache keys to `20260701-02` for all frontend JavaScript files.
+- Updated the visible build time to `2026-07-01 17:48`.
+- Purpose: prevent browsers/Railway proxies from mixing old modules with the latest `app.js`, which can make the UI show old versions such as `v2026.06.24.05`.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
+
 ## Latest Legacy Pricing Compatibility Fix
 
 - Version: `v2026.07.01.02`.

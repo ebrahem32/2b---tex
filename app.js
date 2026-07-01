@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
 const APP_VERSION = 'v2026.07.01.02';
-const APP_BUILD_TIME = '2026-07-01 02:05';
+const APP_BUILD_TIME = '2026-07-01 17:48';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';

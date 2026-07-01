@@ -1,5 +1,16 @@
 # Development Log
 
+### Sync Frontend Cache Version
+
+- Date: 2026-07-01
+- Commit: pending.
+- Version: `v2026.07.01.02`
+- Goal: force browsers and Railway proxies to load the latest frontend files instead of stale June builds.
+- Change: updated all `index.html` JavaScript cache keys to `20260701-02`.
+- Change: updated the visible app build time to `2026-07-01 17:48`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend endpoints, operational stock formulas, WhatsApp service, A5 service.
+
 ### Fix Legacy Pricing Card Term Inheritance
 
 - Date: 2026-07-01
