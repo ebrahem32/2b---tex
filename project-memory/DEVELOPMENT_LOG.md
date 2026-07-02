@@ -1,5 +1,16 @@
 # Development Log
 
+### Stabilize Start Gate Action Cards
+
+- Date: 2026-07-02
+- Commit: pending.
+- Version: `v2026.07.02.02`
+- Goal: keep the start screen complete and prevent missing action cards after cache or DOM drift.
+- Change: added a startup guard that restores and orders the six start actions: operations dashboard, new order, pricing card, order search, reports, and smart follow-up center.
+- Change: bumped the frontend `app.js` cache key to `20260702-02`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend calculations, stock formulas, waste formulas, WhatsApp service, A5 service.
+
 ### Fix Legacy Pricing Cost Card Availability
 
 - Date: 2026-07-02

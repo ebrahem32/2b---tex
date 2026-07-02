@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.02.01';
-const APP_BUILD_TIME = '2026-07-02 16:05';
+const APP_VERSION = 'v2026.07.02.02';
+const APP_BUILD_TIME = '2026-07-02 16:28';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -29,6 +29,41 @@ const MAIN_WAREHOUSE_CUSTOMER = '2B';
 const MAIN_WAREHOUSE_DYEHOUSE = 'المخزن الرئيسي';
 const MAIN_WAREHOUSE_PREFIX = 'WH-';
 const FINISHED_TRANSFER_MARKER = '[finished-stock-transfer]';
+function ensureStartGateActionCards() {
+  const actions = document.querySelector('.start-actions');
+  if (!actions) return;
+  const definitions = [
+    { action: 'workspaceHome', primary: true, title: 'فتح لوحة التشغيل', body: 'الطلبات، الفلاتر، المتابعة، وحالة التشغيل.' },
+    { action: 'orderNew', title: 'طلب جديد', body: 'تسجيل أمر تشغيل جديد مباشرة.' },
+    { action: 'pricingNew', module: 'pricing', title: 'كرت تسعير', body: 'تسعير خامة ومراحل صباغة قبل العرض.' },
+    { action: 'ordersList', module: 'orders', title: 'بحث الطلبات', body: 'الوصول لطلب موجود أو فلترة الحالة.' },
+    { action: 'managementReports', module: 'reports', title: 'التقارير', body: 'متابعة التشغيل والحسابات والتحليلات.' },
+    { action: 'aiModel', module: 'ai', title: 'مركز المتابعة الذكي', body: 'قراءة المتابعة اليومية والأسئلة الذكية في شاشة واحدة.' },
+  ];
+  const existingByAction = new Map();
+  actions.querySelectorAll('[data-nav-action]').forEach((button) => {
+    const key = button.dataset.navAction;
+    if (key && !existingByAction.has(key)) existingByAction.set(key, button);
+    else button.remove();
+  });
+  definitions.forEach((item) => {
+    let button = existingByAction.get(item.action);
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = `start-card${item.primary ? ' primary' : ''}`;
+      button.dataset.navAction = item.action;
+      button.innerHTML = `<strong>${item.title}</strong><span>${item.body}</span>`;
+    } else {
+      button.type = 'button';
+      button.classList.add('start-card');
+      button.classList.toggle('primary', Boolean(item.primary));
+    }
+    if (item.module) button.dataset.moduleAction = item.module;
+    else delete button.dataset.moduleAction;
+    actions.appendChild(button);
+  });
+}
 // LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
 // المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -7258,6 +7293,8 @@ if (refs.printFilteredOrdersBtn) refs.printFilteredOrdersBtn.onclick = openFilte
 if (refs.printFilteredPricingsBtn) refs.printFilteredPricingsBtn.onclick = openFilteredPricingsReport;
 if (refs.openDyehouseBalancesReportBtn) refs.openDyehouseBalancesReportBtn.onclick = openDyehouseBalancesReport;
 if (refs.openManagementReportsBtn) refs.openManagementReportsBtn.onclick = openManagementReportsMenu;
+ensureStartGateActionCards();
+
 document.addEventListener('click', (event) => {
   if (event.target.closest('#backFromDashboardBtn')) {
     event.preventDefault();

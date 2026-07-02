@@ -2,7 +2,16 @@
 
 ## Current Version
 
-`v2026.07.02.01`
+`v2026.07.02.02`
+
+## Latest Start Gate Stabilization
+
+- Date: 2026-07-02.
+- Version: `v2026.07.02.02`.
+- Issue: the start gate could appear with only four cards even though the current `index.html` contains the full six actions.
+- Change: added a runtime guard that normalizes the start gate actions on load and restores the full set: `فتح لوحة التشغيل`, `طلب جديد`, `كرت تسعير`, `بحث الطلبات`, `التقارير`, and `مركز المتابعة الذكي`.
+- Cache: bumped `app.js` cache key to `20260702-02`.
+- Not touched: SQLite schema/data, backend calculations, stock formulas, waste formulas, WhatsApp, A5.
 
 ## Latest Legacy Pricing Cost Card Compatibility
 
