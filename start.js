@@ -18,7 +18,8 @@ function internalPort(value, fallback, reserved = []) {
 }
 const BACKEND_PORT = internalPort(process.env.BACKEND_PORT, '3050', [FRONTEND_PORT]);
 const WHATSAPP_PORT = internalPort(process.env.WHATSAPP_PORT, '3020', [FRONTEND_PORT, BACKEND_PORT]);
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'backend', 'data', '2btex.sqlite');
+const LOCAL_RUNTIME_DB_PATH = path.join(__dirname, 'server-data', '2btex.sqlite');
+const DB_PATH = process.env.DB_PATH || (fs.existsSync(LOCAL_RUNTIME_DB_PATH) ? LOCAL_RUNTIME_DB_PATH : path.join(__dirname, 'backend', 'data', '2btex.sqlite'));
 const SEED_PATH = path.join(__dirname, 'backend', 'data', '2btex.sqlite');
 const IS_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_SERVICE_ID);
 const ALLOW_DB_SEED = process.env.ALLOW_DB_SEED === '1';
@@ -102,4 +103,3 @@ setTimeout(() => {
     WHATSAPP_PORT
   });
 }, 3000);
-

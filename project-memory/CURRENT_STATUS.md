@@ -4,6 +4,15 @@
 
 `v2026.07.02.02`
 
+## Latest Local Runtime Database Fix
+
+- Date: 2026-07-02.
+- Issue: local startup could fall back to the bundled GitHub database at `backend/data/2btex.sqlite`, causing login/data mismatch after moving the production runtime data to `server-data/2btex.sqlite`.
+- Change: local `start.js` now prefers `server-data/2btex.sqlite` when it exists, and only falls back to `backend/data/2btex.sqlite` if no runtime database exists.
+- Verification: backend health now reports `D:\2B Tex نظام التشغيل\server-data\2btex.sqlite`; login for the production user succeeds.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema, production rows, backend calculations, stock formulas, waste formulas.
+
 ## Latest Start Gate Stabilization
 
 - Date: 2026-07-02.

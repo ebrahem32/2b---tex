@@ -1,5 +1,16 @@
 # Development Log
 
+### Prefer Local Runtime Database on Startup
+
+- Date: 2026-07-02
+- Commit: pending.
+- Version: `v2026.07.02.02`
+- Issue: local startup used the bundled `backend/data/2btex.sqlite`, which caused login/data mismatch after moving the active system data under `server-data`.
+- Change: `start.js` now prefers `server-data/2btex.sqlite` for local runtime when it exists.
+- Verification: backend health reports the runtime DB path and the production user login succeeds.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data rows, backend calculations, stock formulas, waste formulas.
+
 ### Stabilize Start Gate Action Cards
 
 - Date: 2026-07-02
