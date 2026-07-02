@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.02.03';
-const APP_BUILD_TIME = '2026-07-02 19:15';
+const APP_VERSION = 'v2026.07.02.04';
+const APP_BUILD_TIME = '2026-07-02 19:45';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -5180,7 +5180,18 @@ function gluingOperationKey(batch = {}) {
   return String(batch.noteNumber || batch.partnerFabric || '').trim();
 }
 
+function gluingPurchaseDetails(batch = {}) {
+  const details = batch.sourceDocument || {};
+  return details?.type === 'gluing-purchase-send' ? details : null;
+}
+
 function gluingSourceLabel(batch = {}) {
+  const purchase = gluingPurchaseDetails(batch);
+  if (purchase) {
+    const material = purchase.materialName || batch.outputName || 'خامة لزق';
+    const supplier = purchase.supplier ? ` - ${purchase.supplier}` : '';
+    return `شراء وإرسال ${material}${supplier}`;
+  }
   const order = orders.find((item)=>item.id === batch.orderId) || {};
   const allocation = allocations.find((item)=>item.id === batch.allocationId) || {};
   const calculatedOrder = order.id ? calculateOrder(order) : null;
@@ -5192,6 +5203,10 @@ function gluingSourceLabel(batch = {}) {
   const width = calculatedAllocation.rawWidth || calculatedAllocation.targetFinishedWidth || '-';
   const weight = calculatedAllocation.targetFinishedWeight || '-';
   return `\u0637\u0644\u0628 ${orderNumber} - ${customer} - ${fabricType} - ${color} - \u0639\u0631\u0636 ${width} - \u0648\u0632\u0646 ${weight}`;
+}
+
+function gluingSourceTypeLabel(batch = {}) {
+  return gluingPurchaseDetails(batch) ? 'شراء خامة لزق + إرسال' : 'خام مجهز مرسل للزق';
 }
 
 function gluingAllocationAvailable(order, allocation) {
@@ -5240,13 +5255,13 @@ function openGluingQueueDialog() {
     const sent = sum(group.sources);
     const received = sum(group.received);
     const inGluing = roundNumber(Math.max(sent - received, 0));
-    const sourceRows = group.sources.map((batch)=>`<tr><td>${escapeHtml(gluingSourceLabel(batch))}</td><td>${formatNumber(batch.quantity || 0)}</td></tr>`).join('');
+    const sourceRows = group.sources.map((batch)=>`<tr><td>${escapeHtml(gluingSourceTypeLabel(batch))}</td><td>${escapeHtml(gluingSourceLabel(batch))}</td><td>${formatNumber(batch.quantity || 0)}</td></tr>`).join('');
     const outputRows = group.received.map((batch)=>`<tr><td>${escapeHtml(batch.outputName || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${escapeHtml(batch.date || '-')}</td></tr>`).join('');
-    return `<div class="subsection"><div class="subsection-head"><div><h3>عملية دمج ${escapeHtml(group.key)}</h3><p class="eyebrow">بعد تسجيل المنتج الناتج، افتح له طلب عادي جديد لإدخاله دورة التشغيل.</p></div></div><div class="summary-grid"><div class="metric"><span>خامات داخلة</span><strong>${formatNumber(sent)}</strong></div><div class="metric"><span>منتج ناتج</span><strong>${formatNumber(received)}</strong></div><div class="metric"><span>متبقي داخل الدمج</span><strong>${formatNumber(inGluing)}</strong></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>الخامة المصدر</th><th>كمية مسحوبة للدمج</th></tr></thead><tbody>${sourceRows}</tbody></table></div>${outputRows ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>المنتج الناتج</th><th>الكمية</th><th>التاريخ</th></tr></thead><tbody>${outputRows}</tbody></table></div>` : ''}</div>`;
+    return `<div class="subsection"><div class="subsection-head"><div><h3>عملية دمج ${escapeHtml(group.key)}</h3><p class="eyebrow">إرسال الخام المجهز لمصنع اللزق، ثم شراء خامة اللزق وإرسالها، ثم تسجيل المنتج الناتج.</p></div></div><div class="summary-grid"><div class="metric"><span>خامات داخلة</span><strong>${formatNumber(sent)}</strong></div><div class="metric"><span>منتج ناتج</span><strong>${formatNumber(received)}</strong></div><div class="metric"><span>متبقي داخل الدمج</span><strong>${formatNumber(inGluing)}</strong></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>نوع الحركة</th><th>الخامة / المصدر</th><th>الكمية</th></tr></thead><tbody>${sourceRows}</tbody></table></div>${outputRows ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>المنتج الناتج</th><th>الكمية</th><th>التاريخ</th></tr></thead><tbody>${outputRows}</tbody></table></div>` : ''}</div>`;
   }).join('') : '<div class="empty-state">لا توجد خامات في دمج الخامات حتى الآن.</div>';
   refs.documentTitle.textContent = 'دمج خامات';
   refs.documentBody.dataset.documentType = 'gluing-queue';
-  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>&#1583;&#1605;&#1580; &#1582;&#1575;&#1605;&#1575;&#1578; &#1605;&#1606; &#1575;&#1604;&#1571;&#1608;&#1585;&#1583;&#1585;&#1575;&#1578; &#1575;&#1604;&#1585;&#1574;&#1610;&#1587;&#1610;&#1577;</h3><p class="eyebrow">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1582;&#1575;&#1605;&#1578;&#1610;&#1606; &#1608;&#1575;&#1604;&#1603;&#1605;&#1610;&#1575;&#1578; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;&#1577; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;&#1548; &#1579;&#1605; &#1610;&#1578;&#1605; &#1587;&#1581;&#1576;&#1607;&#1605; &#1573;&#1604;&#1609; &#1606;&#1601;&#1587; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="&#1585;&#1602;&#1605; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;" required><select name="sourceKey" required><option value="">&#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1571;&#1608;&#1604;&#1609; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</option>${warehouseSourceOptions}</select><input name="quantity" type="number" step="0.01" placeholder="&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1571;&#1608;&#1604;&#1609;" required><select name="sourceKey2"><option value="">&#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1579;&#1575;&#1606;&#1610;&#1577; &#1605;&#1606; &#1585;&#1589;&#1610;&#1583; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</option>${warehouseSourceOptions}</select><input name="quantity2" type="number" step="0.01" placeholder="&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1582;&#1575;&#1605;&#1577; &#1575;&#1604;&#1579;&#1575;&#1606;&#1610;&#1577;"><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button type="button" class="mini-btn full" data-save-gluing-source>&#1587;&#1581;&#1576; &#1575;&#1604;&#1582;&#1575;&#1605;&#1575;&#1578; &#1573;&#1604;&#1609; &#1593;&#1605;&#1604;&#1610;&#1577; &#1575;&#1604;&#1583;&#1605;&#1580;</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الناتج</h3><p class="eyebrow">اختر عملية الدمج بعد سحب الخامتين، ثم سجل المنتج الناتج منها.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم عملية الدمج</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الناتج" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الناتج" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div>${cards}</div>`;
+  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>إرسال خامات لمصنع اللزق</h3><p class="eyebrow">سجل الخام المجهز الخارج من الأوردر، ومعه شراء خامة اللزق وإرسالها في نفس رقم عملية الدمج.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="رقم عملية الدمج" required><select name="sourceKey"><option value="">الخام المجهز من رصيد المخزن</option>${warehouseSourceOptions}</select><input name="quantity" type="number" step="0.01" placeholder="كمية الخام المجهز"><input name="adhesiveName" placeholder="خامة اللزق / القطيفة"><input name="adhesiveQuantity" type="number" step="0.01" placeholder="كمية خامة اللزق المشتراة"><input name="adhesiveSupplier" placeholder="مورد خامة اللزق"><input name="adhesiveUnitPrice" type="number" step="0.01" placeholder="سعر الكيلو"><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-source>حفظ إرسال الخام وشراء خامة اللزق</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الناتج</h3><p class="eyebrow">اختر عملية الدمج بعد تسجيل خام المصنع وخامة اللزق، ثم سجل المنتج الناتج.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم عملية الدمج</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الناتج" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الناتج" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div>${cards}</div>`;
   if (!refs.documentDialog.open) refs.documentDialog.showModal();
 }
 
@@ -5260,13 +5275,17 @@ async function saveGluingSourceFromDialog(form) {
   const operationKey = String(data.operationKey || '').trim();
   if (!operationKey) { alert('اكتب رقم عملية الدمج.'); return; }
   const sourceRows = [
-    { sourceKey:data.sourceKey, quantity:data.quantity },
-    { sourceKey:data.sourceKey2, quantity:data.quantity2 }
+    { sourceKey:data.sourceKey, quantity:data.quantity }
   ].filter((row)=>String(row.sourceKey || '').trim() && Number(row.quantity || 0) > 0);
-  if (!sourceRows.length) { alert('اختر خامة واحدة على الأقل وكمية مطلوبة.'); return; }
+  const adhesiveQuantity = Number(data.adhesiveQuantity || 0);
+  const adhesiveName = String(data.adhesiveName || '').trim();
+  if (!sourceRows.length && !adhesiveQuantity) { alert('اختر خام مجهز أو سجل خامة اللزق المشتراة.'); return; }
+  if (adhesiveQuantity && !adhesiveName) { alert('اكتب اسم خامة اللزق / القطيفة قبل الحفظ.'); return; }
   let savedAny = false;
+  let primaryOrderId = selectedOrderId || '';
   for (const row of sourceRows) {
     const [orderId, allocationId] = String(row.sourceKey || '').split('|');
+    primaryOrderId = primaryOrderId || orderId;
     const order = orders.find((item)=>item.id === orderId);
     const allocation = allocations.find((item)=>item.id === allocationId);
     if (!order || !allocation) { alert('تعذر قراءة الخامة المختارة من الطلب.'); return; }
@@ -5286,14 +5305,44 @@ async function saveGluingSourceFromDialog(form) {
       partnerFabric: operationKey,
       notes
     }));
-    if (!saved) { alert('تعذر سحب الخامات إلى عملية الدمج.'); return; }
+    if (!saved) { alert('تعذر إرسال الخام المجهز إلى عملية الدمج.'); return; }
+    savedAny = true;
+  }
+  if (adhesiveQuantity) {
+    primaryOrderId = primaryOrderId || orders[0]?.id || '';
+    if (!primaryOrderId) { alert('لا يوجد طلب يمكن ربط خامة اللزق به.'); return; }
+    const unitPrice = Number(data.adhesiveUnitPrice || 0);
+    const purchaseNotes = [
+      data.notes || '',
+      `شراء وإرسال ${adhesiveName}`,
+      data.adhesiveSupplier ? `المورد: ${data.adhesiveSupplier}` : '',
+      unitPrice ? `سعر الكيلو: ${formatNumber(unitPrice)}` : ''
+    ].filter(Boolean).join(' - ');
+    const saved = await postBackend('/batches/gluing', batchToApi({
+      id: uid(),
+      orderId: primaryOrderId,
+      allocationId: '',
+      date: data.date,
+      quantity: adhesiveQuantity,
+      movement: 'sent',
+      noteNumber: operationKey,
+      partnerFabric: operationKey,
+      notes: purchaseNotes,
+      sourceDocument: {
+        type: 'gluing-purchase-send',
+        materialName: adhesiveName,
+        supplier: data.adhesiveSupplier || '',
+        unitPrice,
+        totalPrice: roundNumber(adhesiveQuantity * unitPrice)
+      }
+    }));
+    if (!saved) { alert('تعذر حفظ شراء وإرسال خامة اللزق.'); return; }
     savedAny = true;
   }
   if (!savedAny) return;
   await loadBackendData();
   openGluingQueueDialog();
 }
-
 async function saveGluingMergeFromDialog(form) {
   if (!(await ensureBackendForWrite())) return;
   const data = Object.fromEntries(new FormData(form).entries());

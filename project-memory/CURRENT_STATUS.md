@@ -2,7 +2,20 @@
 
 ## Current Version
 
-`v2026.07.02.03`
+`v2026.07.02.04`
+
+## Latest Gluing Workflow Update
+
+- Date: 2026-07-02.
+- Version: `v2026.07.02.04`.
+- Business rule: raw-material merging is not a direct stock merge. The process is:
+  1. send prepared fabric from the order/warehouse balance to the gluing factory,
+  2. buy the adhesive/velvet material and send it to the gluing factory in the same movement,
+  3. record the merged output after the purchased adhesive material exists in the operation.
+- Change: the gluing screen now has a dedicated source form for prepared fabric plus purchased adhesive/velvet material.
+- Change: purchased adhesive material is stored on the existing `gluing_batches` table as a `sent` movement with structured details in `source_document_json`; no schema change was needed.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend calculations, stock formulas, waste formulas, WhatsApp, A5.
 
 ## Latest Combined Dyehouse Issue Entry Update
 

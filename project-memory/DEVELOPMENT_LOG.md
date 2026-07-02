@@ -1573,3 +1573,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: bumped frontend cache keys for `app.js` and `styles.css`.
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, WhatsApp service, A5 service.
+
+### Align Gluing Workflow With Factory Operation
+
+- Date: 2026-07-02
+- Commit: pending.
+- Version: `v2026.07.02.04`
+- Goal: make raw-material merging match the factory process instead of treating it as a simple stock merge.
+- Change: the gluing source form now records prepared fabric sent to the gluing factory and purchased adhesive/velvet material sent in the same operation.
+- Change: purchased adhesive details are stored in `source_document_json` on the existing `gluing_batches` row, so no database schema change is required.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, WhatsApp service, A5 service.
