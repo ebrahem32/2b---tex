@@ -1,5 +1,17 @@
 # Development Log
 
+### Fix Legacy Pricing Cost Card Availability
+
+- Date: 2026-07-02
+- Commit: pending.
+- Version: `v2026.07.02.01`
+- Goal: make old pricing cards show and build `عرض كرت التكلفة` the same way as new pricing cards.
+- Change: kept strict pricing/order matching first, then added a safe unique same-number/same-customer fallback for legacy pricing cards.
+- Change: normalized legacy pricing item fields, including snake_case fields, extra cost, currency, and exchange rate, before building cost reports.
+- Change: bumped the frontend cache key to force browsers to load the fixed `app.js`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend calculations, stock formulas, waste formulas, WhatsApp service, A5 service.
+
 ### Update Weaving Document Layout
 
 - Date: 2026-07-01

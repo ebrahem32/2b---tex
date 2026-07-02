@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.01.04';
-const APP_BUILD_TIME = '2026-07-01 19:08';
+const APP_VERSION = 'v2026.07.02.01';
+const APP_BUILD_TIME = '2026-07-02 16:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -585,6 +585,7 @@ function mapDbTransfer(row) {
 function mapDbPricing(row, customers) {
   const priceItems = parseDbJsonArray(row.pricing_items_json);
   const firstItemWithWeavingSource = priceItems.find((item)=>item?.weavingSource || item?.weaving_source);
+  const firstItemWithCurrency = priceItems.find((item)=>item?.currency || item?.exchangeRate || item?.exchange_rate);
   return {
     id: row.id,
     pricingNumber: row.pricing_number || '',
@@ -609,7 +610,8 @@ function mapDbPricing(row, customers) {
     notes: row.notes || '',
     status: row.status || 'active',
     priceItems,
-    currency: priceItems.find((item)=>item?.currency)?.currency || 'EGP',
+    currency: firstItemWithCurrency?.currency || 'EGP',
+    exchangeRate: Number(firstItemWithCurrency?.exchangeRate || firstItemWithCurrency?.exchange_rate || 1),
   };
 }
 function renderBackendUnavailable() {
@@ -1236,7 +1238,19 @@ function pricingMatchesOrder(pricing, order) {
 }
 function pricingForOrder(order) {
   if (!order) return null;
-  return pricings.find((pricing)=>pricingMatchesOrder(pricing, order)) || null;
+  const strictMatch = pricings.find((pricing)=>pricingMatchesOrder(pricing, order));
+  if (strictMatch) return strictMatch;
+  const orderNo = String(order.orderNumber || '').trim();
+  if (!orderNo) return null;
+  const sameNumberCandidates = pricings.filter((pricing)=>{
+    const pricingNo = String(pricing.pricingNumber || '').trim();
+    const pricingOrderNo = String(orderNumberFromPricing(pricing.pricingNumber) || '').trim();
+    const sameNumber = orderNo === pricingNo || orderNo === pricingOrderNo;
+    return sameNumber && compatibleNameForMatch(order.customer, pricing.customer);
+  });
+  if (sameNumberCandidates.length === 1) return sameNumberCandidates[0];
+  const readableFallback = sameNumberCandidates.filter((pricing)=>readablePricingFabricName(pricing));
+  return readableFallback.length === 1 ? readableFallback[0] : null;
 }
 function orderRawCost(order) {
   const direct = Number(order?.rawCost || order?.rawPrice || 0);
@@ -3033,23 +3047,23 @@ function pricingItemsFor(pricing = {}) {
   if (items.length) return items.map((item)=>({
     currency: item.currency || pricing.currency || 'EGP',
     exchangeRate: Number(item.exchangeRate || item.exchange_rate || pricing.exchangeRate || pricing.exchange_rate || 0),
-    fabricType: item.fabricType || '',
-    materialType: item.materialType || item.fabricType || '',
-    dyehouse: item.dyehouse || '',
+    fabricType: item.fabricType || item.fabric_type || '',
+    materialType: item.materialType || item.material_type || item.fabricType || item.fabric_type || '',
+    dyehouse: item.dyehouse || pricing.dyehouse || '',
     weavingSource: item.weavingSource || item.weaving_source || pricing.weavingSource || '',
-    colorClass: item.colorClass || '',
+    colorClass: item.colorClass || item.color_class || '',
     quantity: Number(item.quantity || 0),
-    inchWidth: item.inchWidth || '',
-    finishedWeight: item.finishedWeight || '',
-    rawCost: Number(item.rawCost || 0),
-    dyeCost: Number(item.dyeCost || 0),
-    dyeStages: Array.isArray(item.dyeStages) ? item.dyeStages : [],
-    accessoryLines: Array.isArray(item.accessoryLines) ? item.accessoryLines : [],
-    accessoryCost: Number(item.accessoryCost || 0),
+    inchWidth: item.inchWidth || item.inch_width || pricing.inchWidth || '',
+    finishedWeight: item.finishedWeight || item.finished_weight || pricing.finishedWeight || '',
+    rawCost: Number(item.rawCost || item.raw_cost || 0),
+    dyeCost: Number(item.dyeCost || item.dye_cost || 0),
+    dyeStages: Array.isArray(item.dyeStages) ? item.dyeStages : Array.isArray(item.dye_stages) ? item.dye_stages : [],
+    accessoryLines: Array.isArray(item.accessoryLines) ? item.accessoryLines : Array.isArray(item.accessory_lines) ? item.accessory_lines : [],
+    accessoryCost: Number(item.accessoryCost || item.accessory_cost || 0),
     wastePercent: pricingInheritedNumber(item, ['wastePercent', 'waste_percent'], pricing.wastePercent ?? pricing.waste_percent ?? 0),
     wasteBasis: item.wasteBasis || item.waste_basis || pricing.wasteBasis || pricing.waste_basis || '',
     deferredPercent: pricingInheritedNumber(item, ['deferredPercent', 'deferred_percent'], pricing.deferredPercent ?? pricing.deferred_percent ?? 0),
-    extraCost: 0,
+    extraCost: Number(item.extraCost || item.extra_cost || pricing.extraCost || pricing.extra_cost || 0),
     profitPerKg: pricingInheritedNumber(item, ['profitPerKg', 'profit_per_kg'], pricing.profitPerKg ?? pricing.profit_per_kg ?? 0),
   }));
   const hasSingle = pricing.fabricType || pricing.quantity || pricing.rawCost || pricing.dyeCost || pricing.profitPerKg;
@@ -3073,7 +3087,7 @@ function pricingItemsFor(pricing = {}) {
     wastePercent: Number(pricing.wastePercent || 0),
     wasteBasis: pricing.wasteBasis || pricing.waste_basis || '',
     deferredPercent: Number(pricing.deferredPercent || pricing.deferred_percent || 0),
-    extraCost: 0,
+    extraCost: Number(pricing.extraCost || pricing.extra_cost || 0),
     profitPerKg: Number(pricing.profitPerKg || 0),
   }];
 }

@@ -2,7 +2,19 @@
 
 ## Current Version
 
-`v2026.07.01.04`
+`v2026.07.02.01`
+
+## Latest Legacy Pricing Cost Card Compatibility
+
+- Date: 2026-07-02.
+- Version: `v2026.07.02.01`.
+- Issue: older pricing cards could be found in pricing data but did not always expose or build the internal cost card from an order screen.
+- Change: order-to-pricing lookup now keeps the strict match first, then safely falls back to a unique same-number/same-customer pricing card for legacy records.
+- Change: pricing item normalization now accepts legacy/snake_case item fields and carries legacy extra cost into the cost report instead of dropping it.
+- Change: pricing currency and exchange rate are recovered from the first saved pricing item for legacy rows.
+- Cache: bumped `app.js` cache key to `20260702-01`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema, production data, backend calculations, stock formulas, waste formulas, WhatsApp, A5.
 
 ## Last Known Commit Before Project Memory
 
