@@ -1561,3 +1561,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Verification: restored counts include `orders=72`, `pricings=47`, `customers=24`, `finished_receiving_batches=201`, `customer_delivery_batches=156`, and `accessory_batches=161`.
 - Verification: login for `Ibrahim Assem` succeeded after restore.
 - Not touched: SQLite schema, backend calculations, stock formulas, waste formulas, Git-tracked bundled database.
+
+### Enhance Combined Dyehouse Issue Entry
+
+- Date: 2026-07-02
+- Commit: pending.
+- Version: `v2026.07.02.03`
+- Goal: support real combined dyehouse issue workflows where one issue can include fabric/accessory lines, extra raw lines, and more than one permit number.
+- Change: added extra raw-fabric rows to the combined dyehouse issue dialog.
+- Change: added multiple permit-number inputs and saved them together on the generated movement records.
+- Change: bumped frontend cache keys for `app.js` and `styles.css`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, WhatsApp service, A5 service.

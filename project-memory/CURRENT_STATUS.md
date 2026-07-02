@@ -2,7 +2,18 @@
 
 ## Current Version
 
-`v2026.07.02.02`
+`v2026.07.02.03`
+
+## Latest Combined Dyehouse Issue Entry Update
+
+- Date: 2026-07-02.
+- Version: `v2026.07.02.03`.
+- Goal: make the combined dyehouse issue document support extra raw-fabric issue lines and multiple permit numbers in the same combined issue.
+- Change: the combined raw issue dialog now has an `Add raw` action under the fabric section. Each added raw line can carry a label, dyehouse, and quantity, and is saved as a dyehouse movement on the current order.
+- Change: the permit-number area now supports multiple permit inputs; saved records store the entered permit numbers joined in one note-number field.
+- Change: added compact inline-control styling for the combined issue controls and bumped frontend cache keys to `20260702-03`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: SQLite schema/data, backend calculations, stock formulas, waste formulas, WhatsApp, A5.
 
 ## Latest Local Runtime Database Fix
 

@@ -1178,6 +1178,11 @@ body[data-active-module="admin"] .main-workspace{display:block}
   }
 }
 
+.inline-control-row{display:flex;align-items:center;gap:8px}
+.inline-control-row input,.inline-control-row select{flex:1;min-width:0}
+.compact-head{margin:0 0 8px}
+.bulk-entry-table input{max-width:100%}
+
 @media print{
   body:not(.printing-stickers):not(.printing-orders-follow) #documentDialog,
   body:not(.printing-stickers):not(.printing-orders-follow) #documentDialog .printable-card,

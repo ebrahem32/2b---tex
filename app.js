@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.02.02';
-const APP_BUILD_TIME = '2026-07-02 16:28';
+const APP_VERSION = 'v2026.07.02.03';
+const APP_BUILD_TIME = '2026-07-02 19:15';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -6093,6 +6093,20 @@ function accessoryRowsForCombinedMovement(order, config) {
   }).join('')).join('');
 }
 
+function bulkExtraRawRowHtml(dyehouse = '') {
+  return `<tr data-bulk-extra-raw-row>
+    <td><input data-bulk-extra-raw-label value="خام إضافي" placeholder="البيان"></td>
+    <td><input data-bulk-extra-raw-dyehouse value="${escapeHtml(dyehouse || '')}" placeholder="المصبغة"></td>
+    <td>كل العروض</td>
+    <td>-</td>
+    <td><div class="inline-control-row"><input type="number" step="0.01" data-bulk-extra-raw-quantity placeholder="0"><button type="button" class="mini-btn danger" data-remove-bulk-extra-raw>حذف</button></div></td>
+  </tr>`;
+}
+
+function bulkNoteNumberFieldHtml(value = '') {
+  return `<label data-bulk-note-row><span>رقم إذن</span><div class="inline-control-row"><input data-bulk-note-number value="${escapeHtml(value || '')}" placeholder="رقم الإذن"><button type="button" class="mini-btn danger" data-remove-bulk-note-number>حذف</button></div></label>`;
+}
+
 function openBulkBatchDialog(source) {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
   if (!order) return;
@@ -6105,18 +6119,23 @@ function openBulkBatchDialog(source) {
   const notes = form?.elements.notes?.value || '';
   const title = config.title;
   const accessoryRows = accessoryRowsForCombinedMovement(order, config);
+  const defaultDyehouse = order.dyehouse || order.allocations?.[0]?.dyehouse || '';
   refs.documentTitle.textContent = title;
   refs.documentBody.dataset.documentType = 'bulk-batches';
   refs.documentBody.innerHTML = `<div class="document-sheet bulk-entry-sheet" data-bulk-group="${config.key}" data-bulk-movement="${movement}" data-bulk-accessory-movement="${config.accessoryMovement}">
     <div class="subsection-head"><div><h2>${title}</h2><p class="muted">${config.description}</p></div></div>
     <div class="summary-grid">
       <label><span>التاريخ</span><input type="date" data-bulk-date value="${escapeHtml(date)}"></label>
-      <label><span>رقم الإذن</span><input data-bulk-note-number value="${escapeHtml(noteNumber)}"></label>
+      <div class="full-row" data-bulk-note-list>
+        <div class="subsection-head compact-head"><h3>أرقام الأذون</h3><button type="button" class="mini-btn" data-add-bulk-note-number>+ إذن</button></div>
+        ${bulkNoteNumberFieldHtml(noteNumber)}
+      </div>
       <label class="full-row"><span>ملاحظات</span><input data-bulk-notes value="${escapeHtml(notes)}"></label>
     </div>
-    <div class="subsection-head"><h3>القماش</h3></div>
+    <div class="subsection-head"><h3>القماش</h3>${movement === 'rawOut' ? '<button type="button" class="mini-btn" data-add-bulk-extra-raw>+ إضافة خام</button>' : ''}</div>
     <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th><th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
       ${combinedMovementClothRows(order, movement)}
+      ${movement === 'rawOut' ? `<tr data-bulk-extra-raw-anchor></tr>${bulkExtraRawRowHtml(defaultDyehouse)}` : ''}
     </tbody></table>
     ${accessoryRows ? `<div class="subsection-head"><h3>الإكسسوار</h3></div><table class="bulk-entry-table"><thead><tr><th>نوع الإكسسوار</th><th>اللون</th><th>العرض</th><th>المتاح/المطلوب</th><th>الكمية</th></tr></thead><tbody>${accessoryRows}</tbody></table>` : ''}
     <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>حفظ الأمر المجمع</button></div>
@@ -6131,9 +6150,13 @@ function bulkBatchItemsFromDialog() {
   const movement = sheet?.dataset.bulkMovement || body.querySelector('[data-bulk-movement]')?.dataset.bulkMovement || body.dataset.bulkMovement || '';
   const accessoryMovement = sheet?.dataset.bulkAccessoryMovement || '';
   const date = body.querySelector('[data-bulk-date]')?.value || new Date().toISOString().slice(0, 10);
-  const noteNumber = body.querySelector('[data-bulk-note-number]')?.value || '';
+  const noteNumber = [...body.querySelectorAll('[data-bulk-note-number]')]
+    .map((input)=>input.value.trim())
+    .filter(Boolean)
+    .join('، ');
   const notes = body.querySelector('[data-bulk-notes]')?.value || '';
   const clothRows = [...body.querySelectorAll('[data-bulk-cloth-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
+  const extraRawRows = [...body.querySelectorAll('[data-bulk-extra-raw-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
   const accessoryRows = [...body.querySelectorAll('[data-bulk-accessory-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
   const clothItems = clothRows.map((row) => {
     const quantity = Number(row.querySelector('[data-bulk-cloth-quantity]')?.value || 0);
@@ -6145,6 +6168,13 @@ function bulkBatchItemsFromDialog() {
     if (movement === 'customer') return { type:'customer', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     return null;
   }).filter(Boolean);
+  const extraRawItems = extraRawRows.map((row) => {
+    const quantity = Number(row.querySelector('[data-bulk-extra-raw-quantity]')?.value || 0);
+    if (!quantity || movement !== 'rawOut') return null;
+    const dyehouse = row.querySelector('[data-bulk-extra-raw-dyehouse]')?.value.trim() || '';
+    const label = row.querySelector('[data-bulk-extra-raw-label]')?.value.trim() || 'خام إضافي';
+    return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber, notes:[notes, label].filter(Boolean).join(' - '), dyehouse }) };
+  }).filter(Boolean);
   const accessoryItems = accessoryRows.map((row) => {
     const quantity = Number(row.querySelector('[data-bulk-accessory-quantity]')?.value || 0);
     if (!quantity) return null;
@@ -6155,7 +6185,7 @@ function bulkBatchItemsFromDialog() {
     if (accessoryMovement === 'accessoryCustomer') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'customer' }) };
     return null;
   }).filter(Boolean);
-  return [...clothItems, ...accessoryItems];
+  return [...clothItems, ...extraRawItems, ...accessoryItems];
 }
 
 async function saveBulkBatchesFromDialog() {
@@ -7447,6 +7477,24 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (saveUserButton) saveSystemUser(saveUserButton.dataset.saveSystemUser).catch((error)=>{ console.error('system-user-save-error', error); alert(error.message || 'تعذر حفظ المستخدم.'); });
   const deleteUserButton = event.target.closest('[data-delete-system-user]');
   if (deleteUserButton) deleteSystemUser(deleteUserButton.dataset.deleteSystemUser).catch((error)=>{ console.error('system-user-delete-error', error); alert(error.message || 'تعذر حذف المستخدم.'); });
+  if (event.target.closest('[data-add-bulk-note-number]')) {
+    refs.documentBody.querySelector('[data-bulk-note-list]')?.insertAdjacentHTML('beforeend', bulkNoteNumberFieldHtml());
+  }
+  const removeBulkNoteButton = event.target.closest('[data-remove-bulk-note-number]');
+  if (removeBulkNoteButton) {
+    const rows = refs.documentBody.querySelectorAll('[data-bulk-note-row]');
+    if (rows.length > 1) removeBulkNoteButton.closest('[data-bulk-note-row]')?.remove();
+    else {
+      const noteInput = removeBulkNoteButton.closest('[data-bulk-note-row]')?.querySelector('[data-bulk-note-number]');
+      if (noteInput) noteInput.value = '';
+    }
+  }
+  if (event.target.closest('[data-add-bulk-extra-raw]')) {
+    const defaultDyehouse = calculateOrder(orders.find((item)=>item.id===selectedOrderId))?.dyehouse || '';
+    refs.documentBody.querySelector('[data-bulk-extra-raw-anchor]')?.insertAdjacentHTML('afterend', bulkExtraRawRowHtml(defaultDyehouse));
+  }
+  const removeBulkExtraRawButton = event.target.closest('[data-remove-bulk-extra-raw]');
+  if (removeBulkExtraRawButton) removeBulkExtraRawButton.closest('[data-bulk-extra-raw-row]')?.remove();
   if (event.target.closest('[data-save-bulk-batches]')) saveBulkBatchesFromDialog().catch((error)=>{ console.error('bulk-batches-save-error', error); alert(error.message || 'تعذر حفظ الإدخال الجماعي.'); });
 });
 
