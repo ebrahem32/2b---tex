@@ -1514,3 +1514,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: added `server-data/` and `server-backups/` to `.gitignore` so production data and backups do not enter Git accidentally.
 - Verification: source database, `D:` data copy, `F:` data copy, and timestamped backup have identical SHA256 hashes.
 - Not touched: SQLite schema, data contents, backend calculations, stock formulas, waste formulas.
+
+### Restore Railway Production Data To Company Server Copy
+
+- Date: 2026-07-02
+- Commit: pending.
+- Goal: fix missing production data after moving the system off Railway by restoring the actual Railway volume SQLite database.
+- Finding: the active company-server/local copy had only `60` orders and `6` pricing cards, while the Railway volume had `72` orders and `47` pricing cards.
+- Change: downloaded `/2btex.sqlite` from Railway volume `2b---tex-volume` to `D:\2B Tex نظام التشغيل\server-backups\railway-volume-2btex-20260702-105012.sqlite`.
+- Change: backed up the previous active local database to `D:\2B Tex نظام التشغيل\server-backups\before-railway-restore-20260702-105509.sqlite`.
+- Change: restored the Railway production database to `D:\2B Tex نظام التشغيل\server-data\2btex.sqlite` and synced it to `F:\2B Tex\data\2btex.sqlite`.
+- Verification: restored counts include `orders=72`, `pricings=47`, `customers=24`, `finished_receiving_batches=201`, `customer_delivery_batches=156`, and `accessory_batches=161`.
+- Verification: login for `Ibrahim Assem` succeeded after restore.
+- Not touched: SQLite schema, backend calculations, stock formulas, waste formulas, Git-tracked bundled database.

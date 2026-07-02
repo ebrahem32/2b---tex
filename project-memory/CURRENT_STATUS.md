@@ -1331,3 +1331,16 @@ For Phase 3.1 local verification before commit:
 - The database copy at `F:\2B Tex\data\2btex.sqlite`, the `D:` server-data copy, the timestamped backup, and the source database have identical SHA256 hashes.
 - Added `server-data/` and `server-backups/` to `.gitignore` to prevent production data/backups from being committed accidentally.
 - Not touched: SQLite schema, production database contents, backend calculations, stock formulas, waste formulas.
+
+## Latest Railway Production Data Restore
+
+- Date: 2026-07-02.
+- Issue: the local/company-server run was using a smaller SQLite copy from the Git/bundled data path, so production records appeared missing.
+- Evidence: the restored Railway volume database is `2,310,144` bytes, while the bundled/F-transfer copy was `294,912` bytes.
+- Railway volume copy downloaded to `D:\2B Tex نظام التشغيل\server-backups\railway-volume-2btex-20260702-105012.sqlite`.
+- Before restore, the active local server database was backed up to `D:\2B Tex نظام التشغيل\server-backups\before-railway-restore-20260702-105509.sqlite`.
+- Restored the Railway production database to `D:\2B Tex نظام التشغيل\server-data\2btex.sqlite`.
+- Synced the same restored data copy to `F:\2B Tex\data\2btex.sqlite`.
+- Post-restore counts: `orders=72`, `pricings=47`, `customers=24`, `order_allocations=216`, `dyehouse_delivery_batches=121`, `finished_receiving_batches=201`, `customer_delivery_batches=156`, `dyehouse_transfers=11`, `accessory_batches=161`, `users=3`.
+- Login verification passed for `Ibrahim Assem`.
+- Not touched: SQLite schema, backend calculations, stock formulas, waste formulas, Git-tracked bundled database.
