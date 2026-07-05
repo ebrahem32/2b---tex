@@ -1593,3 +1593,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: purchased adhesive details are stored in `source_document_json` on the existing `gluing_batches` row, so no database schema change is required.
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, WhatsApp service, A5 service.
+
+### Refresh Company Server Migration Package
+
+- Date: 2026-07-05
+- Commit: pending.
+- Version observed in code: `v2026.07.02.04`
+- Goal: replace the outdated transfer package at `F:\2B Tex` (code at `68a1cf8`, database snapshot from 2026-07-02 10:50) with the current system state.
+- Change: created a new full archive in `F:\2B Tex` from `D:\2B Tex نظام التشغيل` including source, `.git`, and `project-memory`, excluding `node_modules`, `server-data`, `server-backups`, logs, and local temp files.
+- Change: copied the live runtime database `server-data\2btex.sqlite` to `F:\2B Tex\data\2btex.sqlite` with hash verification while the system was running; the previous snapshot was kept in `F:\2B Tex\backups\`.
+- Change: updated `F:\2B Tex\README-نقل-السيرفر.md` with the new archive name and removed the plaintext password.
+- Finding: `F:\2B Tex` still blocks `.js`/`.ps1` file creation as of 2026-07-05, so extraction on the company server still requires IT to allow script extensions first.
+- Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.

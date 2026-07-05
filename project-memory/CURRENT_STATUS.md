@@ -4,6 +4,17 @@
 
 `v2026.07.02.04`
 
+## Latest Refreshed Company Server Migration Package
+
+- Date: 2026-07-05.
+- Version observed in code: `v2026.07.02.04`.
+- Reason: the previous transfer package at `F:\2B Tex` (tar of commit `68a1cf8`, database snapshot from 2026-07-02 10:50) was 9 commits and 3 days of data behind the running system.
+- Change: created a refreshed full project archive in `F:\2B Tex` from the current workspace `D:\2B Tex نظام التشغيل`, including source, `.git`, and `project-memory`, excluding `node_modules`, `server-data`, `server-backups`, logs, and local temp files.
+- Change: replaced `F:\2B Tex\data\2btex.sqlite` with a hash-verified copy of the live runtime database `server-data\2btex.sqlite`; the previous snapshot was moved into `F:\2B Tex\backups\`.
+- Change: updated `F:\2B Tex\README-نقل-السيرفر.md` with the new archive name and removed the plaintext system password from the document.
+- Reminder: `F:\2B Tex` still blocks creating `.js`/`.ps1`/`.bat` files (verified 2026-07-05); IT must allow these extensions before extracting the archive on the company server.
+- Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
 ## Latest Desktop Launcher Update
 
 - Date: 2026-07-05.
