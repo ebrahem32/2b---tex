@@ -4,6 +4,15 @@
 
 `v2026.07.02.04`
 
+## Latest Desktop Launcher Update
+
+- Date: 2026-07-05.
+- Goal: make local company-server startup easier from Windows Desktop.
+- Change: added `start-2btex-desktop.ps1`, a safe launcher that starts `node start.js` only when port `3000` is not already listening, then opens `http://127.0.0.1:3000/`.
+- Local setup: created the desktop shortcut `2B Tex نظام التشغيل.lnk` with the `2B Tex Circular.ico` icon.
+- Runtime data rule: launcher uses the existing startup path and therefore keeps using `server-data/2btex.sqlite` through `start.js`; no database file is added to Git.
+- Not touched: SQLite data/schema, backend calculations, stock formulas, waste formulas, WhatsApp, A5.
+
 ## Latest Gluing Workflow Update
 
 - Date: 2026-07-02.

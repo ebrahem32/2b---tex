@@ -1,5 +1,14 @@
 # Development Log
 
+### Add Desktop Launcher
+
+- Date: 2026-07-05
+- Commit: pending.
+- Goal: allow the system to be started from a Windows Desktop icon without manually opening PowerShell.
+- Change: added `start-2btex-desktop.ps1`; it checks port `3000`, starts `node start.js` only if the system is not already running, and opens `http://127.0.0.1:3000/`.
+- Local setup: created `2B Tex نظام التشغيل.lnk` on the user's Desktop with the project icon.
+- Not touched: SQLite schema/data, backend calculations, stock formulas, waste formulas, WhatsApp service, A5 service.
+
 ### Prefer Local Runtime Database on Startup
 
 - Date: 2026-07-02
