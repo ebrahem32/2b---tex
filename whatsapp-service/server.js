@@ -365,7 +365,7 @@ process.on('uncaughtException', (error) => {
   scheduleReconnect(error?.message || String(error || 'Uncaught exception'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, process.env.WHATSAPP_HOST || '127.0.0.1', () => {
   console.log(`2B Tex WhatsApp service running on http://127.0.0.1:${PORT}`);
   initializeWhatsappClient().catch((error) => {
     console.error('WhatsApp initialize failed:', error.message);

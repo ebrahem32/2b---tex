@@ -1605,3 +1605,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: updated `F:\2B Tex\README-نقل-السيرفر.md` with the new archive name and removed the plaintext password.
 - Finding: `F:\2B Tex` still blocks `.js`/`.ps1` file creation as of 2026-07-05, so extraction on the company server still requires IT to allow script extensions first.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
+### Security Hardening Pass
+
+- Date: 2026-07-05
+- Commit: pending.
+- Version observed in code: `v2026.07.02.04`
+- Goal: close the review findings (LAN exposure, default password, brute-force, stored XSS) without touching operational logic.
+- Change: `backend/server.js` binds `127.0.0.1` by default (`BACKEND_HOST` override); `whatsapp-service/server.js` binds `127.0.0.1` by default (`WHATSAPP_HOST` override). Only the gateway on port 3000 stays public.
+- Change: removed hardcoded `151297` fallback; system-admin fallback requires `SYSTEM_PASS`; first-run seeding uses a random password when `SYSTEM_PASS` is unset.
+- Change: added login rate limiting on `/api/auth/login` (8 attempts / 15 min lock, env-overridable), returns 429 when locked.
+- Change: escaped customer/fabric/dyehouse free text in `modules/reportsUi.js` report tables (stored-XSS fix).
+- Change: `npm audit fix` in `whatsapp-service` (js-yaml advisory resolved).
+- Change: documented new security env vars in `.env.example`.
+- Test: `npm run check` passes; smoke test confirmed loopback binding, old password rejected, new password accepted, and 429 lockout.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, A5 service.

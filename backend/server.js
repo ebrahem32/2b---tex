@@ -8,7 +8,9 @@ const { DB_PATH, initDb, run, transaction, get, all, schemaHealth } = require('.
 const { calculateOrderSummary } = require('./calculations');
 
 const PORT = Number(process.env.PORT || 3050);
-const HOST = '0.0.0.0';
+const HOST = process.env.BACKEND_HOST || '127.0.0.1';
+const SYSTEM_USER = process.env.SYSTEM_USER || 'admin';
+const SYSTEM_PASS = process.env.SYSTEM_PASS || '';
 const BACKUP_DIR = path.join(__dirname, 'backups');
 
 fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -223,7 +225,7 @@ async function requestUser(req) {
       const separator = decoded.indexOf(':');
       const username = decoded.slice(0, separator);
       const password = decoded.slice(separator + 1);
-      if (username === (process.env.SYSTEM_USER || 'admin') && password === (process.env.SYSTEM_PASS || '151297')) {
+      if (SYSTEM_PASS && username === SYSTEM_USER && password === SYSTEM_PASS) {
         return { id: 'system-admin', username, name: 'مدير النظام', role: 'admin', is_active: 1 };
       }
       const row = await get('SELECT * FROM users WHERE username = ?', [username]);
@@ -248,8 +250,13 @@ function requireRole(minRole = 'viewer') {
 async function ensureDefaultAdminUser() {
   const countRow = await get('SELECT COUNT(*) AS count FROM users');
   if (Number(countRow?.count || 0) > 0) return;
-  const username = process.env.SYSTEM_USER || 'admin';
-  const password = process.env.SYSTEM_PASS || '151297';
+  const username = SYSTEM_USER;
+  // Never seed a well-known password. Use SYSTEM_PASS when provided,
+  // otherwise generate a random one so no guessable admin account exists.
+  const password = SYSTEM_PASS || crypto.randomBytes(24).toString('hex');
+  if (!SYSTEM_PASS) {
+    console.warn('[2B Tex] SYSTEM_PASS not set. Seeded admin with a random password; set SYSTEM_PASS or create a user to log in.');
+  }
   const user = {
     id: id(),
     name: 'مدير النظام',
@@ -2151,15 +2158,47 @@ app.get('/api/audit-log', asyncHandler(async (req, res) => {
   res.json(await all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?', [limit]));
 }));
 
+const LOGIN_MAX_ATTEMPTS = Number(process.env.LOGIN_MAX_ATTEMPTS || 8);
+const LOGIN_LOCK_MS = Number(process.env.LOGIN_LOCK_MS || 15 * 60 * 1000);
+const loginAttempts = new Map();
+
+function loginAttemptKey(req, username) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').toString().split(',')[0].trim();
+  return `${ip}|${String(username || '').toLowerCase()}`;
+}
+
+function loginLockRemainingMs(key) {
+  const entry = loginAttempts.get(key);
+  if (!entry) return 0;
+  if (Date.now() - entry.first > LOGIN_LOCK_MS) { loginAttempts.delete(key); return 0; }
+  if (entry.count < LOGIN_MAX_ATTEMPTS) return 0;
+  return LOGIN_LOCK_MS - (Date.now() - entry.first);
+}
+
+function recordLoginFailure(key) {
+  const entry = loginAttempts.get(key);
+  if (!entry || Date.now() - entry.first > LOGIN_LOCK_MS) {
+    loginAttempts.set(key, { count: 1, first: Date.now() });
+  } else {
+    entry.count += 1;
+  }
+}
+
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
   await ensureDefaultAdminUser();
   const username = String(req.body?.username || '').trim();
   const password = String(req.body?.password || '');
   if (!username || !password) return res.status(400).json({ error: 'اسم الدخول وكلمة المرور مطلوبين' });
+  const attemptKey = loginAttemptKey(req, username);
+  const lockRemaining = loginLockRemainingMs(attemptKey);
+  if (lockRemaining > 0) {
+    return res.status(429).json({ error: `تم تجاوز عدد محاولات الدخول. حاول بعد ${Math.ceil(lockRemaining / 60000)} دقيقة.` });
+  }
   let row = await get('SELECT * FROM users WHERE username = ?', [username]);
   const matchesStoredPassword = row && verifyPassword(password, row.password_hash);
-  const matchesSystemFallback = username === (process.env.SYSTEM_USER || 'admin') && password === (process.env.SYSTEM_PASS || '151297');
+  const matchesSystemFallback = Boolean(SYSTEM_PASS) && username === SYSTEM_USER && password === SYSTEM_PASS;
   if (!row && matchesSystemFallback) {
+    loginAttempts.delete(attemptKey);
     const user = { id:'system-admin', name:'مدير النظام', username, role:'admin', is_active:1 };
     const token = signSessionPayload({ id:user.id, username:user.username, name:user.name, role:user.role, exp:Date.now() + (8 * 60 * 60 * 1000) });
     res.setHeader('Set-Cookie', sessionCookie(token));
@@ -2167,8 +2206,10 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
     return res.json({ ok: true, user });
   }
   if (!row || Number(row.is_active) !== 1 || (!matchesStoredPassword && !matchesSystemFallback)) {
+    recordLoginFailure(attemptKey);
     return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
   }
+  loginAttempts.delete(attemptKey);
   const user = publicUser(row);
   const token = signSessionPayload({ id:user.id, username:user.username, name:user.name, role:user.role, exp:Date.now() + (8 * 60 * 60 * 1000) });
   res.setHeader('Set-Cookie', sessionCookie(token));

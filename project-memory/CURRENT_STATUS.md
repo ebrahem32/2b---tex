@@ -4,6 +4,21 @@
 
 `v2026.07.02.04`
 
+## Latest Security Hardening Pass
+
+- Date: 2026-07-05.
+- Scope: network exposure, default credentials, brute-force, and stored XSS. No calculations, schema, waste, or stock logic touched.
+- Change: backend now binds `127.0.0.1` by default (`BACKEND_HOST` override) instead of `0.0.0.0`, so `GET /api/bootstrap` and other unauthenticated reads are no longer reachable from the LAN; only the login gateway on port 3000 stays public.
+- Change: WhatsApp service now binds `127.0.0.1` by default (`WHATSAPP_HOST` override) instead of all interfaces.
+- Change: removed the hardcoded default password `151297` from `backend/server.js`. The system-admin fallback now works only when `SYSTEM_PASS` is set, and first-run seeding uses a random password when `SYSTEM_PASS` is absent (with a warning) so no guessable admin exists.
+- Change: added in-memory login rate limiting on `/api/auth/login` (default 8 failed attempts per ip+username, 15-minute lock, `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCK_MS` overrides), returning HTTP 429 when locked.
+- Change: escaped previously unescaped customer/fabric/dyehouse names in `modules/reportsUi.js` report tables (customer report + inside-dyehouse report) to close a stored-XSS path; the rest of the frontend already routed free text through `escapeHtml`/`safeText`.
+- Change: ran `npm audit fix` in `whatsapp-service` (js-yaml moderate advisory → 0 vulnerabilities).
+- Change: documented `AUTH_SECRET`, `SYSTEM_PASS`, `BACKEND_HOST`, `WHATSAPP_HOST`, and login-throttle vars in `.env.example`.
+- Verification: `npm run check` passes; runtime smoke test on an isolated instance confirmed loopback-only binding, `151297` rejected (401), correct password accepted (200), and 429 lockout after 8 bad attempts.
+- Operator note: on the company server set a strong `SYSTEM_PASS` and an independent `AUTH_SECRET`; on Windows also set `PUPPETEER_EXECUTABLE_PATH` for WhatsApp.
+- Not touched: `backend/calculations.js`, SQLite schema/data, stock formulas, waste formulas, A5 service.
+
 ## Latest Refreshed Company Server Migration Package
 
 - Date: 2026-07-05.
