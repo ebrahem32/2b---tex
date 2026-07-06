@@ -29,8 +29,12 @@ The system is not a billing system. It is the factory operations room.
 
 ## Source of Truth
 
-- Code source: GitHub.
-- Runtime: Railway.
+Decision 2026-07-05: GitHub and Railway are out of the workflow. No pushing to any remote.
+
+- Code source: the company server copy at `F:\2B Tex\system` (extracted git repository).
+- Active local workspace until cutover: `D:\2B Tex نظام التشغيل`.
+- Runtime: the company server (Windows), started with `npm start`.
+- Safety net: `F:\2B Tex\backups\` plus git commits in both copies. There is no remote copy.
 - Persistent project memory: `project-memory/`.
 
 ## Current UI Organization Memory

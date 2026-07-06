@@ -1620,3 +1620,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: documented new security env vars in `.env.example`.
 - Test: `npm run check` passes; smoke test confirmed loopback binding, old password rejected, new password accepted, and 429 lockout.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, A5 service.
+
+
+### Atomic Database Persistence And Post-GitHub Documentation Update
+
+- Date: 2026-07-06
+- Commit: pending.
+- Version observed in code: `v2026.07.02.04`
+- Goal: fix the riskiest infrastructure gap from the 2026-07-06 architecture review (non-atomic SQLite writes) and align project-memory docs with the 2026-07-05 decision to drop GitHub/Railway.
+- Change: `backend/db.js` `persist()` now writes the exported database to `<db>.tmp` and renames it atomically over the live file; falls back to the previous direct write if the rename fails (e.g. antivirus lock). This protects the SQLite file from corruption if the process dies mid-write.
+- Change: `project-memory/PROJECT_OVERVIEW.md`, `SYSTEM_ARCHITECTURE.md`, `SAFE_CHANGE_RULES.md`, and `RUNBOOK.md` updated: source of truth is `F:\2B Tex\system` (active workspace on D: until cutover), no pushing to remotes, Railway/GitHub sections replaced with company-server runtime, required server env vars documented, frontend module list completed.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste logic, WhatsApp service, A5 service, frontend behavior.

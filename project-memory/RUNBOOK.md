@@ -20,25 +20,23 @@ Start the system:
 npm start
 ```
 
-## Railway Runtime
+## Runtime
 
-Railway is the external runtime environment.
+Decision 2026-07-05: GitHub and Railway are out of the workflow. The system runs on the company server (Windows) from `F:\2B Tex\system`, started with `npm start`. Until cutover, the active workspace is `D:\2B Tex نظام التشغيل`.
 
-Expected project service:
+Required environment on the server before first start:
 
-- Repository: `ebrahem32/2b---tex`
-- Public URL: `https://2b-tex-railway-startjs.up.railway.app`
+- `SYSTEM_USER` and a strong `SYSTEM_PASS` (the gateway refuses to serve without them).
+- A strong independent `AUTH_SECRET` for session signing.
+- `PUPPETEER_EXECUTABLE_PATH` pointing to a local Chrome/Chromium for the WhatsApp service (the default `/usr/bin/chromium` is Linux-only).
 
-After pushing to `origin/main`, Railway should build and deploy automatically.
-
-## GitHub Workflow
+## Change Workflow
 
 Before changes:
 
 ```bash
 git status
 git branch
-git remote -v
 ```
 
 After changes:
@@ -47,8 +45,9 @@ After changes:
 npm run check
 git add <files>
 git commit -m "<clear message>"
-git push origin main
 ```
+
+Do NOT push to any remote. Sync the change to `F:\2B Tex\system` and commit there as well.
 
 ## Checks
 

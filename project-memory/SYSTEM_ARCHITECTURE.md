@@ -15,8 +15,19 @@ Current frontend modules:
 
 - `modules/navigation.js`
 - `modules/focusViews.js`
+- `modules/operationalAiManager.js`
+- `modules/todayOrdersUi.js`
 - `modules/aiUi.js`
 - `modules/documentsUi.js`
+- `modules/reportsUi.js`
+- `modules/warehouseUi.js`
+- `modules/ordersUi.js`
+- `modules/auditUi.js`
+- `modules/usersUi.js`
+- `modules/settingsUi.js`
+- `modules/formsUi.js`
+- `modules/pricingUi.js`
+- `modules/backendClient.js`
 
 Frontend direction:
 
@@ -72,5 +83,9 @@ Important AI endpoints:
 
 ## Source and Runtime
 
-- GitHub is the official source of code.
-- Railway is the external runtime.
+Decision 2026-07-05: GitHub and Railway are out of the workflow.
+
+- Official code source: `F:\2B Tex\system` on the company server.
+- Active local workspace until cutover: `D:\2B Tex نظام التشغيل`.
+- Runtime: the company server itself (`npm start` via `start.js`).
+- Database persistence in `backend/db.js` uses an atomic write (temp file + rename) to protect the SQLite file from corruption on power loss.

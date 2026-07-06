@@ -20,7 +20,7 @@
 ## Required Before Changes
 
 - Read `project-memory/`.
-- Work from the official local workspace: `D:\Codex\2B TEX`.
+- Work from the official local workspace: `D:\2B Tex نظام التشغيل` (until cutover to `F:\2B Tex\system`).
 - Run `git status`.
 - Understand the current requested scope.
 - Keep edits scoped.
@@ -31,15 +31,14 @@
 - Run `npm run check`.
 - Confirm `Operational flow check passed`.
 - Update `project-memory/` with the completed change, files touched, verification result, and any important operational rule learned.
-- Commit with a clear message.
-- Push to `origin/main` when requested.
+- Commit with a clear message. Do NOT push to any remote — GitHub is out of the workflow (decision 2026-07-05).
+- Sync the change to the company server copy at `F:\2B Tex\system`.
 - Report:
   - Files changed.
   - What changed.
   - What was not touched.
   - Test result.
   - Commit hash.
-  - Railway/GitHub status when checked.
 
 ## Frontend Refactor Rules
 

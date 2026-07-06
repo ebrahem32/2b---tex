@@ -197,7 +197,16 @@ function backfillAccessoryBatchFields() {
 
 function persist() {
   if (!db) return;
-  fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
+  const data = Buffer.from(db.export());
+  const tempPath = `${DB_PATH}.tmp`;
+  try {
+    fs.writeFileSync(tempPath, data);
+    fs.renameSync(tempPath, DB_PATH);
+  } catch (error) {
+    // rename may fail if the file is locked (antivirus/backup scan) — keep the old direct write as fallback
+    try { fs.unlinkSync(tempPath); } catch {}
+    fs.writeFileSync(DB_PATH, data);
+  }
 }
 
 async function exec(sql) {
