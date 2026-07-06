@@ -525,36 +525,42 @@ async function existingUniqueBusinessRow(table, data) {
   return null;
 }
 
-async function deleteOrderGraph(orderId) {
-  const order = await get('SELECT id, order_number FROM orders WHERE id = ?', [orderId]);
+function deleteOrderGraphTx(tx, orderId) {
+  const order = tx.get('SELECT id, order_number FROM orders WHERE id = ?', [orderId]);
   if (!order) return 0;
-  await run('DELETE FROM report_outbox WHERE order_id = ? OR order_number = ?', [order.id, order.order_number || '']);
-  await run('DELETE FROM dyehouse_transfers WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM raw_returns WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM gluing_batches WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM accessory_batches WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM customer_delivery_batches WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM finished_receiving_batches WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM dyehouse_delivery_batches WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM raw_receiving_batches WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM order_allocations WHERE order_id = ?', [order.id]);
-  await run('DELETE FROM orders WHERE id = ?', [order.id]);
+  tx.run('DELETE FROM report_outbox WHERE order_id = ? OR order_number = ?', [order.id, order.order_number || '']);
+  tx.run('DELETE FROM dyehouse_transfers WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM raw_returns WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM gluing_batches WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM accessory_batches WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM customer_delivery_batches WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM finished_receiving_batches WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM dyehouse_delivery_batches WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM raw_receiving_batches WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM order_allocations WHERE order_id = ?', [order.id]);
+  tx.run('DELETE FROM orders WHERE id = ?', [order.id]);
   return 1;
 }
 
+async function deleteOrderGraph(orderId) {
+  return transaction((tx) => deleteOrderGraphTx(tx, orderId));
+}
+
 async function deleteAllocationGraph(allocationId) {
-  const allocation = await get('SELECT id FROM order_allocations WHERE id = ?', [allocationId]);
-  if (!allocation) return 0;
-  await run('DELETE FROM dyehouse_transfers WHERE from_allocation_id = ? OR to_allocation_id = ?', [allocation.id, allocation.id]);
-  await run('DELETE FROM raw_returns WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM gluing_batches WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM accessory_batches WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM customer_delivery_batches WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM finished_receiving_batches WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM dyehouse_delivery_batches WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM raw_receiving_batches WHERE allocation_id = ?', [allocation.id]);
-  await run('DELETE FROM order_allocations WHERE id = ?', [allocation.id]);
-  return 1;
+  return transaction((tx) => {
+    const allocation = tx.get('SELECT id FROM order_allocations WHERE id = ?', [allocationId]);
+    if (!allocation) return 0;
+    tx.run('DELETE FROM dyehouse_transfers WHERE from_allocation_id = ? OR to_allocation_id = ?', [allocation.id, allocation.id]);
+    tx.run('DELETE FROM raw_returns WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM gluing_batches WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM accessory_batches WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM customer_delivery_batches WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM finished_receiving_batches WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM dyehouse_delivery_batches WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM raw_receiving_batches WHERE allocation_id = ?', [allocation.id]);
+    tx.run('DELETE FROM order_allocations WHERE id = ?', [allocation.id]);
+    return 1;
+  });
 }
 
 async function deleteCustomerGraph(customerId) {
@@ -564,21 +570,23 @@ async function deleteCustomerGraph(customerId) {
   const safeName = String(customer.name || customer.id || 'customer').replace(/[^\u0600-\u06FF\w-]+/g, '-').slice(0, 80) || 'customer';
   const backupPath = path.join(BACKUP_DIR, `before-full-customer-delete-${safeName}-${stamp}.sqlite`);
   if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, backupPath);
-  const orderRows = await all('SELECT id FROM orders WHERE customer_id = ?', [customer.id]);
-  let deletedOrders = 0;
-  for (const row of orderRows) deletedOrders += await deleteOrderGraph(row.id);
-  const pricingResult = await run('DELETE FROM pricings WHERE customer_id = ?', [customer.id]);
-  const customerBatchResult = await run('DELETE FROM customer_delivery_batches WHERE customer_name = ?', [customer.name || '']);
-  const outboxResult = await run('DELETE FROM report_outbox WHERE customer_name = ?', [customer.name || '']);
-  const customerResult = await run('DELETE FROM customers WHERE id = ?', [customer.id]);
-  return {
-    deletedCustomer: customerResult.changes || 0,
-    deletedOrders,
-    deletedPricings: pricingResult.changes || 0,
-    deletedCustomerBatches: customerBatchResult.changes || 0,
-    deletedOutbox: outboxResult.changes || 0,
-    backup: path.basename(backupPath),
-  };
+  return transaction((tx) => {
+    const orderRows = tx.all('SELECT id FROM orders WHERE customer_id = ?', [customer.id]);
+    let deletedOrders = 0;
+    for (const row of orderRows) deletedOrders += deleteOrderGraphTx(tx, row.id);
+    const pricingResult = tx.run('DELETE FROM pricings WHERE customer_id = ?', [customer.id]);
+    const customerBatchResult = tx.run('DELETE FROM customer_delivery_batches WHERE customer_name = ?', [customer.name || '']);
+    const outboxResult = tx.run('DELETE FROM report_outbox WHERE customer_name = ?', [customer.name || '']);
+    const customerResult = tx.run('DELETE FROM customers WHERE id = ?', [customer.id]);
+    return {
+      deletedCustomer: customerResult.changes || 0,
+      deletedOrders,
+      deletedPricings: pricingResult.changes || 0,
+      deletedCustomerBatches: customerBatchResult.changes || 0,
+      deletedOutbox: outboxResult.changes || 0,
+      backup: path.basename(backupPath),
+    };
+  });
 }
 
 async function cleanupLegacyTestOrders() {
