@@ -822,10 +822,10 @@ function checkPricingToOrderCarriesGroupedOperationalFields() {
 }
 
 function checkGroupedPricingVerifyUsesItemsJson() {
-  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-  assert(appSource.includes('function pricingPersistenceMatches'), 'pricing save: grouped pricing verification must use a dedicated matcher');
-  assert(appSource.includes('parseDbJsonArray(row.pricing_items_json)'), 'pricing save: grouped pricing verification must inspect saved price items JSON');
-  assert(appSource.includes('savedItems.length !== expectedItems.length'), 'pricing save: grouped pricing verification must compare item counts');
+  const guardsSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'persistenceGuards.js'), 'utf8');
+  assert(guardsSource.includes('function pricingPersistenceMatches'), 'pricing save: grouped pricing verification must use a dedicated matcher');
+  assert(guardsSource.includes('parseDbJsonArray(row.pricing_items_json)'), 'pricing save: grouped pricing verification must inspect saved price items JSON');
+  assert(guardsSource.includes('savedItems.length !== expectedItems.length'), 'pricing save: grouped pricing verification must compare item counts');
 }
 
 function checkPricingSaveBypassesLegacyHiddenRequiredFields() {
