@@ -895,7 +895,7 @@ function checkMultiWidthOrderRowsKeepWidthLabels() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('function allocationWidthLabel(order, allocation)'), 'multi-width orders: shared width label helper must exist');
   assert(appSource.includes('function allocationMovementLabel(order, allocation)'), 'multi-width orders: movement label must include the width label');
-  assert(appSource.includes('<td>${allocationWidthLabel(order, allocation)}</td>'), 'multi-width orders: color plan rows must show the related width label');
+  assert(appSource.includes('<td>${escapeHtml(allocationWidthLabel(order, allocation))}</td>'), 'multi-width orders: color plan rows must show the related width label');
   const movementUses = appSource.match(/allocationMovementLabel\(order, allocation\), batch\.quantity/g) || [];
   assert(movementUses.length >= 2, 'multi-width orders: receiving and return movement rows must show the related width label');
   assert(appSource.includes('accessoryAllocationLabel(batch)'), 'multi-width orders: accessory receiving rows must keep the related width label');
