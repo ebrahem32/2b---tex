@@ -1632,3 +1632,17 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: `project-memory/PROJECT_OVERVIEW.md`, `SYSTEM_ARCHITECTURE.md`, `SAFE_CHANGE_RULES.md`, and `RUNBOOK.md` updated: source of truth is `F:\2B Tex\system` (active workspace on D: until cutover), no pushing to remotes, Railway/GitHub sections replaced with company-server runtime, required server env vars documented, frontend module list completed.
 - Test: `npm run check` passes and operational flow check passes.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste logic, WhatsApp service, A5 service, frontend behavior.
+
+
+### Internal Build Hardening: Atomic Deletes, AI Layer Extraction, Persistence Guards Module, XSS Escaping
+
+- Date: 2026-07-06
+- Commits: 95d4f62, 322656c, 0deeb69, 50ac973 (plus this log entry).
+- Goal: execute the four priorities from the 2026-07-06 internal-structure review.
+- Change: deleteOrderGraph/deleteAllocationGraph/deleteCustomerGraph in `backend/server.js` now run inside `db.transaction()`; a shared sync helper lets full customer deletion be one atomic transaction. Interrupted deletes roll back instead of leaving partial graphs.
+- Change: the ~1340-line AI employee layer moved from `backend/server.js` to `backend/aiEmployee.js` as a `createAiEmployee(deps)` factory (injected: repairMissingCustomersFromReferences, readableCustomerNameFromId). server.js went from 2812 to 1679 lines. All four `/api/ai/*` endpoints smoke-tested on a temp DB.
+- Change: first safe extraction from PERSISTENCE_SAVE_FLOW_REVIEW.md done: `modules/persistenceGuards.js` (`createPersistenceGuards(deps)`) now holds backendBatchType/backendSnapshot(Collection) and all verify*Persisted readback helpers. ensureBackendForWrite and rollbackAfterBackendWriteFailure stay in app.js per the review. Wired in index.html and check:app.
+- Change: escapeHtml applied to 32 real unescaped free-text interpolation sites found by a template scan (reportsUi management tables, customer ledger, order-details panel including the weavingSource value attribute, Amal document rows, weaving slip options). Wrapped paths (safeText/safe/renderList/listHtml) verified as already escaping.
+- Change: `scripts/operational-flow-check.js` updated to read the AI functions from backend/aiEmployee.js, the pricing matcher from modules/persistenceGuards.js, and the escaped width-label form. Same assertions, new locations.
+- Test: `npm run check` passes and operational flow check passes after each commit; AI endpoints smoke-tested live.
+- Not touched: backend calculations, SQLite schema/data, stock formulas, waste logic, WhatsApp service, A5 service, route behavior.
