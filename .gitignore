@@ -15,6 +15,7 @@ Reports/
 # Local secrets
 .env
 .env.local
+.env.sqlserver.local
 ai-service/.env
 !.env.example
 !**/.env.example

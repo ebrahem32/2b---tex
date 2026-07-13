@@ -25,6 +25,17 @@ const IS_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PRO
 const ALLOW_DB_SEED = process.env.ALLOW_DB_SEED === '1';
 const VOLUME_ROOT = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data';
 const WHATSAPP_DATA_DIR = process.env.WHATSAPP_DATA_DIR || (IS_RAILWAY ? path.join(VOLUME_ROOT, 'whatsapp') : path.join(__dirname, 'whatsapp-service', 'data'));
+const puppeteerExecutablePath = process.env.PUPPETEER_EXECUTABLE_PATH || (IS_RAILWAY ? '/usr/bin/chromium' : '');
+const WHATSAPP_SERVICE_DIR = path.join(__dirname, 'whatsapp-service');
+const LOCAL_WHATSAPP_SERVICE_DIR = process.env.WHATSAPP_SERVICE_RUNTIME || 'C:\\ProgramData\\2BTex\\whatsapp-service';
+
+function whatsappServiceCwd() {
+  if (!IS_RAILWAY && fs.existsSync(path.join(LOCAL_WHATSAPP_SERVICE_DIR, 'node_modules')) && fs.existsSync(path.join(LOCAL_WHATSAPP_SERVICE_DIR, 'package.json'))) {
+    fs.copyFileSync(path.join(WHATSAPP_SERVICE_DIR, 'server.js'), path.join(LOCAL_WHATSAPP_SERVICE_DIR, 'server.js'));
+    return LOCAL_WHATSAPP_SERVICE_DIR;
+  }
+  return WHATSAPP_SERVICE_DIR;
+}
 
 function failStartup(message) {
   console.error('==========================================');
@@ -88,11 +99,11 @@ launch('backend', ['server.js'], path.join(__dirname, 'backend'), {
 });
 
 // طھط´ط؛ظٹظ„ ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨ ط¯ط§ط®ظ„ظٹظ‹ط§ ط­طھظ‰ ظٹطھط¹ط§ظ…ظ„ ط§ظ„ظƒظ…ط¨ظٹظˆطھط± ظˆط§ظ„ظ…ظˆط¨ط§ظٹظ„ ظ…ط¹ ظ†ظپط³ ط±ط§ط¨ط· Railway.
-launch('whatsapp', ['server.js'], path.join(__dirname, 'whatsapp-service'), {
+launch('whatsapp', ['server.js'], whatsappServiceCwd(), {
   PORT: WHATSAPP_PORT,
   DATA_DIR: WHATSAPP_DATA_DIR,
   REPORTS_DIR: path.join(WHATSAPP_DATA_DIR, 'reports'),
-  PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+  ...(puppeteerExecutablePath ? { PUPPETEER_EXECUTABLE_PATH: puppeteerExecutablePath } : {}),
 }, { critical: false, restartDelayMs: 30000 });
 
 // طھط´ط؛ظٹظ„ ط§ظ„ظ€ frontend ط¨ط¹ط¯ 3 ط«ظˆط§ظ†ظٹ ظ„ظ„طھط£ظƒط¯ ط£ظ† ط§ظ„ظ€ backend ط¬ط§ظ‡ط²

@@ -1,5 +1,17 @@
 # Development Log
 
+### Move Active Runtime To Company Server Folder
+
+- Date: 2026-07-12
+- Goal: run the system from `F:\2B Tex\system` for LAN usage by multiple client devices.
+- Change: synchronized the current project source into `F:\2B Tex\system` while preserving a backup of the previous F-drive runtime database.
+- Change: copied the current runtime SQLite database to `F:\2B Tex\system\server-data\2btex.sqlite`.
+- Change: added `F:\2B Tex\server-tools\start-2btex-server.ps1`.
+- Change: created two F-drive shortcuts: `تشغيل سيرفر 2B Tex.lnk` for the server and `فتح نظام 2B Tex على الشبكة.lnk` for clients.
+- Verification: `npm run check` passed from `F:\2B Tex\system`; operational flow check passed; backend health reports `F:\2B Tex\system\server-data\2btex.sqlite`; LAN URL `http://10.68.82.50:3000/` returned HTTP 200 from the server.
+- Note: adding the Windows Firewall rule for inbound TCP `3000` requires administrator permission.
+- Not touched: SQLite schema, backend calculations, stock formulas, waste formulas.
+
 ### Add Desktop Launcher
 
 - Date: 2026-07-05
@@ -1646,3 +1658,63 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: `scripts/operational-flow-check.js` updated to read the AI functions from backend/aiEmployee.js, the pricing matcher from modules/persistenceGuards.js, and the escaped width-label form. Same assertions, new locations.
 - Test: `npm run check` passes and operational flow check passes after each commit; AI endpoints smoke-tested live.
 - Not touched: backend calculations, SQLite schema/data, stock formulas, waste logic, WhatsApp service, A5 service, route behavior.
+
+### Local Cleanup Status
+
+## Latest Local Cleanup Status
+
+- Date: 2026-07-12.
+- Primary project folder is now `F:\2B Tex\system`.
+- Desktop shortcut now starts `F:\2B Tex\server-tools\start-2btex-server.ps1`.
+- Deleted the empty old marker file `D:\2B Tex`.
+- `D:\2B Tex نظام التشغيل` is empty but still locked by the running Codex/session directory handle.
+- `D:\2B Tex نظام التشغيل__broken-contents-20260701-1720` only remains because Windows service `Cloudflared` is running from that old path and requires Administrator permission to stop/delete.
+- Added admin cleanup script: `F:\2B Tex\server-tools\cleanup-old-2btex-folders-admin.ps1`.
+
+### SQL Server Migration Preparation
+
+- Date: 2026-07-12
+- Commit: pending.
+- Goal: prepare 2B Tex for SQL Server so several company devices can safely use one shared database instead of SQLite as the only writer.
+- Change: `backend/db.js` now selects the database client from `DB_CLIENT`; SQLite remains the default.
+- Change: previous SQLite database implementation moved to `backend/db-sqlite.js`.
+- Change: added `backend/db-mssql.js` with SQL Server connection/config support and the same backend DB interface.
+- Change: added `backend/schema.mssql.sql` for SQL Server schema creation.
+- Change: added `scripts/migrate-sqlite-to-mssql.js` for a copy-only migration from SQLite into SQL Server; it skips existing target rows and never deletes source SQLite data.
+- Change: added root `mssql` dependency and `npm run migrate:sqlserver`.
+- Change: documented SQL Server environment variables in `.env.example`.
+- Test: `npm run check` passes and operational flow check passes on the current SQLite runtime.
+- Blocker: a SQL Server Express/Standard service or connection string is still required before the live cutover. LocalDB was found but is not recommended for LAN multi-device operation.
+- Not touched: production SQLite data contents, backend calculations, stock formulas, waste logic, AI backend, WhatsApp service, A5 service.
+
+### SQL Server Express Cutover
+
+- Date: 2026-07-12
+- Commit: pending.
+- Goal: activate SQL Server Express as the shared company-server database for multi-device operation.
+- Change: installed SQL Server Express 2022 instance `SQLEXPRESS`, enabled TCP on port `1433`, started `MSSQL$SQLEXPRESS` and `SQLBrowser`.
+- Change: created database `2BTex` and migrated the current SQLite data into it using `scripts/migrate-sqlite-to-mssql.js`.
+- Change: created a pre-migration SQLite backup in `F:\2B Tex\backups\pre-sqlserver-migration`.
+- Change: added `.env.sqlserver.local` to `.gitignore`; the local file is required for the server but must not be committed because it contains credentials.
+- Change: updated `F:\2B Tex\server-tools\start-2btex-server.ps1` so the single startup shortcut loads SQL Server automatically and falls back to SQLite only when the SQL env file is absent.
+- Change: installed a local WhatsApp dependency cache in `C:\ProgramData\2BTex\whatsapp-service` and updated `start.js` to run WhatsApp from that cache on Windows, avoiding network-share module loading delays while preserving project data paths.
+- Test: SQL Server adapter smoke test passed with `orders=77` and `users=3`.
+- Test: runtime health passed: frontend `3000`, backend `3050` connected to SQL Server database `2BTex`, WhatsApp `3020` reachable with status `waiting_for_qr`.
+- Test: `npm run check` passes and operational flow check passes.
+- Not touched: backend calculations, stock formulas, waste logic, AI backend behavior, WhatsApp internals, A5 service.
+
+### Production Closing: Health Check, SQL Backup, Daily Backup Task, Firewall Script
+
+- Date: 2026-07-13
+- Commit: pending.
+- Goal: close the company-server runtime for production after SQL Server cutover.
+- Change: added `F:\2B Tex\server-tools\production-health-check.ps1` to verify SQL Server, backend, frontend, WhatsApp, and login-page reachability in one check.
+- Change: added `F:\2B Tex\server-tools\backup-sqlserver.ps1` for SQL Server `.bak` backups with a copy under `F:\2B Tex\backups\sqlserver`.
+- Change: fixed backup permissions by writing first to `C:\ProgramData\2BTex\backups\sqlserver`, granting the SQL Server service write access, then copying the result to the project backup folder.
+- Change: created Windows scheduled task `2B Tex SQL Server Daily Backup`, daily at `02:30`, status `Ready`.
+- Change: added `F:\2B Tex\server-tools\production-firewall-admin.ps1` and `.cmd` wrapper to open only the frontend port `3000` and disable direct SQL Server port `1433` exposure. This script must be run once as Administrator.
+- Test: successful SQL Server backup created: `2btex-sqlserver-20260713-142201.bak` (10.87 MB).
+- Test: production health check passed: SQL Server, ports `3000/3050/3020`, backend health, frontend login page, and WhatsApp service are reachable.
+- Test: `npm run check` passes and operational flow check passes.
+- Remaining manual step: run the firewall admin script as Administrator, then test from another company device.
+- Not touched: production data contents, backend calculations, stock formulas, waste logic, AI backend behavior, WhatsApp internals, A5 service.

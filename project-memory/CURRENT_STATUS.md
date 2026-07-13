@@ -4,6 +4,20 @@
 
 `v2026.07.02.04`
 
+## Latest Company Server Runtime Update
+
+- Date: 2026-07-12.
+- Goal: run the system from the company server folder instead of Railway.
+- Active server folder: `F:\2B Tex\system`.
+- Active runtime database: `F:\2B Tex\system\server-data\2btex.sqlite`.
+- LAN URL tested from the server: `http://10.68.82.50:3000/`.
+- Created shortcuts inside `F:\2B Tex`:
+  - `تشغيل سيرفر 2B Tex.lnk`: starts the system from the server folder.
+  - `فتح نظام 2B Tex على الشبكة.lnk`: opens the LAN URL for client devices.
+- Verification: `npm run check` passed from `F:\2B Tex\system`; operational flow check passed; backend health reports the F-drive database.
+- Note: Windows Firewall rule for port `3000` requires administrator permission if other devices cannot connect.
+- Not touched: SQLite schema, backend calculations, stock formulas, waste formulas.
+
 ## Latest Security Hardening Pass
 
 - Date: 2026-07-05.
@@ -1433,3 +1447,69 @@ For Phase 3.1 local verification before commit:
 - Post-restore counts: `orders=72`, `pricings=47`, `customers=24`, `order_allocations=216`, `dyehouse_delivery_batches=121`, `finished_receiving_batches=201`, `customer_delivery_batches=156`, `dyehouse_transfers=11`, `accessory_batches=161`, `users=3`.
 - Login verification passed for `Ibrahim Assem`.
 - Not touched: SQLite schema, backend calculations, stock formulas, waste formulas, Git-tracked bundled database.
+
+## Latest Local Cleanup Status
+
+- Date: 2026-07-12.
+- Primary project folder is now `F:\2B Tex\system`.
+- Desktop shortcut now starts `F:\2B Tex\server-tools\start-2btex-server.ps1`.
+- Deleted the empty old marker file `D:\2B Tex`.
+- `D:\2B Tex نظام التشغيل` is empty but still locked by the running Codex/session directory handle.
+- `D:\2B Tex نظام التشغيل__broken-contents-20260701-1720` only remains because Windows service `Cloudflared` is running from that old path and requires Administrator permission to stop/delete.
+- Added admin cleanup script: `F:\2B Tex\server-tools\cleanup-old-2btex-folders-admin.ps1`.
+
+## Latest SQL Server Migration Preparation
+
+- Date: 2026-07-12.
+- Goal: prepare the system for multi-device company-server use without keeping SQLite as the only writer.
+- Added a database-client selector in `backend/db.js`; default remains SQLite unless `DB_CLIENT=mssql` is set.
+- Preserved the previous SQLite implementation in `backend/db-sqlite.js`.
+- Added `backend/db-mssql.js` as a SQL Server adapter with the same `get/all/run/exec/transaction/schemaHealth` interface used by the backend.
+- Added `backend/schema.mssql.sql` for SQL Server table creation.
+- Added `scripts/migrate-sqlite-to-mssql.js` to copy the current SQLite data into SQL Server without deleting source data and without overwriting existing target rows.
+- Added `mssql` dependency and `npm run migrate:sqlserver`.
+- Added SQL Server environment examples to `.env.example`.
+- Current status: code-level support is ready and `npm run check` passes on the current SQLite runtime.
+- Important blocker: no SQL Server Express/Standard service or connection was found on this machine yet. LocalDB exists but is not recommended for multi-device LAN use.
+- No production data was deleted, reset, or migrated during this preparation step.
+
+## Latest SQL Server Express Cutover
+
+- Date: 2026-07-12.
+- Goal: move the company-server runtime from single-writer SQLite to SQL Server Express for safer multi-device use.
+- SQL Server Express 2022 installed successfully as instance `SQLEXPRESS`.
+- SQL Server services verified: `MSSQL$SQLEXPRESS` running, `SQLBrowser` running, TCP enabled on port `1433`.
+- Created SQL Server database `2BTex`.
+- Migrated the current SQLite runtime data into SQL Server without deleting the SQLite source.
+- Migration counts verified: `orders=77`, `users=3`, with all operational tables copied.
+- Created pre-migration SQLite backup: `F:\2B Tex\backups\pre-sqlserver-migration\2btex-20260712-184119.sqlite`.
+- Added local SQL Server environment file `.env.sqlserver.local`; it is intentionally ignored by Git because it contains credentials.
+- Updated server launcher `F:\2B Tex\server-tools\start-2btex-server.ps1` to load SQL Server settings automatically when `.env.sqlserver.local` exists, with SQLite fallback only if SQL settings are absent.
+- Updated `start.js` so WhatsApp runs from local dependency cache `C:\ProgramData\2BTex\whatsapp-service` on Windows while keeping WhatsApp data/reports under the project folder.
+- SQL Server adapter smoke test passed: `orders=77`, `users=3`.
+- Runtime health verified: frontend `3000` OK, backend `3050` OK with database `2BTex`, WhatsApp `3020` OK and waiting for QR login.
+- `npm run check` passed and `Operational flow check passed`.
+- Not touched: backend calculations, stock formulas, waste formulas, AI backend behavior, WhatsApp internals, A5 service logic.
+
+## Latest Production Closing Status
+
+- Date: 2026-07-13.
+- Goal: close the company-server runtime for production after SQL Server cutover.
+- Production health check passed:
+  - SQL Server `SQLEXPRESS` service running.
+  - SQL port `1433` listening.
+  - Frontend `3000` listening and login page returns HTTP 200.
+  - Backend `3050` listening and `/api/health` reports database `2BTex`.
+  - WhatsApp service `3020` reachable.
+- `npm run check` passed and `Operational flow check passed`.
+- SQL Server daily backup script added at `F:\2B Tex\server-tools\backup-sqlserver.ps1`.
+- First successful SQL Server backup created after fixing SQL service write permissions:
+  `F:\2B Tex\backups\sqlserver\2btex-sqlserver-20260713-142201.bak`.
+- Windows scheduled task created:
+  `2B Tex SQL Server Daily Backup`, daily at `02:30`, status `Ready`.
+- Production health script added:
+  `F:\2B Tex\server-tools\production-health-check.ps1`.
+- Firewall admin script added:
+  `F:\2B Tex\server-tools\production-firewall-admin.cmd`.
+- Remaining manual production lock step: run the firewall admin script once as Administrator to keep port `3000` open for users and disable direct SQL Server port `1433` exposure.
+- Not touched: production SQL data contents, backend calculations, stock formulas, waste formulas, AI backend behavior, WhatsApp internals, A5 service logic.

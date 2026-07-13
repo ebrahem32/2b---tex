@@ -8,14 +8,18 @@
     "check": "npm run check:app && npm run check:server && npm run check:backend && npm run check:start && npm run check:operations",
     "check:app": "node --check app.js && node --check documents.js && node --check orders.js && node --check pricing.js && node --check modules/navigation.js && node --check modules/focusViews.js && node --check modules/operationalAiManager.js && node --check modules/todayOrdersUi.js && node --check modules/aiUi.js && node --check modules/documentsUi.js && node --check modules/reportsUi.js && node --check modules/warehouseUi.js && node --check modules/ordersUi.js && node --check modules/auditUi.js && node --check modules/usersUi.js && node --check modules/settingsUi.js && node --check modules/formsUi.js && node --check modules/pricingUi.js && node --check modules/persistenceGuards.js && node --check modules/backendClient.js",
     "check:server": "node --check server.js",
-    "check:backend": "node --check backend/server.js && node --check backend/aiEmployee.js && node --check backend/calculations.js && node --check backend/tools/import-localstorage.js",
+    "check:backend": "node --check backend/server.js && node --check backend/db.js && node --check backend/db-sqlite.js && node --check backend/db-mssql.js && node --check backend/aiEmployee.js && node --check backend/calculations.js && node --check backend/tools/import-localstorage.js",
     "check:start": "node --check start.js",
     "check:operations": "node --check scripts/full-operational-test.js && node scripts/operational-flow-check.js",
-    "test:operational-full": "node scripts/full-operational-test.js"
+    "test:operational-full": "node scripts/full-operational-test.js",
+    "migrate:sqlserver": "node scripts/migrate-sqlite-to-mssql.js"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "puppeteer-core": "^25.1.0"
+  },
+  "dependencies": {
+    "mssql": "^11.0.1"
   }
 }
