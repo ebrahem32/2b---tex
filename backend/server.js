@@ -28,14 +28,14 @@ const TABLE_FIELDS = {
   pricings: ['id','pricing_number','customer_id','pricing_date','fabric_type','material_type','dyehouse','color_class','quantity','inch_width','finished_weight','raw_cost','dye_cost','waste_percent','extra_cost','profit_per_kg','unit_price','total_price','pricing_items_json','payment_terms','notes','status','created_at','updated_at'],
   orders: ['id','order_number','pricing_id','customer_id','order_date','product_code','fabric_type','total_raw_quantity','expected_waste_percent','width_mode','width_lines_json','inch_width','kilo_price','raw_cost','payment_terms','accessory_type','accessory_percent','accessory_lines_json','dyehouse','weaving_source','notes','operation_notes_json','status','is_closed','created_at','updated_at'],
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','width_line_id','raw_inch','raw_width','finished_width','finished_weight','accessory_quantity_manual','notes','created_at','updated_at'],
-  raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','source_document_json','created_at','updated_at'],
-  dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','width_line_id','note_number','notes','source_document_json','created_at','updated_at'],
-  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','note_number','notes','source_document_json','created_at','updated_at'],
-  customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','customer_name','unit_price','total_price','payment_terms','note_number','movement','notes','source_document_json','created_at','updated_at'],
-  accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','source_document_json','created_at','updated_at'],
-  raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','source_document_json','created_at','updated_at'],
-  gluing_batches: ['id','order_id','allocation_id','batch_date','quantity','movement','partner_fabric','output_name','customer_name','note_number','notes','source_document_json','created_at','updated_at'],
-  dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_at','updated_at'],
+  raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','width_line_id','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','customer_name','unit_price','total_price','payment_terms','note_number','movement','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  gluing_batches: ['id','order_id','allocation_id','batch_date','quantity','movement','partner_fabric','output_name','customer_name','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  dyehouse_transfers: ['id','order_id','from_allocation_id','to_allocation_id','from_dyehouse','to_dyehouse','quantity','transfer_date','note_number','notes','created_by','updated_by','created_at','updated_at'],
   report_outbox: ['id','report_type','order_id','order_number','customer_name','target_group','message_text','attachment_path','status','error_message','retry_count','created_at','sent_at'],
   audit_log: ['id','action','entity_type','entity_id','before_json','after_json','note','created_at'],
   users: ['id','name','username','password_hash','role','is_active','created_at','updated_at'],
@@ -45,6 +45,15 @@ function tableData(table, data) {
   const allowed = TABLE_FIELDS[table];
   if (!allowed) return data;
   return Object.fromEntries(Object.entries(data).filter(([key]) => allowed.includes(key)));
+}
+
+function withMutationActor(table, data, mode = 'create') {
+  const body = { ...(data || {}) };
+  const actor = auditActorLabel(currentAuditActor());
+  if (!actor || !TABLE_FIELDS[table]) return body;
+  if (TABLE_FIELDS[table].includes('updated_by') && !body.updated_by) body.updated_by = actor;
+  if (mode === 'create' && TABLE_FIELDS[table].includes('created_by') && !body.created_by) body.created_by = actor;
+  return body;
 }
 
 function id() {
@@ -448,7 +457,7 @@ async function auditMutation(action, entityType, entityId, beforeValue = null, a
 }
 
 function insertSql(table, data) {
-  const filtered = tableData(table, data || {});
+  const filtered = tableData(table, withMutationActor(table, data || {}, 'create'));
   const body = { id: filtered.id || id(), ...filtered, created_at: filtered.created_at || now(), updated_at: filtered.updated_at || now() };
   const keys = Object.keys(body);
   return {
@@ -459,7 +468,7 @@ function insertSql(table, data) {
 }
 
 function updateSql(table, data, idValue) {
-  const body = { ...tableData(table, data || {}), updated_at: now() };
+  const body = { ...tableData(table, withMutationActor(table, data || {}, 'update')), updated_at: now() };
   delete body.id;
   delete body.created_at;
   const keys = Object.keys(body);

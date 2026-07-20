@@ -28,14 +28,14 @@ const REQUIRED_COLUMNS = {
     'raw_width',
     'accessory_quantity_manual',
   ],
-  raw_receiving_batches: ['source_document_json'],
-  dyehouse_delivery_batches: ['width_line_id', 'source_document_json'],
-  finished_receiving_batches: ['note_number', 'source_document_json'],
-  customer_delivery_batches: ['customer_name', 'unit_price', 'total_price', 'payment_terms', 'note_number', 'movement', 'source_document_json'],
-  accessory_batches: ['batch_date', 'note_number', 'movement', 'source_document_json'],
-  raw_returns: ['note_number', 'source_document_json'],
-  gluing_batches: ['movement', 'partner_fabric', 'output_name', 'customer_name', 'note_number', 'source_document_json'],
-  dyehouse_transfers: ['note_number'],
+  raw_receiving_batches: ['source_document_json', 'created_by', 'updated_by'],
+  dyehouse_delivery_batches: ['width_line_id', 'source_document_json', 'created_by', 'updated_by'],
+  finished_receiving_batches: ['note_number', 'source_document_json', 'created_by', 'updated_by'],
+  customer_delivery_batches: ['customer_name', 'unit_price', 'total_price', 'payment_terms', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
+  accessory_batches: ['batch_date', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
+  raw_returns: ['note_number', 'source_document_json', 'created_by', 'updated_by'],
+  gluing_batches: ['movement', 'partner_fabric', 'output_name', 'customer_name', 'note_number', 'source_document_json', 'created_by', 'updated_by'],
+  dyehouse_transfers: ['note_number', 'created_by', 'updated_by'],
   users: ['name', 'username', 'password_hash', 'role', 'is_active'],
 };
 
@@ -114,7 +114,11 @@ function runMigrations() {
     'accessory_batches',
     'raw_returns',
     'gluing_batches',
-  ].forEach((table) => addColumnIfMissing(table, 'source_document_json TEXT'));
+  ].forEach((table) => {
+    addColumnIfMissing(table, 'source_document_json TEXT');
+    addColumnIfMissing(table, 'created_by TEXT');
+    addColumnIfMissing(table, 'updated_by TEXT');
+  });
   [
     'customer_name TEXT',
     'unit_price REAL DEFAULT 0',
@@ -138,6 +142,8 @@ function runMigrations() {
     'note_number TEXT',
   ].forEach((definition) => addColumnIfMissing('gluing_batches', definition));
   addColumnIfMissing('dyehouse_transfers', 'note_number TEXT');
+  addColumnIfMissing('dyehouse_transfers', 'created_by TEXT');
+  addColumnIfMissing('dyehouse_transfers', 'updated_by TEXT');
   [
     'name TEXT',
     'username TEXT',

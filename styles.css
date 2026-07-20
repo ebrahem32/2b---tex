@@ -261,7 +261,11 @@
 @media print{.document-meta{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}.document-meta div{padding:7px 8px!important;font-size:11px!important}.document-meta span{font-size:9px!important}}
 @media print{.two-b-report .document-meta{grid-template-columns:repeat(6,1fr)!important;gap:0!important}.two-b-report .document-meta div{font-size:10px!important;min-height:46px!important;padding:7px 6px!important;gap:5px!important}.two-b-report .document-meta span{font-size:8px!important}.two-b-report .report-title h2{font-size:24px!important}.two-b-report .report-title h2 small{font-size:16px!important}.two-b-report .report-section{margin-top:14px!important}.two-b-report .report-section h3{font-size:15px!important;padding-bottom:5px!important}.two-b-report th,.two-b-report td{font-size:9.5px!important;padding:6px 5px!important}.two-b-report .document-footer{margin-top:14px!important;padding-top:8px!important}}
 .kpi-grid strong{font-size:22px;color:#071527}
-.batch-item{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.batch-item{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.batch-main{display:grid;gap:7px;min-width:0}
+.batch-meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px;line-height:1.5}
+.batch-meta[hidden]{display:none!important}
+.batch-meta span{border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:rgba(255,255,255,.03)}
 .batch-actions{display:flex;gap:6px;flex-wrap:wrap}
 .mini-btn.danger{color:#fecaca}
 .whatsapp-settings-sheet .summary-grid{grid-template-columns:2fr 1fr}

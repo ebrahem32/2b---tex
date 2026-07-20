@@ -1,16 +1,16 @@
 # Development Log
 
-### Move Active Runtime To Company Server Folder
+### Record Movement User Attribution
 
-- Date: 2026-07-12
-- Goal: run the system from `F:\2B Tex\system` for LAN usage by multiple client devices.
-- Change: synchronized the current project source into `F:\2B Tex\system` while preserving a backup of the previous F-drive runtime database.
-- Change: copied the current runtime SQLite database to `F:\2B Tex\system\server-data\2btex.sqlite`.
-- Change: added `F:\2B Tex\server-tools\start-2btex-server.ps1`.
-- Change: created two F-drive shortcuts: `تشغيل سيرفر 2B Tex.lnk` for the server and `فتح نظام 2B Tex على الشبكة.lnk` for clients.
-- Verification: `npm run check` passed from `F:\2B Tex\system`; operational flow check passed; backend health reports `F:\2B Tex\system\server-data\2btex.sqlite`; LAN URL `http://10.68.82.50:3000/` returned HTTP 200 from the server.
-- Note: adding the Windows Firewall rule for inbound TCP `3000` requires administrator permission.
-- Not touched: SQLite schema, backend calculations, stock formulas, waste formulas.
+- Date: 2026-07-19
+- Commit: pending.
+- Goal: show who recorded or last edited every operational movement, so daily entries are attributable per user.
+- Change: added `created_by` and `updated_by` columns to all movement tables (`raw_receiving_batches`, `dyehouse_delivery_batches`, `finished_receiving_batches`, `customer_delivery_batches`, `accessory_batches`, `raw_returns`, `gluing_batches`, `dyehouse_transfers`) through safe add-column-if-missing migrations in both `backend/db-mssql.js` and `backend/db-sqlite.js`.
+- Change: `backend/server.js` now stamps the current audit actor on every insert (`created_by` + `updated_by`) and every update (`updated_by`) through a new `withMutationActor()` helper, and exposes both columns in `TABLE_FIELDS`.
+- Change: the frontend maps `created_by`/`updated_by` into movement state, shows a `المستخدم` badge for the logged-in user, and displays the recording user on movement rows with `غير مسجل` as the fallback for older rows that predate the columns.
+- Existing rows keep empty attribution; no historical data is rewritten.
+- Test: `npm run check` passes and `Operational flow check passed`.
+- Not touched: production data rows, backend calculations, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
 
 ### Add Desktop Launcher
 
@@ -1537,6 +1537,28 @@ This file records important system changes. New entries should follow `CHANGE_TE
 
 ### Price Accessories As Full Costing Lines
 
+### Consolidate Project To One Folder
+
+- Date: 2026-07-19
+- Goal: keep all 2B Tex runtime files under one clear project folder.
+- Change: confirmed `F:\2B` was an accidental Chromium/browser profile folder and removed it.
+- Change: confirmed the canonical project folder is `F:\2B Tex`.
+- Verification: production health check passed after cleanup: SQL Server, frontend, backend, WhatsApp, and login page are reachable.
+- Not touched: production data, SQL Server contents, backend calculations, stock formulas, waste logic.
+
+### Fix Windows App Launch On Server GPU Environment
+
+- Date: 2026-07-19
+- Goal: make the one-click Windows app open reliably on the company server.
+- Finding: the previous portable EXE exited with code `1` because Electron failed to start a GPU process.
+- Change: disabled Electron hardware acceleration/GPU switches in `windows-app\src\main.js`.
+- Change: root and desktop shortcuts now target `F:\2B Tex\windows-app\dist\win-unpacked\2B Tex.exe`.
+- Change: moved the failing portable EXE to `F:\2B Tex\backups\disabled-launchers`.
+- Change: updated `F:\2B Tex\2B Tex.cmd` to open the same working Windows app.
+- Test: launching `F:\2B Tex\2B Tex.lnk` starts the Windows app.
+- Test: production health check passes after the fix.
+- Not touched: production data, SQL Server contents, backend calculations, stock formulas, waste logic.
+
 - Date: 2026-07-01
 - Commit: pending.
 - Version: `v2026.07.01.01`
@@ -1616,105 +1638,132 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: copied the live runtime database `server-data\2btex.sqlite` to `F:\2B Tex\data\2btex.sqlite` with hash verification while the system was running; the previous snapshot was kept in `F:\2B Tex\backups\`.
 - Change: updated `F:\2B Tex\README-نقل-السيرفر.md` with the new archive name and removed the plaintext password.
 - Finding: `F:\2B Tex` still blocks `.js`/`.ps1` file creation as of 2026-07-05, so extraction on the company server still requires IT to allow script extensions first.
+### Stabilize Windows Client App Folder Distribution
+
+- Date: 2026-07-19
+- Client app version: `2026.07.19-client.2`.
+- Goal: make the single shared 2B Tex icon work from any company workstation without requiring SQL Server, Node.js, Python, or a local database on the client.
+- Change: switched the active client distribution from the portable EXE to the unpacked Windows app folder at `windows-app\dist\win-unpacked`.
+- Change: updated `client-app-manifest.json` with `sourceAppDir` and `appAsarSha256` so the workstation updater verifies `resources\app.asar`.
+- Change: updated `server-tools\install-client-app.ps1`, `server-tools\client-launcher.ps1`, and `server-tools\client-app-health-check.ps1` to support folder-based app distribution.
+- Change: updated `2B Tex.lnk` so the shared icon runs the installer/updater and opens the local app copy from `%LOCALAPPDATA%\2BTex\App`.
+- Change: added a single-instance lock to the Windows app and fixed the offline/error screen fallback.
+- Verification: production health check passed.
+- Verification: client health check passed.
+- Verification: local install/update succeeded and the app launched from `C:\Users\ebrahem.aseem\AppData\Local\2BTex\App\2B Tex.exe`.
+- Not touched: production data, database schema, backend calculations, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
+### Add Client Diagnostics Report
+
+- Date: 2026-07-19
+- Goal: make failed workstation launches diagnosable without guessing.
+- Change: enhanced `server-tools\client-app-health-check.ps1` to check the server share, shared app package hash, local app install, and local app package hash.
+- Change: health checks can now write a Desktop report named `2B-Tex-client-health-*.txt`.
+- Change: updated `فحص وتشغيل 2B Tex من أي جهاز.cmd` to write the report and open the app.
+- Change: added `client-diagnose-only.cmd` for report-only diagnosis on client devices.
+- Verification: client health check passed and generated a Desktop report.
+- Not touched: production data, database schema, backend calculations, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
 
-### Security Hardening Pass
+### Fix Open Document PNG Sharing
 
-- Date: 2026-07-05
+- Date: 2026-07-19.
 - Commit: pending.
-- Version observed in code: `v2026.07.02.04`
-- Goal: close the review findings (LAN exposure, default password, brute-force, stored XSS) without touching operational logic.
-- Change: `backend/server.js` binds `127.0.0.1` by default (`BACKEND_HOST` override); `whatsapp-service/server.js` binds `127.0.0.1` by default (`WHATSAPP_HOST` override). Only the gateway on port 3000 stays public.
-- Change: removed hardcoded `151297` fallback; system-admin fallback requires `SYSTEM_PASS`; first-run seeding uses a random password when `SYSTEM_PASS` is unset.
-- Change: added login rate limiting on `/api/auth/login` (8 attempts / 15 min lock, env-overridable), returns 429 when locked.
-- Change: escaped customer/fabric/dyehouse free text in `modules/reportsUi.js` report tables (stored-XSS fix).
-- Change: `npm audit fix` in `whatsapp-service` (js-yaml advisory resolved).
-- Change: documented new security env vars in `.env.example`.
-- Test: `npm run check` passes; smoke test confirmed loopback binding, old password rejected, new password accepted, and 429 lockout.
-- Not touched: backend calculations, SQLite schema/data, stock formulas, waste formulas, A5 service.
+- Goal: allow `PNG Share` to work from the currently open document, including quotation and pricing/cost documents, instead of only queued operational reports.
+- Change: added an open-document fallback payload in `modules/documentsUi.js` so any visible `.document-sheet` can be captured by the existing PNG renderer.
+- Change: tagged pricing quotation and pricing cost documents in `app.js` with `documentType`, `documentNumber`, and `reportTitle` metadata.
+- Change: restored clear Arabic labels for the linked order quotation actions.
+- Verification: `npm run check` passed and `Operational flow check passed`.
+- Production: restarted the 2B Tex server from `F:\2B Tex\server-tools\start-2btex-server.ps1`; production health check passed for SQL Server, frontend `3000`, backend `3050`, and WhatsApp `3020`.
 
+### Configure Network-Share Desktop App Launcher
 
-### Atomic Database Persistence And Post-GitHub Documentation Update
-
-- Date: 2026-07-06
+- Date: 2026-07-19
 - Commit: pending.
-- Version observed in code: `v2026.07.02.04`
-- Goal: fix the riskiest infrastructure gap from the 2026-07-06 architecture review (non-atomic SQLite writes) and align project-memory docs with the 2026-07-05 decision to drop GitHub/Railway.
-- Change: `backend/db.js` `persist()` now writes the exported database to `<db>.tmp` and renames it atomically over the live file; falls back to the previous direct write if the rename fails (e.g. antivirus lock). This protects the SQLite file from corruption if the process dies mid-write.
-- Change: `project-memory/PROJECT_OVERVIEW.md`, `SYSTEM_ARCHITECTURE.md`, `SAFE_CHANGE_RULES.md`, and `RUNBOOK.md` updated: source of truth is `F:\2B Tex\system` (active workspace on D: until cutover), no pushing to remotes, Railway/GitHub sections replaced with company-server runtime, required server env vars documented, frontend module list completed.
-- Test: `npm run check` passes and operational flow check passes.
-- Not touched: backend calculations, SQLite schema/data, stock formulas, waste logic, WhatsApp service, A5 service, frontend behavior.
+- Goal: allow any company-network device to open 2B Tex from one shared icon without depending on local drive letter `F:`.
+- Change: updated `\\DELTA-DC\Dyeing\2B Tex\2B Tex.lnk` and the user desktop shortcut to open `http://192.168.10.37:3000/login.html` through Windows `cmd.exe`, avoiding EXE execution from a network share on client devices.
+- Change: added `\\DELTA-DC\Dyeing\2B Tex\2B Tex.url` and updated `\\DELTA-DC\Dyeing\2B Tex\2B Tex.cmd` as browser-based fallbacks.
+- Verification: shortcut targets open the production URL, app code loads `http://192.168.10.37:3000/login.html`, firewall allow rules exist for the app ports, and production health check passes.
 
+### Promote 2B Tex Windows Client App
 
-### Internal Build Hardening: Atomic Deletes, AI Layer Extraction, Persistence Guards Module, XSS Escaping
-
-- Date: 2026-07-06
-- Commits: 95d4f62, 322656c, 0deeb69, 50ac973 (plus this log entry).
-- Goal: execute the four priorities from the 2026-07-06 internal-structure review.
-- Change: deleteOrderGraph/deleteAllocationGraph/deleteCustomerGraph in `backend/server.js` now run inside `db.transaction()`; a shared sync helper lets full customer deletion be one atomic transaction. Interrupted deletes roll back instead of leaving partial graphs.
-- Change: the ~1340-line AI employee layer moved from `backend/server.js` to `backend/aiEmployee.js` as a `createAiEmployee(deps)` factory (injected: repairMissingCustomersFromReferences, readableCustomerNameFromId). server.js went from 2812 to 1679 lines. All four `/api/ai/*` endpoints smoke-tested on a temp DB.
-- Change: first safe extraction from PERSISTENCE_SAVE_FLOW_REVIEW.md done: `modules/persistenceGuards.js` (`createPersistenceGuards(deps)`) now holds backendBatchType/backendSnapshot(Collection) and all verify*Persisted readback helpers. ensureBackendForWrite and rollbackAfterBackendWriteFailure stay in app.js per the review. Wired in index.html and check:app.
-- Change: escapeHtml applied to 32 real unescaped free-text interpolation sites found by a template scan (reportsUi management tables, customer ledger, order-details panel including the weavingSource value attribute, Amal document rows, weaving slip options). Wrapped paths (safeText/safe/renderList/listHtml) verified as already escaping.
-- Change: `scripts/operational-flow-check.js` updated to read the AI functions from backend/aiEmployee.js, the pricing matcher from modules/persistenceGuards.js, and the escaped width-label form. Same assertions, new locations.
-- Test: `npm run check` passes and operational flow check passes after each commit; AI endpoints smoke-tested live.
-- Not touched: backend calculations, SQLite schema/data, stock formulas, waste logic, WhatsApp service, A5 service, route behavior.
-
-### Local Cleanup Status
-
-## Latest Local Cleanup Status
-
-- Date: 2026-07-12.
-- Primary project folder is now `F:\2B Tex\system`.
-- Desktop shortcut now starts `F:\2B Tex\server-tools\start-2btex-server.ps1`.
-- Deleted the empty old marker file `D:\2B Tex`.
-- `D:\2B Tex نظام التشغيل` is empty but still locked by the running Codex/session directory handle.
-- `D:\2B Tex نظام التشغيل__broken-contents-20260701-1720` only remains because Windows service `Cloudflared` is running from that old path and requires Administrator permission to stop/delete.
-- Added admin cleanup script: `F:\2B Tex\server-tools\cleanup-old-2btex-folders-admin.ps1`.
-
-### SQL Server Migration Preparation
-
-- Date: 2026-07-12
+- Date: 2026-07-19
 - Commit: pending.
-- Goal: prepare 2B Tex for SQL Server so several company devices can safely use one shared database instead of SQLite as the only writer.
-- Change: `backend/db.js` now selects the database client from `DB_CLIENT`; SQLite remains the default.
-- Change: previous SQLite database implementation moved to `backend/db-sqlite.js`.
-- Change: added `backend/db-mssql.js` with SQL Server connection/config support and the same backend DB interface.
-- Change: added `backend/schema.mssql.sql` for SQL Server schema creation.
-- Change: added `scripts/migrate-sqlite-to-mssql.js` for a copy-only migration from SQLite into SQL Server; it skips existing target rows and never deletes source SQLite data.
-- Change: added root `mssql` dependency and `npm run migrate:sqlserver`.
-- Change: documented SQL Server environment variables in `.env.example`.
-- Test: `npm run check` passes and operational flow check passes on the current SQLite runtime.
-- Blocker: a SQL Server Express/Standard service or connection string is still required before the live cutover. LocalDB was found but is not recommended for LAN multi-device operation.
-- Not touched: production SQLite data contents, backend calculations, stock formulas, waste logic, AI backend, WhatsApp service, A5 service.
+- Goal: make the production entry point a real Windows application window while keeping data and services centralized on the company server.
+- Change: updated the Electron client app offline/error screen to proper Arabic text.
+- Change: rebuilt the `win-unpacked` app package by updating `resources\app.asar`.
+- Change: pointed `\\DELTA-DC\Dyeing\2B Tex\2B Tex.lnk` and the user desktop shortcut back to the shared Windows app executable.
+- Verification: app process launches successfully, production health check passes, and client machines only need access to the server share and `http://192.168.10.37:3000`.
 
-### SQL Server Express Cutover
+### Re-verify Shared Windows Client App
 
-- Date: 2026-07-12
+- Date: 2026-07-19
 - Commit: pending.
-- Goal: activate SQL Server Express as the shared company-server database for multi-device operation.
-- Change: installed SQL Server Express 2022 instance `SQLEXPRESS`, enabled TCP on port `1433`, started `MSSQL$SQLEXPRESS` and `SQLBrowser`.
-- Change: created database `2BTex` and migrated the current SQLite data into it using `scripts/migrate-sqlite-to-mssql.js`.
-- Change: created a pre-migration SQLite backup in `F:\2B Tex\backups\pre-sqlserver-migration`.
-- Change: added `.env.sqlserver.local` to `.gitignore`; the local file is required for the server but must not be committed because it contains credentials.
-- Change: updated `F:\2B Tex\server-tools\start-2btex-server.ps1` so the single startup shortcut loads SQL Server automatically and falls back to SQLite only when the SQL env file is absent.
-- Change: installed a local WhatsApp dependency cache in `C:\ProgramData\2BTex\whatsapp-service` and updated `start.js` to run WhatsApp from that cache on Windows, avoiding network-share module loading delays while preserving project data paths.
-- Test: SQL Server adapter smoke test passed with `orders=77` and `users=3`.
-- Test: runtime health passed: frontend `3000`, backend `3050` connected to SQL Server database `2BTex`, WhatsApp `3020` reachable with status `waiting_for_qr`.
-- Test: `npm run check` passes and operational flow check passes.
-- Not touched: backend calculations, stock formulas, waste logic, AI backend behavior, WhatsApp internals, A5 service.
+- Goal: confirm the one-icon Windows client still works after closing other open client devices.
+- Verification: `\\DELTA-DC\Dyeing\2B Tex\2B Tex.lnk` targets `\\DELTA-DC\Dyeing\2B Tex\windows-app\dist\win-unpacked\2B Tex.exe` with the shared app working directory.
+- Verification: launching the shared shortcut starts `2B Tex.exe` from the network share.
+- Verification: production health check passes for SQL Server, ports `1433/3000/3050/3020`, backend health, frontend login page, and WhatsApp service.
+- Finding: `git` is currently unavailable on PATH after local cleanup; reinstall Git before the next Git commit/push from this server.
 
-### Production Closing: Health Check, SQL Backup, Daily Backup Task, Firewall Script
+### Stabilize Official Client Launcher
 
-- Date: 2026-07-13
+- Date: 2026-07-19
 - Commit: pending.
-- Goal: close the company-server runtime for production after SQL Server cutover.
-- Change: added `F:\2B Tex\server-tools\production-health-check.ps1` to verify SQL Server, backend, frontend, WhatsApp, and login-page reachability in one check.
-- Change: added `F:\2B Tex\server-tools\backup-sqlserver.ps1` for SQL Server `.bak` backups with a copy under `F:\2B Tex\backups\sqlserver`.
-- Change: fixed backup permissions by writing first to `C:\ProgramData\2BTex\backups\sqlserver`, granting the SQL Server service write access, then copying the result to the project backup folder.
-- Change: created Windows scheduled task `2B Tex SQL Server Daily Backup`, daily at `02:30`, status `Ready`.
-- Change: added `F:\2B Tex\server-tools\production-firewall-admin.ps1` and `.cmd` wrapper to open only the frontend port `3000` and disable direct SQL Server port `1433` exposure. This script must be run once as Administrator.
-- Test: successful SQL Server backup created: `2btex-sqlserver-20260713-142201.bak` (10.87 MB).
-- Test: production health check passed: SQL Server, ports `3000/3050/3020`, backend health, frontend login page, and WhatsApp service are reachable.
-- Test: `npm run check` passes and operational flow check passes.
-- Remaining manual step: run the firewall admin script as Administrator, then test from another company device.
-- Not touched: production data contents, backend calculations, stock formulas, waste logic, AI backend behavior, WhatsApp internals, A5 service.
+- Goal: keep one clear app entry point for all client devices and promote the verified portable Windows app.
+- Change: updated `\\DELTA-DC\Dyeing\2B Tex\2B Tex.lnk` to point to `\\DELTA-DC\Dyeing\2B Tex\windows-app\dist\2B Tex.exe`.
+- Change: kept `windows-app\dist\win-unpacked\2B Tex.exe` as the fallback app bundle.
+- Change: added `F:\2B Tex\README_CLIENT_APP.md` describing the official launcher and warning not to use build internals.
+- Finding: the copied root portable EXE had a different SHA256 hash than `windows-app\dist\2B Tex.exe` and exited once with code `1`; it was moved to `F:\2B Tex\backups\untrusted-root-portable-2B-Tex-20260719.exe`.
+- Verification: the official shortcut launches the portable app from the network share, and production health check passes.
+
+### Add Local Client App Installer
+
+- Date: 2026-07-19
+- Commit: pending.
+- Goal: make each workstation launch 2B Tex as a local Windows app from one icon while keeping SQL Server and production data on the company server only.
+- Change: added `F:\2B Tex\server-tools\install-client-app.ps1`.
+- Change: added `F:\2B Tex\install-2btex-client.cmd` and `F:\2B Tex\تثبيت تطبيق 2B Tex على هذا الجهاز.cmd`.
+- Behavior: the installer checks server reachability, validates the production login page, verifies the shared portable app SHA256, copies it to `%LOCALAPPDATA%\2BTex\App\2B Tex.exe`, verifies the installed hash, and creates Desktop/Start Menu shortcuts.
+- Verification: ran the installer with `-NoLaunch` successfully, confirmed shortcut targets point to the local app, confirmed installed SHA256 `8EB7B12FCAE5C7ABE27B8E1F5689DCB1B73BB47EB583070F8813009E89375542`, launched the local app, and stopped test processes.
+
+### Add Client Manifest And Self-Update Launcher
+
+- Date: 2026-07-19
+- Commit: pending.
+- Goal: keep one stable workstation icon while allowing future Windows app builds to be deployed centrally.
+- Change: added `F:\2B Tex\client-app-manifest.json` with production URL, source app path, version, SHA256, and size.
+- Change: added `F:\2B Tex\server-tools\client-launcher.ps1` to compare the local app with the manifest and copy the new build before launch when needed.
+- Change: updated the installer so Desktop and Start Menu shortcuts target the local launcher through hidden PowerShell and keep the app EXE as the shortcut icon.
+- Verification: installer loaded manifest version `2026.07.19-client.1`, created local launcher, created shortcuts pointing to `Launch-2B-Tex.ps1`, launched the local app from the shortcut, and test processes were stopped.
+
+### Convert Shared Icon To Smart Installer Launcher
+
+- Date: 2026-07-19
+- Commit: pending.
+- Goal: make the icon in the server folder work from any network device as the single app entry point.
+- Change: updated `F:\2B Tex\2B Tex.lnk` and `\\DELTA-DC\Dyeing\2B Tex\2B Tex.lnk` to run hidden PowerShell against `\\DELTA-DC\Dyeing\2B Tex\server-tools\install-client-app.ps1`.
+- Change: updated `F:\2B Tex\2B Tex.cmd` to use the same installer/updater path.
+- Behavior: clicking the shared icon installs/updates the workstation app, creates local shortcuts, and opens the local app copy.
+- Verification: launched the shared shortcut and confirmed the running app path was `C:\Users\ebrahem.aseem\AppData\Local\2BTex\App\2B Tex.exe`; production health check remained green.
+
+### Add Client App Health Check
+
+- Date: 2026-07-19
+- Commit: pending.
+- Goal: make it easy to prove from any client device whether 2B Tex can run as an app.
+- Change: added `F:\2B Tex\server-tools\client-app-health-check.ps1`.
+
+### Add Native Windows Bootstrap Launcher
+
+- Date: 2026-07-19
+- Commit: pending.
+- Goal: replace hidden PowerShell as the shared entry point with one real Windows EXE in the server folder.
+- Change: added `F:\2B Tex\server-tools\2BTexLauncher.cs`.
+- Change: built `F:\2B Tex\2B Tex.exe` as the official bootstrap app.
+- Change: updated `F:\2B Tex\2B Tex.lnk` to point to `\\DELTA-DC\Dyeing\2B Tex\2B Tex.exe`.
+- Change: restored `F:\2B Tex\2B Tex.cmd` as a fallback that starts the same EXE.
+- Behavior: the EXE checks the production server, verifies the shared app package, updates `%LOCALAPPDATA%\2BTex\App`, and opens the local app.
+- Verification: launched the root EXE and confirmed the active app path is `C:\Users\ebrahem.aseem\AppData\Local\2BTex\App\2B Tex.exe`.
+- Change: added `F:\2B Tex\فحص وتشغيل 2B Tex من أي جهاز.cmd` to run the check and open the app.
+- Verification: the check passed from the server for ping, port `3000`, login page HTTP 200, and shared app file existence.
