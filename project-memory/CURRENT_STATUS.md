@@ -1,5 +1,15 @@
 # Current Status
 
+## Latest Arabic Encoding Repair
+
+- Date: 2026-07-20.
+- Issue: Arabic string literals inside `app.js` and `modules/documentsUi.js` were corrupted (UTF-8 read as Windows-1256), so stage badges and filter labels showed mojibake in the app.
+- Fix: reversed the double encoding on the corrupted segments only; clean Arabic text and code were left untouched.
+- Fix: `index.html` cache keys for `app.js` and `documentsUi.js` bumped to `20260720-01`.
+- Verification: zero mojibake remains, syntax checks pass, `npm run check` passes, and the diff against the last clean commit `ca42b3e` now shows only the intended feature changes.
+- Working rule: after any external edit session, grep frontend files for the mojibake signature (for example `ط§ظ„`) before commit.
+- Not touched: production data, database schema, backend calculations, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
 ## Latest Movement User Attribution
 
 - Date: 2026-07-19.

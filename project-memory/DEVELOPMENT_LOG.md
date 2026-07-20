@@ -1,5 +1,17 @@
 # Development Log
 
+### Repair Arabic Text Encoding Corruption In Frontend Sources
+
+- Date: 2026-07-20
+- Commit: pending.
+- Issue: stage badges and order filter labels rendered as mojibake (for example `ظ…ظƒطھظ…ظ„` instead of `مكتمل`) in the running app.
+- Root cause: `app.js` and `modules/documentsUi.js` were saved in a previous edit session with UTF-8 Arabic text mis-read as Windows-1256, corrupting Arabic string literals inside the source files themselves. The corruption entered with the movement-user-attribution working-tree changes; commit `ca42b3e` was still clean.
+- Fix: reversed the double encoding programmatically (mojibake -> cp1256 bytes -> UTF-8) in two passes: whole-segment repair, then pair-level repair for mixed words where only some characters were corrupted.
+- Fix: bumped `index.html` cache keys for `app.js` and `documentsUi.js` to `20260720-01` so clients reload the repaired files.
+- Verification: zero mojibake sequences remain, `node --check` passes on both files, and `npm run check` passes with `Operational flow check passed`.
+- Verification: after repair, the non-whitespace diff against clean commit `ca42b3e` shrank to the intended feature changes only, confirming corrupted lines were restored to their original text.
+- Not touched: production data, database schema, backend calculations, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
 ### Record Movement User Attribution
 
 - Date: 2026-07-19

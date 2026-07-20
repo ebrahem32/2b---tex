@@ -26,19 +26,19 @@ const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
 const MAIN_WAREHOUSE_STOCK_MARKER = '[main-warehouse-stock]';
 const MAIN_WAREHOUSE_CUSTOMER = '2B';
-const MAIN_WAREHOUSE_DYEHOUSE = 'ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ';
+const MAIN_WAREHOUSE_DYEHOUSE = 'المخزن الرئيسي';
 const MAIN_WAREHOUSE_PREFIX = 'WH-';
 const FINISHED_TRANSFER_MARKER = '[finished-stock-transfer]';
 function ensureStartGateActionCards() {
   const actions = document.querySelector('.start-actions');
   if (!actions) return;
   const definitions = [
-    { action: 'workspaceHome', primary: true, title: 'ظپطھط­ ظ„ظˆط­ط© ط§ظ„طھط´ط؛ظٹظ„', body: 'ط§ظ„ط·ظ„ط¨ط§طھطŒ ط§ظ„ظپظ„ط§طھط±طŒ ط§ظ„ظ…طھط§ط¨ط¹ط©طŒ ظˆط­ط§ظ„ط© ط§ظ„طھط´ط؛ظٹظ„.' },
-    { action: 'orderNew', title: 'ط·ظ„ط¨ ط¬ط¯ظٹط¯', body: 'طھط³ط¬ظٹظ„ ط£ظ…ط± طھط´ط؛ظٹظ„ ط¬ط¯ظٹط¯ ظ…ط¨ط§ط´ط±ط©.' },
-    { action: 'pricingNew', module: 'pricing', title: 'ظƒط±طھ طھط³ط¹ظٹط±', body: 'طھط³ط¹ظٹط± ط®ط§ظ…ط© ظˆظ…ط±ط§ط­ظ„ طµط¨ط§ط؛ط© ظ‚ط¨ظ„ ط§ظ„ط¹ط±ط¶.' },
-    { action: 'ordersList', module: 'orders', title: 'ط¨ط­ط« ط§ظ„ط·ظ„ط¨ط§طھ', body: 'ط§ظ„ظˆطµظˆظ„ ظ„ط·ظ„ط¨ ظ…ظˆط¬ظˆط¯ ط£ظˆ ظپظ„طھط±ط© ط§ظ„ط­ط§ظ„ط©.' },
-    { action: 'managementReports', module: 'reports', title: 'ط§ظ„طھظ‚ط§ط±ظٹط±', body: 'ظ…طھط§ط¨ط¹ط© ط§ظ„طھط´ط؛ظٹظ„ ظˆط§ظ„ط­ط³ط§ط¨ط§طھ ظˆط§ظ„طھط­ظ„ظٹظ„ط§طھ.' },
-    { action: 'aiModel', module: 'ai', title: 'ظ…ط±ظƒط² ط§ظ„ظ…طھط§ط¨ط¹ط© ط§ظ„ط°ظƒظٹ', body: 'ظ‚ط±ط§ط،ط© ط§ظ„ظ…طھط§ط¨ط¹ط© ط§ظ„ظٹظˆظ…ظٹط© ظˆط§ظ„ط£ط³ط¦ظ„ط© ط§ظ„ط°ظƒظٹط© ظپظٹ ط´ط§ط´ط© ظˆط§ط­ط¯ط©.' },
+    { action: 'workspaceHome', primary: true, title: 'فتح لوحة التشغيل', body: 'الطلبات، الفلاتر، المتابعة، وحالة التشغيل.' },
+    { action: 'orderNew', title: 'طلب جديد', body: 'تسجيل أمر تشغيل جديد مباشرة.' },
+    { action: 'pricingNew', module: 'pricing', title: 'كرت تسعير', body: 'تسعير خامة ومراحل صباغة قبل العرض.' },
+    { action: 'ordersList', module: 'orders', title: 'بحث الطلبات', body: 'الوصول لطلب موجود أو فلترة الحالة.' },
+    { action: 'managementReports', module: 'reports', title: 'التقارير', body: 'متابعة التشغيل والحسابات والتحليلات.' },
+    { action: 'aiModel', module: 'ai', title: 'مركز المتابعة الذكي', body: 'قراءة المتابعة اليومية والأسئلة الذكية في شاشة واحدة.' },
   ];
   const existingByAction = new Map();
   actions.querySelectorAll('[data-nav-action]').forEach((button) => {
@@ -64,8 +64,8 @@ function ensureStartGateActionCards() {
     actions.appendChild(button);
   });
 }
-// LEGACY_ARABIC_MARKER: ط¨ظ‚ط§ظٹط§ ظƒطھظ„ ظ‚ط¯ظٹظ…ط© طھط§ظ„ظپط© ط¯ط§ط®ظ„ app.js.
-// ط§ظ„ظ…ط³ط§ط±ط§طھ ط§ظ„ظ…ط³طھط®ط¯ظ…ط© ظپط¹ظ„ظٹظ‹ط§ طھظ… طھط¬ط§ظˆط²ظ‡ط§ ط¨ط¯ظˆط§ظ„ ط¹ط±ط¨ظٹط© ط³ظ„ظٹظ…ط© ظپظٹ ظ†ظ‡ط§ظٹط© ط§ظ„ظ…ظ„ظپطŒ ظˆظ‡ط°ظ‡ ط§ظ„ط¹ظ„ط§ظ…ط© طھط¨ظ‚ظ‰ ط¸ط§ظ‡ط±ط© ظپظٹ ط§ظ„ط¨ط­ط« ط­طھظ‰ ظ„ط§ ظ†ط®ظپظٹ ظ…ظˆط§ط¶ط¹ ط§ظ„طھظ†ط¸ظٹظپ ط§ظ„ظ…طھط¨ظ‚ظٹط©.
+// LEGACY_ARABIC_MARKER: بقايا كتل قديمة تالفة داخل app.js.
+// المسارات المستخدمة فعليًا تم تجاوزها بدوال عربية سليمة في نهاية الملف، وهذه العلامة تبقى ظاهرة في البحث حتى لا نخفي مواضع التنظيف المتبقية.
 const uid = () => `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const load = (key, fallback, legacyKey) => {
@@ -178,9 +178,9 @@ if (!Array.isArray(dyehouseTransfers)) dyehouseTransfers = clone(defaults.transf
 if (!Array.isArray(rawReturns)) rawReturns = clone(defaults.rawReturns);
 if (!Array.isArray(gluingBatches)) gluingBatches = clone(defaults.gluing);
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
-const LEGACY_TEST_CUSTOMERS = new Set(['ط§ظ… ط§ط­ظ…ط¯','ط£ظ… ط£ط­ظ…ط¯','ط§ظ… ط£ط­ظ…ط¯','ط£ظ… ط§ط­ظ…ط¯']);
+const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
 function normalizeLegacyCustomerName(value) {
-  return String(value || '').replace(/[ط¥ط£ط¢]/g, 'ط§').replace(/\s+/g, ' ').trim();
+  return String(value || '').replace(/[إأآ]/g, 'ا').replace(/\s+/g, ' ').trim();
 }
 function isLegacyTestOrder(order) {
   return LEGACY_TEST_ORDER_NUMBERS.has(String(order?.orderNumber || '').trim())
@@ -417,23 +417,23 @@ let pricingRowsForReport;
 const refs = Object.fromEntries([
   'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','weavingOrdersTableBody','dyehouseOrdersTableBody','warehouseOrdersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','savePricingBtn','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
-refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ظ…ظ„ط§ط­ط¸ط§طھ طھط´ط؛ظٹظ„');
+refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
 function composePaymentTerms(modeValue, detailsValue) {
-  const mode = String(modeValue || 'ظ†ظ‚ط¯ظٹ').trim() || 'ظ†ظ‚ط¯ظٹ';
+  const mode = String(modeValue || 'نقدي').trim() || 'نقدي';
   const details = String(detailsValue || '').trim();
   return details ? `${mode} - ${details}` : mode;
 }
 function parsePaymentTerms(value) {
   const text = String(value || '').trim();
-  if (!text) return { mode:'ظ†ظ‚ط¯ظٹ', details:'' };
+  if (!text) return { mode:'نقدي', details:'' };
   const [mode, ...rest] = text.split(' - ');
-  return { mode: mode === 'ظƒط§ط´' ? 'ظ†ظ‚ط¯ظٹ' : (mode || 'ظ†ظ‚ط¯ظٹ'), details: rest.join(' - ') };
+  return { mode: mode === 'كاش' ? 'نقدي' : (mode || 'نقدي'), details: rest.join(' - ') };
 }
 function setPaymentFields(modeRef, detailsRef, hiddenRef, paymentTerms) {
   const parsed = parsePaymentTerms(paymentTerms);
   if (modeRef) {
-    const fallback = [...modeRef.options].some((option)=>option.value === 'ظ†ظ‚ط¯ظٹ') ? 'ظ†ظ‚ط¯ظٹ' : ([...modeRef.options][0]?.value || '');
+    const fallback = [...modeRef.options].some((option)=>option.value === 'نقدي') ? 'نقدي' : ([...modeRef.options][0]?.value || '');
     modeRef.value = [...modeRef.options].some((option)=>option.value === parsed.mode) ? parsed.mode : fallback;
   }
   if (detailsRef) detailsRef.value = parsed.details || '';
@@ -735,7 +735,7 @@ async function loadBackendData(options = {}) {
         if (attempt < retries) await wait(800);
       }
     }
-    if (!data) throw lastError || new Error('طھط¹ط°ط± طھط­ظ…ظٹظ„ ط¨ظٹط§ظ†ط§طھ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ');
+    if (!data) throw lastError || new Error('تعذر تحميل بيانات قاعدة البيانات');
     const customers = data.customers || [];
     backendCustomers = customers.map((customer)=>({
       id: customer.id || backendCustomerId(customer.name),
@@ -801,7 +801,7 @@ async function loadBackendData(options = {}) {
 }
 
 async function syncLocalStorageToBackend() {
-  if (!confirm('ط³ظٹطھظ… طھط±ط­ظٹظ„ ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…طھطµظپط­ ط§ظ„ط­ط§ظ„ظٹط© ط¥ظ„ظ‰ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ط¨ط¯ظˆظ† ط­ط°ظپ LocalStorage. ظ‡ظ„ طھط±ظٹط¯ ط§ظ„ظ…طھط§ط¨ط¹ط©طں')) return;
+  if (!confirm('سيتم ترحيل بيانات المتصفح الحالية إلى قاعدة البيانات بدون حذف LocalStorage. هل تريد المتابعة؟')) return;
   const snapshot = initialLocalStorageSnapshot || captureLocalStorageSnapshot();
   try {
     const result = await backendRequest('/import-local', {
@@ -816,11 +816,11 @@ async function syncLocalStorageToBackend() {
         ...snapshot
       })
     });
-    alert(`طھظ…طھ ط§ظ„ظ…ط²ط§ظ…ظ†ط©.\nطھظ…طھ ط¥ط¶ط§ظپط©: ${result.inserted || 0}\nطھظ… طھط­ط¯ظٹط«: ${result.updated || 0}\nطھظ… طھط¬ط§ظ‡ظ„: ${result.skipped || 0}`);
+    alert(`تمت المزامنة.\nتمت إضافة: ${result.inserted || 0}\nتم تحديث: ${result.updated || 0}\nتم تجاهل: ${result.skipped || 0}`);
     await loadBackendData();
   } catch (error) {
     console.error(error);
-    alert('طھط¹ط°ط± طھظ†ظپظٹط° ط§ظ„ظ…ط²ط§ظ…ظ†ط©. طھط£ظƒط¯ ط£ظ† ط®ط¯ظ…ط© ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ طھط¹ظ…ظ„ ط«ظ… ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰.');
+    alert('تعذر تنفيذ المزامنة. تأكد أن خدمة قاعدة البيانات تعمل ثم حاول مرة أخرى.');
   }
 }
 const orderToApi = (order, customerId = null) => ({
@@ -953,7 +953,7 @@ async function ensureBackendCustomer(name) {
   const existing = findCustomerMasterByName(cleanName);
   if (existing?.id) return existing.id;
   const id = backendCustomerId(cleanName);
-  const saved = await postBackend('/customers', { id, name: cleanName, notes: 'ظ…ط¶ط§ظپ ظ…ظ† ط§ظ„ظˆط§ط¬ظ‡ط©' });
+  const saved = await postBackend('/customers', { id, name: cleanName, notes: 'مضاف من الواجهة' });
   if (saved?.id) {
     backendCustomers = [
       ...customerMasterRows().filter((customer)=>customer.id !== saved.id),
@@ -968,7 +968,7 @@ async function postBackend(path, payload) {
   catch (error) { backendAvailable = false; console.warn('Backend write failed, kept LocalStorage copy', error); return null; }
 }
 async function postBackendStrict(path, payload) {
-  if (!backendAvailable) throw new Error('ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ط؛ظٹط± ظ…طھطµظ„ط© ط§ظ„ط¢ظ†.');
+  if (!backendAvailable) throw new Error('قاعدة البيانات غير متصلة الآن.');
   return backendRequest(path, { method: 'POST', body: JSON.stringify(payload) });
 }
 async function putBackend(path, payload) {
@@ -991,14 +991,14 @@ async function saveBackendSetting(key, value) {
     return null;
   }
 }
-async function ensureBackendForWrite(message = 'طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.') {
+async function ensureBackendForWrite(message = 'تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد التعديل.') {
   try {
     const health = await backendRequest('/health', { cache: 'no-store' });
     const schemaOk = health?.schema?.ok !== false;
     backendAvailable = schemaOk;
-    updateBackendStatusBadge(schemaOk ? 'ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ…طھطµظ„ط©' : 'ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ…طھطµظ„ط© ظ„ظƒظ† طھط­طھط§ط¬ طھط±ظ‚ظٹط©');
+    updateBackendStatusBadge(schemaOk ? 'قاعدة البيانات متصلة' : 'قاعدة البيانات متصلة لكن تحتاج ترقية');
     if (!schemaOk) {
-      alert('ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ…طھطµظ„ط© ظ„ظƒظ† ظ‡ظٹظƒظ„ظ‡ط§ ط؛ظٹط± ظ…ظƒطھظ…ظ„. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„ ط­طھظ‰ طھطھظ… ط§ظ„طھط±ظ‚ظٹط©.');
+      alert('قاعدة البيانات متصلة لكن هيكلها غير مكتمل. لم يتم اعتماد التعديل حتى تتم الترقية.');
       return false;
     }
     return true;
@@ -1026,20 +1026,20 @@ const {
   parseDbJsonArray,
 });
 async function rollbackAfterBackendWriteFailure(message) {
-  alert(message || 'طھط¹ط°ط± طھط«ط¨ظٹطھ ط§ظ„طھط¹ط¯ظٹظ„ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ط³ظٹطھظ… ط§ظ„ط±ط¬ظˆط¹ ظ„ط¢ط®ط± ط¨ظٹط§ظ†ط§طھ ظ…ط­ظپظˆط¸ط©.');
+  alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
   await loadBackendData();
 }
 const reportTypeLabels = {
-  weaving_production_order: 'ط£ظ…ط± طھط´ط؛ظٹظ„ ظ†ط³ظٹط¬',
-  dyeing_production_order: 'ط£ظ…ط± طھط´ط؛ظٹظ„ طµط¨ط§ط؛ط©',
-  dyehouses_report: 'طھظ‚ط±ظٹط± ط§ظ„ظ…طµط§ط¨ط؛',
-  orders_follow_report: 'طھظ‚ط±ظٹط± ظ…طھط§ط¨ط¹ط© ط§ظ„ط·ظ„ط¨ط§طھ',
-  dyehouse_balances_report: 'طھظ‚ط±ظٹط± ط£ط±طµط¯ط© ط§ظ„ظ…طµط§ط¨ط؛',
-  scheduled_operations_report: 'طھظ‚ط±ظٹط± ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„ط¯ظˆط±ظٹ',
-  document_pdf_report: 'طھظ‚ط±ظٹط± PDF',
+  weaving_production_order: 'أمر تشغيل نسيج',
+  dyeing_production_order: 'أمر تشغيل صباغة',
+  dyehouses_report: 'تقرير المصابغ',
+  orders_follow_report: 'تقرير متابعة الطلبات',
+  dyehouse_balances_report: 'تقرير أرصدة المصابغ',
+  scheduled_operations_report: 'تقرير التشغيل الدوري',
+  document_pdf_report: 'تقرير PDF',
 };
 const reportTypeIcons = { pending:'â€¢', sending:'â€¦', sent:'âœ“', failed:'!', cancelled:'أ—' };
-const reportStatusText = { pending:'ظپظٹ ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط±ط³ط§ظ„', sending:'ط¬ط§ط±ظٹ ط§ظ„ط¥ط±ط³ط§ظ„', sent:'طھظ… ط§ظ„ط¥ط±ط³ط§ظ„', failed:'طھط¹ط°ط± ط§ظ„ط¥ط±ط³ط§ظ„', cancelled:'طھظ… ط§ظ„ط¥ظ„ط؛ط§ط،' };
+const reportStatusText = { pending:'في قائمة الإرسال', sending:'جاري الإرسال', sent:'تم الإرسال', failed:'تعذر الإرسال', cancelled:'تم الإلغاء' };
 function nowIso() { return new Date().toISOString(); }
 function arDateTime(value = new Date()) {
   const date = value instanceof Date ? value : new Date(value);
@@ -1059,12 +1059,12 @@ function recordAudit(action, entityType, entityId, beforeValue = null, afterValu
   auditLog = auditLog.slice(0, 1000);
 }
 async function persistAuditLog() {
-  // ط³ط¬ظ„ ط§ظ„طھط¹ط¯ظٹظ„ط§طھ ط§ظ„ط±ط³ظ…ظٹ ط£طµط¨ط­ ظپظٹ ط¬ط¯ظˆظ„ audit_log ط¯ط§ط®ظ„ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ.
+  // سجل التعديلات الرسمي أصبح في جدول audit_log داخل قاعدة البيانات.
   return true;
 }
 function getFirstRawNoteNumber(order) {
   if (!order) return '';
-  return [...new Set(rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber).filter(Boolean))].join('طŒ ');
+  return [...new Set(rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>batch.noteNumber).filter(Boolean))].join('، ');
 }
 function compatibleNameForMatch(left, right) {
   const a = normalizeForCompare(left).replace(/\s+/g, ' ').trim();
@@ -1383,20 +1383,20 @@ function reportNeedsManualWhatsappGroup(reportType) {
 function reportMessage(reportType, order) {
   const rawNote = getFirstRawNoteNumber(order) || '-';
   if (reportType === 'weaving_production_order') {
-    return `ط£ظ…ط± طھط´ط؛ظٹظ„ ظ†ط³ظٹط¬\nط±ظ‚ظ… ط§ظ„ط·ظ„ط¨: ${order.orderNumber || '-'}\nط§ظ„ط¹ظ…ظٹظ„: ${order.customer || '-'}\nط§ظ„طµظ†ظپ: ${order.fabricType || '-'}\nط§ظ„ظƒظ…ظٹط©: ${formatNumber(order.totalRawOrdered || 0)}\nط³ط¹ط± ط§ظ„ط®ط§ظ…: ${formatNumber(orderRawCost(order) || 0)}\nط§ظ„طھط§ط±ظٹط®: ${order.orderDate || '-'}\nظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„طھط´ط؛ظٹظ„: ${reportOperationNotes(order)}`;
+    return `أمر تشغيل نسيج\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nالكمية: ${formatNumber(order.totalRawOrdered || 0)}\nسعر الخام: ${formatNumber(orderRawCost(order) || 0)}\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
   }
   if (reportType === 'dyeing_production_order') {
     const dyehouseName = String(order.whatsappDyehouseName || order.dyehouse || '').trim();
     const dyeingLines = (order.allocations || [])
       .filter((line)=>!dyehouseName || String(line.dyehouse || order.dyehouse || '').trim() === dyehouseName)
-      .map((line)=>`${line.color || line.pantoneCode || '-'}: ${formatNumber(line.plannedQuantity || 0)} ظƒط¬ظ…`)
+      .map((line)=>`${line.color || line.pantoneCode || '-'}: ${formatNumber(line.plannedQuantity || 0)} كجم`)
       .join('\n');
-    return `ط£ظ…ط± طھط´ط؛ظٹظ„ طµط¨ط§ط؛ط©\nط±ظ‚ظ… ط§ظ„ط·ظ„ط¨: ${order.orderNumber || '-'}\nط¥ط°ظ† ط§ظ„ط®ط§ظ…: ${rawNote}\nط§ظ„ط¹ظ…ظٹظ„: ${order.customer || '-'}\nط§ظ„ظ…طµط¨ط؛ط©: ${dyehouseName || '-'}\nط§ظ„طµظ†ظپ: ${order.fabricType || '-'}\nط§ظ„ط£ظ„ظˆط§ظ† ظˆط§ظ„ظƒظ…ظٹط§طھ:\n${dyeingLines || '-'}\nظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„طھط´ط؛ظٹظ„: ${reportOperationNotes(order)}`;
+    return `أمر تشغيل صباغة\nرقم الطلب: ${order.orderNumber || '-'}\nإذن الخام: ${rawNote}\nالعميل: ${order.customer || '-'}\nالمصبغة: ${dyehouseName || '-'}\nالصنف: ${order.fabricType || '-'}\nالألوان والكميات:\n${dyeingLines || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
   }
   if (order.isStandaloneReport) {
-    return `${reportTypeLabels[reportType] || order.reportTitle || 'طھظ‚ط±ظٹط± ظ…ظ† ظ†ط¸ط§ظ… 2B Tex'}\n${order.reportSubtitle || 'طھظ‚ط±ظٹط± ظ…ظ† ظ†ط¸ط§ظ… 2B Tex'}\nظˆظ‚طھ ط§ظ„طھط¬ظ‡ظٹط²: ${arDateTime()}`;
+    return `${reportTypeLabels[reportType] || order.reportTitle || 'تقرير من نظام 2B Tex'}\n${order.reportSubtitle || 'تقرير من نظام 2B Tex'}\nوقت التجهيز: ${arDateTime()}`;
   }
-  return `طھظ‚ط±ظٹط± طھط´ط؛ظٹظ„\nط±ظ‚ظ… ط§ظ„ط·ظ„ط¨: ${order.orderNumber || '-'}\nط§ظ„ط¹ظ…ظٹظ„: ${order.customer || '-'}\nط§ظ„ظ…ط±ط³ظ„ ظ„ظ„ظ…طµط¨ط؛ط©: ${formatNumber(order.totalSentToDyehouse || order.totalRawReceived || 0)}\nط§ظ„ظ…ط³طھظ„ظ… ظ…ط¬ظ‡ط²: ${formatNumber(order.totalFinishedReceived || 0)}\nط§ظ„ظ‡ط§ظ„ظƒ ط§ظ„ظپط¹ظ„ظٹ: ${formatNumber(order.totalWaste || 0)}\nظ†ط³ط¨ط© ط§ظ„ظ‡ط§ظ„ظƒ: ${formatNumber(order.totalWastePercent || 0)}%`;
+  return `تقرير تشغيل\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالمرسل للمصبغة: ${formatNumber(order.totalSentToDyehouse || order.totalRawReceived || 0)}\nالمستلم مجهز: ${formatNumber(order.totalFinishedReceived || 0)}\nالهالك الفعلي: ${formatNumber(order.totalWaste || 0)}\nنسبة الهالك: ${formatNumber(order.totalWastePercent || 0)}%`;
 }
 function enqueueReport(reportType, order, attachmentPath = '') {
   ensureRuntimeCollections();
@@ -1415,7 +1415,7 @@ function enqueueReport(reportType, order, attachmentPath = '') {
     const row = { id:uid(), reportType, orderNumber:order.orderNumber, customerName:order.customer, targetGroup, messageText:reportMessage(reportType, messageOrder), attachmentPath, status:'pending', createdAt:nowIso(), sendingAt:null, sentAt:null, errorMessage:'', retryCount:0 };
     reportOutbox.unshift(row);
     rows.push(row);
-    recordAudit('create', 'reportOutbox', row.id, null, row, `ط¥ط¶ط§ظپط© ${reportTypeLabels[reportType] || reportType} ط¥ظ„ظ‰ ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط±ط³ط§ظ„`);
+    recordAudit('create', 'reportOutbox', row.id, null, row, `إضافة ${reportTypeLabels[reportType] || reportType} إلى قائمة الإرسال`);
     persistAuditLog().catch((error)=>console.warn('audit-save-failed', error));
   });
   save();
@@ -1473,31 +1473,31 @@ function buildScheduledOperationsReportText(settings = scheduledReportSettings()
     .filter((order)=>Number(order.totalWastePercent || 0) > Math.max(8, Number(order.expectedWastePercent || 0)))
     .sort((a,b)=>Number(b.totalWastePercent || 0) - Number(a.totalWastePercent || 0));
   const lines = [
-    `طھظ‚ط±ظٹط± ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„ط¯ظˆط±ظٹ - 2B Tex`,
-    `ظˆظ‚طھ ط§ظ„طھظ‚ط±ظٹط±: ${arDateTime()}`,
+    `تقرير التشغيل الدوري - 2B Tex`,
+    `وقت التقرير: ${arDateTime()}`,
     '',
-    `ط¹ط¯ط¯ ط§ظ„ط·ظ„ط¨ط§طھ: ${formatNumber(calculated.length, 0)}`,
-    `ط·ظ„ط¨ط§طھ ظ…ظپطھظˆط­ط©: ${formatNumber(openOrders.length, 0)}`,
-    `ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©: ${formatNumber(dyehouse.reduce((total, order)=>total + Number(order.remainingAtDyehouse || order.totalSentToDyehouse || 0), 0))} ظƒط¬ظ…`,
-    `ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…: ${formatNumber(ready.reduce((total, order)=>total + Number(order.warehouseBalance || 0), 0))} ظƒط¬ظ…`,
+    `عدد الطلبات: ${formatNumber(calculated.length, 0)}`,
+    `طلبات مفتوحة: ${formatNumber(openOrders.length, 0)}`,
+    `داخل المصبغة: ${formatNumber(dyehouse.reduce((total, order)=>total + Number(order.remainingAtDyehouse || order.totalSentToDyehouse || 0), 0))} كجم`,
+    `جاهز للتسليم: ${formatNumber(ready.reduce((total, order)=>total + Number(order.warehouseBalance || 0), 0))} كجم`,
   ];
   if (settings.includeDyehouse && dyehouse.length) {
-    lines.push('', 'ط£ط¹ظ„ظ‰ ط£ط±طµط¯ط© ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©:');
-    lines.push(...topOrderLines(dyehouse, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'} / ${order.dyehouse || '-'}: ${formatNumber(order.remainingAtDyehouse || order.totalSentToDyehouse || 0)} ظƒط¬ظ…`));
+    lines.push('', 'أعلى أرصدة داخل المصبغة:');
+    lines.push(...topOrderLines(dyehouse, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'} / ${order.dyehouse || '-'}: ${formatNumber(order.remainingAtDyehouse || order.totalSentToDyehouse || 0)} كجم`));
   }
   if (settings.includeReady && ready.length) {
-    lines.push('', 'ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…:');
-    lines.push(...topOrderLines(ready, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.warehouseBalance || 0)} ظƒط¬ظ…`));
+    lines.push('', 'جاهز للتسليم:');
+    lines.push(...topOrderLines(ready, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.warehouseBalance || 0)} كجم`));
   }
   if (settings.includeDelayed && delayed.length) {
-    lines.push('', 'ط·ظ„ط¨ط§طھ ظ…طھط£ط®ط±ط©:');
-    lines.push(...topOrderLines(delayed, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.delayDays, 0)} ظٹظˆظ…`));
+    lines.push('', 'طلبات متأخرة:');
+    lines.push(...topOrderLines(delayed, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.delayDays, 0)} يوم`));
   }
   if (settings.includeWaste && waste.length) {
-    lines.push('', 'ط£ط¹ظ„ظ‰ ظ‡ط§ظ„ظƒ:');
+    lines.push('', 'أعلى هالك:');
     lines.push(...topOrderLines(waste, (order)=>`- ${order.orderNumber} / ${order.customer || '-'} / ${order.fabricType || '-'}: ${formatNumber(order.totalWastePercent || 0, 1)}%`));
   }
-  lines.push('', 'ظ…ط±ط³ظ„ طھظ„ظ‚ط§ط¦ظٹظ‹ط§ ظ…ظ† ظ†ط¸ط§ظ… 2B Tex.');
+  lines.push('', 'مرسل تلقائيًا من نظام 2B Tex.');
   return lines.join('\n');
 }
 function enqueueScheduledWhatsappReport(settings = scheduledReportSettings(), runKey = scheduledReportRunKey(settings)) {
@@ -1521,7 +1521,7 @@ function enqueueScheduledWhatsappReport(settings = scheduledReportSettings(), ru
     retryCount: 0,
   };
   reportOutbox.unshift(row);
-  recordAudit('create', 'reportOutbox', row.id, null, row, 'ط¥ط¶ط§ظپط© طھظ‚ط±ظٹط± ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„ط¯ظˆط±ظٹ ط¥ظ„ظ‰ ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط±ط³ط§ظ„');
+  recordAudit('create', 'reportOutbox', row.id, null, row, 'إضافة تقرير التشغيل الدوري إلى قائمة الإرسال');
   save();
   syncOutboxToWhatsappService();
   return row;
@@ -1558,7 +1558,7 @@ async function syncOutboxToWhatsappService() {
     updateWhatsappStatusBadge();
     return data;
   } catch (error) {
-    whatsappStatus = { ...whatsappStatus, errorMessage:'ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨ ط؛ظٹط± ظ…طھط§ط­ط© ظ„ظ„ظ…ط²ط§ظ…ظ†ط©', processing:{ blockedReason:error.message || String(error) } };
+    whatsappStatus = { ...whatsappStatus, errorMessage:'خدمة واتساب غير متاحة للمزامنة', processing:{ blockedReason:error.message || String(error) } };
     save();
     updateWhatsappStatusBadge();
     return null;
@@ -1580,12 +1580,12 @@ async function pollWhatsappService() {
     updateWhatsappStatusBadge();
     if (selectedOrderId && refs.orderDetailsPanel?.querySelector('.report-send-status') && !orderDetailsHasActiveDraft()) renderDetails();
   } catch {
-    whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨ ط؛ظٹط± ظ…طھطµظ„ط© ط­ط§ظ„ظٹظ‹ط§', processing:null, outboxSummary:null };
+    whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا', processing:null, outboxSummary:null };
     updateWhatsappStatusBadge();
   }
 }
 function whatsappConnectionStatusText() {
-  return { connected:'ظ…طھطµظ„', waiting_for_qr:'ط¨ط§ظ†طھط¸ط§ط± ط±ط¨ط· ظˆط§طھط³ط§ط¨', disconnected:'ط؛ظٹط± ظ…طھطµظ„' }[whatsappStatus?.status] || whatsappStatus?.status || 'ط؛ظٹط± ظ…طھطµظ„';
+  return { connected:'متصل', waiting_for_qr:'بانتظار ربط واتساب', disconnected:'غير متصل' }[whatsappStatus?.status] || whatsappStatus?.status || 'غير متصل';
 }
 function whatsappConnectionPanelHtml() {
   const statusText = whatsappConnectionStatusText();
@@ -1623,7 +1623,7 @@ function startWhatsappSettingsAutoRefresh() {
       updateWhatsappStatusBadge();
       updateWhatsappSettingsConnectionPanel();
     } catch {
-      whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨ ط؛ظٹط± ظ…طھطµظ„ط© ط­ط§ظ„ظٹظ‹ط§', processing:null, outboxSummary:null };
+      whatsappStatus = { status:'disconnected', updatedAt:nowIso(), errorMessage:'خدمة واتساب غير متصلة حاليًا', processing:null, outboxSummary:null };
       updateWhatsappStatusBadge();
       updateWhatsappSettingsConnectionPanel();
     }
@@ -1640,8 +1640,8 @@ function reportRowsForOrder(order) {
 }
 // LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic renderReportSendStatus implementation.
 function renderReportSendStatus(order) {
-  const rows = reportRowsForOrder(order).map((row)=>`<tr><td>${escapeHtml(reportTypeLabels[row.reportType] || row.reportType)}</td><td>${escapeHtml(row.targetGroup || '-')}</td><td>${reportTypeIcons[row.status] || ''} ${reportStatusText[row.status] || row.status}</td><td>${row.sentAt ? arDateTime(row.sentAt) : '-'}</td><td>${escapeHtml(row.errorMessage || '-')}</td><td>${row.id && row.status === 'failed' ? `<button class="mini-btn" data-retry-outbox="${row.id}">ط¥ط¹ط§ط¯ط© ط§ظ„ظ…ط­ط§ظˆظ„ط©</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6">ظ„ط§ طھظˆط¬ط¯ طھظ‚ط§ط±ظٹط± ظپظٹ ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط±ط³ط§ظ„.</td></tr>';
-  return `<section class="report-send-status panel-card"><div class="subsection-head"><div><h3>ط­ط§ظ„ط© ظ…ط´ط§ط±ظƒط© ط§ظ„طھظ‚ط§ط±ظٹط±</h3><p class="eyebrow">ط§ظ„ظ…ط´ط§ط±ظƒط© ط§ظ„طھظ„ظ‚ط§ط¦ظٹط© طھط¹ظ…ظ„ ظپظ‚ط· ط¹ظ†ط¯ طھظپط¹ظٹظ„ ظˆط§طھط³ط§ط¨ ظˆط±ط¨ط· ط§ظ„ط¬ط±ظˆط¨ط§طھ.</p></div></div><table><thead><tr><th>ط§ظ„طھظ‚ط±ظٹط±</th><th>ط§ظ„ط¬ط±ظˆط¨</th><th>ط§ظ„ط­ط§ظ„ط©</th><th>ظˆظ‚طھ ط§ظ„ط¥ط±ط³ط§ظ„</th><th>ظ…ظ„ط§ط­ط¸ط§طھ</th><th>ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+  const rows = reportRowsForOrder(order).map((row)=>`<tr><td>${escapeHtml(reportTypeLabels[row.reportType] || row.reportType)}</td><td>${escapeHtml(row.targetGroup || '-')}</td><td>${reportTypeIcons[row.status] || ''} ${reportStatusText[row.status] || row.status}</td><td>${row.sentAt ? arDateTime(row.sentAt) : '-'}</td><td>${escapeHtml(row.errorMessage || '-')}</td><td>${row.id && row.status === 'failed' ? `<button class="mini-btn" data-retry-outbox="${row.id}">إعادة المحاولة</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6">لا توجد تقارير في قائمة الإرسال.</td></tr>';
+  return `<section class="report-send-status panel-card"><div class="subsection-head"><div><h3>حالة مشاركة التقارير</h3><p class="eyebrow">المشاركة التلقائية تعمل فقط عند تفعيل واتساب وربط الجروبات.</p></div></div><table><thead><tr><th>التقرير</th><th>الجروب</th><th>الحالة</th><th>وقت الإرسال</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 // LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic whatsappGroupsPromptHint implementation.
 async function whatsappGroupsPromptHint() {
@@ -1650,7 +1650,7 @@ async function whatsappGroupsPromptHint() {
     if (!response.ok) return '';
     const data = await response.json();
     const names = (data.groups || []).map((group)=>group.name).filter(Boolean).slice(0, 20);
-    return names.length ? `\n\nط§ظ„ط¬ط±ظˆط¨ط§طھ ط§ظ„ظ…طھط§ط­ط© ط­ط§ظ„ظٹظ‹ط§:\n${names.join('\n')}\n\nط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ط¬ط±ظˆط¨ ظƒظ…ط§ ظٹط¸ظ‡ط± ظ‡ظ†ط§.` : '';
+    return names.length ? `\n\nالجروبات المتاحة حاليًا:\n${names.join('\n')}\n\nاكتب اسم الجروب كما يظهر هنا.` : '';
   } catch {
     return '';
   }
@@ -1658,8 +1658,8 @@ async function whatsappGroupsPromptHint() {
 function whatsappSettingsRowHtml(type, label, name = '', group = '') {
   return `<tr data-whatsapp-group-row data-group-type="${escapeHtml(type)}">
     <td><input type="text" data-entity-name value="${escapeHtml(name)}" placeholder="${escapeHtml(label)}"></td>
-    <td><input type="text" data-group-name value="${escapeHtml(group)}" placeholder="ط§ط³ظ… ط¬ط±ظˆط¨ ظˆط§طھط³ط§ط¨"></td>
-    <td><button class="mini-btn" type="button" data-delete-group-row>ط­ط°ظپ</button></td>
+    <td><input type="text" data-group-name value="${escapeHtml(group)}" placeholder="اسم جروب واتساب"></td>
+    <td><button class="mini-btn" type="button" data-delete-group-row>حذف</button></td>
   </tr>`;
 }
 function whatsappSettingsRows(map = {}, names = []) {
@@ -1683,9 +1683,9 @@ function whatsappSettingsRows(map = {}, names = []) {
 function whatsappSettingsSectionHtml(type, title, label, map, names) {
   const rowsHtml = whatsappSettingsRows(map, names).map(([name, group])=>whatsappSettingsRowHtml(type, label, name, group)).join('');
   return `<section class="whatsapp-settings-section">
-    <div class="subsection-head"><h3>${escapeHtml(title)}</h3><button class="mini-btn" type="button" data-add-whatsapp-group-row="${escapeHtml(type)}" data-row-label="${escapeHtml(label)}">ط¥ط¶ط§ظپط©</button></div>
+    <div class="subsection-head"><h3>${escapeHtml(title)}</h3><button class="mini-btn" type="button" data-add-whatsapp-group-row="${escapeHtml(type)}" data-row-label="${escapeHtml(label)}">إضافة</button></div>
     <table>
-      <thead><tr><th>${escapeHtml(label)}</th><th>ط§ط³ظ… ط¬ط±ظˆط¨ ظˆط§طھط³ط§ط¨</th><th>ط¥ط¬ط±ط§ط،</th></tr></thead>
+      <thead><tr><th>${escapeHtml(label)}</th><th>اسم جروب واتساب</th><th>إجراء</th></tr></thead>
       <tbody data-whatsapp-group-rows="${escapeHtml(type)}">${rowsHtml}</tbody>
     </table>
   </section>`;
@@ -1694,41 +1694,41 @@ function renderWhatsappSettingsDialog(groupNames = []) {
   ensureRuntimeCollections();
   const groupOptions = groupNames.map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('');
   const schedule = scheduledReportSettings();
-  refs.documentTitle.textContent = 'ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨';
+  refs.documentTitle.textContent = 'إعدادات واتساب';
   refs.documentBody.dataset.documentType = 'whatsapp-settings';
   refs.documentBody.innerHTML = `<div class="document-sheet whatsapp-settings-sheet">
-    <h2>ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨</h2>
-    <p class="muted">ط§ط±ط¨ط· ظƒظ„ ط¹ظ…ظٹظ„ ط£ظˆ ظ…طµط¨ط؛ط© ط£ظˆ ظ…طµط¯ط± ظ†ط³ظٹط¬ ط¨ط§ظ„ط¬ط±ظˆط¨ ط§ظ„طµط­ظٹط­. ط§ظ„ط¥ط±ط³ط§ظ„ ط§ظ„طھظ„ظ‚ط§ط¦ظٹ ظ„ط§ ظٹط¹ظ…ظ„ ط¥ظ„ط§ ط¹ظ†ط¯ طھظپط¹ظٹظ„ظ‡ طµط±ط§ط­ط©.</p>
+    <h2>إعدادات واتساب</h2>
+    <p class="muted">اربط كل عميل أو مصبغة أو مصدر نسيج بالجروب الصحيح. الإرسال التلقائي لا يعمل إلا عند تفعيله صراحة.</p>
     <div data-whatsapp-connection-panel>${whatsappConnectionPanelHtml()}</div>
     <div class="summary-grid">
-      <label><span>ط¬ط±ظˆط¨ ط§ظ„طھظ‚ط§ط±ظٹط± ط§ظ„ط¹ط§ظ…ط©</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="ظ…ط«ط§ظ„: طھظ‚ط§ط±ظٹط± ط§ظ„ظ…طµط§ط¨ط؛"></label>
-      <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>طھظپط¹ظٹظ„ ط§ظ„ط¥ط±ط³ط§ظ„ ط§ظ„طھظ„ظ‚ط§ط¦ظٹ ط¹ظ†ط¯ طھط´ط؛ظٹظ„ ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨</span></label>
+      <label><span>جروب التقارير العامة</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="مثال: تقارير المصابغ"></label>
+      <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل الإرسال التلقائي عند تشغيل خدمة واتساب</span></label>
     </div>
     <section class="whatsapp-settings-section">
       <div class="subsection-head">
-        <h3>ط§ظ„طھظ‚ط§ط±ظٹط± ط§ظ„ط¯ظˆط±ظٹط©</h3>
-        <button class="mini-btn" type="button" data-run-whatsapp-schedule-now>ط¥ط±ط³ط§ظ„ طھط¬ط±ط¨ط© ط§ظ„ط¢ظ†</button>
+        <h3>التقارير الدورية</h3>
+        <button class="mini-btn" type="button" data-run-whatsapp-schedule-now>إرسال تجربة الآن</button>
       </div>
       <div class="summary-grid">
-        <label class="checkbox-row"><input type="checkbox" data-schedule-enabled ${schedule.enabled ? 'checked' : ''}> <span>طھظپط¹ظٹظ„ ط¥ط±ط³ط§ظ„ طھظ‚ط±ظٹط± ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„ط¯ظˆط±ظٹ</span></label>
-        <label><span>ظˆظ‚طھ ط§ظ„ط¥ط±ط³ط§ظ„ ط§ظ„ظٹظˆظ…ظٹ</span><input type="time" data-schedule-time value="${escapeHtml(schedule.time || '09:00')}"></label>
-        <label><span>ط¬ط±ظˆط¨ ط§ظ„طھظ‚ط±ظٹط± ط§ظ„ط¯ظˆط±ظٹ</span><input type="text" data-schedule-group value="${escapeHtml(schedule.groupName || whatsappSettings.dyehousesReportGroupName || '')}" list="whatsappGroupNames" placeholder="ط§ط³ظ… ط¬ط±ظˆط¨ ظˆط§طھط³ط§ط¨"></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-enabled ${schedule.enabled ? 'checked' : ''}> <span>تفعيل إرسال تقرير التشغيل الدوري</span></label>
+        <label><span>وقت الإرسال اليومي</span><input type="time" data-schedule-time value="${escapeHtml(schedule.time || '09:00')}"></label>
+        <label><span>جروب التقرير الدوري</span><input type="text" data-schedule-group value="${escapeHtml(schedule.groupName || whatsappSettings.dyehousesReportGroupName || '')}" list="whatsappGroupNames" placeholder="اسم جروب واتساب"></label>
       </div>
       <div class="summary-grid compact">
-        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeOperations" ${schedule.includeOperations ? 'checked' : ''}> <span>ظ…ظ„ط®طµ ط§ظ„طھط´ط؛ظٹظ„</span></label>
-        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeDyehouse" ${schedule.includeDyehouse ? 'checked' : ''}> <span>ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©</span></label>
-        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeReady" ${schedule.includeReady ? 'checked' : ''}> <span>ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…</span></label>
-        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeDelayed" ${schedule.includeDelayed ? 'checked' : ''}> <span>ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ…طھط£ط®ط±ط©</span></label>
-        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeWaste" ${schedule.includeWaste ? 'checked' : ''}> <span>ط£ط¹ظ„ظ‰ ظ‡ط§ظ„ظƒ</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeOperations" ${schedule.includeOperations ? 'checked' : ''}> <span>ملخص التشغيل</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeDyehouse" ${schedule.includeDyehouse ? 'checked' : ''}> <span>داخل المصبغة</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeReady" ${schedule.includeReady ? 'checked' : ''}> <span>جاهز للتسليم</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeDelayed" ${schedule.includeDelayed ? 'checked' : ''}> <span>الطلبات المتأخرة</span></label>
+        <label class="checkbox-row"><input type="checkbox" data-schedule-section="includeWaste" ${schedule.includeWaste ? 'checked' : ''}> <span>أعلى هالك</span></label>
       </div>
-      <p class="muted">ط§ظ„طھظ‚ط±ظٹط± ط§ظ„ط¯ظˆط±ظٹ ظٹظڈط±ط³ظ„ ظƒط±ط³ط§ظ„ط© طھط´ط؛ظٹظ„ ظ†طµظٹط© ظ…ظ† ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ†ط¸ط§ظ… ط§ظ„ط­ط§ظ„ظٹط©. ظ…ط³طھظ†ط¯ط§طھ PDF/PNG طھط¸ظ„ ظ…ظ† ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط³طھظ†ط¯ط§طھ ط­طھظ‰ ظ†ط¶ظٹظپ ظ…ظˆظ„ط¯ PDF ظ…ظ† ط§ظ„ط³ظٹط±ظپط±.</p>
+      <p class="muted">التقرير الدوري يُرسل كرسالة تشغيل نصية من بيانات النظام الحالية. مستندات PDF/PNG تظل من قائمة المستندات حتى نضيف مولد PDF من السيرفر.</p>
     </section>
-    ${whatsappSettingsSectionHtml('dyehouse', 'ط±ط¨ط· ط§ظ„ظ…طµط§ط¨ط؛ ط¨ط§ظ„ط¬ط±ظˆط¨ط§طھ', 'ط§ط³ظ… ط§ظ„ظ…طµط¨ط؛ط©', whatsappSettings.dyehouseGroups, knownDyehouseNames())}
-    ${whatsappSettingsSectionHtml('weaving', 'ط±ط¨ط· ظ…طµط§ط¯ط± ط§ظ„ظ†ط³ظٹط¬ ط¨ط§ظ„ط¬ط±ظˆط¨ط§طھ', 'ظ…طµط¯ط± ط§ظ„ظ†ط³ظٹط¬', whatsappSettings.weavingGroups, knownWeavingNames())}
-    ${whatsappSettingsSectionHtml('customer', 'ط±ط¨ط· ط§ظ„ط¹ظ…ظ„ط§ط، ط¨ط§ظ„ط¬ط±ظˆط¨ط§طھ', 'ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„', whatsappSettings.customerGroups, knownCustomerNames())}
+    ${whatsappSettingsSectionHtml('dyehouse', 'ربط المصابغ بالجروبات', 'اسم المصبغة', whatsappSettings.dyehouseGroups, knownDyehouseNames())}
+    ${whatsappSettingsSectionHtml('weaving', 'ربط مصادر النسيج بالجروبات', 'مصدر النسيج', whatsappSettings.weavingGroups, knownWeavingNames())}
+    ${whatsappSettingsSectionHtml('customer', 'ربط العملاء بالجروبات', 'اسم العميل', whatsappSettings.customerGroups, knownCustomerNames())}
     <datalist id="whatsappGroupNames">${groupOptions}</datalist>
     <div class="document-actions no-print">
-      <button class="primary-btn" type="button" data-save-whatsapp-settings>ط­ظپط¸ ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ</button>
+      <button class="primary-btn" type="button" data-save-whatsapp-settings>حفظ الإعدادات</button>
     </div>
   </div>`;
   refs.documentBody.querySelectorAll('[data-group-name]').forEach((input)=>input.setAttribute('list', 'whatsappGroupNames'));
@@ -1737,7 +1737,7 @@ function renderWhatsappSettingsDialog(groupNames = []) {
   startWhatsappSettingsAutoRefresh();
 }
 async function saveWhatsappSettingsFromDialog() {
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ إعدادات واتساب.'))) return;
   const before = clone(whatsappSettings);
   const nextMaps = { dyehouse:{}, weaving:{}, customer:{} };
   refs.documentBody.querySelectorAll('[data-whatsapp-group-row]').forEach((row)=>{
@@ -1767,32 +1767,32 @@ async function saveWhatsappSettingsFromDialog() {
   };
   const saved = await saveBackendSetting('whatsappSettings', nextSettings);
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ إعدادات واتساب في قاعدة البيانات. لم يتم اعتماد التعديل.');
     return;
   }
   whatsappSettings = nextSettings;
-  recordAudit('update', 'whatsappSettings', 'groups', before, whatsappSettings, 'طھط­ط¯ظٹط« ط¥ط¹ط¯ط§ط¯ط§طھ ظ…ط¬ظ…ظˆط¹ط§طھ ظˆط§طھط³ط§ط¨');
+  recordAudit('update', 'whatsappSettings', 'groups', before, whatsappSettings, 'تحديث إعدادات مجموعات واتساب');
   refreshOutboxTargetsAfterSettings();
   await saveBackendSetting('auditLog', auditLog);
   save();
   syncOutboxToWhatsappService();
   await loadBackendData();
   renderWhatsappSettingsDialog();
-  alert(whatsappSettings.sendingEnabled ? 'طھظ… ط­ظپط¸ ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨ ظˆطھظپط¹ظٹظ„ ط§ظ„ط¥ط±ط³ط§ظ„.' : 'طھظ… ط­ظپط¸ ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨ ظ…ط¹ ط¨ظ‚ط§ط، ط§ظ„ط¥ط±ط³ط§ظ„ ط§ظ„طھظ„ظ‚ط§ط¦ظٹ ظ…طھظˆظ‚ظپظ‹ط§.');
+  alert(whatsappSettings.sendingEnabled ? 'تم حفظ إعدادات واتساب وتفعيل الإرسال.' : 'تم حفظ إعدادات واتساب مع بقاء الإرسال التلقائي متوقفًا.');
 }
 function isLegacyRecoveredText(value) {
   const text = String(value || '');
-  const legacyText = ['ظ†طµ','ظ‚ط¯ظٹظ…','ط؛ظٹط±','ظ…ط³طھط¹ط§ط¯'].join(' ');
-  return text.includes(legacyText) || /\uFFFD|أ¯طںآ½|\?{3,}/.test(text);
+  const legacyText = ['نص','قديم','غير','مستعاد'].join(' ');
+  return text.includes(legacyText) || /\uFFFD|أ¯؟آ½|\?{3,}/.test(text);
 }
 function normalizeDyehousePriceLabel(value) {
   const text = String(value || '')
     .trim()
-    .replace(/ظƒط³ط± ط¨ظٹط§ط¶/g, 'ظƒط³طھط±ط©')
-    .replace(/ط£ط³ظˆط¯ ظ…ط®طµظˆطµ/g, 'ط£ط³ظˆط¯ ط®ط§طµ')
-    .replace(/ط¨ظ†ظٹ ط؛ط§ظ…ظ‚/g, 'ط£ظ„ظˆط§ظ† ط®ط§طµط©')
-    .replace(/^ط®طµظˆطµ$/g, 'ط£ظ„ظˆط§ظ† ط®ط§طµط©')
-    .replace(/^ط£ظ„ظˆط§ظ†$/g, 'ط£ظ„ظˆط§ظ† ط®ط§طµط©');
+    .replace(/كسر بياض/g, 'كسترة')
+    .replace(/أسود مخصوص/g, 'أسود خاص')
+    .replace(/بني غامق/g, 'ألوان خاصة')
+    .replace(/^خصوص$/g, 'ألوان خاصة')
+    .replace(/^ألوان$/g, 'ألوان خاصة');
   return text;
 }
 const roundNumber = (value, digits = 2) => {
@@ -1825,7 +1825,7 @@ function sanitizeDyehousePriceLibrary(source = {}) {
 }));
 
 async function saveDyehousePricesFromDialog() {
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط£ط³ط¹ط§ط± ط§ظ„ظ…طµط§ط¨ط؛.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ أسعار المصابغ.'))) return;
   const before = clone(customDyehousePriceLibrary || {});
   const next = {};
   refs.documentBody.querySelectorAll('[data-dyehouse-price-row]').forEach((row) => {
@@ -1856,16 +1856,16 @@ async function saveDyehousePricesFromDialog() {
   if (!saved) {
     customDyehousePriceLibrary = before;
     saveDyehousePriceLibraryLocal();
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط£ط³ط¹ط§ط± ط§ظ„ظ…طµط§ط¨ط؛ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ أسعار المصابغ في قاعدة البيانات. لم يتم اعتماد التعديل.');
     return;
   }
-  recordAudit('update', 'dyehousePriceLibrary', 'pricing', before, customDyehousePriceLibrary, 'طھط­ط¯ظٹط« ط£ط³ط¹ط§ط± ط§ظ„ظ…طµط§ط¨ط؛');
+  recordAudit('update', 'dyehousePriceLibrary', 'pricing', before, customDyehousePriceLibrary, 'تحديث أسعار المصابغ');
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   applyPricingDyehouseOptions();
   updateSuggestedDyeCost();
   renderDyehousePricesDialog();
-  alert('طھظ… ط­ظپط¸ ط£ط³ط¹ط§ط± ط§ظ„ظ…طµط§ط¨ط؛ ط¨ظ†ط¬ط§ط­.');
+  alert('تم حفظ أسعار المصابغ بنجاح.');
 }
 function ensureCustomerAccount(customerName) {
   const name = String(customerName || '').trim();
@@ -1907,11 +1907,11 @@ function finishedStockSaleInvoices(customerName) {
         id: batch.id,
         orderNumber: sourceOrder.orderNumber || batch.orderId || '-',
         date: batch.date,
-        item: [sourceOrder.fabricType, sourceAllocation.color].filter(Boolean).join(' / ') || 'ط¨ظٹط¹ ظ…ط¬ظ‡ط²',
+        item: [sourceOrder.fabricType, sourceAllocation.color].filter(Boolean).join(' / ') || 'بيع مجهز',
         quantity,
         unitPrice,
         amount: roundNumber(amount),
-        status: 'ط¨ظٹط¹ ظ…ط¬ظ‡ط² ظ…ظ† ط§ظ„ظ…ط®ط²ظ†',
+        status: 'بيع مجهز من المخزن',
       };
     });
 }
@@ -1934,7 +1934,7 @@ function customerAccountInvoices(customerName) {
         quantity: invoiceQuantity,
         unitPrice,
         amount: roundNumber(invoiceQuantity * unitPrice),
-        status: deliveredQuantity ? 'طھظ… ط§ظ„طھط³ظ„ظٹظ…' : (order.operationClosed ? 'ظ…ط؛ظ„ظ‚ ط¨ط¯ظˆظ† طھط³ظ„ظٹظ…' : 'طھط­طھ ط§ظ„طھط´ط؛ظٹظ„'),
+        status: deliveredQuantity ? 'تم التسليم' : (order.operationClosed ? 'مغلق بدون تسليم' : 'تحت التشغيل'),
       };
     });
   return [...orderInvoices, ...finishedStockSaleInvoices(name)].sort((a, b)=>String(a.date || '').localeCompare(String(b.date || '')));
@@ -1953,28 +1953,28 @@ function knownAccountCustomers() {
 function customerMasterTableRows() {
   const rows = customerMasterRows().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name), 'ar'));
   return rows.map((customer)=>{
-    const deleteAction = canDeleteRecords?.() ? `<button class="mini-btn danger" type="button" data-delete-customer-master="${escapeHtml(customer.id)}">ط­ط°ظپ</button>` : '';
+    const deleteAction = canDeleteRecords?.() ? `<button class="mini-btn danger" type="button" data-delete-customer-master="${escapeHtml(customer.id)}">حذف</button>` : '';
     return `<tr>
     <td>${escapeHtml(customer.name)}</td>
     <td>${escapeHtml(customer.phone || '-')}</td>
     <td>${escapeHtml(customer.notes || '-')}</td>
-    <td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-edit-customer-master="${escapeHtml(customer.id)}">طھط¹ط¯ظٹظ„</button><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(customer.name)}">ظƒط´ظپ ط§ظ„ط­ط³ط§ط¨</button>${deleteAction}</div></td>
+    <td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-edit-customer-master="${escapeHtml(customer.id)}">تعديل</button><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(customer.name)}">كشف الحساب</button>${deleteAction}</div></td>
   </tr>`;
-  }).join('') || '<tr><td colspan="4">ظ„ط§ طھظˆط¬ط¯ ط¨ظٹط§ظ†ط§طھ ط¹ظ…ظ„ط§ط، ظ…ط³ط¬ظ„ط©.</td></tr>';
+  }).join('') || '<tr><td colspan="4">لا توجد بيانات عملاء مسجلة.</td></tr>';
 }
 function customerMasterSectionHtml() {
   return `<section class="report-section no-print">
-    <h3>ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¹ظ…ظ„ط§ط،</h3>
+    <h3>بيانات العملاء</h3>
     <div class="summary-grid">
       <input type="hidden" data-customer-master-id>
-      <input data-customer-master-name placeholder="ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„ ط§ظ„ط±ط³ظ…ظٹ">
-      <input data-customer-master-phone placeholder="ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ">
-      <input data-customer-master-notes placeholder="ظ…ظ„ط§ط­ط¸ط§طھ">
-      <button class="primary-btn" type="button" data-save-customer-master>ط­ظپط¸ ط§ظ„ط¹ظ…ظٹظ„</button>
-      <button class="mini-btn" type="button" data-clear-customer-master>ط¹ظ…ظٹظ„ ط¬ط¯ظٹط¯</button>
+      <input data-customer-master-name placeholder="اسم العميل الرسمي">
+      <input data-customer-master-phone placeholder="رقم الهاتف">
+      <input data-customer-master-notes placeholder="ملاحظات">
+      <button class="primary-btn" type="button" data-save-customer-master>حفظ العميل</button>
+      <button class="mini-btn" type="button" data-clear-customer-master>عميل جديد</button>
     </div>
-    <p class="muted">ط§ظ„ظ†ط¸ط§ظ… ظٹط·ط§ط¨ظ‚ ط£ط³ظ…ط§ط، ط§ظ„ط¹ظ…ظ„ط§ط، ط¨ط¹ط¯ طھظˆط­ظٹط¯ ط§ظ„ظ‡ظ…ط²ط§طھ ظˆط§ظ„ظ…ط³ط§ظپط§طھطŒ ظ„ط°ظ„ظƒ ط£ظ…ظ„/ط§ظ…ظ„/ط¥ظ…ظ„ طھط¹طھط¨ط± ظ†ظپط³ ط§ظ„ط¹ظ…ظٹظ„.</p>
-    <table class="customer-ledger-table"><thead><tr><th>ط§ظ„ط¹ظ…ظٹظ„</th><th>ط§ظ„ظ‡ط§طھظپ</th><th>ظ…ظ„ط§ط­ط¸ط§طھ</th><th class="no-print">ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${customerMasterTableRows()}</tbody></table>
+    <p class="muted">النظام يطابق أسماء العملاء بعد توحيد الهمزات والمسافات، لذلك أمل/امل/إمل تعتبر نفس العميل.</p>
+    <table class="customer-ledger-table"><thead><tr><th>العميل</th><th>الهاتف</th><th>ملاحظات</th><th class="no-print">إجراء</th></tr></thead><tbody>${customerMasterTableRows()}</tbody></table>
   </section>`;
 }
 function customerMasterFormRefs() {
@@ -2009,23 +2009,23 @@ async function saveCustomerMasterFromDialog() {
   const name = cleanCustomerDisplayName(formRefs.name?.value || '');
   const phone = String(formRefs.phone?.value || '').trim();
   const notes = String(formRefs.notes?.value || '').trim();
-  if (!name) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„.'); return; }
+  if (!name) { alert('اكتب اسم العميل.'); return; }
   const normalized = normalizeCustomerMasterName(name);
   const duplicate = customerMasterRows().find((customer)=>normalizeCustomerMasterName(customer.name) === normalized && String(customer.id) !== String(id));
   if (duplicate) {
-    alert(`ط§ظ„ط¹ظ…ظٹظ„ ظ…ظˆط¬ظˆط¯ ط¨ط§ظ„ظپط¹ظ„ ط¨ط§ط³ظ…: ${duplicate.name}`);
+    alert(`العميل موجود بالفعل باسم: ${duplicate.name}`);
     fillCustomerMasterForm(duplicate.id);
     return;
   }
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¹ظ…ظٹظ„.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ بيانات العميل.'))) return;
   const customerId = id || backendCustomerId(name);
   const payload = { id: customerId, name, phone, notes };
   const saved = id ? await putBackend(`/customers/${encodeURIComponent(customerId)}`, payload) : await postBackend('/customers', payload);
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¹ظ…ظٹظ„ ط¯ط§ط®ظ„ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ بيانات العميل داخل قاعدة البيانات.');
     return;
   }
-  recordAudit(id ? 'update' : 'create', 'customer', customerId, null, payload, `ط­ظپط¸ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¹ظ…ظٹظ„ ${name}`);
+  recordAudit(id ? 'update' : 'create', 'customer', customerId, null, payload, `حفظ بيانات العميل ${name}`);
   await persistAuditLog();
   await loadBackendData();
   applyCustomerNameDatalist();
@@ -2035,16 +2035,16 @@ async function deleteCustomerMaster(customerId) {
   const customer = customerMasterRows().find((item)=>String(item.id) === String(customerId));
   if (!customer) return;
   if (!normalizeCustomerMasterName(customer.name)) {
-    alert('ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„ ط؛ظٹط± ظˆط§ط¶ط­.');
+    alert('اسم العميل غير واضح.');
     return;
   }
-  const fullDeleteText = `ط­ط°ظپ ظƒط§ظ…ظ„ ظ„ظ„ط¹ظ…ظٹظ„ ${customer.name}طں\n\nط³ظٹطھظ… ط­ط°ظپ ط§ظ„ط¹ظ…ظٹظ„ ظ…ظ† ط§ظ„ظ‚ط§ط¦ظ…ط© ظˆط­ط°ظپ ط£ظٹ ط·ظ„ط¨ط§طھ ط£ظˆ ط¹ط±ظˆط¶ ط³ط¹ط± ط£ظˆ ط­ط±ظƒط§طھ ط¨ظٹط¹/طھط³ظ„ظٹظ… ظ…ط±طھط¨ط·ط© ط¨ظ‡ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ.\nظ‡ط°ظ‡ ط§ظ„ط¹ظ…ظ„ظٹط© ظ„ط§ طھط±ط§ط¬ط¹ ط¥ظ„ط§ ظ…ظ† ط§ظ„ظ†ط³ط® ط§ظ„ط§ط­طھظٹط§ط·ظٹط©.`;
+  const fullDeleteText = `حذف كامل للعميل ${customer.name}؟\n\nسيتم حذف العميل من القائمة وحذف أي طلبات أو عروض سعر أو حركات بيع/تسليم مرتبطة به من قاعدة البيانات.\nهذه العملية لا تراجع إلا من النسخ الاحتياطية.`;
   if (!confirm(fullDeleteText)) return;
-  if (!confirm(`طھط£ظƒظٹط¯ ظ†ظ‡ط§ط¦ظٹ: ط­ط°ظپ ظƒط§ظ…ظ„ ظ„ظ„ط¹ظ…ظٹظ„ ${customer.name} ظˆظƒظ„ ط¨ظٹط§ظ†ط§طھظ‡ ط§ظ„ظ…ط±طھط¨ط·ط©طں`)) return;
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ط°ظپ ط§ظ„ط¹ظ…ظٹظ„.'))) return;
+  if (!confirm(`تأكيد نهائي: حذف كامل للعميل ${customer.name} وكل بياناته المرتبطة؟`)) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حذف العميل.'))) return;
   const deleted = await deleteBackend(`/customers/${encodeURIComponent(customer.id)}/full`);
   if (!deleted?.ok) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± طھظ†ظپظٹط° ط§ظ„ط­ط°ظپ ط§ظ„ظƒط§ظ…ظ„ ظ„ظ„ط¹ظ…ظٹظ„ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ.');
+    await rollbackAfterBackendWriteFailure('تعذر تنفيذ الحذف الكامل للعميل من قاعدة البيانات.');
     return;
   }
   if (customerAccounts?.[customer.name]) {
@@ -2053,7 +2053,7 @@ async function deleteCustomerMaster(customerId) {
     await saveBackendSetting('customerAccounts', nextAccounts);
     customerAccounts = nextAccounts;
   }
-  recordAudit('delete', 'customer', customer.id, customer, deleted.deleted || null, `ط­ط°ظپ ظƒط§ظ…ظ„ ظ„ظ„ط¹ظ…ظٹظ„ ${customer.name}`);
+  recordAudit('delete', 'customer', customer.id, customer, deleted.deleted || null, `حذف كامل للعميل ${customer.name}`);
   await persistAuditLog();
   await loadBackendData();
   applyCustomerNameDatalist();
@@ -2070,23 +2070,23 @@ function renderCustomerAccountsDialog() {
     acc.balance += Number(item.balance || 0);
     return acc;
   }, { opening:0, invoices:0, payments:0, balance:0 });
-  const rows = summaries.map((item)=>`<tr><td>${escapeHtml(item.customerName)}</td><td>${formatNumber(item.openingBalance)}</td><td>${formatNumber(item.invoiceTotal)}</td><td>${formatNumber(item.paymentTotal)}</td><td><strong>${formatNumber(item.balance)}</strong></td><td class="no-print"><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(item.customerName)}">ط¹ط±ط¶ ط§ظ„ط­ط³ط§ط¨</button></td></tr>`).join('');
-  refs.documentTitle.textContent = 'ط­ط³ط§ط¨ط§طھ ط§ظ„ط¹ظ…ظ„ط§ط،';
+  const rows = summaries.map((item)=>`<tr><td>${escapeHtml(item.customerName)}</td><td>${formatNumber(item.openingBalance)}</td><td>${formatNumber(item.invoiceTotal)}</td><td>${formatNumber(item.paymentTotal)}</td><td><strong>${formatNumber(item.balance)}</strong></td><td class="no-print"><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(item.customerName)}">عرض الحساب</button></td></tr>`).join('');
+  refs.documentTitle.textContent = 'حسابات العملاء';
   refs.documentBody.dataset.documentType = 'customer-accounts';
   refs.documentBody.innerHTML = `<div class="document-sheet customer-account-sheet">
     <div class="customer-ledger-header">
-      <div><p class="muted">ظ†ط¸ط§ظ… 2B Tex</p><h2>ط­ط³ط§ط¨ط§طھ ط§ظ„ط¹ظ…ظ„ط§ط،</h2><span>ظ…ظ„ط®طµ ط£ط±طµط¯ط© ط§ظ„ط¹ظ…ظ„ط§ط، ط¯ط§ط®ظ„ ظ†ط¸ط§ظ… ط§ظ„ظ…طھط§ط¨ط¹ط©.</span></div>
+      <div><p class="muted">نظام 2B Tex</p><h2>حسابات العملاء</h2><span>ملخص أرصدة العملاء داخل نظام المتابعة.</span></div>
     </div>
     <div class="customer-ledger-summary">
-      <div><span>ط¹ط¯ط¯ ط§ظ„ط¹ظ…ظ„ط§ط،</span><strong>${summaries.length}</strong></div>
-      <div><span>ط±طµظٹط¯ ط§ظپطھطھط§ط­ظٹ</span><strong>${formatNumber(totals.opening)}</strong></div>
-      <div><span>ظ…ط¨ظٹط¹ط§طھ / ظ…ط³طھط­ظ‚ط§طھ</span><strong>${formatNumber(totals.invoices)}</strong></div>
-      <div><span>ظ…ط¯ظپظˆط¹ط§طھ</span><strong>${formatNumber(totals.payments)}</strong></div>
-      <div class="emphasis"><span>ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط±طµظٹط¯</span><strong>${formatNumber(totals.balance)}</strong></div>
+      <div><span>عدد العملاء</span><strong>${summaries.length}</strong></div>
+      <div><span>رصيد افتتاحي</span><strong>${formatNumber(totals.opening)}</strong></div>
+      <div><span>مبيعات / مستحقات</span><strong>${formatNumber(totals.invoices)}</strong></div>
+      <div><span>مدفوعات</span><strong>${formatNumber(totals.payments)}</strong></div>
+      <div class="emphasis"><span>إجمالي الرصيد</span><strong>${formatNumber(totals.balance)}</strong></div>
     </div>
-    <p class="muted customer-ledger-note">ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ = ط§ظ„ط±طµظٹط¯ ط§ظ„ط§ظپطھطھط§ط­ظٹ + ظ…ط³طھط­ظ‚ط§طھ ط§ظ„ط·ظ„ط¨ط§طھ - ط§ظ„ظ…ط¯ظپظˆط¹ط§طھ. ظ‡ط°ظ‡ ط§ظ„ظ‚ط±ط§ط،ط© ط¯ط§ط®ظ„ ظ†ط¸ط§ظ… ط§ظ„ظ…طھط§ط¨ط¹ط© ظپظ‚ط· ظˆظ„ط§ طھط¹ط¯ظ„ ط£ط±طµط¯ط© A5.</p>
+    <p class="muted customer-ledger-note">الرصيد الحالي = الرصيد الافتتاحي + مستحقات الطلبات - المدفوعات. هذه القراءة داخل نظام المتابعة فقط ولا تعدل أرصدة A5.</p>
     ${customerMasterSectionHtml()}
-    <table class="customer-ledger-table"><thead><tr><th>ط§ظ„ط¹ظ…ظٹظ„</th><th>ط±طµظٹط¯ ط§ظپطھطھط§ط­ظٹ</th><th>ظ…ط¨ظٹط¹ط§طھ / ظ…ط³طھط­ظ‚ط§طھ</th><th>ظ…ط¯ظپظˆط¹ط§طھ</th><th>ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ</th><th class="no-print">ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${rows || '<tr><td colspan="6">ظ„ط§ طھظˆط¬ط¯ ط­ط³ط§ط¨ط§طھ ط¹ظ…ظ„ط§ط، ظ…طھط§ط­ط©.</td></tr>'}</tbody></table>
+    <table class="customer-ledger-table"><thead><tr><th>العميل</th><th>رصيد افتتاحي</th><th>مبيعات / مستحقات</th><th>مدفوعات</th><th>الرصيد الحالي</th><th class="no-print">إجراء</th></tr></thead><tbody>${rows || '<tr><td colspan="6">لا توجد حسابات عملاء متاحة.</td></tr>'}</tbody></table>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
@@ -2094,30 +2094,30 @@ function renderCustomerAccountsDialog() {
 function renderCustomerLedgerDialog(customerName) {
   const summary = customerAccountSummary(customerName);
   const invoiceRows = summary.invoices.map((item)=>`<tr><td>${escapeHtml(item.orderNumber || '-')}</td><td>${escapeHtml(item.date || '-')}</td><td>${escapeHtml(item.item || '-')}</td><td>${formatNumber(item.quantity)}</td><td>${formatNumber(item.unitPrice)}</td><td>${formatNumber(item.amount)}</td><td>${escapeHtml(item.status)}</td></tr>`).join('');
-  const paymentRows = summary.payments.map((item)=>`<tr><td>${escapeHtml(item.date || '-')}</td><td>${formatNumber(item.amount)}</td><td>${escapeHtml(item.method || '-')}</td><td>${escapeHtml(item.notes || '-')}</td><td class="no-print"><button class="mini-btn danger" type="button" data-delete-customer-payment="${escapeHtml(item.id)}" data-customer-name="${escapeHtml(summary.customerName)}">ط­ط°ظپ</button></td></tr>`).join('');
-  refs.documentTitle.textContent = `ظƒط´ظپ ط­ط³ط§ط¨ ط§ظ„ط¹ظ…ظٹظ„ ${summary.customerName}`;
+  const paymentRows = summary.payments.map((item)=>`<tr><td>${escapeHtml(item.date || '-')}</td><td>${formatNumber(item.amount)}</td><td>${escapeHtml(item.method || '-')}</td><td>${escapeHtml(item.notes || '-')}</td><td class="no-print"><button class="mini-btn danger" type="button" data-delete-customer-payment="${escapeHtml(item.id)}" data-customer-name="${escapeHtml(summary.customerName)}">حذف</button></td></tr>`).join('');
+  refs.documentTitle.textContent = `كشف حساب العميل ${summary.customerName}`;
   refs.documentBody.dataset.documentType = 'customer-ledger';
   refs.documentBody.innerHTML = `<div class="document-sheet customer-ledger-sheet">
     <div class="customer-ledger-header">
-      <button class="mini-btn no-print" type="button" data-back-customer-accounts>ط±ط¬ظˆط¹</button>
-      <div><p class="muted">ظƒط´ظپ ط­ط³ط§ط¨ ط¹ظ…ظٹظ„</p><h2>${escapeHtml(summary.customerName)}</h2><span>ط­ط±ظƒط§طھ ط§ظ„ط¹ظ…ظٹظ„ ظ…ظ† ظپظˆط§طھظٹط± ط§ظ„ط·ظ„ط¨ط§طھ ظˆط§ظ„ظ…ط¯ظپظˆط¹ط§طھ ط§ظ„ظ…ط³ط¬ظ„ط©.</span></div>
+      <button class="mini-btn no-print" type="button" data-back-customer-accounts>رجوع</button>
+      <div><p class="muted">كشف حساب عميل</p><h2>${escapeHtml(summary.customerName)}</h2><span>حركات العميل من فواتير الطلبات والمدفوعات المسجلة.</span></div>
     </div>
     <div class="customer-ledger-summary">
-      <div><span>ط±طµظٹط¯ ط§ظپطھطھط§ط­ظٹ</span><strong>${formatNumber(summary.openingBalance)}</strong></div>
-      <div><span>ظ…ط¨ظٹط¹ط§طھ / ظ…ط³طھط­ظ‚ط§طھ</span><strong>${formatNumber(summary.invoiceTotal)}</strong></div>
-      <div><span>ظ…ط¯ظپظˆط¹ط§طھ</span><strong>${formatNumber(summary.paymentTotal)}</strong></div>
-      <div class="emphasis"><span>ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ</span><strong>${formatNumber(summary.balance)}</strong></div>
+      <div><span>رصيد افتتاحي</span><strong>${formatNumber(summary.openingBalance)}</strong></div>
+      <div><span>مبيعات / مستحقات</span><strong>${formatNumber(summary.invoiceTotal)}</strong></div>
+      <div><span>مدفوعات</span><strong>${formatNumber(summary.paymentTotal)}</strong></div>
+      <div class="emphasis"><span>الرصيد الحالي</span><strong>${formatNumber(summary.balance)}</strong></div>
     </div>
     <section class="report-section ledger-edit-section no-print">
-      <h3>طھط¹ط¯ظٹظ„ ط§ظ„ط±طµظٹط¯ ط§ظ„ط§ظپطھطھط§ط­ظٹ</h3>
-      <div class="summary-grid"><label><span>ط§ظ„ط±طµظٹط¯ ط§ظ„ط§ظپطھطھط§ط­ظٹ</span><input type="number" step="0.01" data-opening-balance value="${summary.openingBalance}"></label><button class="primary-btn" type="button" data-save-opening-balance="${escapeHtml(summary.customerName)}">ط­ظپط¸ ط§ظ„ط±طµظٹط¯</button></div>
+      <h3>تعديل الرصيد الافتتاحي</h3>
+      <div class="summary-grid"><label><span>الرصيد الافتتاحي</span><input type="number" step="0.01" data-opening-balance value="${summary.openingBalance}"></label><button class="primary-btn" type="button" data-save-opening-balance="${escapeHtml(summary.customerName)}">حفظ الرصيد</button></div>
     </section>
     <section class="report-section ledger-edit-section no-print">
-      <h3>ط¥ط¶ط§ظپط© ط¯ظپط¹ط©</h3>
-      <div class="summary-grid"><input type="date" data-payment-date value="${new Date().toISOString().slice(0,10)}"><input type="number" step="0.01" data-payment-amount placeholder="ط§ظ„ظ…ط¨ظ„ط؛"><input data-payment-method placeholder="ط·ط±ظٹظ‚ط© ط§ظ„ط¯ظپط¹"><input data-payment-notes placeholder="ظ…ظ„ط§ط­ط¸ط§طھ"><button class="primary-btn" type="button" data-add-customer-payment="${escapeHtml(summary.customerName)}">ط¥ط¶ط§ظپط© ط¯ظپط¹ط©</button></div>
+      <h3>إضافة دفعة</h3>
+      <div class="summary-grid"><input type="date" data-payment-date value="${new Date().toISOString().slice(0,10)}"><input type="number" step="0.01" data-payment-amount placeholder="المبلغ"><input data-payment-method placeholder="طريقة الدفع"><input data-payment-notes placeholder="ملاحظات"><button class="primary-btn" type="button" data-add-customer-payment="${escapeHtml(summary.customerName)}">إضافة دفعة</button></div>
     </section>
-    <section class="report-section"><h3>ظپظˆط§طھظٹط± ط§ظ„ط·ظ„ط¨ط§طھ</h3><table class="customer-ledger-table"><thead><tr><th>ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨</th><th>ط§ظ„طھط§ط±ظٹط®</th><th>ط§ظ„ط¨ظ†ط¯</th><th>ط§ظ„ظƒظ…ظٹط©</th><th>ط³ط¹ط± ط§ظ„ظˆط­ط¯ط©</th><th>ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</th><th>ط§ظ„ط­ط§ظ„ط©</th></tr></thead><tbody>${invoiceRows || '<tr><td colspan="7">ظ„ط§ طھظˆط¬ط¯ ظپظˆط§طھظٹط± ظ…ط³ط¬ظ„ط© ظ„ظ‡ط°ط§ ط§ظ„ط¹ظ…ظٹظ„.</td></tr>'}</tbody></table></section>
-    <section class="report-section"><h3>ط§ظ„ظ…ط¯ظپظˆط¹ط§طھ</h3><table class="customer-ledger-table"><thead><tr><th>ط§ظ„طھط§ط±ظٹط®</th><th>ط§ظ„ظ…ط¨ظ„ط؛</th><th>ط·ط±ظٹظ‚ط© ط§ظ„ط¯ظپط¹</th><th>ظ…ظ„ط§ط­ط¸ط§طھ</th><th class="no-print">ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${paymentRows || '<tr><td colspan="5">ظ„ط§ طھظˆط¬ط¯ ظ…ط¯ظپظˆط¹ط§طھ ظ…ط³ط¬ظ„ط© ظ„ظ‡ط°ط§ ط§ظ„ط¹ظ…ظٹظ„.</td></tr>'}</tbody></table></section>
+    <section class="report-section"><h3>فواتير الطلبات</h3><table class="customer-ledger-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>البند</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${invoiceRows || '<tr><td colspan="7">لا توجد فواتير مسجلة لهذا العميل.</td></tr>'}</tbody></table></section>
+    <section class="report-section"><h3>المدفوعات</h3><table class="customer-ledger-table"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th><th class="no-print">إجراء</th></tr></thead><tbody>${paymentRows || '<tr><td colspan="5">لا توجد مدفوعات مسجلة لهذا العميل.</td></tr>'}</tbody></table></section>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
@@ -2125,17 +2125,17 @@ function renderCustomerLedgerDialog(customerName) {
 async function saveCustomerOpeningBalance(customerName) {
   const account = ensureCustomerAccount(customerName);
   if (!account) return;
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط­ط³ط§ط¨ ط§ظ„ط¹ظ…ظٹظ„.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ حساب العميل.'))) return;
   const before = clone(account);
   const nextAccounts = clone(customerAccounts);
   nextAccounts[customerName] = { ...(nextAccounts[customerName] || { payments:[] }), openingBalance:Number(refs.documentBody.querySelector('[data-opening-balance]')?.value || 0) };
   const saved = await saveBackendSetting('customerAccounts', nextAccounts);
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط­ط³ط§ط¨ ط§ظ„ط¹ظ…ظٹظ„ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ حساب العميل في قاعدة البيانات. لم يتم اعتماد التعديل.');
     return;
   }
   customerAccounts = nextAccounts;
-  recordAudit('update', 'customerAccount', customerName, before, customerAccounts[customerName], `طھط¹ط¯ظٹظ„ ط§ظ„ط±طµظٹط¯ ط§ظ„ط§ظپطھطھط§ط­ظٹ ظ„ظ„ط¹ظ…ظٹظ„ ${customerName}`);
+  recordAudit('update', 'customerAccount', customerName, before, customerAccounts[customerName], `تعديل الرصيد الافتتاحي للعميل ${customerName}`);
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   renderCustomerLedgerDialog(customerName);
@@ -2144,8 +2144,8 @@ async function addCustomerPayment(customerName) {
   const account = ensureCustomerAccount(customerName);
   if (!account) return;
   const amount = Number(refs.documentBody.querySelector('[data-payment-amount]')?.value || 0);
-  if (!amount) { alert('ط£ط¯ط®ظ„ ظ…ط¨ظ„ط؛ ط§ظ„ط¯ظپط¹ط© ظ‚ط¨ظ„ ط§ظ„ط­ظپط¸.'); return; }
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط§ظ„ط¯ظپط¹ط©.'))) return;
+  if (!amount) { alert('أدخل مبلغ الدفعة قبل الحفظ.'); return; }
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ الدفعة.'))) return;
   const payment = { id:uid(), date:refs.documentBody.querySelector('[data-payment-date]')?.value || new Date().toISOString().slice(0,10), amount, method:refs.documentBody.querySelector('[data-payment-method]')?.value || '', notes:refs.documentBody.querySelector('[data-payment-notes]')?.value || '' };
   const before = clone(account);
   const nextAccounts = clone(customerAccounts);
@@ -2154,11 +2154,11 @@ async function addCustomerPayment(customerName) {
   nextAccounts[customerName] = nextAccount;
   const saved = await saveBackendSetting('customerAccounts', nextAccounts);
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¯ظپط¹ط© ط§ظ„ط¹ظ…ظٹظ„ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط¯ظپط¹ط©.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ دفعة العميل في قاعدة البيانات. لم يتم اعتماد الدفعة.');
     return;
   }
   customerAccounts = nextAccounts;
-  recordAudit('create', 'customerPayment', payment.id, before, nextAccount, `ط¥ط¶ط§ظپط© ط¯ظپط¹ط© ظ„ظ„ط¹ظ…ظٹظ„ ${customerName}`);
+  recordAudit('create', 'customerPayment', payment.id, before, nextAccount, `إضافة دفعة للعميل ${customerName}`);
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   renderCustomerLedgerDialog(customerName);
@@ -2166,7 +2166,7 @@ async function addCustomerPayment(customerName) {
 async function deleteCustomerPayment(customerName, paymentId) {
   const account = ensureCustomerAccount(customerName);
   if (!account) return;
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ط°ظپ ط§ظ„ط¯ظپط¹ط©.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حذف الدفعة.'))) return;
   const before = clone(account);
   const nextAccounts = clone(customerAccounts);
   const nextAccount = { ...(nextAccounts[customerName] || { openingBalance:0, payments:[] }) };
@@ -2174,11 +2174,11 @@ async function deleteCustomerPayment(customerName, paymentId) {
   nextAccounts[customerName] = nextAccount;
   const saved = await saveBackendSetting('customerAccounts', nextAccounts);
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ط°ظپ ط¯ظپط¹ط© ط§ظ„ط¹ظ…ظٹظ„ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط°ظپ.');
+    await rollbackAfterBackendWriteFailure('تعذر حذف دفعة العميل من قاعدة البيانات. لم يتم اعتماد الحذف.');
     return;
   }
   customerAccounts = nextAccounts;
-  recordAudit('delete', 'customerPayment', paymentId, before, nextAccount, `ط­ط°ظپ ط¯ظپط¹ط© ظ„ظ„ط¹ظ…ظٹظ„ ${customerName}`);
+  recordAudit('delete', 'customerPayment', paymentId, before, nextAccount, `حذف دفعة للعميل ${customerName}`);
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   renderCustomerLedgerDialog(customerName);
@@ -2193,7 +2193,7 @@ function refreshOutboxTargetsAfterSettings() {
     if (!nextTarget && reportNeedsManualWhatsappGroup(row.reportType) && row.targetGroup) {
       row.targetGroup = '';
       row.status = 'failed';
-      row.errorMessage = 'ظ„ظ… ظٹطھظ… طھط­ط¯ظٹط¯ ط¬ط±ظˆط¨ ظˆط§طھط³ط§ط¨ ظ„ظ‡ط°ط§ ط§ظ„طھظ‚ط±ظٹط±.';
+      row.errorMessage = 'لم يتم تحديد جروب واتساب لهذا التقرير.';
       row.sendingAt = null;
       changed = true;
       return;
@@ -2306,11 +2306,11 @@ async function renderA5AccountsDialog() {
 }
 async function renderA5LedgerDialog(customerName) {
   const name = String(customerName || '').trim();
-  refs.documentTitle.textContent = `ظƒط´ظپ ط­ط³ط§ط¨ A5 - ${name}`;
+  refs.documentTitle.textContent = `كشف حساب A5 - ${name}`;
   refs.documentBody.dataset.documentType = 'a5-ledger';
   refs.documentBody.innerHTML = `<div class="document-sheet">
-    <div class="subsection-head"><div><h2>ظƒط´ظپ ط­ط³ط§ط¨ A5</h2><p class="muted">${escapeHtml(name)} - ط¨ظٹط§ظ†ط§طھ ظ‚ط±ط§ط،ط© ظپظ‚ط· ظ…ظ† A5.</p></div><button class="mini-btn no-print" type="button" data-back-a5-accounts>ط±ط¬ظˆط¹</button></div>
-    <p class="muted">ط¬ط§ط±ظٹ طھط­ظ…ظٹظ„ ط­ط±ظƒط§طھ ط§ظ„ط­ط³ط§ط¨...</p>
+    <div class="subsection-head"><div><h2>كشف حساب A5</h2><p class="muted">${escapeHtml(name)} - بيانات قراءة فقط من A5.</p></div><button class="mini-btn no-print" type="button" data-back-a5-accounts>رجوع</button></div>
+    <p class="muted">جاري تحميل حركات الحساب...</p>
   </div>`;
   try {
     const movements = await fetchA5CustomerLedger(name);
@@ -2332,21 +2332,21 @@ async function renderA5LedgerDialog(customerName) {
       <td>${item.orderRef || item.orderBookRef || '-'}</td>
     </tr>`).join('');
     refs.documentBody.innerHTML = `<div class="document-sheet">
-      <div class="subsection-head"><div><h2>ظƒط´ظپ ط­ط³ط§ط¨ A5 - ${escapeHtml(name)}</h2><p class="muted">ط­ط±ظƒط§طھ ط§ظ„ط¹ظ…ظٹظ„ ظپظٹ A5 ظ…ط¹ ظ…ظ„ط®طµ ط·ظ„ط¨ط§طھظ‡ ط¯ط§ط®ظ„ ظ†ط¸ط§ظ… ط§ظ„ظ…طھط§ط¨ط¹ط©.</p></div><button class="mini-btn no-print" type="button" data-back-a5-accounts>ط±ط¬ظˆط¹</button></div>
+      <div class="subsection-head"><div><h2>كشف حساب A5 - ${escapeHtml(name)}</h2><p class="muted">حركات العميل في A5 مع ملخص طلباته داخل نظام المتابعة.</p></div><button class="mini-btn no-print" type="button" data-back-a5-accounts>رجوع</button></div>
       <div class="summary-grid">
-        <div class="metric"><span>ط±طµظٹط¯ ط§ظ„ط¹ظ…ظٹظ„</span><strong>${formatNumber(currentBalance)}</strong></div>
-        <div class="metric"><span>ط¥ط¬ظ…ط§ظ„ظٹ ظ…ط¯ظٹظ†</span><strong>${formatNumber(totals.debit)}</strong></div>
-        <div class="metric"><span>ط¥ط¬ظ…ط§ظ„ظٹ ط¯ط§ط¦ظ†</span><strong>${formatNumber(totals.credit)}</strong></div>
-        <div class="metric"><span>ط¹ط¯ط¯ ط§ظ„ط­ط±ظƒط§طھ</span><strong>${movements.length}</strong></div>
-        <div class="metric"><span>ط·ظ„ط¨ط§طھ ط§ظ„ظ…طھط§ط¨ط¹ط©</span><strong>${tracking.ordersCount}</strong></div>
-        <div class="metric"><span>طھط­طھ ط§ظ„طھط´ط؛ظٹظ„</span><strong>${tracking.activeOrdersCount}</strong></div>
+        <div class="metric"><span>رصيد العميل</span><strong>${formatNumber(currentBalance)}</strong></div>
+        <div class="metric"><span>إجمالي مدين</span><strong>${formatNumber(totals.debit)}</strong></div>
+        <div class="metric"><span>إجمالي دائن</span><strong>${formatNumber(totals.credit)}</strong></div>
+        <div class="metric"><span>عدد الحركات</span><strong>${movements.length}</strong></div>
+        <div class="metric"><span>طلبات المتابعة</span><strong>${tracking.ordersCount}</strong></div>
+        <div class="metric"><span>تحت التشغيل</span><strong>${tracking.activeOrdersCount}</strong></div>
       </div>
-      <table><thead><tr><th>ط§ظ„طھط§ط±ظٹط®</th><th>ظ†ظˆط¹ ط§ظ„ط­ط±ظƒط©</th><th>ط§ظ„ط¨ظٹط§ظ†</th><th>ط±طµظٹط¯ ظ‚ط¨ظ„</th><th>ظ…ط¯ظٹظ†</th><th>ط¯ط§ط¦ظ†</th><th>ط±طµظٹط¯ ط¨ط¹ط¯</th><th>ظ…ط±ط¬ط¹ ط§ظ„ط·ظ„ط¨</th></tr></thead><tbody>${rows || '<tr><td colspan="8">ظ„ط§ طھظˆط¬ط¯ ط­ط±ظƒط§طھ ظ…طھط§ط­ط© ظ„ظ‡ط°ط§ ط§ظ„ط¹ظ…ظٹظ„ ظپظٹ A5.</td></tr>'}</tbody></table>
+      <table><thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th>رصيد قبل</th><th>مدين</th><th>دائن</th><th>رصيد بعد</th><th>مرجع الطلب</th></tr></thead><tbody>${rows || '<tr><td colspan="8">لا توجد حركات متاحة لهذا العميل في A5.</td></tr>'}</tbody></table>
     </div>`;
   } catch (error) {
     refs.documentBody.innerHTML = `<div class="document-sheet">
-      <div class="subsection-head"><h2>ظƒط´ظپ ط­ط³ط§ط¨ A5</h2><button class="mini-btn no-print" type="button" data-back-a5-accounts>ط±ط¬ظˆط¹</button></div>
-      <div class="notice warning">طھط¹ط°ط± طھط­ظ…ظٹظ„ ظƒط´ظپ ط§ظ„ط­ط³ط§ط¨ ظ…ظ† A5. طھط£ظƒط¯ ط£ظ† ط®ط¯ظ…ط© A5 طھط¹ظ…ظ„ ط«ظ… ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰.</div>
+      <div class="subsection-head"><h2>كشف حساب A5</h2><button class="mini-btn no-print" type="button" data-back-a5-accounts>رجوع</button></div>
+      <div class="notice warning">تعذر تحميل كشف الحساب من A5. تأكد أن خدمة A5 تعمل ثم حاول مرة أخرى.</div>
     </div>`;
   }
 }
@@ -2397,75 +2397,75 @@ function openOutboxDialog() {
     return escapeHtml(!text || brokenText(text) ? fallback : text);
   };
   const rows = reportOutbox.map((item)=>{
-    const reportName = reportTypeLabels[item.reportType] || item.reportType || 'طھظ‚ط±ظٹط±';
+    const reportName = reportTypeLabels[item.reportType] || item.reportType || 'تقرير';
     const status = `${reportTypeIcons[item.status] || ''} ${reportStatusText[item.status] || item.status || '-'}`.trim();
-    const errorText = brokenText(item.errorMessage) ? 'ط±ط³ط§ظ„ط© ظ‚ط¯ظٹظ…ط© ط؛ظٹط± ظ‚ط§ط¨ظ„ط© ظ„ظ„ط¹ط±ط¶' : (item.errorMessage || '-');
-    const action = item.status === 'failed' ? `<button class="mini-btn" data-retry-outbox="${item.id}">ط¥ط¹ط§ط¯ط© ط§ظ„ظ…ط­ط§ظˆظ„ط©</button>` : '';
-    return `<tr><td>${cellText(reportName, 'طھظ‚ط±ظٹط±')}</td><td>${cellText(item.orderNumber, '-')}</td><td>${cellText(item.targetGroup, 'ط؛ظٹط± ظ…ط­ط¯ط¯')}</td><td>${escapeHtml(status)}</td><td>${cellText(errorText, '-')}</td><td>${action}</td></tr>`;
-  }).join('') || '<tr><td colspan="6">ظ„ط§ طھظˆط¬ط¯ طھظ‚ط§ط±ظٹط± ظپظٹ ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط±ط³ط§ظ„.</td></tr>';
-  refs.documentTitle.textContent = 'ظ‚ط§ط¦ظ…ط© ط¥ط±ط³ط§ظ„ ظˆط§طھط³ط§ط¨';
+    const errorText = brokenText(item.errorMessage) ? 'رسالة قديمة غير قابلة للعرض' : (item.errorMessage || '-');
+    const action = item.status === 'failed' ? `<button class="mini-btn" data-retry-outbox="${item.id}">إعادة المحاولة</button>` : '';
+    return `<tr><td>${cellText(reportName, 'تقرير')}</td><td>${cellText(item.orderNumber, '-')}</td><td>${cellText(item.targetGroup, 'غير محدد')}</td><td>${escapeHtml(status)}</td><td>${cellText(errorText, '-')}</td><td>${action}</td></tr>`;
+  }).join('') || '<tr><td colspan="6">لا توجد تقارير في قائمة الإرسال.</td></tr>';
+  refs.documentTitle.textContent = 'قائمة إرسال واتساب';
   refs.documentBody.dataset.documentType = 'outbox';
-  refs.documentBody.innerHTML = `<div class="document-sheet"><h2>ظ‚ط§ط¦ظ…ط© ط¥ط±ط³ط§ظ„ ظˆط§طھط³ط§ط¨</h2><p class="muted">ط­ط§ظ„ط© ط§ظ„طھظ‚ط§ط±ظٹط± ط§ظ„طھظٹ طھظ†طھط¸ط± ط§ظ„ط¥ط±ط³ط§ظ„ ط£ظˆ طھظ… ط¥ط±ط³ط§ظ„ظ‡ط§ ظ…ظ† ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨.</p><table><thead><tr><th>ط§ظ„طھظ‚ط±ظٹط±</th><th>ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨</th><th>ط§ظ„ط¬ط±ظˆط¨</th><th>ط§ظ„ط­ط§ظ„ط©</th><th>ظ…ظ„ط§ط­ط¸ط§طھ</th><th>ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  refs.documentBody.innerHTML = `<div class="document-sheet"><h2>قائمة إرسال واتساب</h2><p class="muted">حالة التقارير التي تنتظر الإرسال أو تم إرسالها من خدمة واتساب.</p><table><thead><tr><th>التقرير</th><th>رقم الطلب</th><th>الجروب</th><th>الحالة</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
 }
 async function openSystemStatusDialog() {
-  refs.documentTitle.textContent = 'ظپط­طµ ط§ظ„ظ†ط¸ط§ظ…';
+  refs.documentTitle.textContent = 'فحص النظام';
   refs.documentBody.dataset.documentType = 'system-status';
-  refs.documentBody.innerHTML = '<div class="document-sheet"><h2>ظپط­طµ ط§ظ„ظ†ط¸ط§ظ…</h2><p>ط¬ط§ط±ظٹ ظ‚ط±ط§ط،ط© ط­ط§ظ„ط© Railway ظˆظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ...</p></div>';
+  refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>جاري قراءة حالة Railway وقاعدة البيانات...</p></div>';
   refs.documentDialog.showModal();
   try {
     const status = await backendRequest('/system/check', { cache: 'no-store' });
-    const row = (item) => `<tr><td>${escapeHtml(item.label)}</td><td><span class="status ${item.ok ? 'completed' : 'failed'}">${item.ok ? 'ط³ظ„ظٹظ…' : 'ظٹط­طھط§ط¬ ظ…ط±ط§ط¬ط¹ط©'}</span></td><td>${escapeHtml(item.detail || '-')}</td></tr>`;
+    const row = (item) => `<tr><td>${escapeHtml(item.label)}</td><td><span class="status ${item.ok ? 'completed' : 'failed'}">${item.ok ? 'سليم' : 'يحتاج مراجعة'}</span></td><td>${escapeHtml(item.detail || '-')}</td></tr>`;
     const tableRow = (label, value) => `<tr><td>${escapeHtml(label)}</td><td>${Number(value || 0).toLocaleString('en-US')}</td></tr>`;
     const stageRows = (status.orderStages || []).map((stage)=>`<tr><td>${escapeHtml(stage.label)}</td><td>${escapeHtml(stage.description)}</td></tr>`).join('');
     refs.documentBody.innerHTML = `<div class="document-sheet">
-      <h2>ظپط­طµ ط§ظ„ظ†ط¸ط§ظ…</h2>
-      <p class="muted">ط¢ط®ط± ظپط­طµ: ${escapeHtml(status.generatedAt || '-')}</p>
+      <h2>فحص النظام</h2>
+      <p class="muted">آخر فحص: ${escapeHtml(status.generatedAt || '-')}</p>
       <table>
-        <thead><tr><th>ط§ظ„ط¨ظ†ط¯</th><th>ط§ظ„ط­ط§ظ„ط©</th><th>ط§ظ„طھظپط§طµظٹظ„</th></tr></thead>
+        <thead><tr><th>البند</th><th>الحالة</th><th>التفاصيل</th></tr></thead>
         <tbody>${(status.checks || []).map(row).join('')}</tbody>
       </table>
-      <h3>ظ…ظ„ط®طµ ط§ظ„ط¨ظٹط§ظ†ط§طھ</h3>
+      <h3>ملخص البيانات</h3>
       <table>
         <tbody>
-          ${tableRow('ط§ظ„ط·ظ„ط¨ط§طھ', status.tables?.orders)}
-          ${tableRow('ط§ظ„ط£ظ„ظˆط§ظ†', status.tables?.allocations)}
-          ${tableRow('ط§ط³طھظ„ط§ظ… ط§ظ„ط®ط§ظ…', status.tables?.rawReceiving)}
-          ${tableRow('ط¥ط±ط³ط§ظ„ ط§ظ„ظ…طµط¨ط؛ط©', status.tables?.dyehouseDelivery)}
-          ${tableRow('ط§ط³طھظ„ط§ظ… ط§ظ„ظ…ط¬ظ‡ط²', status.tables?.finishedReceiving)}
-          ${tableRow('طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„', status.tables?.customerDelivery)}
-          ${tableRow('ط§ظ„ط¥ظƒط³ط³ظˆط§ط±ط§طھ', status.tables?.accessories)}
-          ${tableRow('ط³ط¬ظ„ ط§ظ„طھط¹ط¯ظٹظ„ط§طھ', status.tables?.auditLog)}
+          ${tableRow('الطلبات', status.tables?.orders)}
+          ${tableRow('الألوان', status.tables?.allocations)}
+          ${tableRow('استلام الخام', status.tables?.rawReceiving)}
+          ${tableRow('إرسال المصبغة', status.tables?.dyehouseDelivery)}
+          ${tableRow('استلام المجهز', status.tables?.finishedReceiving)}
+          ${tableRow('تسليم العميل', status.tables?.customerDelivery)}
+          ${tableRow('الإكسسوارات', status.tables?.accessories)}
+          ${tableRow('سجل التعديلات', status.tables?.auditLog)}
         </tbody>
       </table>
-      <h3>ط­ط§ظ„ط§طھ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط¹طھظ…ط¯ط©</h3>
+      <h3>حالات الطلب المعتمدة</h3>
       <table>
-        <thead><tr><th>ط§ظ„ط­ط§ظ„ط©</th><th>ط§ظ„ظ…ط¹ظ†ظ‰</th></tr></thead>
+        <thead><tr><th>الحالة</th><th>المعنى</th></tr></thead>
         <tbody>${stageRows}</tbody>
       </table>
-      <h3>ط§ظ„ظ†ط³ط® ط§ظ„ط§ط­طھظٹط§ط·ظٹ</h3>
-      <p><strong>ط¢ط®ط± ظ†ط³ط®ط©:</strong> ${escapeHtml(status.storage?.latestBackup?.name || 'ظ„ط§ طھظˆط¬ط¯ ظ†ط³ط®ط©')}</p>
-      <p><strong>ط¹ط¯ط¯ ط§ظ„ظ†ط³ط®:</strong> ${Number(status.storage?.backupsCount || 0).toLocaleString('en-US')}</p>
-      <p><strong>ط³ظٹط§ط³ط© ط§ظ„ط§ط­طھظپط§ط¸:</strong> ط­ط°ظپ طھظ„ظ‚ط§ط¦ظٹ ط¨ط¹ط¯ ${Number(status.storage?.retentionDays || 6).toLocaleString('en-US')} ط£ظٹط§ظ…</p>
-      <p><strong>ط¢ط®ط± طھظ†ط¸ظٹظپ:</strong> ${escapeHtml(status.storage?.lastCleanup?.ranAt || '-')} - ظ…ط­ط°ظˆظپ ${Number(status.storage?.lastCleanup?.deleted || 0).toLocaleString('en-US')} ظ†ط³ط®ط©</p>
+      <h3>النسخ الاحتياطي</h3>
+      <p><strong>آخر نسخة:</strong> ${escapeHtml(status.storage?.latestBackup?.name || 'لا توجد نسخة')}</p>
+      <p><strong>عدد النسخ:</strong> ${Number(status.storage?.backupsCount || 0).toLocaleString('en-US')}</p>
+      <p><strong>سياسة الاحتفاظ:</strong> حذف تلقائي بعد ${Number(status.storage?.retentionDays || 6).toLocaleString('en-US')} أيام</p>
+      <p><strong>آخر تنظيف:</strong> ${escapeHtml(status.storage?.lastCleanup?.ranAt || '-')} - محذوف ${Number(status.storage?.lastCleanup?.deleted || 0).toLocaleString('en-US')} نسخة</p>
             ${fabricMasterSettingsSectionHtml()}
-      <button class="mini-btn gold" type="button" data-create-backup>ط¥ظ†ط´ط§ط، ظ†ط³ط®ط© ط§ط­طھظٹط§ط·ظٹط© ط§ظ„ط¢ظ†</button>
+      <button class="mini-btn gold" type="button" data-create-backup>إنشاء نسخة احتياطية الآن</button>
     </div>`;
   } catch {
-    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>ظپط­طµ ط§ظ„ظ†ط¸ط§ظ…</h2><p>طھط¹ط°ط± ظ‚ط±ط§ط،ط© ط­ط§ظ„ط© ط§ظ„ظ†ط¸ط§ظ… ط­ط§ظ„ظٹظ‹ط§.</p></div>';
+    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
   }
 }
 async function createBackupFromStatusDialog() {
   const button = refs.documentBody.querySelector('[data-create-backup]');
-  if (button) { button.disabled = true; button.textContent = 'ط¬ط§ط±ظٹ ط¥ظ†ط´ط§ط، ط§ظ„ظ†ط³ط®ط©...'; }
+  if (button) { button.disabled = true; button.textContent = 'جاري إنشاء النسخة...'; }
   try {
     const result = await backendRequest('/backup', { method:'POST', body:JSON.stringify({}) });
-    alert(result.ok ? 'طھظ… ط¥ظ†ط´ط§ط، ط§ظ„ظ†ط³ط®ط© ط§ظ„ط§ط­طھظٹط§ط·ظٹط©.' : 'طھط¹ط°ط± ط¥ظ†ط´ط§ط، ط§ظ„ظ†ط³ط®ط© ط§ظ„ط§ط­طھظٹط§ط·ظٹط©.');
+    alert(result.ok ? 'تم إنشاء النسخة الاحتياطية.' : 'تعذر إنشاء النسخة الاحتياطية.');
     await openSystemStatusDialog();
   } catch (error) {
-    alert(error.message || 'طھط¹ط°ط± ط¥ظ†ط´ط§ط، ط§ظ„ظ†ط³ط®ط© ط§ظ„ط§ط­طھظٹط§ط·ظٹط©.');
-    if (button) { button.disabled = false; button.textContent = 'ط¥ظ†ط´ط§ط، ظ†ط³ط®ط© ط§ط­طھظٹط§ط·ظٹط© ط§ظ„ط¢ظ†'; }
+    alert(error.message || 'تعذر إنشاء النسخة الاحتياطية.');
+    if (button) { button.disabled = false; button.textContent = 'إنشاء نسخة احتياطية الآن'; }
   }
 }
 function installAutomationUi() {
@@ -2679,7 +2679,7 @@ async function retryOutbox(id) {
   item.status = 'pending';
   item.errorMessage = '';
   item.retryCount = Number(item.retryCount || 0) + 1;
-  recordAudit('retry', 'reportOutbox', id, null, item, 'ط¥ط¹ط§ط¯ط© ط¥ط±ط³ط§ظ„ ط§ظ„طھظ‚ط±ظٹط±');
+  recordAudit('retry', 'reportOutbox', id, null, item, 'إعادة إرسال التقرير');
   await persistAuditLog();
   save();
   await syncOutboxToWhatsappService();
@@ -2691,10 +2691,10 @@ function fabricMasterSettingsSectionHtml() {
   const masterRows = fabricMasterRows();
   const suggestedRows = knownFabricNames().filter((name)=>!findFabricMasterByName(name));
   return `<section class="report-section no-print">
-    <div class="subsection-head"><div><h3>ط§ظ„ط£طµظ†ط§ظپ ط§ظ„ط±ط³ظ…ظٹط©</h3><p class="muted">ط§ظƒطھط¨ ظƒظ„ طµظ†ظپ ط±ط³ظ…ظٹ ظپظٹ ط³ط·ط± ظ…ط³طھظ‚ظ„. ط§ظ„ظ†ط¸ط§ظ… ظٹط·ط§ط¨ظ‚ ط§ظ„ط£طµظ†ط§ظپ ط¨ط¹ط¯ طھظˆط­ظٹط¯ ط§ظ„ظ‡ظ…ط²ط§طھ ظˆط§ظ„ظ…ط³ط§ظپط§طھ ط­طھظ‰ ظ„ط§ طھطھظƒط±ط± ط§ظ„ط®ط§ظ…ط© ط¨ط£ظƒط«ط± ظ…ظ† ظƒطھط§ط¨ط©.</p></div></div>
-    <textarea data-fabric-master-list rows="8" class="full" placeholder="ظ…ط«ط§ظ„: ط³ظ†ط¬ظ„ ظ„ظٹظƒط±ط§&#10;ط¨ظٹظƒط§ ظ‚ط·ظ† ظ…ظ…ط´ط· ط§ط³طھط±طھط±">${escapeHtml(masterRows.join('\n'))}</textarea>
-    <p class="muted">ط£طµظ†ط§ظپ ظ…ط³طھط®ط¯ظ…ط© ظˆط؛ظٹط± ظ…ط«ط¨طھط© ط±ط³ظ…ظٹظ‹ط§: ${escapeHtml(suggestedRows.slice(0, 20).join('طŒ ') || 'ظ„ط§ ظٹظˆط¬ط¯')}</p>
-    <button class="primary-btn" type="button" data-save-fabric-master>ط­ظپط¸ ط§ظ„ط£طµظ†ط§ظپ ط§ظ„ط±ط³ظ…ظٹط©</button>
+    <div class="subsection-head"><div><h3>الأصناف الرسمية</h3><p class="muted">اكتب كل صنف رسمي في سطر مستقل. النظام يطابق الأصناف بعد توحيد الهمزات والمسافات حتى لا تتكرر الخامة بأكثر من كتابة.</p></div></div>
+    <textarea data-fabric-master-list rows="8" class="full" placeholder="مثال: سنجل ليكرا&#10;بيكا قطن ممشط استرتر">${escapeHtml(masterRows.join('\n'))}</textarea>
+    <p class="muted">أصناف مستخدمة وغير مثبتة رسميًا: ${escapeHtml(suggestedRows.slice(0, 20).join('، ') || 'لا يوجد')}</p>
+    <button class="primary-btn" type="button" data-save-fabric-master>حفظ الأصناف الرسمية</button>
   </section>`;
 }
 async function saveFabricMasterFromDialog() {
@@ -2710,19 +2710,19 @@ async function saveFabricMasterFromDialog() {
     else seen.set(key, name);
   });
   if (duplicates.length) {
-    alert(`ظٹظˆط¬ط¯ طھظƒط±ط§ط± ظپظٹ ط§ظ„ط£طµظ†ط§ظپ:\n${duplicates.slice(0, 5).join('\n')}`);
+    alert(`يوجد تكرار في الأصناف:\n${duplicates.slice(0, 5).join('\n')}`);
     return;
   }
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط§ظ„ط£طµظ†ط§ظپ ط§ظ„ط±ط³ظ…ظٹط©.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ الأصناف الرسمية.'))) return;
   const nextMaster = [...seen.values()].sort((a,b)=>String(a).localeCompare(String(b), 'ar'));
   const saved = await saveBackendSetting('fabricMaster', nextMaster);
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط£طµظ†ط§ظپ ط§ظ„ط±ط³ظ…ظٹط© ط¯ط§ط®ظ„ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ الأصناف الرسمية داخل قاعدة البيانات.');
     return;
   }
   const before = clone(fabricMaster);
   fabricMaster = nextMaster;
-  recordAudit('update', 'fabricMaster', 'settings', before, fabricMaster, 'طھط­ط¯ظٹط« ط§ظ„ط£طµظ†ط§ظپ ط§ظ„ط±ط³ظ…ظٹط©');
+  recordAudit('update', 'fabricMaster', 'settings', before, fabricMaster, 'تحديث الأصناف الرسمية');
   await saveBackendSetting('auditLog', auditLog);
   save();
   await loadBackendData();
@@ -2886,7 +2886,7 @@ function getSuggestedDyeCost(dyehouse, materialType, colorClass) {
   getEditingOrderId: () => editingOrderId,
 }));
 
-const statusLabel = (status) => ({ pending:'ط¨ط§ظ†طھط¸ط§ط± ط§ظ„ط§ط³طھظ„ط§ظ…', 'in-progress':'ظ‚ظٹط¯ ط§ظ„طھط´ط؛ظٹظ„', completed:'ظ…ظƒطھظ…ظ„', closed:'ظ…ط؛ظ„ظ‚ طھط´ط؛ظٹظ„ظٹظ‹ط§' }[status]);
+const statusLabel = (status) => ({ pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا' }[status]);
 const orderDomain = window.TwoBTexOrders.createOrderDomain({
   buildItemCode,
   orderRawCost,
@@ -3005,7 +3005,7 @@ function calculatePricing(pricing) {
     status: source.status,
     priceItems: calculatedItems,
     itemCount: calculatedItems.length,
-    fabricType: calculatedItems.length > 1 ? `${first.fabricType || 'ط¹ط±ط¶ ظ…ط¬ظ…ط¹'} + ${calculatedItems.length - 1}` : first.fabricType || source.fabricType || '',
+    fabricType: calculatedItems.length > 1 ? `${first.fabricType || 'عرض مجمع'} + ${calculatedItems.length - 1}` : first.fabricType || source.fabricType || '',
     quantity: totalQuantity,
     wasteCost: weighted('wasteCost'),
     deferredCost: weighted('deferredCost'),
@@ -3089,7 +3089,7 @@ function pricingAccessoryLinesForOrder(item = {}) {
   return (Array.isArray(item.accessoryLines) ? item.accessoryLines : [])
     .map((line)=>({
       id: line.id || uid(),
-      type: line.type || 'ط¥ظƒط³ط³ظˆط§ط±',
+      type: line.type || 'إكسسوار',
       percent: Number(line.percent || 0),
       quantityManual: line.quantityManual !== undefined && line.quantityManual !== null && line.quantityManual !== ''
         ? Number(line.quantityManual || 0)
@@ -3160,16 +3160,16 @@ function pricingStageKey(value) {
 }
 
 function isFixedPackagingStageName(value) {
-  return pricingStageKey(value) === pricingStageKey('طھط؛ظ„ظٹظپ');
+  return pricingStageKey(value) === pricingStageKey('تغليف');
 }
 
 function isFixedTransportStageName(value) {
-  return pricingStageKey(value) === pricingStageKey('ظ†ظ‚ظ„');
+  return pricingStageKey(value) === pricingStageKey('نقل');
 }
 
 function fixedPricingStageDefinition(value) {
-  if (isFixedPackagingStageName(value)) return { name:'طھط؛ظ„ظٹظپ', price:2, fixed:true };
-  if (isFixedTransportStageName(value)) return { name:'ظ†ظ‚ظ„', price:0.5, fixed:true };
+  if (isFixedPackagingStageName(value)) return { name:'تغليف', price:2, fixed:true };
+  if (isFixedTransportStageName(value)) return { name:'نقل', price:0.5, fixed:true };
   return null;
 }
 
@@ -3185,67 +3185,67 @@ function normalizePricingDyeStages(stages = [], dyeCost = '') {
     })
     .filter((stage)=>stage.name || stage.price);
   if (!normalized.length && dyeCost !== '' && dyeCost !== null && dyeCost !== undefined) {
-    normalized.push({ name:'طµط¨ط§ط؛ط©', price:Number(dyeCost || 0), fixed:false });
+    normalized.push({ name:'صباغة', price:Number(dyeCost || 0), fixed:false });
   }
   if (!normalized.some((stage)=>isFixedPackagingStageName(stage.name))) {
-    normalized.push({ name:'طھط؛ظ„ظٹظپ', price:2, fixed:true });
+    normalized.push({ name:'تغليف', price:2, fixed:true });
   }
   if (!normalized.some((stage)=>isFixedTransportStageName(stage.name))) {
-    normalized.push({ name:'ظ†ظ‚ظ„', price:0.5, fixed:true });
+    normalized.push({ name:'نقل', price:0.5, fixed:true });
   }
   return normalized.map((stage)=>fixedPricingStageDefinition(stage.name) || stage);
 }
 
 function pricingDeferredPercentFromPaymentDetails() {
   const text = String(refs.pricingPaymentMode?.value || refs.pricingPaymentDetails?.value || refs.pricingPaymentTerms?.value || '');
-  const monthMatch = text.match(/(?:ط£ط¬ظ„|ط§ط¬ظ„)\s*(\d+)/i);
+  const monthMatch = text.match(/(?:أجل|اجل)\s*(\d+)/i);
   if (monthMatch) return Number(monthMatch[1] || 0);
-  const match = text.match(/(?:ط£ط¬ظ„|ط§ط¬ظ„|ظ†ط³ط¨ط©)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%?/i);
+  const match = text.match(/(?:أجل|اجل|نسبة)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%?/i);
   return match ? Number(match[1] || 0) / 3 : 0;
 }
 
 function pricingWasteBasisSelect(value = '', disabled = false) {
   const current = value || 'net';
   return `<select data-pricing-item-field="wasteBasis" ${disabled ? 'disabled' : ''}>
-    <option value="net" ${current === 'net' ? 'selected' : ''}>طµط§ظپظٹ</option>
-    <option value="gross" ${current === 'gross' ? 'selected' : ''}>ظ‚ط§ط¦ظ…</option>
+    <option value="net" ${current === 'net' ? 'selected' : ''}>صافي</option>
+    <option value="gross" ${current === 'gross' ? 'selected' : ''}>قائم</option>
   </select>`;
 }
 
 function pricingItemRowHtml(item = {}) {
-  const stages = normalizePricingDyeStages(Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'طµط¨ط§ط؛ط©', price:item.dyeCost || '' }], item.dyeCost || '');
+  const stages = normalizePricingDyeStages(Array.isArray(item.dyeStages) && item.dyeStages.length ? item.dyeStages : [{ name:'صباغة', price:item.dyeCost || '' }], item.dyeCost || '');
   const stagesHtml = stages.map((stage)=>pricingStageRowHtml(stage)).join('');
   const accessories = Array.isArray(item.accessoryLines) && item.accessoryLines.length ? item.accessoryLines : [];
   const accessoriesHtml = accessories.map((line)=>pricingAccessoryRowHtml(line, stages)).join('');
   return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
-    <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="ط§ظ„طµظ†ظپ / ط§ظ„ط®ط§ظ…ط©" value="${escapeHtml(item.fabricType || item.materialType || '')}">
-    <input data-pricing-item-field="dyehouse" placeholder="ط§ظ„ظ…طµط¨ط؛ط©" value="${escapeHtml(item.dyehouse || '')}">
-    <input data-pricing-item-field="weavingSource" placeholder="ظ…طµط¯ط± ط§ظ„ظ†ط³ظٹط¬" value="${escapeHtml(item.weavingSource || '')}">
-    <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="ط§ظ„ظƒظ…ظٹط©" value="${item.quantity || ''}">
-    <input data-pricing-item-field="inchWidth" placeholder="ط§ظ„ط¨ظˆطµط©" value="${escapeHtml(item.inchWidth || '')}">
-    <input data-pricing-item-field="finishedWeight" placeholder="ط§ظ„ظˆط²ظ†" value="${escapeHtml(item.finishedWeight || '')}">
-    <div class="pricing-money-field"><input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="ط³ط¹ط± ط§ظ„ظ‚ظ…ط§ط´" value="${item.rawCost || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
+    <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف / الخامة" value="${escapeHtml(item.fabricType || item.materialType || '')}">
+    <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
+    <input data-pricing-item-field="weavingSource" placeholder="مصدر النسيج" value="${escapeHtml(item.weavingSource || '')}">
+    <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
+    <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
+    <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
+    <div class="pricing-money-field"><input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="سعر القماش" value="${item.rawCost || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
     <div class="pricing-stage-card" data-pricing-stage-card>
-      <div class="pricing-stage-head"><span>ط¬ط¯ظˆظ„ ط§ظ„طµط¨ط§ط؛ط©</span><button class="mini-btn" type="button" data-add-pricing-stage>+ ظ…ط±ط­ظ„ط©</button></div>
+      <div class="pricing-stage-head"><span>جدول الصباغة</span><button class="mini-btn" type="button" data-add-pricing-stage>+ مرحلة</button></div>
       <div class="pricing-stage-rows">${stagesHtml}</div>
-      <div class="pricing-stage-total">ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„طµط¨ط§ط؛ط©: <strong data-pricing-dye-total>${formatNumber(pricingStagesTotal(stages))}</strong></div>
+      <div class="pricing-stage-total">إجمالي الصباغة: <strong data-pricing-dye-total>${formatNumber(pricingStagesTotal(stages))}</strong></div>
     </div>
     <div class="pricing-stage-card pricing-accessory-card" data-pricing-accessory-card>
-      <div class="pricing-stage-head"><span>ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</span><button class="mini-btn" type="button" data-add-pricing-accessory>+ ط¥ظƒط³ط³ظˆط§ط±</button></div>
+      <div class="pricing-stage-head"><span>الإكسسوار</span><button class="mini-btn" type="button" data-add-pricing-accessory>+ إكسسوار</button></div>
       <div class="pricing-stage-rows">${accessoriesHtml}</div>
-      <div class="pricing-stage-total">ط¥ط¬ظ…ط§ظ„ظٹ ط®ط§ظ… ط§ظ„ط¥ظƒط³ط³ظˆط§ط±: <strong data-pricing-accessory-total>${formatNumber(pricingAccessoriesTotal(accessories))}</strong></div>
+      <div class="pricing-stage-total">إجمالي خام الإكسسوار: <strong data-pricing-accessory-total>${formatNumber(pricingAccessoriesTotal(accessories))}</strong></div>
     </div>
-    <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="ظ‡ط§ظ„ظƒ %" value="${item.wastePercent || ''}">
+    <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
-    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="ط£ط¬ظ„ ط´ظ‡ط±" value="${item.deferredPercent || ''}">
-    <div class="pricing-money-field"><input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ط±ط¨ط­" value="${item.profitPerKg || ''}"><span data-pricing-currency-badge="egp">ط¬ظ†ظٹظ‡</span></div>
-    <button type="button" class="mini-btn danger" data-remove-pricing-item>ط­ط°ظپ</button>
+    <input data-pricing-item-field="deferredPercent" type="number" step="0.01" placeholder="أجل شهر" value="${item.deferredPercent || ''}">
+    <div class="pricing-money-field"><input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}"><span data-pricing-currency-badge="egp">جنيه</span></div>
+    <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
   </div>`;
 }
 
 function pricingAccessoryTypeOptions(current = '') {
-  const options = uniqueNonEmpty(['ط±ظٹط¨', 'ط¯ظٹط±ط¨ظٹ', 'ظ„ظٹط§ظ‚ط§طھ', 'ط£ط³ط§ظˆط±', 'ط£ط³ط§ظˆط± ظˆظ„ظٹط§ظ‚ط§طھ', current]).filter(Boolean);
-  return `<option value="">ط§ط®طھط± ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</option>${options.map((name)=>`<option value="${escapeHtml(name)}" ${name === current ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}`;
+  const options = uniqueNonEmpty(['ريب', 'ديربي', 'لياقات', 'أساور', 'أساور ولياقات', current]).filter(Boolean);
+  return `<option value="">اختر الإكسسوار</option>${options.map((name)=>`<option value="${escapeHtml(name)}" ${name === current ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}`;
 }
 
 function pricingAccessorySelectedStageNames(line = {}) {
@@ -3258,9 +3258,9 @@ function pricingAccessorySelectedStageNames(line = {}) {
 function pricingAccessoryStageOptions(line = {}, stages = []) {
   const selected = new Set(pricingAccessorySelectedStageNames(line).map((name)=>String(name || '').trim()).filter(Boolean));
   const validStages = (Array.isArray(stages) ? stages : []).filter((stage)=>stage.name || stage.price);
-  if (!validStages.length) return '<span class="pricing-accessory-hint">ط£ط¶ظپ ظ…ط±ط§ط­ظ„ ط§ظ„طµط¨ط§ط؛ط© ط£ظˆظ„ظ‹ط§ ظ„ط§ط®طھظٹط§ط± ظ…ط§ ظٹظ†ط·ط¨ظ‚ ط¹ظ„ظ‰ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±.</span>';
+  if (!validStages.length) return '<span class="pricing-accessory-hint">أضف مراحل الصباغة أولًا لاختيار ما ينطبق على الإكسسوار.</span>';
   return validStages.map((stage)=>{
-    const name = String(stage.name || 'ظ…ط±ط­ظ„ط©').trim();
+    const name = String(stage.name || 'مرحلة').trim();
     return `<label class="pricing-accessory-stage-option"><input type="checkbox" data-pricing-accessory-stage value="${escapeHtml(name)}" ${selected.has(name) ? 'checked' : ''}><span>${escapeHtml(name)} + ${formatNumber(stage.price || 0)}</span></label>`;
   }).join('');
 }
@@ -3271,16 +3271,16 @@ function pricingAccessoryRowHtml(line = {}, stages = []) {
   const profitPerKg = line.profitPerKg ?? '';
   return `<div class="pricing-stage-row pricing-accessory-row" data-pricing-accessory-row>
     <select data-pricing-accessory-type>${pricingAccessoryTypeOptions(line.type || '')}</select>
-    <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="ط§ظ„ظƒظ…ظٹط©" value="${quantity || ''}">
-    <div class="pricing-money-field"><input data-pricing-accessory-price type="number" step="0.01" placeholder="ط³ط¹ط± ط§ظ„ط®ط§ظ…" value="${line.price || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
-    <button class="mini-btn danger" type="button" data-remove-pricing-accessory>ط­ط°ظپ</button>
-    <input data-pricing-accessory-waste-percent type="number" step="0.01" placeholder="ظ‡ط§ظ„ظƒ %" value="${wastePercent}">
+    <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="الكمية" value="${quantity || ''}">
+    <div class="pricing-money-field"><input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
+    <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
+    <input data-pricing-accessory-waste-percent type="number" step="0.01" placeholder="هالك %" value="${wastePercent}">
     <select data-pricing-accessory-waste-basis>
-      <option value="">ظ†ظپط³ ظ‡ط§ظ„ظƒ ط§ظ„ظ‚ظ…ط§ط´</option>
-      <option value="net" ${(line.wasteBasis || line.waste_basis) === 'net' ? 'selected' : ''}>طµط§ظپظٹ</option>
-      <option value="gross" ${(line.wasteBasis || line.waste_basis) === 'gross' ? 'selected' : ''}>ظ‚ط§ط¦ظ…</option>
+      <option value="">نفس هالك القماش</option>
+      <option value="net" ${(line.wasteBasis || line.waste_basis) === 'net' ? 'selected' : ''}>صافي</option>
+      <option value="gross" ${(line.wasteBasis || line.waste_basis) === 'gross' ? 'selected' : ''}>قائم</option>
     </select>
-    <div class="pricing-money-field"><input data-pricing-accessory-profit type="number" step="0.01" placeholder="ط±ط¨ط­ / ظƒط¬ظ…" value="${profitPerKg}"><span data-pricing-currency-badge="egp">ط¬ظ†ظٹظ‡</span></div>
+    <div class="pricing-money-field"><input data-pricing-accessory-profit type="number" step="0.01" placeholder="ربح / كجم" value="${profitPerKg}"><span data-pricing-currency-badge="egp">جنيه</span></div>
     <div class="pricing-accessory-stage-options" data-pricing-accessory-stage-options>${pricingAccessoryStageOptions(line, stages)}</div>
   </div>`;
 }
@@ -3289,9 +3289,9 @@ function pricingStageRowHtml(stage = {}) {
   const fixedStage = fixedPricingStageDefinition(stage.name);
   const isFixedStage = Boolean(fixedStage);
   return `<div class="pricing-stage-row" data-pricing-stage-row>
-    <input data-pricing-stage-name placeholder="ظ…ط±ط­ظ„ط© ط§ظ„طµط¨ط§ط؛ط©" value="${escapeHtml(fixedStage?.name || stage.name || '')}" ${isFixedStage ? 'readonly' : ''}>
-    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="ط§ظ„ط³ط¹ط±" value="${isFixedStage ? fixedStage.price : (stage.price || '')}" ${isFixedStage ? 'readonly' : ''}><span data-pricing-currency-badge="egp">ط¬ظ†ظٹظ‡</span></div>
-    ${isFixedStage ? '<span class="status pending">ط«ط§ط¨طھ</span>' : '<button class="mini-btn danger" type="button" data-remove-pricing-stage>ط­ط°ظپ</button>'}
+    <input data-pricing-stage-name placeholder="مرحلة الصباغة" value="${escapeHtml(fixedStage?.name || stage.name || '')}" ${isFixedStage ? 'readonly' : ''}>
+    <div class="pricing-money-field"><input data-pricing-stage-price type="number" step="0.01" placeholder="السعر" value="${isFixedStage ? fixedStage.price : (stage.price || '')}" ${isFixedStage ? 'readonly' : ''}><span data-pricing-currency-badge="egp">جنيه</span></div>
+    ${isFixedStage ? '<span class="status pending">ثابت</span>' : '<button class="mini-btn danger" type="button" data-remove-pricing-stage>حذف</button>'}
   </div>`;
 }
 
@@ -3408,7 +3408,7 @@ function pricingCurrencyValue() {
   return pricingCurrencyRef()?.value || 'EGP';
 }
 function pricingCurrencyLabel(currency = pricingCurrencyValue()) {
-  return currency === 'USD' ? 'ط¯ظˆظ„ط§ط±' : 'ط¬ظ†ظٹظ‡';
+  return currency === 'USD' ? 'دولار' : 'جنيه';
 }
 function updatePricingCurrencyBadges() {
   const label = pricingCurrencyLabel();
@@ -3416,7 +3416,7 @@ function updatePricingCurrencyBadges() {
     badge.textContent = label;
   });
   document.querySelectorAll('[data-pricing-currency-badge="egp"]').forEach((badge)=>{
-    badge.textContent = 'ط¬ظ†ظٹظ‡';
+    badge.textContent = 'جنيه';
   });
 }
 function pricingExchangeRateRef() {
@@ -3447,9 +3447,9 @@ function renderPricingFormulaBreakdown(payload = {}, calculated = {}) {
   const currency = calculated.currency || payload.currency || pricingCurrencyValue();
   const currencyLabel = pricingCurrencyLabel(currency);
   const money = (value) => `${formatNumber(value || 0, 2)} ${currencyLabel}`;
-  const egp = (value) => `${formatNumber(value || 0, 2)} ط¬ظ†ظٹظ‡`;
+  const egp = (value) => `${formatNumber(value || 0, 2)} جنيه`;
   if (items.length !== 1) {
-    box.innerHTML = `<strong>طھظپطµظٹظ„ ط§ظ„طھط³ط¹ظٹط±:</strong> ظƒط±طھ ظ…ط¬ظ…ط¹ ظ…ظ† ${items.length} ط®ط§ظ…ط§طھ. ظ…طھظˆط³ط· ط³ط¹ط± ط§ظ„ط¨ظٹط¹ ${money(calculated.sellPrice)} ظˆط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¹ظ‚ط¯ ${money(calculated.totalOffer)}.`;
+    box.innerHTML = `<strong>تفصيل التسعير:</strong> كرت مجمع من ${items.length} خامات. متوسط سعر البيع ${money(calculated.sellPrice)} وإجمالي العقد ${money(calculated.totalOffer)}.`;
     return;
   }
   const item = items[0] || {};
@@ -3462,14 +3462,14 @@ function renderPricingFormulaBreakdown(payload = {}, calculated = {}) {
   const deferredCost = Number(calc.deferredCost || 0);
   const profitEgp = Number(item.profitPerKg || 0);
   const profitConverted = Number(calc.profitCost || calc.profitPerKg || 0);
-  const rateText = currency === 'USD' ? ` | ط³ط¹ط± ط§ظ„ط¯ظˆظ„ط§ط± ط§ظ„ظ…ط³طھط®ط¯ظ…: ${formatNumber(exchangeRate, 2)}` : '';
+  const rateText = currency === 'USD' ? ` | سعر الدولار المستخدم: ${formatNumber(exchangeRate, 2)}` : '';
   const profitText = currency === 'USD'
-    ? `ط±ط¨ط­ ${egp(profitEgp)} = ${money(profitConverted)}`
-    : `ط±ط¨ط­ ${money(profitConverted)}`;
+    ? `ربح ${egp(profitEgp)} = ${money(profitConverted)}`
+    : `ربح ${money(profitConverted)}`;
   const dyeText = currency === 'USD'
-    ? `طµط¨ط§ط؛ط© ${egp(dyeEgp)} = ${money(dyeConverted)}`
-    : `طµط¨ط§ط؛ط© ${money(dyeConverted)}`;
-  box.innerHTML = `<strong>ط·ط±ظٹظ‚ط© ط§ظ„ط­ط³ط§ط¨:</strong> ط®ط§ظ… ${money(rawCost)} + ${dyeText} + ظ‡ط§ظ„ظƒ ${money(wasteCost)} + ط£ط¬ظ„ ${money(deferredCost)} + ${profitText} = <strong>${money(calc.sellPrice || calculated.sellPrice || 0)}</strong>${rateText}`;
+    ? `صباغة ${egp(dyeEgp)} = ${money(dyeConverted)}`
+    : `صباغة ${money(dyeConverted)}`;
+  box.innerHTML = `<strong>طريقة الحساب:</strong> خام ${money(rawCost)} + ${dyeText} + هالك ${money(wasteCost)} + أجل ${money(deferredCost)} + ${profitText} = <strong>${money(calc.sellPrice || calculated.sellPrice || 0)}</strong>${rateText}`;
 }
 function renderPricingItemsEditor(pricing = null) {
   const rows = document.getElementById('pricingItemsRows');
@@ -3503,7 +3503,7 @@ function markPricingCardMode() {
     field.setAttribute('data-pricing-legacy-disabled', 'true');
     field.closest('label')?.classList.add('pricing-legacy-field');
   });
-  refs.pricingDialog?.querySelector('.dialog-head h2')?.replaceChildren(document.createTextNode('ظƒط±طھ طھط³ط¹ظٹط± ط¬ط¯ظٹط¯'));
+  refs.pricingDialog?.querySelector('.dialog-head h2')?.replaceChildren(document.createTextNode('كرت تسعير جديد'));
 }
 
 function installPricingWeavingSourceField() {
@@ -3513,7 +3513,7 @@ function installPricingWeavingSourceField() {
   }
   const anchor = refs.pricingDyehouse?.closest('label') || refs.pricingFabricType?.closest('label');
   if (!anchor) return;
-  anchor.insertAdjacentHTML('afterend', '<label><span>ظ…طµط¯ط± ط§ظ„ظ†ط³ظٹط¬</span><input id="pricingWeavingSource" autocomplete="off"></label>');
+  anchor.insertAdjacentHTML('afterend', '<label><span>مصدر النسيج</span><input id="pricingWeavingSource" autocomplete="off"></label>');
   refs.pricingWeavingSource = document.getElementById('pricingWeavingSource');
 }
 
@@ -3523,8 +3523,8 @@ function ensurePricingItemsUi() {
   if (!anchor) return;
   markPricingCardMode();
   installPricingWeavingSourceField();
-  refs.pricingPaymentMode?.closest('label')?.insertAdjacentHTML('beforebegin', `<label><span>ط¹ظ…ظ„ط© ط§ظ„طھط³ط¹ظٹط±</span><select id="pricingCurrency"><option value="EGP">ط¬ظ†ظٹظ‡</option><option value="USD">ط¯ظˆظ„ط§ط±</option></select></label><label class="pricing-exchange-rate-field field-hidden"><span>ط³ط¹ط± ط§ظ„ط¯ظˆظ„ط§ط± ط§ظ„ظٹظˆظ…</span><input id="pricingExchangeRate" type="number" step="0.01" min="0" placeholder="ظ…ط«ط§ظ„: 52"><small>ظٹط­ظˆظ„ ط§ظ„طµط¨ط§ط؛ط© ظˆط§ظ„طھط¬ظ‡ظٹط² ط¨ط§ظ„ط¬ظ†ظٹظ‡ ط¥ظ„ظ‰ ط¯ظˆظ„ط§ط±.</small></label>`);
-  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>ظƒط±طھ طھط³ط¹ظٹط±</span><p class="eyebrow">ط§ظ„طµظ†ظپ ظ‡ظˆ ط§ظ„ط®ط§ظ…ط©. ط¥ط¶ط§ظپط§طھ ط§ظ„طµط¨ط§ط؛ط© ط¯ط§ط®ظ„ ط¬ط¯ظˆظ„ ط§ظ„طµط¨ط§ط؛ط©طŒ ظˆط§ظ„ط¥ظƒط³ط³ظˆط§ط± ظ„ظ‡ ط¬ط¯ظˆظ„ ظ…ط³طھظ‚ظ„ ط¯ط§ط®ظ„ ظ†ظپط³ ط§ظ„ط¨ظ†ط¯.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ ط¥ط¶ط§ظپط© ط®ط§ظ…ط©</button></div><div class="grouped-order-head pricing-items-head"><span>ط§ظ„طµظ†ظپ / ط§ظ„ط®ط§ظ…ط©</span><span>ط§ظ„ظ…طµط¨ط؛ط©</span><span>ط§ظ„ظƒظ…ظٹط©</span><span>ط§ظ„ط¨ظˆطµط©</span><span>ط§ظ„ظˆط²ظ†</span><span>ط³ط¹ط± ط§ظ„ظ‚ظ…ط§ط´</span><span>ط¬ط¯ظˆظ„ ط§ظ„طµط¨ط§ط؛ط©</span><span>ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</span><span>ظ‡ط§ظ„ظƒ %</span><span>طµط§ظپظٹ/ظ‚ط§ط¦ظ…</span><span>ط£ط¬ظ„ %</span><span>ط±ط¨ط­</span><span></span></div><div id="pricingItemsRows"></div></div>`);
+  refs.pricingPaymentMode?.closest('label')?.insertAdjacentHTML('beforebegin', `<label><span>عملة التسعير</span><select id="pricingCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label><label class="pricing-exchange-rate-field field-hidden"><span>سعر الدولار اليوم</span><input id="pricingExchangeRate" type="number" step="0.01" min="0" placeholder="مثال: 52"><small>يحول الصباغة والتجهيز بالجنيه إلى دولار.</small></label>`);
+  anchor.insertAdjacentHTML('afterend', `<div class="full-row grouped-order-box pricing-items-box" id="pricingItemsBox"><div class="subsection-head"><div><span>كرت تسعير</span><p class="eyebrow">الصنف هو الخامة. إضافات الصباغة داخل جدول الصباغة، والإكسسوار له جدول مستقل داخل نفس البند.</p></div><button type="button" class="mini-btn" id="addPricingItemBtn">+ إضافة خامة</button></div><div class="grouped-order-head pricing-items-head"><span>الصنف / الخامة</span><span>المصبغة</span><span>الكمية</span><span>البوصة</span><span>الوزن</span><span>سعر القماش</span><span>جدول الصباغة</span><span>الإكسسوار</span><span>هالك %</span><span>صافي/قائم</span><span>أجل %</span><span>ربح</span><span></span></div><div id="pricingItemsRows"></div></div>`);
   refs.pricingForm?.querySelector('.pricing-preview')?.insertAdjacentHTML('afterend', '<div class="pricing-formula-preview" id="pricingFormulaPreview"></div>');
   document.getElementById('addPricingItemBtn')?.addEventListener('click', () => {
     document.getElementById('pricingItemsRows')?.insertAdjacentHTML('beforeend', pricingItemRowHtml());
@@ -3636,7 +3636,7 @@ function ensurePricingItemsUi() {
 function openFilteredPricingsReport() {
   const rows = typeof pricingRowsForReport === 'function' ? pricingRowsForReport() : [];
   const pricingPrintActualSellableBalanceLabel = 'الرصيد الفعلي للبيع';
-  const currencyName = (currency) => currency === 'USD' ? 'ط¯ظˆظ„ط§ط±' : 'ط¬ظ†ظٹظ‡';
+  const currencyName = (currency) => currency === 'USD' ? 'دولار' : 'جنيه';
   const money = (value, currency) => `${formatNumber(value || 0, 2)} ${currencyName(currency)}`;
   const unifiedNumber = (row) => row.linkedOrder?.orderNumber || row.pricingNumber || '-';
   const sellableBalance = (row) => Number(row.linkedOrder?.warehouseBalance || 0);
@@ -3656,26 +3656,26 @@ function openFilteredPricingsReport() {
     <td>${escapeHtml(money(row.rawCost, row.currency))}</td>
     <td>${escapeHtml(money(row.sellPrice, row.currency))}</td>
     <td>${escapeHtml(money(row.totalOffer, row.currency))}</td>
-    <td>${formatNumber(sellableBalance(row))} ظƒط¬ظ…</td>
-    <td>${row.listMode === 'linked' ? 'ظ…ط±طھط¨ط· ط¨ط·ظ„ط¨ طھط´ط؛ظٹظ„' : 'ظƒط±طھ طھط³ط¹ظٹط± ط´ط؛ط§ظ„'}</td>
-  </tr>`).join('') || emptyRow(10, 'ظ„ط§ طھظˆط¬ط¯ ظƒط±ظˆطھ طھط³ط¹ظٹط± ظ…ط·ط§ط¨ظ‚ط© ظ„ظ„ظپظ„طھط±ط©.');
-  refs.documentTitle.textContent = 'ظ‚ط§ط¦ظ…ط© ط§ظ„طھط³ط¹ظٹط±';
+    <td>${formatNumber(sellableBalance(row))} كجم</td>
+    <td>${row.listMode === 'linked' ? 'مرتبط بطلب تشغيل' : 'كرت تسعير شغال'}</td>
+  </tr>`).join('') || emptyRow(10, 'لا توجد كروت تسعير مطابقة للفلترة.');
+  refs.documentTitle.textContent = 'قائمة التسعير';
   refs.documentBody.innerHTML = `<div class="document-sheet two-b-report">
     ${documentHeader()}
-    <div class="report-title"><h2>ظ‚ط§ط¦ظ…ط© ط§ظ„طھط³ط¹ظٹط±</h2><span>طھظ‚ط±ظٹط± ظ…ط·ط§ط¨ظ‚ ظ„ظ„ظپظ„طھط±ط© ط§ظ„ط­ط§ظ„ظٹط© ظپظٹ ط´ط§ط´ط© ظƒط±ظˆطھ ط§ظ„طھط³ط¹ظٹط±.</span></div>
+    <div class="report-title"><h2>قائمة التسعير</h2><span>تقرير مطابق للفلترة الحالية في شاشة كروت التسعير.</span></div>
     <div class="document-meta">
-      <div><span>ط¹ط¯ط¯ ط§ظ„ط¨ظ†ظˆط¯</span>${formatNumber(rows.length, 0)}</div>
-      <div><span>ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¹ظ‚ط¯</span>${escapeHtml(totalContractsText)}</div>
-      <div><span>${pricingPrintActualSellableBalanceLabel}</span>${formatNumber(totalSellableBalance)} ظƒط¬ظ…</div>
-      <div><span>طھط§ط±ظٹط® ط§ظ„ط·ط¨ط§ط¹ط©</span>${new Date().toLocaleString('en-GB')}</div>
+      <div><span>عدد البنود</span>${formatNumber(rows.length, 0)}</div>
+      <div><span>إجمالي العقد</span>${escapeHtml(totalContractsText)}</div>
+      <div><span>${pricingPrintActualSellableBalanceLabel}</span>${formatNumber(totalSellableBalance)} كجم</div>
+      <div><span>تاريخ الطباعة</span>${new Date().toLocaleString('en-GB')}</div>
     </div>
     <section class="report-section">
-      <h3>ظƒط±ظˆطھ ط§ظ„طھط³ط¹ظٹط±</h3>
-      <table><thead><tr><th>ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨</th><th>ط§ظ„ط¹ظ…ظٹظ„</th><th>ط§ظ„طµظ†ظپ</th><th>ط§ظ„ظ…طµط¨ط؛ط©</th><th>ط§ظ„ظƒظ…ظٹط©</th><th>ط³ط¹ط± ط§ظ„ط®ط§ظ…</th><th>ط³ط¹ط± ط§ظ„ظ…ط¬ظ‡ط²</th><th>ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¹ظ‚ط¯</th><th>ط§ظ„ط±طµظٹط¯ ط§ظ„ظپط¹ظ„ظٹ ظ„ظ„ط¨ظٹط¹</th><th>ط§ظ„ط­ط§ظ„ط©</th></tr></thead><tbody>${tableRows}</tbody></table>
+      <h3>كروت التسعير</h3>
+      <table><thead><tr><th>رقم الطلب</th><th>العميل</th><th>الصنف</th><th>المصبغة</th><th>الكمية</th><th>سعر الخام</th><th>سعر المجهز</th><th>إجمالي العقد</th><th>الرصيد الفعلي للبيع</th><th>الحالة</th></tr></thead><tbody>${tableRows}</tbody></table>
     </section>
     <div class="summary-grid document-summary print-summary">
-      <div class="metric emphasis"><span>ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¹ظ‚ط¯</span><strong>${escapeHtml(totalContractsText)}</strong></div>
-      <div class="metric"><span>ط§ظ„ط±طµظٹط¯ ط§ظ„ظپط¹ظ„ظٹ ظ„ظ„ط¨ظٹط¹</span><strong>${formatNumber(totalSellableBalance)} ظƒط¬ظ…</strong></div>
+      <div class="metric emphasis"><span>إجمالي العقد</span><strong>${escapeHtml(totalContractsText)}</strong></div>
+      <div class="metric"><span>الرصيد الفعلي للبيع</span><strong>${formatNumber(totalSellableBalance)} كجم</strong></div>
     </div>
     ${documentFooter()}
   </div>`;
@@ -3698,16 +3698,16 @@ function validatePricingPayloadForSave(pricing) {
     ? pricing.priceItems.filter((item)=>item.fabricType || Number(item.quantity || 0) > 0 || Number(item.rawCost || 0) > 0)
     : [];
   if (!String(pricing?.customer || '').trim()) {
-    alert('ط§ط®طھط± ط§ظ„ط¹ظ…ظٹظ„ ظ‚ط¨ظ„ ط­ظپط¸ ظƒط±طھ ط§ظ„طھط³ط¹ظٹط±.');
+    alert('اختر العميل قبل حفظ كرت التسعير.');
     return false;
   }
   if (!items.length) {
-    alert('ط£ط¶ظپ ط®ط§ظ…ط© ظˆط§ط­ط¯ط© ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„ ط¯ط§ط®ظ„ ظƒط±طھ ط§ظ„طھط³ط¹ظٹط±.');
+    alert('أضف خامة واحدة على الأقل داخل كرت التسعير.');
     return false;
   }
   const incompleteItem = items.find((item)=>!String(item.fabricType || '').trim() || Number(item.quantity || 0) <= 0);
   if (incompleteItem) {
-    alert('ظƒظ„ ط®ط§ظ…ط© ظپظٹ ظƒط±طھ ط§ظ„طھط³ط¹ظٹط± ظٹط¬ط¨ ط£ظ† طھط­طھظˆظٹ ط¹ظ„ظ‰ ط§ظ„طµظ†ظپ ظˆط§ظ„ظƒظ…ظٹط©.');
+    alert('كل خامة في كرت التسعير يجب أن تحتوي على الصنف والكمية.');
     return false;
   }
   return true;
@@ -3721,22 +3721,22 @@ async function attachPricingToOrder(orderId, pricingId) {
   const savedOrder = await putBackend(`/orders/${updatedOrder.id}`, orderToApi(updatedOrder, backendCustomer));
   if (!savedOrder) return false;
   if (!(await verifyOrderPersisted(updatedOrder.id, updatedOrder))) return false;
-  recordAudit('update', 'order', updatedOrder.id, before, updatedOrder, `ط±ط¨ط· ط§ظ„ط·ظ„ط¨ ط±ظ‚ظ… ${updatedOrder.orderNumber || ''} ط¨ط§ظ„طھط³ط¹ظٹط±ط©`);
+  recordAudit('update', 'order', updatedOrder.id, before, updatedOrder, `ربط الطلب رقم ${updatedOrder.orderNumber || ''} بالتسعيرة`);
   await persistAuditLog();
   return true;
 }
 async function deletePricing(id) {
   const pricing = pricings.find((item)=>item.id===id);
   if (!pricing) return;
-  if (!confirm(`ظ‡ظ„ طھط±ظٹط¯ ط­ط°ظپ ط§ظ„طھط³ط¹ظٹط±ط© ط±ظ‚ظ… ${pricing.pricingNumber}طں`)) return;
+  if (!confirm(`هل تريد حذف التسعيرة رقم ${pricing.pricingNumber}؟`)) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   const deleted = await deleteBackend(`/pricings/${id}`);
   if (backendSaveRequired && !deleted) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ط°ظپ ط§ظ„طھط³ط¹ظٹط±ط© ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط°ظپ.');
+    await rollbackAfterBackendWriteFailure('تعذر حذف التسعيرة من قاعدة البيانات. لم يتم اعتماد الحذف.');
     return;
   }
-  recordAudit('delete', 'pricing', id, pricing, null, `ط­ط°ظپ ط§ظ„طھط³ط¹ظٹط±ط© ط±ظ‚ظ… ${pricing.pricingNumber || ''}`);
+  recordAudit('delete', 'pricing', id, pricing, null, `حذف التسعيرة رقم ${pricing.pricingNumber || ''}`);
   await persistAuditLog();
   if (editingPricingId === id) editingPricingId = null;
   await loadBackendData();
@@ -3755,21 +3755,21 @@ async function addPricing(event) {
       const backendCustomer = await ensureBackendCustomer(updatedPricing.customer);
       const savedPricing = await putBackend(`/pricings/${editingPricingId}`, pricingToApi(updatedPricing, backendCustomer));
       if (backendSaveRequired && !savedPricing) {
-        await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ طھط¹ط¯ظٹظ„ ط§ظ„طھط³ط¹ظٹط±ط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+        await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل التسعيرة في قاعدة البيانات. لم يتم اعتماد التعديل.');
         return;
       }
       if (!(await verifyPricingPersisted(editingPricingId, updatedPricing))) {
-        await rollbackAfterBackendWriteFailure('طھظ… ط¥ط±ط³ط§ظ„ طھط¹ط¯ظٹظ„ ط§ظ„طھط³ط¹ظٹط±ط© ظ„ظƒظ† ظ„ظ… ظٹط±ط¬ط¹ ظ…ظ† ظ‚ط§ط¹ط¯ط© Railway. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+        await rollbackAfterBackendWriteFailure('تم إرسال تعديل التسعيرة لكن لم يرجع من قاعدة Railway. لم يتم اعتماد التعديل.');
         return;
       }
       if (pendingPricingOrderId) {
         const linked = await attachPricingToOrder(pendingPricingOrderId, editingPricingId);
         if (!linked) {
-          await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ طھط¹ط¯ظٹظ„ ط§ظ„طھط³ط¹ظٹط±ط© ظ„ظƒظ† طھط¹ط°ط± ط±ط¨ط·ظ‡ط§ ط¨ط§ظ„ط·ظ„ط¨ ط§ظ„ط­ط§ظ„ظٹ. ط±ط§ط¬ط¹ ط§ظ„ط§طھطµط§ظ„ ط«ظ… ط­ط§ظˆظ„ ظ…ظ† طھظپط§طµظٹظ„ ط§ظ„ط·ظ„ط¨ ظ…ط±ط© ط£ط®ط±ظ‰.');
+          await rollbackAfterBackendWriteFailure('تم حفظ تعديل التسعيرة لكن تعذر ربطها بالطلب الحالي. راجع الاتصال ثم حاول من تفاصيل الطلب مرة أخرى.');
           return;
         }
       }
-      recordAudit('update', 'pricing', editingPricingId, before, updatedPricing, `طھط¹ط¯ظٹظ„ ط§ظ„طھط³ط¹ظٹط±ط© ط±ظ‚ظ… ${updatedPricing.pricingNumber || ''}`);
+      recordAudit('update', 'pricing', editingPricingId, before, updatedPricing, `تعديل التسعيرة رقم ${updatedPricing.pricingNumber || ''}`);
       await persistAuditLog();
     }
     editingPricingId = null;
@@ -3779,21 +3779,21 @@ async function addPricing(event) {
     const backendCustomer = await ensureBackendCustomer(createdPricing.customer);
     const savedPricing = await postBackend('/pricings', pricingToApi(createdPricing, backendCustomer));
     if (backendSaveRequired && !savedPricing) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„طھط³ط¹ظٹط±ط© ط§ظ„ط¬ط¯ظٹط¯ط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط³ط¹ظٹط±ط©.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ التسعيرة الجديدة في قاعدة البيانات. لم يتم اعتماد التسعيرة.');
       return;
     }
     if (!(await verifyPricingPersisted(savedPricing.id || createdPricing.id, createdPricing))) {
-      await rollbackAfterBackendWriteFailure('طھظ… ط¥ط±ط³ط§ظ„ ط§ظ„طھط³ط¹ظٹط±ط© ظ„ظƒظ† ظ„ظ… طھط±ط¬ط¹ ظ…ظ† ظ‚ط§ط¹ط¯ط© Railway. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط³ط¹ظٹط±ط©.');
+      await rollbackAfterBackendWriteFailure('تم إرسال التسعيرة لكن لم ترجع من قاعدة Railway. لم يتم اعتماد التسعيرة.');
       return;
     }
     if (pendingPricingOrderId) {
       const linked = await attachPricingToOrder(pendingPricingOrderId, savedPricing.id || createdPricing.id);
       if (!linked) {
-        await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ ط§ظ„طھط³ط¹ظٹط±ط© ظ„ظƒظ† طھط¹ط°ط± ط±ط¨ط·ظ‡ط§ ط¨ط§ظ„ط·ظ„ط¨ ط§ظ„ط­ط§ظ„ظٹ. ط±ط§ط¬ط¹ ط§ظ„ط§طھطµط§ظ„ ط«ظ… ط­ط§ظˆظ„ ظ…ظ† طھظپط§طµظٹظ„ ط§ظ„ط·ظ„ط¨ ظ…ط±ط© ط£ط®ط±ظ‰.');
+        await rollbackAfterBackendWriteFailure('تم حفظ التسعيرة لكن تعذر ربطها بالطلب الحالي. راجع الاتصال ثم حاول من تفاصيل الطلب مرة أخرى.');
         return;
       }
     }
-    recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `ط¥ظ†ط´ط§ط، ط§ظ„طھط³ط¹ظٹط±ط© ط±ظ‚ظ… ${createdPricing.pricingNumber || ''}`);
+    recordAudit('create', 'pricing', createdPricing.id, null, createdPricing, `إنشاء التسعيرة رقم ${createdPricing.pricingNumber || ''}`);
     await persistAuditLog();
   }
   await loadBackendData();
@@ -3835,7 +3835,7 @@ function convertPricingToOrder(id) {
     rawCost: primaryDraft.rawCost || primary.rawCost || pricing.rawCost || 0,
     paymentTerms: pricing.paymentTerms || '',
     dyehouse: primaryDraft.dyehouse || primary.dyehouse || pricing.dyehouse || '',
-    weavingSource: primaryDraft.weavingSource || pricing.weavingSource || 'ظ…ظ† ظƒط±طھ ط§ظ„طھط³ط¹ظٹط±',
+    weavingSource: primaryDraft.weavingSource || pricing.weavingSource || 'من كرت التسعير',
     accessoryType: primaryDraft.accessoryType || '',
     accessoryPercent: primaryDraft.accessoryPercent || 0,
     accessoryLines: primaryDraft.accessoryLines || [],
@@ -3896,17 +3896,17 @@ function openCustomerPricingQuotation(id) {
   const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
   const notes = String(pricing.notes || '').trim();
   const alreadyConverted = pricingConvertedByOrder(sourcePricing || pricing);
-  const convertPricingButton = alreadyConverted ? '' : `<button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">طھط­ظˆظٹظ„ ظ„ط·ظ„ط¨ طھط´ط؛ظٹظ„</button>`;
-  const wasteBasisLabel = (item) => (item.wasteBasis || item.accountingMode) === 'gross' ? 'ظ‚ط§ط¦ظ…' : 'طµط§ظپظٹ';
+  const convertPricingButton = alreadyConverted ? '' : `<button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">تحويل لطلب تشغيل</button>`;
+  const wasteBasisLabel = (item) => (item.wasteBasis || item.accountingMode) === 'gross' ? 'قائم' : 'صافي';
   const dyeStagesLabel = (item) => Array.isArray(item.dyeStages) && item.dyeStages.length
-    ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'ظ…ط±ط­ظ„ط©')} ${money(stage.price)}`).join('<br>')
+    ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)}`).join('<br>')
     : money(item.dyeCost);
   const accessoryLabel = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
     ? item.accessoryLines.map((line)=>{
         const quantity = Number(line.quantity ?? line.percent ?? 0);
         const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
         const stages = pricingAccessorySelectedStageNames(line).length ? ` + ${escapeHtml(pricingAccessorySelectedStageNames(line).join(' / '))}` : '';
-        return `${escapeHtml(line.type || 'ط¥ظƒط³ط³ظˆط§ط±')} ${money(quantity)} ظƒط¬ظ… أ— ${money(unitPrice)} ${currency}${stages} = ${money(line.total ?? quantity * unitPrice)} ${currency}`;
+        return `${escapeHtml(line.type || 'إكسسوار')} ${money(quantity)} كجم أ— ${money(unitPrice)} ${currency}${stages} = ${money(line.total ?? quantity * unitPrice)} ${currency}`;
       }).join('<br>')
     : '-';
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
@@ -3916,7 +3916,7 @@ function openCustomerPricingQuotation(id) {
     <td>${dyeStagesLabel(item)}</td>
     <td>${accessoryLabel(item)}</td>
     <td>${money(item.wasteCost)} (${money(item.wastePercent)}% ${wasteBasisLabel(item)})</td>
-    <td>${money(item.deferredCost)} (${money(item.deferredMonths || 0)} ط´ظ‡ط± / ${money(item.deferredPercent)}%)</td>
+    <td>${money(item.deferredCost)} (${money(item.deferredMonths || 0)} شهر / ${money(item.deferredPercent)}%)</td>
     <td>${money(item.profitPerKg)}</td>
     <td>${money(item.sellPrice)} \u062c\u0646\u064a\u0647</td>
     <td>${money(item.totalOffer)} \u062c\u0646\u064a\u0647</td>
@@ -3927,8 +3927,8 @@ function openCustomerPricingQuotation(id) {
         const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
         const total = Number(line.total ?? quantity * unitPrice);
         return `<tr class="quotation-accessory-row">
-          <td><span class="quotation-line-kind">ط¥ظƒط³ط³ظˆط§ط±</span><strong>${escapeHtml(line.type || 'ط¥ظƒط³ط³ظˆط§ط±')}</strong></td>
-          <td>${money(quantity)} ظƒط¬ظ…</td>
+          <td><span class="quotation-line-kind">إكسسوار</span><strong>${escapeHtml(line.type || 'إكسسوار')}</strong></td>
+          <td>${money(quantity)} كجم</td>
           <td>${money(unitPrice)} ${currency}</td>
           <td>${money(total)} ${currency}</td>
         </tr>`;
@@ -3937,7 +3937,7 @@ function openCustomerPricingQuotation(id) {
   const publicItemRows = (items.length ? items : [pricing]).map((item)=>{
     const clothTotal = Number(item.clothTotal ?? Number(item.sellPrice || 0) * Number(item.quantity || 0));
     return `<tr class="quotation-fabric-row">
-      <td><span class="quotation-line-kind">ظ‚ظ…ط§ط´</span><strong>${escapeHtml(item.fabricType || '-')}</strong></td>
+      <td><span class="quotation-line-kind">قماش</span><strong>${escapeHtml(item.fabricType || '-')}</strong></td>
       <td>${money(item.quantity)} \u0643\u062c\u0645</td>
       <td>${money(item.sellPrice)} ${currency}</td>
       <td>${money(clothTotal)} ${currency}</td>
@@ -3968,7 +3968,7 @@ function openCustomerPricingQuotation(id) {
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
       <table class="quotation-items-table"><thead><tr><th>\u0627\u0644\u0628\u0646\u062f</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${publicItemRows}</tbody></table>
     </section>
-    <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'ط¹ط±ط¶ ط§ظ„ط³ط¹ط± ط³ط§ط±ظٹ ظ„ظ…ط¯ط© 7 ط£ظٹط§ظ….'].filter(Boolean).join('\n'))}</p></section>
+    <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
     ${documentFooter()}
   </div>`;
   refs.documentDialog.showModal();
@@ -3983,12 +3983,12 @@ function openPricingCostSheet(id) {
   const money = (value) => Number(value || 0).toLocaleString('en-US');
   const currency = pricingCurrencyLabel(pricing.currency || pricing.priceItems?.find((item)=>item?.currency)?.currency || 'EGP');
   const stageRows = (item) => Array.isArray(item.dyeStages) && item.dyeStages.length
-    ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'ظ…ط±ط­ظ„ط©')} ${money(stage.price)} ط¬ظ†ظٹظ‡`).join('<br>')
-    : `${money(item.dyeCost || 0)} ط¬ظ†ظٹظ‡`;
+    ? item.dyeStages.map((stage)=>`${escapeHtml(stage.name || 'مرحلة')} ${money(stage.price)} جنيه`).join('<br>')
+    : `${money(item.dyeCost || 0)} جنيه`;
   const accessoryCostRows = (item) => Array.isArray(item.accessoryLines) && item.accessoryLines.length
     ? item.accessoryLines.map((line)=>`<tr>
-        <td>ط¥ظƒط³ط³ظˆط§ط±: ${escapeHtml(line.type || '-')}</td>
-        <td>${money(line.quantity)} ظƒط¬ظ…</td>
+        <td>إكسسوار: ${escapeHtml(line.type || '-')}</td>
+        <td>${money(line.quantity)} كجم</td>
         <td>${money(line.price)} ${currency}</td>
         <td>${money(line.stageCostConverted ?? line.stageCost ?? 0)} ${currency}</td>
         <td>${money(line.wasteCost)} ${currency} (${money(line.wastePercent)}%)</td>
@@ -4000,8 +4000,8 @@ function openPricingCostSheet(id) {
       </tr>`).join('')
     : '';
   const itemRows = (items.length ? items : [pricing]).map((item)=>`<tr>
-      <td>ظ‚ظ…ط§ط´: ${escapeHtml(item.fabricType || '-')}</td>
-      <td>${money(item.quantity)} ظƒط¬ظ…</td>
+      <td>قماش: ${escapeHtml(item.fabricType || '-')}</td>
+      <td>${money(item.quantity)} كجم</td>
       <td>${money(item.rawCost)} ${currency}</td>
       <td>${stageRows(item)}</td>
       <td>${money(item.wasteCost)} ${currency} (${money(item.wastePercent)}%)</td>
@@ -4011,24 +4011,24 @@ function openPricingCostSheet(id) {
       <td>${money(item.sellPrice)} ${currency}</td>
       <td>${money(item.clothTotal)} ${currency}</td>
     </tr>${accessoryCostRows(item)}`).join('');
-  refs.documentTitle.textContent = 'طھظ‚ط±ظٹط± طھظƒظ„ظپط© ظƒط±طھ ط§ظ„طھط³ط¹ظٹط±';
+  refs.documentTitle.textContent = 'تقرير تكلفة كرت التسعير';
   refs.documentBody.dataset.documentType = 'pricing-cost';
   refs.documentBody.dataset.documentNumber = pricing.pricingNumber || pricing.id || '';
   refs.documentBody.dataset.reportTitle = 'تقرير تكلفة داخلي';
   refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
     ${documentHeader()}
-    <div class="report-title quotation-title"><h2>طھظ‚ط±ظٹط± طھظƒظ„ظپط© ط¯ط§ط®ظ„ظٹ <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>ظ…ط³طھظ†ط¯ ط¯ط§ط®ظ„ظٹ ظ„ظ…ط¬ظ…ظˆط¹ط© ط§ظ„طھظƒط§ظ„ظٹظپ ظˆظ„ط§ ظٹط±ط³ظ„ ظ„ظ„ط¹ظ…ظٹظ„.</span></div>
+    <div class="report-title quotation-title"><h2>تقرير تكلفة داخلي <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>مستند داخلي لمجموعة التكاليف ولا يرسل للعميل.</span></div>
     <div class="document-meta quotation-meta">
-      <div><span>ط§ظ„ط¹ظ…ظٹظ„</span>${escapeHtml(pricing.customer || '-')}</div>
-      <div><span>ط§ظ„طھط§ط±ظٹط®</span>${escapeHtml(pricing.pricingDate || '-')}</div>
-      <div><span>ط§ظ„ط¹ظ…ظ„ط©</span>${currency}</div>
-      <div><span>ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¹ظ‚ط¯</span>${money(pricing.totalOffer)} ${currency}</div>
+      <div><span>العميل</span>${escapeHtml(pricing.customer || '-')}</div>
+      <div><span>التاريخ</span>${escapeHtml(pricing.pricingDate || '-')}</div>
+      <div><span>العملة</span>${currency}</div>
+      <div><span>إجمالي العقد</span>${money(pricing.totalOffer)} ${currency}</div>
     </div>
     <section class="report-section">
-      <h3>طھظپطµظٹظ„ ط§ظ„طھظƒظ„ظپط©</h3>
-      <table class="quotation-items-table"><thead><tr><th>ط§ظ„ط¨ظ†ط¯</th><th>ط§ظ„ظƒظ…ظٹط©</th><th>ط³ط¹ط± ط§ظ„ط®ط§ظ…</th><th>ط§ظ„طµط¨ط§ط؛ط© / ط§ظ„ظ…ط±ط§ط­ظ„</th><th>ط§ظ„ظ‡ط§ظ„ظƒ</th><th>ط§ظ„ط£ط¬ظ„</th><th>ط§ظ„ط±ط¨ط­</th><th>طھظƒظ„ظپط© ط§ظ„ظƒظٹظ„ظˆ</th><th>ط³ط¹ط± ط§ظ„ط¨ظٹط¹</th><th>ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</th></tr></thead><tbody>${itemRows}</tbody></table>
+      <h3>تفصيل التكلفة</h3>
+      <table class="quotation-items-table"><thead><tr><th>البند</th><th>الكمية</th><th>سعر الخام</th><th>الصباغة / المراحل</th><th>الهالك</th><th>الأجل</th><th>الربح</th><th>تكلفة الكيلو</th><th>سعر البيع</th><th>الإجمالي</th></tr></thead><tbody>${itemRows}</tbody></table>
     </section>
-    <section class="report-section quotation-notes"><h3>ظ…ظ„ط§ط­ط¸ط§طھ</h3><p>${escapeHtml(pricing.notes || 'ظ„ط§ طھظˆط¬ط¯ ظ…ظ„ط§ط­ط¸ط§طھ.')}</p></section>
+    <section class="report-section quotation-notes"><h3>ملاحظات</h3><p>${escapeHtml(pricing.notes || 'لا توجد ملاحظات.')}</p></section>
     ${documentFooter()}
   </div>`;
   refs.documentDialog.showModal();
@@ -4041,35 +4041,35 @@ function openPricingQuotation(id) {
   const money = (value) => Number(value || 0).toLocaleString('en-US');
   const customer = pricing.customer || pricing.customerName || pricing.clientName || '-';
   const notes = String(pricing.notes || '').trim();
-  refs.documentTitle.textContent = 'ط¹ط±ط¶ ط³ط¹ط±';
+  refs.documentTitle.textContent = 'عرض سعر';
   refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
     ${documentHeader()}
-    <div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">طھظ†ط²ظٹظ„ ط·ظ„ط¨</button><button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">طھط¹ط¯ظٹظ„</button></div>
-    <div class="report-title"><h2>ط¹ط±ط¶ ط³ط¹ط± <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>ط¹ط±ط¶ ظ…ظ‚ط¯ظ… ظ„ظ„ط¹ظ…ظٹظ„ ط­ط³ط¨ ط¨ظٹط§ظ†ط§طھ ط§ظ„طھط³ط¹ظٹط± ط§ظ„ط­ط§ظ„ظٹط©.</span></div>
+    <div class="document-inline-actions no-print"><button class="mini-btn" data-convert-pricing="${escapeHtml(pricing.id)}">تنزيل طلب</button><button class="mini-btn" data-edit-pricing-doc="${escapeHtml(pricing.id)}">تعديل</button></div>
+    <div class="report-title"><h2>عرض سعر <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>عرض مقدم للعميل حسب بيانات التسعير الحالية.</span></div>
     <div class="document-meta">
-      <div><span>ط§ظ„ط¹ظ…ظٹظ„</span>${escapeHtml(customer)}</div>
-      <div><span>ط§ظ„طھط§ط±ظٹط®</span>${escapeHtml(pricing.pricingDate || '-')}</div>
-      <div><span>ط§ظ„طµظ†ظپ</span>${escapeHtml(pricing.fabricType || '-')}</div>
-      <div><span>ط¯ط±ط¬ط© ط§ظ„ظ„ظˆظ†</span>${escapeHtml(pricing.colorClass || '-')}</div>
-      <div><span>ط§ظ„ظƒظ…ظٹط©</span>${money(pricing.quantity)} ظƒط¬ظ…</div>
-      <div><span>ط§ظ„ط¨ظˆطµط©</span>${escapeHtml(pricing.inchWidth || '-')}</div>
-      <div><span>ط§ظ„ظˆط²ظ† ط§ظ„ظ…ط¬ظ‡ط²</span>${escapeHtml(pricing.finishedWeight || '-')}</div>
-      <div><span>ط·ط±ظٹظ‚ط© ط§ظ„ط³ط¯ط§ط¯</span>${escapeHtml(pricing.paymentTerms || 'ظƒط§ط´')}</div>
+      <div><span>العميل</span>${escapeHtml(customer)}</div>
+      <div><span>التاريخ</span>${escapeHtml(pricing.pricingDate || '-')}</div>
+      <div><span>الصنف</span>${escapeHtml(pricing.fabricType || '-')}</div>
+      <div><span>درجة اللون</span>${escapeHtml(pricing.colorClass || '-')}</div>
+      <div><span>الكمية</span>${money(pricing.quantity)} كجم</div>
+      <div><span>البوصة</span>${escapeHtml(pricing.inchWidth || '-')}</div>
+      <div><span>الوزن المجهز</span>${escapeHtml(pricing.finishedWeight || '-')}</div>
+      <div><span>طريقة السداد</span>${escapeHtml(pricing.paymentTerms || 'كاش')}</div>
     </div>
     <section class="report-section quotation-summary">
-      <h3>ظ…ظ„ط®طµ ط§ظ„ط¹ط±ط¶</h3>
+      <h3>ملخص العرض</h3>
       <div class="quotation-kpis">
-        <div><span>ط³ط¹ط± ط§ظ„ظƒظٹظ„ظˆ</span><strong>${money(pricing.sellPrice)} ط¬ظ†ظٹظ‡</strong></div>
-        <div class="quotation-total"><span>ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¹ظ‚ط¯</span><strong>${money(pricing.totalOffer)} ط¬ظ†ظٹظ‡</strong></div>
+        <div><span>سعر الكيلو</span><strong>${money(pricing.sellPrice)} جنيه</strong></div>
+        <div class="quotation-total"><span>إجمالي العقد</span><strong>${money(pricing.totalOffer)} جنيه</strong></div>
       </div>
     </section>
     <section class="report-section">
-      <h3>ط¨ظ†ظˆط¯ ط§ظ„ط¹ط±ط¶</h3>
-      <table><thead><tr><th>ط§ظ„طµظ†ظپ</th><th>ط¯ط±ط¬ط© ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ظƒظ…ظٹط©</th><th>ط§ظ„ط¨ظˆطµط©</th><th>ط³ط¹ط± ط§ظ„ظƒظٹظ„ظˆ</th><th>ط§ظ„ط¥ط¬ظ…ط§ظ„ظٹ</th></tr></thead><tbody>
-        <tr><td>${escapeHtml(pricing.fabricType || '-')}</td><td>${escapeHtml(pricing.colorClass || '-')}</td><td>${money(pricing.quantity)} ظƒط¬ظ…</td><td>${escapeHtml(pricing.inchWidth || '-')}</td><td>${money(pricing.sellPrice)} ط¬ظ†ظٹظ‡</td><td>${money(pricing.totalOffer)} ط¬ظ†ظٹظ‡</td></tr>
+      <h3>بنود العرض</h3>
+      <table><thead><tr><th>الصنف</th><th>درجة اللون</th><th>الكمية</th><th>البوصة</th><th>سعر الكيلو</th><th>الإجمالي</th></tr></thead><tbody>
+        <tr><td>${escapeHtml(pricing.fabricType || '-')}</td><td>${escapeHtml(pricing.colorClass || '-')}</td><td>${money(pricing.quantity)} كجم</td><td>${escapeHtml(pricing.inchWidth || '-')}</td><td>${money(pricing.sellPrice)} جنيه</td><td>${money(pricing.totalOffer)} جنيه</td></tr>
       </tbody></table>
     </section>
-    <section class="report-section"><h3>ظ…ظ„ط§ط­ط¸ط§طھ</h3><p>${escapeHtml(notes || 'ظ„ط§ طھظˆط¬ط¯ ظ…ظ„ط§ط­ط¸ط§طھ ط¥ط¶ط§ظپظٹط©.')}</p></section>
+    <section class="report-section"><h3>ملاحظات</h3><p>${escapeHtml(notes || 'لا توجد ملاحظات إضافية.')}</p></section>
     ${documentFooter()}
   </div>`;
   refs.documentDialog.showModal();
@@ -4111,7 +4111,7 @@ function mainWarehouseStockRows() {
 }
 function renderMainWarehouseRows() {
   const rows = mainWarehouseStockRows();
-  if (!rows.length) return '<tr><td colspan="7">ظ„ط§ طھظˆط¬ط¯ ط£طµظ†ط§ظپ ظ…ط³ط¬ظ„ط© ظ…ط¨ط§ط´ط±ط© ظپظٹ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ ط­طھظ‰ ط§ظ„ط¢ظ†.</td></tr>';
+  if (!rows.length) return '<tr><td colspan="7">لا توجد أصناف مسجلة مباشرة في المخزن الرئيسي حتى الآن.</td></tr>';
   return rows.map(({ order, allocation, balance })=>`
     <tr>
       <td>${escapeHtml(order.orderNumber || '-')}</td>
@@ -4188,14 +4188,14 @@ function renderFinishedSaleRows() {
         <td><input type="number" step="0.01" min="0" data-finished-sale-quantity placeholder="0"></td>
       </tr>`)
     .join('');
-  body.innerHTML = rows || '<tr><td colspan="7">ظ„ط§ ظٹظˆط¬ط¯ ط±طµظٹط¯ ظ…ط®ط²ظ† ظ…طھط§ط­ ظ„ظ„ط¨ظٹط¹ ط§ظ„ط¬ط§ظ‡ط².</td></tr>';
+  body.innerHTML = rows || '<tr><td colspan="7">لا يوجد رصيد مخزن متاح للبيع الجاهز.</td></tr>';
 }
 function renderFinishedTransferTargets() {
   const select = document.querySelector('#finishedTransferForm select[name="targetKey"]');
   if (!select) return;
   const currentValue = select.value;
   const fabric = selectedFinishedSaleFabric();
-  select.innerHTML = `<option value="">ط§ط®طھط± ط§ظ„ط·ظ„ط¨ / ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط³طھظ„ظ… ظ„ظ„طھط­ظˆظٹظ„</option>${finishedTransferTargetOptions(fabric)}`;
+  select.innerHTML = `<option value="">اختر الطلب / اللون المستلم للتحويل</option>${finishedTransferTargetOptions(fabric)}`;
   if (currentValue && [...select.options].some((option)=>option.value === currentValue)) select.value = currentValue;
 }
 function renderFinishedSalePanel() {
@@ -4206,77 +4206,77 @@ function renderFinishedSalePanel() {
   const total = sources.reduce((sumValue, item)=>sumValue + Number(item.balance || 0), 0);
   panel.innerHTML = `
     <div class="section-head stacked-on-mobile">
-      <div><p class="eyebrow">ط§ظ„ظ…ط®ط²ظ† ظˆط§ظ„طھط³ظ„ظٹظ…</p><h2>ط¨ظٹط¹ ظ…ط¬ظ‡ط²</h2><p class="muted">ط¨ظٹط¹ ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ظپط¹ظ„ظٹ ط¨ط¯ظˆظ† ط¥ظ†ط´ط§ط، ط£ظ…ط± طھط´ط؛ظٹظ„ ط¬ط¯ظٹط¯.</p></div>
-      <div class="metric compact"><span>ط±طµظٹط¯ ظ…طھط§ط­ ظ„ظ„ط¨ظٹط¹</span><strong>${formatNumber(total)}</strong></div>
+      <div><p class="eyebrow">المخزن والتسليم</p><h2>بيع مجهز</h2><p class="muted">بيع من رصيد المخزن الفعلي بدون إنشاء أمر تشغيل جديد.</p></div>
+      <div class="metric compact"><span>رصيد متاح للبيع</span><strong>${formatNumber(total)}</strong></div>
     </div>
     <datalist id="customerNamesList">${knownCustomerNames().map((name)=>`<option value="${escapeHtml(name)}"></option>`).join('')}</datalist>
     <div class="subsection main-warehouse-entry">
       <div class="subsection-head">
         <div>
-          <h3>ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ</h3>
-          <p class="muted">ط¥ط¶ط§ظپط© طµظ†ظپ ط¬ط§ظ‡ط² ظ…ط¨ط§ط´ط±ط© ظ„ظ„ظ…ط®ط²ظ† ط¨ط¯ظˆظ† ظƒط±طھ طھط³ط¹ظٹط± ط£ظˆ ط·ظ„ط¨ ط¹ظ…ظٹظ„. ط¨ط¹ط¯ ط§ظ„ط­ظپط¸ ظٹط¸ظ‡ط± ط§ظ„ط±طµظٹط¯ ظپظٹ ط¨ظٹط¹ ظ…ط¬ظ‡ط².</p>
+          <h3>المخزن الرئيسي</h3>
+          <p class="muted">إضافة صنف جاهز مباشرة للمخزن بدون كرت تسعير أو طلب عميل. بعد الحفظ يظهر الرصيد في بيع مجهز.</p>
         </div>
-        <span class="status warehouse">ط±طµظٹط¯ ط¯ط§ط®ظ„ظٹ</span>
+        <span class="status warehouse">رصيد داخلي</span>
       </div>
       <form id="mainWarehouseStockForm" class="batch-form finished-sale-form">
-        <input name="fabricType" list="fabricNamesList" placeholder="ط§ظ„طµظ†ظپ" required>
-        <input name="color" placeholder="ط§ظ„ظ„ظˆظ†" required>
-        <input name="quantity" type="number" step="0.01" min="0" placeholder="ظƒظ…ظٹط© ط§ظ„ظ…ط®ط²ظ†" required>
-        <input name="finishedWeight" type="number" step="0.01" min="0" placeholder="ط§ظ„ظˆط²ظ† ظ…ط¬ظ‡ط²">
-        <input name="width" placeholder="ط§ظ„ط¹ط±ط¶">
-        <input name="inch" placeholder="ط§ظ„ط¨ظˆطµط©">
-        <input name="unitPrice" type="number" step="0.01" min="0" placeholder="ط³ط¹ط± ط§ظ„ظƒظٹظ„ظˆ">
+        <input name="fabricType" list="fabricNamesList" placeholder="الصنف" required>
+        <input name="color" placeholder="اللون" required>
+        <input name="quantity" type="number" step="0.01" min="0" placeholder="كمية المخزن" required>
+        <input name="finishedWeight" type="number" step="0.01" min="0" placeholder="الوزن مجهز">
+        <input name="width" placeholder="العرض">
+        <input name="inch" placeholder="البوصة">
+        <input name="unitPrice" type="number" step="0.01" min="0" placeholder="سعر الكيلو">
         <input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>
-        <input name="noteNumber" placeholder="ط±ظ‚ظ… ط¥ط°ظ† / ظ…ط±ط¬ط¹">
-        <input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ">
-        <button class="mini-btn full" type="submit">ط¥ط¶ط§ظپط© ط±طµظٹط¯ ظ„ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ</button>
+        <input name="noteNumber" placeholder="رقم إذن / مرجع">
+        <input class="full" name="notes" placeholder="ملاحظات">
+        <button class="mini-btn full" type="submit">إضافة رصيد للمخزن الرئيسي</button>
       </form>
       <div class="table-wrap">
         <table class="mobile-card-table allocation-table">
-          <thead><tr><th>ط±ظ‚ظ… ط§ظ„ظ…طµط¯ط±</th><th>ط§ظ„طµظ†ظپ</th><th>ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†</th><th>ظ…ط¨ط§ط¹</th><th>ط§ظ„ط±طµظٹط¯</th></tr></thead>
+          <thead><tr><th>رقم المصدر</th><th>الصنف</th><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>مباع</th><th>الرصيد</th></tr></thead>
           <tbody>${renderMainWarehouseRows()}</tbody>
         </table>
       </div>
     </div>
     <form id="finishedSaleForm" class="batch-form finished-sale-form">
-      <input name="customerName" list="customerNamesList" placeholder="ط§ظ„ط¹ظ…ظٹظ„ ط§ظ„ظ…ط³طھظ„ظ…" required>
+      <input name="customerName" list="customerNamesList" placeholder="العميل المستلم" required>
       <select id="finishedSaleFabric" name="fabricType" required>
-        <option value="">ط§ط®طھط± ط§ظ„طµظ†ظپ ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†</option>
+        <option value="">اختر الصنف من رصيد المخزن</option>
         ${finishedStockSaleFabricOptions()}
       </select>
       <input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>
-      <input name="unitPrice" type="number" step="0.01" min="0" placeholder="ط³ط¹ط± ط§ظ„ظƒظٹظ„ظˆ" required>
-      <input name="paymentTerms" placeholder="ط·ط±ظٹظ‚ط© ط§ظ„ط³ط¯ط§ط¯ / ط´ط±ظˆط· ط§ظ„ط¨ظٹط¹">
-      <input name="noteNumber" placeholder="ط±ظ‚ظ… ظ…ط³طھظ†ط¯ ط§ظ„ط¨ظٹط¹">
-      <input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ">
+      <input name="unitPrice" type="number" step="0.01" min="0" placeholder="سعر الكيلو" required>
+      <input name="paymentTerms" placeholder="طريقة السداد / شروط البيع">
+      <input name="noteNumber" placeholder="رقم مستند البيع">
+      <input class="full" name="notes" placeholder="ملاحظات">
       <div class="table-wrap full">
         <table class="mobile-card-table allocation-table finished-sale-table">
-          <thead><tr><th>ط±ظ‚ظ… ط§ظ„ظ…طµط¯ط±</th><th>ظ…طµط¯ط± ط§ظ„ط±طµظٹط¯</th><th>ط§ظ„طµظ†ظپ</th><th>ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط§ظ„ظ…طھط§ط­</th><th>ظƒظ…ظٹط© ط§ظ„ط¨ظٹط¹</th></tr></thead>
+          <thead><tr><th>رقم المصدر</th><th>مصدر الرصيد</th><th>الصنف</th><th>اللون</th><th>العرض</th><th>المتاح</th><th>كمية البيع</th></tr></thead>
           <tbody id="finishedSaleRows"></tbody>
         </table>
       </div>
-      <button class="primary-btn full" type="submit">ط­ظپط¸ ط¨ظٹط¹ ظ…ط¬ظ‡ط²</button>
+      <button class="primary-btn full" type="submit">حفظ بيع مجهز</button>
     </form>
     <form id="finishedTransferForm" class="batch-form finished-sale-form">
       <div class="full">
-        <h3>طھط­ظˆظٹظ„ ط±طµظٹط¯ ظ…ط¬ظ‡ط² ظ…ظ† ط·ظ„ط¨ ظ„ط·ظ„ط¨</h3>
-        <p class="muted">ط­ط±ظƒط© ط¯ط§ط®ظ„ظٹط© طھظ†ظ‚ظ„ ط±طµظٹط¯ ظ…ط®ط²ظ† ظپط¹ظ„ظٹ ظ…ظ† ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…طµط¯ط± ط¥ظ„ظ‰ ط·ظ„ط¨ ط¢ط®ط± ط¨ط¯ظˆظ† طھط³ط¬ظٹظ„ ط¨ظٹط¹ ط£ظˆ ظپط§طھظˆط±ط© ط¹ظ…ظٹظ„.</p>
+        <h3>تحويل رصيد مجهز من طلب لطلب</h3>
+        <p class="muted">حركة داخلية تنقل رصيد مخزن فعلي من الطلب المصدر إلى طلب آخر بدون تسجيل بيع أو فاتورة عميل.</p>
       </div>
       <select name="targetKey" required>
-        <option value="">ط§ط®طھط± ط§ظ„ط·ظ„ط¨ / ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط³طھظ„ظ… ظ„ظ„طھط­ظˆظٹظ„</option>
+        <option value="">اختر الطلب / اللون المستلم للتحويل</option>
         ${finishedTransferTargetOptions(currentFabric)}
       </select>
       <input name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" required>
-      <input name="noteNumber" placeholder="ط±ظ‚ظ… ط¥ط°ظ† ط§ظ„طھط­ظˆظٹظ„">
-      <input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„طھط­ظˆظٹظ„">
-      <p class="muted full">ط§ظƒطھط¨ ظƒظ…ظٹط© ط§ظ„طھط­ظˆظٹظ„ ظپظٹ ط¬ط¯ظˆظ„ ط§ظ„ط±طµظٹط¯ ط¨ط§ظ„ط£ط¹ظ„ظ‰طŒ ط«ظ… ط§ط¶ط؛ط· ط­ظپط¸ ط§ظ„طھط­ظˆظٹظ„. ظ†ظپط³ ط§ظ„ط¬ط¯ظˆظ„ ظٹط³طھط®ط¯ظ… ظ„ط§ط®طھظٹط§ط± ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…طµط¯ط±.</p>
-      <button class="mini-btn full" type="submit">ط­ظپط¸ طھط­ظˆظٹظ„ ط±طµظٹط¯ ظ…ط¬ظ‡ط²</button>
+      <input name="noteNumber" placeholder="رقم إذن التحويل">
+      <input class="full" name="notes" placeholder="ملاحظات التحويل">
+      <p class="muted full">اكتب كمية التحويل في جدول الرصيد بالأعلى، ثم اضغط حفظ التحويل. نفس الجدول يستخدم لاختيار الرصيد المصدر.</p>
+      <button class="mini-btn full" type="submit">حفظ تحويل رصيد مجهز</button>
     </form>
     <div class="subsection">
-      <div class="subsection-head"><h3>ط¢ط®ط± ط­ط±ظƒط§طھ ط§ظ„ظ…ط®ط²ظ†</h3></div>
+      <div class="subsection-head"><h3>آخر حركات المخزن</h3></div>
       <div class="table-wrap">
         <table class="mobile-card-table allocation-table">
-          <thead><tr><th>ط§ظ„طھط§ط±ظٹط®</th><th>ط§ظ„ط­ط±ظƒط©</th><th>ط§ظ„ط·ط±ظپ</th><th>ط§ظ„ظ…طµط¯ط±</th><th>ط§ظ„طµظ†ظپ</th><th>ط§ظ„ظƒظ…ظٹط©</th><th>ط§ظ„ظ‚ظٹظ…ط©</th></tr></thead>
+          <thead><tr><th>التاريخ</th><th>الحركة</th><th>الطرف</th><th>المصدر</th><th>الصنف</th><th>الكمية</th><th>القيمة</th></tr></thead>
           <tbody>${finishedStockSaleHistoryRows()}</tbody>
         </table>
       </div>
@@ -4300,16 +4300,16 @@ function finishedStockSaleHistoryRows() {
     .map((batch)=>{
       const order = orders.find((item)=>item.id === batch.orderId) || {};
       const allocation = allocations.find((item)=>item.id === batch.allocationId) || {};
-      const typeLabel = batch.__historyType === 'sale' ? 'ط¨ظٹط¹ ظ…ط¬ظ‡ط²' : (batch.__historyType === 'transfer-in' ? 'طھط­ظˆظٹظ„ ظˆط§ط±ط¯' : 'طھط­ظˆظٹظ„ طµط§ط¯ط±');
+      const typeLabel = batch.__historyType === 'sale' ? 'بيع مجهز' : (batch.__historyType === 'transfer-in' ? 'تحويل وارد' : 'تحويل صادر');
       const party = batch.__historyType === 'sale'
         ? (batch.customerName || '-')
-        : ((batch.notes || '').split(' - ').find((part)=>part.includes('طھط­ظˆظٹظ„')) || '-');
+        : ((batch.notes || '').split(' - ').find((part)=>part.includes('تحويل')) || '-');
       const amount = batch.__historyType === 'sale'
         ? formatNumber(batch.totalPrice || Number(batch.quantity || 0) * Number(batch.unitPrice || 0))
         : '-';
       return `<tr><td>${escapeHtml(batch.date || '-')}</td><td>${escapeHtml(typeLabel)}</td><td>${escapeHtml(party)}</td><td>${escapeHtml(order.orderNumber || '-')}</td><td>${escapeHtml([order.fabricType, allocation.color].filter(Boolean).join(' / ') || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${amount}</td></tr>`;
     })
-    .join('') || '<tr><td colspan="7">ظ„ط§ طھظˆط¬ط¯ ط­ط±ظƒط§طھ ظ…ط®ط²ظ† ظ…ط³ط¬ظ„ط©.</td></tr>';
+    .join('') || '<tr><td colspan="7">لا توجد حركات مخزن مسجلة.</td></tr>';
 }
 function openFinishedSalePanel() {
   openMainWorkspace();
@@ -4335,17 +4335,17 @@ function ensureFinishedSaleUi() {
   const warehouseStageButton = document.querySelector('[data-stage-shortcut="stage:warehouse"]');
   const warehouseSection = warehouseStageButton?.closest('section');
   if (warehouseSection && !warehouseSection.querySelector('[data-nav-action="finishedSale"]')) {
-    warehouseStageButton.insertAdjacentHTML('afterend', '<button type="button" data-module-action="warehouse" data-nav-action="finishedSale">ط¨ظٹط¹ ظ…ط¬ظ‡ط²</button>');
+    warehouseStageButton.insertAdjacentHTML('afterend', '<button type="button" data-module-action="warehouse" data-nav-action="finishedSale">بيع مجهز</button>');
   }
   const topOperationMenu = [...document.querySelectorAll('.erp-menu-list')]
     .find((menu)=>menu.querySelector('[data-nav-action="orderDetails"]') && menu.querySelector('[data-nav-action="gluingQueue"]'));
   if (topOperationMenu && !topOperationMenu.querySelector('[data-nav-action="finishedSale"]')) {
-    topOperationMenu.querySelector('[data-nav-action="orderDetails"]')?.insertAdjacentHTML('afterend', '<button type="button" data-nav-action="finishedSale">ط¨ظٹط¹ ظ…ط¬ظ‡ط²</button>');
+    topOperationMenu.querySelector('[data-nav-action="orderDetails"]')?.insertAdjacentHTML('afterend', '<button type="button" data-nav-action="finishedSale">بيع مجهز</button>');
   }
 }
 async function saveFinishedStockSale(event) {
   event.preventDefault();
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط¨ظٹط¹ ظ…ط¬ظ‡ط².'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ بيع مجهز.'))) return;
   const form = event.target.closest('#finishedSaleForm');
   if (!form) return;
   const data = Object.fromEntries(new FormData(form).entries());
@@ -4363,13 +4363,13 @@ async function saveFinishedStockSale(event) {
       };
     })
     .filter((item)=>item.quantity > 0);
-  if (!customerName) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„ ط§ظ„ظ…ط³طھظ„ظ….'); return; }
-  if (!rows.length) { alert('ط§ظƒطھط¨ ظƒظ…ظٹط© ط¨ظٹط¹ ظˆط§ط­ط¯ط© ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„.'); return; }
+  if (!customerName) { alert('اكتب اسم العميل المستلم.'); return; }
+  if (!rows.length) { alert('اكتب كمية بيع واحدة على الأقل.'); return; }
   await ensureBackendCustomer(customerName);
   for (const item of rows) {
     const totalPrice = roundNumber(item.quantity * unitPrice);
     const balanceWarning = item.quantity > item.available + 0.001
-      ? `طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„ط¨ظٹط¹ ${formatNumber(item.quantity)} ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„طµظ†ظپ ط§ظ„ظ…طھط§ط­ ${formatNumber(item.available)} ظƒط¬ظ…`
+      ? `تنبيه: كمية البيع ${formatNumber(item.quantity)} أكبر من رصيد الصنف المتاح ${formatNumber(item.available)} كجم`
       : '';
     const saved = await postBackend('/batches/customer', batchToApi({
       id: uid(),
@@ -4383,29 +4383,29 @@ async function saveFinishedStockSale(event) {
       paymentTerms: data.paymentTerms || '',
       noteNumber: data.noteNumber || '',
       movement: 'finished_sale',
-      notes: ['ط¨ظٹط¹ ظ…ط¬ظ‡ط²', balanceWarning, data.notes || ''].filter(Boolean).join(' - '),
+      notes: ['بيع مجهز', balanceWarning, data.notes || ''].filter(Boolean).join(' - '),
     }));
     if (!saved) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¨ظٹط¹ ظ…ط¬ظ‡ط² ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط±ظƒط©.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ بيع مجهز في قاعدة البيانات. لم يتم اعتماد الحركة.');
       return;
     }
   }
-  recordAudit('create', 'finishedStockSale', customerName, null, { rows: rows.length, customerName }, 'طھط³ط¬ظٹظ„ ط¨ظٹط¹ ظ…ط¬ظ‡ط² ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†');
+  recordAudit('create', 'finishedStockSale', customerName, null, { rows: rows.length, customerName }, 'تسجيل بيع مجهز من رصيد المخزن');
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   renderFinishedSalePanel();
-  alert('طھظ… ط­ظپط¸ ط¨ظٹط¹ ظ…ط¬ظ‡ط² ظˆط®طµظ… ط§ظ„ظƒظ…ظٹط© ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†.');
+  alert('تم حفظ بيع مجهز وخصم الكمية من رصيد المخزن.');
 }
 async function saveFinishedStockTransfer(event) {
   event.preventDefault();
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ طھط­ظˆظٹظ„ ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…ط¬ظ‡ط².'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ تحويل الرصيد المجهز.'))) return;
   const form = event.target.closest('#finishedTransferForm');
   if (!form) return;
   const data = Object.fromEntries(new FormData(form).entries());
   const [targetOrderId, targetAllocationId] = String(data.targetKey || '').split('|');
   const targetOrder = orders.find((order)=>order.id === targetOrderId);
   const targetAllocation = allocations.find((allocation)=>allocation.id === targetAllocationId);
-  if (!targetOrder || !targetAllocation) { alert('ط§ط®طھط± ط§ظ„ط·ظ„ط¨ / ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط³طھظ„ظ… ظ„ظ„طھط­ظˆظٹظ„.'); return; }
+  if (!targetOrder || !targetAllocation) { alert('اختر الطلب / اللون المستلم للتحويل.'); return; }
   const rows = [...document.querySelectorAll('#finishedSaleRows [data-finished-sale-row]')]
     .map((row)=>{
       const quantity = roundNumber(Number(row.querySelector('[data-finished-sale-quantity]')?.value || 0));
@@ -4417,19 +4417,19 @@ async function saveFinishedStockTransfer(event) {
       };
     })
     .filter((item)=>item.quantity > 0);
-  if (!rows.length) { alert('ط§ظƒطھط¨ ظƒظ…ظٹط© طھط­ظˆظٹظ„ ظˆط§ط­ط¯ط© ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„ ظپظٹ ط¬ط¯ظˆظ„ ط§ظ„ط±طµظٹط¯.'); return; }
+  if (!rows.length) { alert('اكتب كمية تحويل واحدة على الأقل في جدول الرصيد.'); return; }
   const date = data.date || new Date().toISOString().slice(0, 10);
   const noteNumber = data.noteNumber || '';
   const transferId = uid();
   for (const item of rows) {
     if (item.orderId === targetOrderId && item.allocationId === targetAllocationId) {
-      alert('ظ„ط§ ظٹظ…ظƒظ† طھط­ظˆظٹظ„ ط§ظ„ط±طµظٹط¯ ط¥ظ„ظ‰ ظ†ظپط³ ط§ظ„ط·ظ„ط¨ / ط§ظ„ظ„ظˆظ† ط§ظ„ظ…طµط¯ط±.');
+      alert('لا يمكن تحويل الرصيد إلى نفس الطلب / اللون المصدر.');
       return;
     }
     const sourceOrder = orders.find((order)=>order.id === item.orderId) || {};
     const sourceAllocation = allocations.find((allocation)=>allocation.id === item.allocationId) || {};
     const warning = item.quantity > item.available + 0.001
-      ? `طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„طھط­ظˆظٹظ„ ${formatNumber(item.quantity)} ط£ظƒط¨ط± ظ…ظ† ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…طھط§ط­ ${formatNumber(item.available)} ظƒط¬ظ…`
+      ? `تنبيه: كمية التحويل ${formatNumber(item.quantity)} أكبر من الرصيد المتاح ${formatNumber(item.available)} كجم`
       : '';
     const sourceLabel = `${sourceOrder.orderNumber || '-'} / ${sourceOrder.customer || '-'} / ${sourceOrder.fabricType || '-'} / ${sourceAllocation.color || '-'}`;
     const targetLabel = `${targetOrder.orderNumber || '-'} / ${targetOrder.customer || '-'} / ${targetOrder.fabricType || '-'} / ${targetAllocation.color || '-'}`;
@@ -4445,10 +4445,10 @@ async function saveFinishedStockTransfer(event) {
       paymentTerms: '',
       noteNumber,
       movement: 'finished_transfer_out',
-      notes: [FINISHED_TRANSFER_MARKER, `طھط­ظˆظٹظ„ ط±طµظٹط¯ ظ…ط¬ظ‡ط² ط¥ظ„ظ‰ ${targetLabel}`, `ظ…ط±ط¬ط¹ ${transferId}`, warning, data.notes || ''].filter(Boolean).join(' - '),
+      notes: [FINISHED_TRANSFER_MARKER, `تحويل رصيد مجهز إلى ${targetLabel}`, `مرجع ${transferId}`, warning, data.notes || ''].filter(Boolean).join(' - '),
     }));
     if (!outSaved) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط®ط±ظˆط¬ طھط­ظˆظٹظ„ ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…ط¬ظ‡ط² ظ…ظ† ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…طµط¯ط±. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط­ظˆظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ خروج تحويل الرصيد المجهز من الطلب المصدر. لم يتم اعتماد التحويل.');
       return;
     }
     const inSaved = await postBackend('/batches/finished', batchToApi({
@@ -4460,22 +4460,22 @@ async function saveFinishedStockTransfer(event) {
       noteNumber,
       finishedWidth: targetAllocation.targetFinishedWidth || targetAllocation.rawWidth || '',
       finishedWeight: targetAllocation.targetFinishedWeight || '',
-      notes: [FINISHED_TRANSFER_MARKER, `طھط­ظˆظٹظ„ ط±طµظٹط¯ ظ…ط¬ظ‡ط² ظ…ظ† ${sourceLabel}`, `ظ…ط±ط¬ط¹ ${transferId}`, data.notes || ''].filter(Boolean).join(' - '),
+      notes: [FINISHED_TRANSFER_MARKER, `تحويل رصيد مجهز من ${sourceLabel}`, `مرجع ${transferId}`, data.notes || ''].filter(Boolean).join(' - '),
     }));
     if (!inSaved) {
-      await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ ط®ط±ظˆط¬ ط§ظ„طھط­ظˆظٹظ„ ظ…ظ† ط§ظ„ظ…طµط¯ط± ظ„ظƒظ† طھط¹ط°ط± ط­ظپط¸ ط¯ط®ظˆظ„ظ‡ ط¹ظ„ظ‰ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ‡ط¯ظپ. ط±ط§ط¬ط¹ ط§ظ„ط­ط±ظƒط§طھ ظ‚ط¨ظ„ ط§ظ„ظ…طھط§ط¨ط¹ط©.');
+      await rollbackAfterBackendWriteFailure('تم حفظ خروج التحويل من المصدر لكن تعذر حفظ دخوله على الطلب الهدف. راجع الحركات قبل المتابعة.');
       return;
     }
   }
-  recordAudit('create', 'finishedStockTransfer', targetOrder.orderNumber || targetOrderId, null, { rows: rows.length, targetOrder: targetOrder.orderNumber, transferId }, 'طھط­ظˆظٹظ„ ط±طµظٹط¯ ظ…ط¬ظ‡ط² ظ…ظ† ط·ظ„ط¨ ظ„ط·ظ„ط¨');
+  recordAudit('create', 'finishedStockTransfer', targetOrder.orderNumber || targetOrderId, null, { rows: rows.length, targetOrder: targetOrder.orderNumber, transferId }, 'تحويل رصيد مجهز من طلب لطلب');
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   renderFinishedSalePanel();
-  alert('طھظ… ط­ظپط¸ طھط­ظˆظٹظ„ ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…ط¬ظ‡ط² ط¨ظٹظ† ط§ظ„ط·ظ„ط¨ط§طھ.');
+  alert('تم حفظ تحويل الرصيد المجهز بين الطلبات.');
 }
 async function saveMainWarehouseStock(event) {
   event.preventDefault();
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ رصيد المخزن الرئيسي.'))) return;
   const form = event.target.closest('#mainWarehouseStockForm');
   if (!form) return;
   const data = Object.fromEntries(new FormData(form).entries());
@@ -4484,9 +4484,9 @@ async function saveMainWarehouseStock(event) {
   const quantity = roundNumber(Number(data.quantity || 0));
   const finishedWeight = data.finishedWeight ? roundNumber(Number(data.finishedWeight || 0)) : quantity;
   const unitPrice = roundNumber(Number(data.unitPrice || 0));
-  if (!fabricType) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„طµظ†ظپ ظ‚ط¨ظ„ ط­ظپط¸ ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†.'); return; }
-  if (!color) { alert('ط§ظƒطھط¨ ط§ظ„ظ„ظˆظ† ظ‚ط¨ظ„ ط­ظپط¸ ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†.'); return; }
-  if (!(quantity > 0)) { alert('ط§ظƒطھط¨ ظƒظ…ظٹط© ظ…ط®ط²ظ† ط£ظƒط¨ط± ظ…ظ† طµظپط±.'); return; }
+  if (!fabricType) { alert('اكتب اسم الصنف قبل حفظ رصيد المخزن.'); return; }
+  if (!color) { alert('اكتب اللون قبل حفظ رصيد المخزن.'); return; }
+  if (!(quantity > 0)) { alert('اكتب كمية مخزن أكبر من صفر.'); return; }
   const orderId = uid();
   const allocationId = uid();
   const orderNumber = nextMainWarehouseOrderNumber();
@@ -4512,7 +4512,7 @@ async function saveMainWarehouseStock(event) {
     accessoryLines: [],
     dyehouse: MAIN_WAREHOUSE_DYEHOUSE,
     weavingSource: MAIN_WAREHOUSE_DYEHOUSE,
-    notes: [MAIN_WAREHOUSE_STOCK_MARKER, 'ط±طµظٹط¯ ظ…ط®ط²ظ† ط±ط¦ظٹط³ظٹ ظ…ط¨ط§ط´ط±', data.notes || ''].filter(Boolean).join(' - '),
+    notes: [MAIN_WAREHOUSE_STOCK_MARKER, 'رصيد مخزن رئيسي مباشر', data.notes || ''].filter(Boolean).join(' - '),
     operationNotes: {},
     status: 'pending',
     operationClosed: false,
@@ -4530,16 +4530,16 @@ async function saveMainWarehouseStock(event) {
     targetFinishedWidth: data.width || '',
     targetFinishedWeight: finishedWeight,
     accessoryQuantityManual: null,
-    notes: 'ط±طµظٹط¯ ظ…ط®ط²ظ† ط±ط¦ظٹط³ظٹ ظ…ط¨ط§ط´ط±',
+    notes: 'رصيد مخزن رئيسي مباشر',
   };
   const savedOrder = await postBackend('/orders', orderToApi(order, backendCustomer));
   if (!savedOrder) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط£ظ…ط± ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط±طµظٹط¯.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ أمر المخزن الرئيسي في قاعدة البيانات. لم يتم اعتماد الرصيد.');
     return;
   }
   const savedAllocation = await postBackend(`/orders/${orderId}/allocations`, allocationToApi(allocation));
   if (!savedAllocation) {
-    await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ ط£ظ…ط± ط§ظ„ظ…ط®ط²ظ†طŒ ظ„ظƒظ† طھط¹ط°ط± ط­ظپط¸ ط¨ظ†ط¯ ط§ظ„طµظ†ظپ/ط§ظ„ظ„ظˆظ†. ط±ط§ط¬ط¹ ط§ظ„ط±طµظٹط¯ ظ‚ط¨ظ„ ط§ظ„ظ…طھط§ط¨ط¹ط©.');
+    await rollbackAfterBackendWriteFailure('تم حفظ أمر المخزن، لكن تعذر حفظ بند الصنف/اللون. راجع الرصيد قبل المتابعة.');
     return;
   }
   const savedFinished = await postBackend('/batches/finished', batchToApi({
@@ -4549,19 +4549,19 @@ async function saveMainWarehouseStock(event) {
     date,
     quantity,
     noteNumber: data.noteNumber || '',
-    notes: [MAIN_WAREHOUSE_STOCK_MARKER, 'ط¥ط¶ط§ظپط© ظ…ط¨ط§ط´ط±ط© ظ„ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ', data.notes || ''].filter(Boolean).join(' - '),
+    notes: [MAIN_WAREHOUSE_STOCK_MARKER, 'إضافة مباشرة للمخزن الرئيسي', data.notes || ''].filter(Boolean).join(' - '),
     finishedWidth: data.width || '',
     finishedWeight,
   }));
   if (!savedFinished) {
-    await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ ط§ظ„طµظ†ظپطŒ ظ„ظƒظ† طھط¹ط°ط± ط­ظپط¸ ط­ط±ظƒط© ط¯ط®ظˆظ„ ط§ظ„ظ…ط®ط²ظ†. ط±ط§ط¬ط¹ ط§ظ„ط±طµظٹط¯ ظ‚ط¨ظ„ ط§ظ„ط¨ظٹط¹.');
+    await rollbackAfterBackendWriteFailure('تم حفظ الصنف، لكن تعذر حفظ حركة دخول المخزن. راجع الرصيد قبل البيع.');
     return;
   }
-  recordAudit('create', 'mainWarehouseStock', orderNumber, null, { orderNumber, fabricType, color, quantity }, 'ط¥ط¶ط§ظپط© ط±طµظٹط¯ ظ…ط¨ط§ط´ط± ظ„ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ');
+  recordAudit('create', 'mainWarehouseStock', orderNumber, null, { orderNumber, fabricType, color, quantity }, 'إضافة رصيد مباشر للمخزن الرئيسي');
   await saveBackendSetting('auditLog', auditLog);
   await loadBackendData();
   renderFinishedSalePanel();
-  alert('طھظ…طھ ط¥ط¶ط§ظپط© ط§ظ„طµظ†ظپ ط¥ظ„ظ‰ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ ظˆط£طµط¨ط­ ظ…طھط§ط­ظ‹ط§ ظپظٹ ط¨ظٹط¹ ظ…ط¬ظ‡ط².');
+  alert('تمت إضافة الصنف إلى المخزن الرئيسي وأصبح متاحًا في بيع مجهز.');
 }
 function orderNoteNumbers(order) {
   const allocationIds = (order.allocations || []).map((allocation)=>allocation.id);
@@ -4579,12 +4579,12 @@ function orderSearchText(order) {
   const noteNumbers = orderNoteNumbers(order);
   const noteAliases = noteNumbers.flatMap((note)=>[
     note,
-    `ط§ط°ظ† ${note}`,
-    `ط¥ط°ظ† ${note}`,
-    `ط§ط°ظ† ط±ظ‚ظ… ${note}`,
-    `ط¥ط°ظ† ط±ظ‚ظ… ${note}`,
-    `ط±ظ‚ظ… ط§ط°ظ† ${note}`,
-    `ط±ظ‚ظ… ط¥ط°ظ† ${note}`,
+    `اذن ${note}`,
+    `إذن ${note}`,
+    `اذن رقم ${note}`,
+    `إذن رقم ${note}`,
+    `رقم اذن ${note}`,
+    `رقم إذن ${note}`,
   ]);
   return normalizeDigits([order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode, ...noteAliases].filter(Boolean).join(' ').toLowerCase());
 }
@@ -4627,22 +4627,22 @@ function fillSelectOptions(select, values, allLabel) {
   if ([...select.options].some((option)=>option.value === current)) select.value = current;
 }
 function renderOrderFilters() {
-  fillSelectOptions(refs.customerFilter, orders.map((order)=>order.customer), 'ظƒظ„ ط§ظ„ط¹ظ…ظ„ط§ط،');
-  fillSelectOptions(refs.dyehouseFilter, orders.map((order)=>order.dyehouse), 'ظƒظ„ ط§ظ„ظ…طµط§ط¨ط؛');
-  fillSelectOptions(refs.fabricFilter, knownFabricNames(), 'ظƒظ„ ط§ظ„ط£طµظ†ط§ظپ');
+  fillSelectOptions(refs.customerFilter, orders.map((order)=>order.customer), 'كل العملاء');
+  fillSelectOptions(refs.dyehouseFilter, orders.map((order)=>order.dyehouse), 'كل المصابغ');
+  fillSelectOptions(refs.fabricFilter, knownFabricNames(), 'كل الأصناف');
 }
 function renderStats(list) {
   const fmt = (value) => roundNumber(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
   const insideDyehouse = list.reduce((t,o)=>t + Number(o.rawAtDyehouseAvailable || o.remainingAtDyehouse || 0), 0);
   const values = [
-    ['ط¹ط¯ط¯ ط§ظ„ط·ظ„ط¨ط§طھ', list.length],
-    ['ط®ط§ظ… ظ…ط·ظ„ظˆط¨', list.reduce((t,o)=>t+o.totalRawOrdered,0)],
-    ['ط®ط±ط¬ ظ„ظ„ظ…طµط¨ط؛ط©', list.reduce((t,o)=>t+o.totalSentToDyehouse,0)],
-    ['ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©', insideDyehouse],
-    ['ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†', list.reduce((t,o)=>t+o.totalFinishedReceived,0)],
-    ['ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…', list.reduce((t,o)=>t+o.warehouseBalance,0)],
-    ['ظ…ط³ظ„ظ… ظ„ظ„ط¹ظ…ظٹظ„', list.reduce((t,o)=>t+o.totalDeliveredToCustomer,0)],
-    ['ظ‡ط§ظ„ظƒ ظپط¹ظ„ظٹ', list.reduce((t,o)=>t+o.totalWaste,0)],
+    ['عدد الطلبات', list.length],
+    ['خام مطلوب', list.reduce((t,o)=>t+o.totalRawOrdered,0)],
+    ['خرج للمصبغة', list.reduce((t,o)=>t+o.totalSentToDyehouse,0)],
+    ['داخل المصبغة', insideDyehouse],
+    ['دخل المخزن', list.reduce((t,o)=>t+o.totalFinishedReceived,0)],
+    ['جاهز للتسليم', list.reduce((t,o)=>t+o.warehouseBalance,0)],
+    ['مسلم للعميل', list.reduce((t,o)=>t+o.totalDeliveredToCustomer,0)],
+    ['هالك فعلي', list.reduce((t,o)=>t+o.totalWaste,0)],
   ];
   refs.statsGrid.innerHTML = values.map(([label,value]) => `<article class="stat-card"><span>${label}</span><strong>${fmt(value)}</strong></article>`).join('');
 }
@@ -4663,29 +4663,29 @@ function renderErpCockpit(list = []) {
     .filter((order, index, arr)=>arr.findIndex((item)=>item.id === order.id) === index)
     .slice(0, 5);
   const lanes = [
-    { label:'ط§ظ„ظ†ط³ظٹط¬', filter:'stage:weaving', count:countWhere((order)=>orderMatchesStageFilter(order, 'weaving', stageOf(order))), qty:sum(source, (order)=>Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)), sub:'ط®ط§ظ… ظ…ط·ظ„ظˆط¨ ظ„ظ… ظٹط®ط±ط¬ ط¨ط¹ط¯' },
-    { label:'ط§ظ„ظ…طµط¨ط؛ط©', filter:'stage:dyehouse', count:countWhere((order)=>orderMatchesStageFilter(order, 'dyehouse', stageOf(order))), qty:sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)), sub:'ط±طµظٹط¯ ظپط¹ظ„ظٹ ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©' },
-    { label:'ط§ظ„ظ…ط®ط²ظ† / ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…', filter:'stage:warehouse', count:countWhere((order)=>orderMatchesStageFilter(order, 'warehouse', stageOf(order))), qty:sum(source, (order)=>order.warehouseBalance), sub:'ظ…ط¬ظ‡ط² ظ…ظˆط¬ظˆط¯ ظˆظ…طھط§ط­ ظ„ظ„طھط³ظ„ظٹظ…' },
+    { label:'النسيج', filter:'stage:weaving', count:countWhere((order)=>orderMatchesStageFilter(order, 'weaving', stageOf(order))), qty:sum(source, (order)=>Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)), sub:'خام مطلوب لم يخرج بعد' },
+    { label:'المصبغة', filter:'stage:dyehouse', count:countWhere((order)=>orderMatchesStageFilter(order, 'dyehouse', stageOf(order))), qty:sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0)), sub:'رصيد فعلي داخل المصبغة' },
+    { label:'المخزن / جاهز للتسليم', filter:'stage:warehouse', count:countWhere((order)=>orderMatchesStageFilter(order, 'warehouse', stageOf(order))), qty:sum(source, (order)=>order.warehouseBalance), sub:'مجهز موجود ومتاح للتسليم' },
   ];
   const cards = [
-    ['ط·ظ„ط¨ط§طھ ظ…ظپطھظˆط­ط©', active.length, `${source.length} ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط·ظ„ط¨ط§طھ`],
-    ['ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©', fmt(sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0))), `${lanes[1].count} ط£ظˆط±ط¯ط±`],
-    ['ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط¬ط§ظ‡ط²', fmt(sum(source, (order)=>order.warehouseBalance)), `${lanes[2].count} ط£ظˆط±ط¯ط±`],
-    ['ط£ظˆظ„ظˆظٹط© ظ…طھط§ط¨ط¹ط©', lateOrders.length + wasteWatch.length, 'ظˆظ‚ظˆظپ ط·ظˆظٹظ„ ط£ظˆ ظ‡ط§ظ„ظƒ ظ…ط±طھظپط¹'],
+    ['طلبات مفتوحة', active.length, `${source.length} إجمالي الطلبات`],
+    ['داخل المصبغة', fmt(sum(source, (order)=>Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0))), `${lanes[1].count} أوردر`],
+    ['رصيد المخزن الجاهز', fmt(sum(source, (order)=>order.warehouseBalance)), `${lanes[2].count} أوردر`],
+    ['أولوية متابعة', lateOrders.length + wasteWatch.length, 'وقوف طويل أو هالك مرتفع'],
   ];
   panel.innerHTML = `
     <div class="section-head stacked-on-mobile">
-      <div><p class="eyebrow">ERP Command Center</p><h2>ط؛ط±ظپط© ط¹ظ…ظ„ظٹط§طھ ط§ظ„ظ…طµظ†ط¹</h2><p class="orders-list-note">ظ‚ط±ط§ط،ط© طھظ†ظپظٹط°ظٹط© ظ„ط­ط±ظƒط© ط§ظ„ظ‚ظ…ط§ط´ ظ…ظ† ط§ظ„ظ†ط³ظٹط¬ ط¥ظ„ظ‰ ط§ظ„ظ…طµط¨ط؛ط© ظˆط§ظ„ظ…ط®ط²ظ† ظˆط§ظ„طھط³ظ„ظٹظ…طŒ ظ…ط¨ظ†ظٹط© ط¹ظ„ظ‰ ظ†ظپط³ ط¨ظٹط§ظ†ط§طھ ط§ظ„طھط´ط؛ظٹظ„ ط§ظ„ط­ط§ظ„ظٹط©.</p></div>
-      <div class="actions"><button class="mini-btn gold" type="button" data-nav-action="ordersList">ظپطھط­ ظƒظ„ ط§ظ„ط·ظ„ط¨ط§طھ</button><button class="mini-btn" type="button" data-nav-action="managementReports">ط§ظ„طھظ‚ط§ط±ظٹط±</button></div>
+      <div><p class="eyebrow">ERP Command Center</p><h2>غرفة عمليات المصنع</h2><p class="orders-list-note">قراءة تنفيذية لحركة القماش من النسيج إلى المصبغة والمخزن والتسليم، مبنية على نفس بيانات التشغيل الحالية.</p></div>
+      <div class="actions"><button class="mini-btn gold" type="button" data-nav-action="ordersList">فتح كل الطلبات</button><button class="mini-btn" type="button" data-nav-action="managementReports">التقارير</button></div>
     </div>
     <div class="erp-cockpit-cards">${cards.map(([label, value, sub])=>`<article><span>${label}</span><strong>${value}</strong><small>${sub}</small></article>`).join('')}</div>
-    <div class="erp-pipeline">${lanes.map((lane, index)=>`<button type="button" data-stage-shortcut="${lane.filter}"><span>${index + 1}</span><strong>${lane.label}</strong><em>${fmt(lane.qty)} ظƒط¬ظ…</em><small>${lane.count} ط£ظˆط±ط¯ط± - ${lane.sub}</small></button>`).join('')}</div>
+    <div class="erp-pipeline">${lanes.map((lane, index)=>`<button type="button" data-stage-shortcut="${lane.filter}"><span>${index + 1}</span><strong>${lane.label}</strong><em>${fmt(lane.qty)} كجم</em><small>${lane.count} أوردر - ${lane.sub}</small></button>`).join('')}</div>
     <div class="erp-priority-board">
-      <div><h3>ط£ظˆظ„ظˆظٹط§طھ ط§ظ„ظ…طھط§ط¨ط¹ط©</h3><p class="eyebrow">ط§ظ„ط£ظ‚ط¯ظ… ظˆظ‚ظˆظپظ‹ط§ ط£ظˆ ط§ظ„ط£ط¹ظ„ظ‰ ظ‡ط§ظ„ظƒظ‹ط§ ظٹط¸ظ‡ط± ظ‡ظ†ط§ ط£ظˆظ„ظ‹ط§.</p></div>
+      <div><h3>أولويات المتابعة</h3><p class="eyebrow">الأقدم وقوفًا أو الأعلى هالكًا يظهر هنا أولًا.</p></div>
       <div class="erp-priority-list">${priorityRows.length ? priorityRows.map((order)=>{
         const stage = stageOf(order);
-        return `<button type="button" data-view="${escapeHtml(order.id)}"><strong>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</strong><span>${escapeHtml(order.fabricType || '-')}</span><small>${escapeHtml(operationStagePlace(order, stage))} / ${Number(stage.days || 0)} ظٹظˆظ… / ظ‡ط§ظ„ظƒ ${fmt(order.totalWastePercent || 0)}%</small></button>`;
-      }).join('') : '<div class="empty-state">ظ„ط§ طھظˆط¬ط¯ ط£ظˆظ„ظˆظٹط§طھ ط­ط±ط¬ط© ط­ط§ظ„ظٹظ‹ط§.</div>'}</div>
+        return `<button type="button" data-view="${escapeHtml(order.id)}"><strong>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</strong><span>${escapeHtml(order.fabricType || '-')}</span><small>${escapeHtml(operationStagePlace(order, stage))} / ${Number(stage.days || 0)} يوم / هالك ${fmt(order.totalWastePercent || 0)}%</small></button>`;
+      }).join('') : '<div class="empty-state">لا توجد أولويات حرجة حاليًا.</div>'}</div>
     </div>`;
 }
 ({
@@ -4773,7 +4773,7 @@ function updateRawMovementVisibility(form) {
 
 function accessoryTypeSelectHtml(order) {
   const options = (order?.accessoryLines || []).map((line)=>`<option value="${line.type}">${line.type}</option>`).join('');
-  return `<select name="accessoryType" required><option value="">ط§ط®طھط± ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</option>${options}</select>`;
+  return `<select name="accessoryType" required><option value="">اختر نوع الإكسسوار</option>${options}</select>`;
 }
 
 function accessoryTypesLabel(order) {
@@ -4861,10 +4861,10 @@ function accessoryFlowPartsForOrder(order, allocation, movement) {
   accessoryLineName,
 }));
 function reportOrderItemsCell(order) {
-  const parts = [`ظ‚ظ…ط§ط´ ${formatNumber(order?.totalRawOrdered || order?.totalRawQuantity || 0)} ظƒط¬ظ…`];
+  const parts = [`قماش ${formatNumber(order?.totalRawOrdered || order?.totalRawQuantity || 0)} كجم`];
   (order?.accessoryLines || []).forEach((line) => {
     const quantity = Number(line.quantity || line.quantityManual || 0);
-    if (quantity) parts.push(`${accessoryLineName(line, order)} ${formatNumber(quantity)} ظƒط¬ظ…`);
+    if (quantity) parts.push(`${accessoryLineName(line, order)} ${formatNumber(quantity)} كجم`);
   });
   return parts.map((part, index)=>`<span class="report-flow-line ${index ? 'report-flow-accessory' : 'report-flow-body'}">${escapeHtml(part)}</span>`).join('');
 }
@@ -4872,10 +4872,10 @@ function accessoryDocumentSection(order, fmt, safe) {
   const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
   const hasAccessory = lines.length || Number(order?.accessoryRequired || 0) || Number(order?.accessorySent || 0) || Number(order?.accessoryReceived || 0) || Number(order?.accessoryDelivered || 0);
   if (!hasAccessory) return '';
-  const rows = (lines.length ? lines : [{ type:'ط¥ظƒط³ط³ظˆط§ط±', percent:order?.accessoryPercent || 0, quantity:order?.accessoryRequired || 0 }])
-    .map((line) => `<tr><td>${safe(line.type || 'ط¥ظƒط³ط³ظˆط§ط±')}</td><td>${formatNumber(Number(line.percent || 0))}%</td><td>${fmt(line.quantity || line.quantityManual || 0)}</td></tr>`).join('');
-  const wasteText = order?.operationClosed ? `${fmt(order.accessoryWaste || 0)} (${formatNumber(order.accessoryWastePercent || 0, 1)}%)` : 'ظٹط¸ظ‡ط± ط¨ط¹ط¯ ط¥ط؛ظ„ط§ظ‚ ط§ظ„ط¯ظˆط±ط©';
-  return `<section class="report-section"><h3>ظ…طھط§ط¨ط¹ط© ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</h3><table class="summary-table"><tbody><tr><th>ط¥ظƒط³ط³ظˆط§ط± ظ…ط·ظ„ظˆط¨</th><td>${fmt(order.accessoryRequired || 0)}</td><th>ط¥ظƒط³ط³ظˆط§ط± ظ…ط±ط³ظ„</th><td>${fmt(order.accessorySent || 0)}</td></tr><tr><th>ط¥ظƒط³ط³ظˆط§ط± ظ…ط³طھظ„ظ…</th><td>${fmt(order.accessoryReceived || 0)}</td><th>ط¥ظƒط³ط³ظˆط§ط± ظ…ط³ظ„ظ… ظ„ظ„ط¹ظ…ظٹظ„</th><td>${fmt(order.accessoryDelivered || 0)}</td></tr><tr><th>ط±طµظٹط¯ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</th><td>${fmt(order.accessoryBalance || 0)}</td><th>ظ‡ط§ظ„ظƒ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</th><td>${wasteText}</td></tr></tbody></table><table class="summary-table"><thead><tr><th>ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</th><th>ط§ظ„ظ†ط³ط¨ط©</th><th>ط§ظ„ظƒظ…ظٹط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+  const rows = (lines.length ? lines : [{ type:'إكسسوار', percent:order?.accessoryPercent || 0, quantity:order?.accessoryRequired || 0 }])
+    .map((line) => `<tr><td>${safe(line.type || 'إكسسوار')}</td><td>${formatNumber(Number(line.percent || 0))}%</td><td>${fmt(line.quantity || line.quantityManual || 0)}</td></tr>`).join('');
+  const wasteText = order?.operationClosed ? `${fmt(order.accessoryWaste || 0)} (${formatNumber(order.accessoryWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة';
+  return `<section class="report-section"><h3>متابعة الإكسسوار</h3><table class="summary-table"><tbody><tr><th>إكسسوار مطلوب</th><td>${fmt(order.accessoryRequired || 0)}</td><th>إكسسوار مرسل</th><td>${fmt(order.accessorySent || 0)}</td></tr><tr><th>إكسسوار مستلم</th><td>${fmt(order.accessoryReceived || 0)}</td><th>إكسسوار مسلم للعميل</th><td>${fmt(order.accessoryDelivered || 0)}</td></tr><tr><th>رصيد الإكسسوار</th><td>${fmt(order.accessoryBalance || 0)}</td><th>هالك الإكسسوار</th><td>${wasteText}</td></tr></tbody></table><table class="summary-table"><thead><tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 function updateCustomerDeliveryFields(form) {
   if (!form) return;
@@ -4909,14 +4909,14 @@ function installBulkEntryButtons() {
   if (!batchGrid || panel.querySelector('[data-combined-movement-panel]')) return;
   batchGrid.insertAdjacentHTML('beforebegin', `<section class="combined-movement-panel" data-combined-movement-panel>
     <div>
-      <p class="eyebrow">ط£ظˆط§ظ…ط± ط§ظ„ط­ط±ظƒط© ط§ظ„ظ…ط¬ظ…ط¹ط©</p>
-      <h3>ط§ظ„ظ‚ظ…ط§ط´ ظˆط§ظ„ط¥ظƒط³ط³ظˆط§ط± ظپظٹ ط¥ط°ظ† ظˆط§ط­ط¯</h3>
-      <p class="eyebrow">ط§ظ„ظ†ظ…ط§ط°ط¬ ط§ظ„ظپط±ط¯ظٹط© ط£ط³ظپظ„ظ‡ط§ ظ…طھط§ط­ط© ظ„ظ„ظ…ط±طھط¬ط¹ط§طھ ط£ظˆ ط§ظ„ط­ط±ظƒط© ط§ظ„ط³ط±ظٹط¹ط©.</p>
+      <p class="eyebrow">أوامر الحركة المجمعة</p>
+      <h3>القماش والإكسسوار في إذن واحد</h3>
+      <p class="eyebrow">النماذج الفردية أسفلها متاحة للمرتجعات أو الحركة السريعة.</p>
     </div>
     <div class="combined-movement-actions">
-      <button class="mini-btn gold" type="button" data-open-combined-movement="dyehouse">ط£ظ…ط± طµط±ظپ ظ„ظ„ظ…طµط¨ط؛ط©</button>
-      <button class="mini-btn" type="button" data-open-combined-movement="finished">ط£ظ…ط± ط§ط³طھظ„ط§ظ… ظ…ظ† ط§ظ„ظ…طµط¨ط؛ط©</button>
-      <button class="mini-btn" type="button" data-open-combined-movement="customer">ط£ظ…ط± طھط³ظ„ظٹظ… ظ„ظ„ط¹ظ…ظٹظ„</button>
+      <button class="mini-btn gold" type="button" data-open-combined-movement="dyehouse">أمر صرف للمصبغة</button>
+      <button class="mini-btn" type="button" data-open-combined-movement="finished">أمر استلام من المصبغة</button>
+      <button class="mini-btn" type="button" data-open-combined-movement="customer">أمر تسليم للعميل</button>
     </div>
   </section>`);
 }
@@ -4926,82 +4926,82 @@ function repairOrderDetailsArabic(order) {
   const isBadText = isLegacyRecoveredText;
   const setText = (selector, text) => { const element = root.querySelector(selector); if (element) element.textContent = text; };
   const setPlaceholder = (selector, text) => { root.querySelectorAll(selector).forEach((element)=>{ element.placeholder = text; }); };
-  setText('#editOrderBtn', 'طھط¹ط¯ظٹظ„ ط§ظ„ط·ظ„ط¨');
-  setText('#toggleOperationClosedBtn', order.operationClosed ? 'ط¥ط¹ط§ط¯ط© ظپطھط­ ط§ظ„طھط´ط؛ظٹظ„' : 'ط¥ط؛ظ„ط§ظ‚ ط¯ظˆط±ط© ط§ظ„طھط´ط؛ظٹظ„');
-  setText('#addAllocationBtn', '+ ط¥ط¶ط§ظپط© ظ„ظˆظ†');
+  setText('#editOrderBtn', 'تعديل الطلب');
+  setText('#toggleOperationClosedBtn', order.operationClosed ? 'إعادة فتح التشغيل' : 'إغلاق دورة التشغيل');
+  setText('#addAllocationBtn', '+ إضافة لون');
   root.querySelectorAll('.batch-box h3').forEach((title) => {
     const form = title.closest('.batch-box')?.querySelector('.batch-form')?.dataset.form;
-    const labels = { raw:'ط®ط±ظˆط¬ ط®ط§ظ…', accessory:'ط®ط±ظˆط¬ ط¥ظƒط³ط³ظˆط§ط±', accessoryReceived:'ط§ط³طھظ„ط§ظ… ط¥ظƒط³ط³ظˆط§ط±', production:'ط§ط³طھظ„ط§ظ… ظ…ط¬ظ‡ط²', customer:'طھط³ظ„ظٹظ… ط¹ظ…ظٹظ„' };
+    const labels = { raw:'خروج خام', accessory:'خروج إكسسوار', accessoryReceived:'استلام إكسسوار', production:'استلام مجهز', customer:'تسليم عميل' };
     if (labels[form]) title.textContent = labels[form];
   });
   const rawForm = root.querySelector('form[data-form="raw"]');
   if (rawForm) {
-    rawForm.elements.movementKind.options[0].textContent = 'ط®ط±ظˆط¬ ط®ط§ظ… ظ„ظ„ظ…طµط¨ط؛ط©';
-    rawForm.elements.movementKind.options[1].textContent = 'ط§ط±طھط¬ط§ط¹ ط®ط§ظ… ظ„ظ„ظ†ط³ظٹط¬';
-    rawForm.querySelector('[name="widthLineId"] option')?.replaceChildren(document.createTextNode('ط§ط®طھط± ط§ظ„ط¹ط±ط¶ ط¹ظ†ط¯ ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ…'));
-    rawForm.querySelector('[name="allocationId"] option')?.replaceChildren(document.createTextNode('ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ظ…طµط¨ط؛ط© ظ„ظ„ظ…ط±طھط¬ط¹'));
+    rawForm.elements.movementKind.options[0].textContent = 'خروج خام للمصبغة';
+    rawForm.elements.movementKind.options[1].textContent = 'ارتجاع خام للنسيج';
+    rawForm.querySelector('[name="widthLineId"] option')?.replaceChildren(document.createTextNode('اختر العرض عند خروج الخام'));
+    rawForm.querySelector('[name="allocationId"] option')?.replaceChildren(document.createTextNode('اختر اللون / المصبغة للمرتجع'));
     const fileLabel = rawForm.querySelector('.batch-file-label span');
-    if (fileLabel) fileLabel.textContent = 'طµظˆط±ط© ط¥ط°ظ† ط§ظ„ط®ط§ظ…';
-    rawForm.querySelector('button') && (rawForm.querySelector('button').textContent = 'ط¥ط¶ط§ظپط© ط­ط±ظƒط©');
+    if (fileLabel) fileLabel.textContent = 'صورة إذن الخام';
+    rawForm.querySelector('button') && (rawForm.querySelector('button').textContent = 'إضافة حركة');
   }
   root.querySelectorAll('select[name="widthLineId"] option').forEach((option) => {
     const line = (order.widthLines || []).find((item)=>item.id === option.value);
-    if (line) option.textContent = `ط¨ظˆطµط© ${line.inch} â€” ط¹ط±ط¶ ${line.width} â€” ظ…ط·ظ„ظˆط¨ ${line.quantity}`;
+    if (line) option.textContent = `بوصة ${line.inch} â€” عرض ${line.width} â€” مطلوب ${line.quantity}`;
   });
-  root.querySelectorAll('form[data-form="accessory"] button, form[data-form="accessoryReceived"] button').forEach((button)=>button.textContent = 'ط¥ط¶ط§ظپط©');
-  root.querySelector('form[data-form="production"] button') && (root.querySelector('form[data-form="production"] button').textContent = 'ط¥ط¶ط§ظپط© ط§ط³طھظ„ط§ظ…');
-  root.querySelector('form[data-form="customer"] button') && (root.querySelector('form[data-form="customer"] button').textContent = 'ط¥ط¶ط§ظپط© ط­ط±ظƒط©');
+  root.querySelectorAll('form[data-form="accessory"] button, form[data-form="accessoryReceived"] button').forEach((button)=>button.textContent = 'إضافة');
+  root.querySelector('form[data-form="production"] button') && (root.querySelector('form[data-form="production"] button').textContent = 'إضافة استلام');
+  root.querySelector('form[data-form="customer"] button') && (root.querySelector('form[data-form="customer"] button').textContent = 'إضافة حركة');
   const customerForm = root.querySelector('form[data-form="customer"]');
   if (customerForm?.elements.movementKind) {
     [...customerForm.elements.movementKind.options].forEach((option) => {
-      if (option.value === 'cloth') option.textContent = 'طھط³ظ„ظٹظ… ظ‚ظ…ط§ط´';
-      if (option.value === 'clothReturn') option.textContent = 'ظ…ط±طھط¬ط¹ ظ‚ظ…ط§ط´ ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„';
-      if (option.value === 'accessory') option.textContent = 'طھط³ظ„ظٹظ… ط¥ظƒط³ط³ظˆط§ط±';
-      if (option.value === 'accessoryReturn') option.textContent = 'ظ…ط±طھط¬ط¹ ط¥ظƒط³ط³ظˆط§ط± ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„';
+      if (option.value === 'cloth') option.textContent = 'تسليم قماش';
+      if (option.value === 'clothReturn') option.textContent = 'مرتجع قماش من العميل';
+      if (option.value === 'accessory') option.textContent = 'تسليم إكسسوار';
+      if (option.value === 'accessoryReturn') option.textContent = 'مرتجع إكسسوار من العميل';
     });
   }
-  setPlaceholder('input[name="quantity"]', 'ط§ظ„ظƒظ…ظٹط©');
-  setPlaceholder('form[data-form="production"] input[name="quantity"], form[data-form="accessoryReceived"] input[name="quantity"]', 'ط§ظ„ظƒظ…ظٹط© ط§ظ„ظ…ط³طھظ„ظ…ط©');
-  setPlaceholder('input[name="supplier"]', 'ظ…طµط¯ط± ط§ظ„ظ†ط³ظٹط¬');
-  setPlaceholder('input[name="noteNumber"]', 'ط±ظ‚ظ… ط§ظ„ط¥ط°ظ†');
-  setPlaceholder('input[name="notes"]', 'ظ…ظ„ط§ط­ط¸ط§طھ');
+  setPlaceholder('input[name="quantity"]', 'الكمية');
+  setPlaceholder('form[data-form="production"] input[name="quantity"], form[data-form="accessoryReceived"] input[name="quantity"]', 'الكمية المستلمة');
+  setPlaceholder('input[name="supplier"]', 'مصدر النسيج');
+  setPlaceholder('input[name="noteNumber"]', 'رقم الإذن');
+  setPlaceholder('input[name="notes"]', 'ملاحظات');
   root.querySelectorAll('.summary-grid .metric span').forEach((span, index) => {
-    const labels = ['ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط·ظ„ظˆط¨','ط®ط±ط¬ ظ…ظ† ط§ظ„ظ†ط³ظٹط¬ ط¥ظ„ظ‰ ط§ظ„ظ…طµط¨ط؛ط©','ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©','ظ…ط¬ظ‡ط² ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†','ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† / ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…','طھظ… طھط³ظ„ظٹظ…ظ‡ ظ„ظ„ط¹ظ…ظٹظ„','ظ…ط±طھط¬ط¹ ط®ط§ظ… ظ„ظ„ظ†ط³ظٹط¬','ظ‡ط§ظ„ظƒ طھظ‚ط¯ظٹط±ظٹ','ظ‡ط§ظ„ظƒ ظپط¹ظ„ظٹ'];
+    const labels = ['إجمالي الخام المطلوب','خرج من النسيج إلى المصبغة','داخل المصبغة','مجهز دخل المخزن','رصيد المخزن / جاهز للتسليم','تم تسليمه للعميل','مرتجع خام للنسيج','هالك تقديري','هالك فعلي'];
     if (labels[index]) span.textContent = labels[index];
   });
   root.querySelectorAll('th').forEach((th) => {
     if (!isBadText(th.textContent)) return;
     const row = [...th.parentElement.children];
     const index = row.indexOf(th);
-    const fixed = ({ 0:'ط§ظ„ط¨ظˆطµط©', 1:'ط§ظ„ط¹ط±ط¶', 2:'ط§ظ„ظƒظ…ظٹط©', 7:'ظ‡ط§ظ„ظƒ طھظ‚ط¯ظٹط±ظٹ', 8:'ظ‡ط§ظ„ظƒ طھظ‚ط¯ظٹط±ظٹ', 9:'ظ‡ط§ظ„ظƒ ظپط¹ظ„ظٹ', 10:'ط¥ط¬ط±ط§ط،ط§طھ' })[index];
+    const fixed = ({ 0:'البوصة', 1:'العرض', 2:'الكمية', 7:'هالك تقديري', 8:'هالك تقديري', 9:'هالك فعلي', 10:'إجراءات' })[index];
     if (fixed) th.textContent = fixed;
   });
-  root.querySelectorAll('.batch-list .empty-state').forEach((item)=>{ if (isBadText(item.textContent)) item.textContent = 'ظ„ط§ طھظˆط¬ط¯ ط¯ظپط¹ط§طھ ط¨ط¹ط¯.'; });
+  root.querySelectorAll('.batch-list .empty-state').forEach((item)=>{ if (isBadText(item.textContent)) item.textContent = 'لا توجد دفعات بعد.'; });
   root.querySelectorAll('.batch-list .batch-item span').forEach((span)=>{
     let text = span.textContent;
-    text = text.replace(/\?+/g, '').replace(/\uFFFD/g, '').replace(/أ¯طںآ½/g, '').replace(/\s+/g, ' ').trim();
-    if (text.includes('202') && !text.includes('ط®ط±ظˆط¬ ط®ط§ظ…')) text = `ط®ط±ظˆط¬ ط®ط§ظ… - ${text}`;
-    text = text.replace(/(\d+)\s*-\s*(\d+)$/, 'ط¨ظˆطµط© $1 - ط¹ط±ط¶ $2');
+    text = text.replace(/\?+/g, '').replace(/\uFFFD/g, '').replace(/أ¯؟آ½/g, '').replace(/\s+/g, ' ').trim();
+    if (text.includes('202') && !text.includes('خروج خام')) text = `خروج خام - ${text}`;
+    text = text.replace(/(\d+)\s*-\s*(\d+)$/, 'بوصة $1 - عرض $2');
     span.textContent = text;
   });
   const sendStatus = root.querySelector('.report-send-status');
   if (sendStatus) {
     const title = sendStatus.querySelector('h3');
     const hint = sendStatus.querySelector('.eyebrow');
-    if (title) title.textContent = 'ط­ط§ظ„ط© ظ…ط´ط§ط±ظƒط© ط§ظ„طھظ‚ط§ط±ظٹط±';
-    if (hint) hint.textContent = 'ط§ظ„ظ…ط´ط§ط±ظƒط© طھطھظ… ط¹ط¨ط± ط®ط¯ظ…ط© ظˆط§طھط³ط§ط¨ ط¹ظ†ط¯ طھط´ط؛ظٹظ„ظ‡ط§.';
+    if (title) title.textContent = 'حالة مشاركة التقارير';
+    if (hint) hint.textContent = 'المشاركة تتم عبر خدمة واتساب عند تشغيلها.';
   }
   root.querySelectorAll('h3').forEach((title)=>{
-    if (isBadText(title.textContent)) title.textContent = 'ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط­ط§ظ„ظٹ';
+    if (isBadText(title.textContent)) title.textContent = 'رصيد المخزن الحالي';
   });
   root.querySelectorAll('.subsection .eyebrow').forEach((hint)=>{
-    if (isBadText(hint.textContent)) hint.textContent = 'ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط­ط³ط¨ ط§ظ„طھط´ط؛ظٹظ„ ظˆط§ظ„طھط³ظ„ظٹظ…';
+    if (isBadText(hint.textContent)) hint.textContent = 'رصيد المخزن حسب التشغيل والتسليم';
   });
   root.querySelectorAll('th').forEach((th)=>{
     if (!isBadText(th.textContent)) return;
     const row = [...th.parentElement.children];
     const index = row.indexOf(th);
-    const fixed = index === 3 ? 'ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†' : index === 4 ? 'ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ' : 'ظ…ظ„ط§ط­ط¸ط§طھ';
+    const fixed = index === 3 ? 'دخل المخزن' : index === 4 ? 'الرصيد الحالي' : 'ملاحظات';
     th.textContent = fixed;
   });
 }
@@ -5036,24 +5036,24 @@ function renderOperationFollowPanel() {
     return acc;
   }, { quantity:0 });
   const cards = [
-    ['ط§ظ„ظ†ط³ظٹط¬', totals.weaving || 0],
-    ['ط§ظ„ظ…طµط¨ط؛ط©', totals.dyehouse || 0],
-    ['ط§ظ„ظ…ط®ط²ظ†', totals.warehouse || 0],
-    ['ط§ظ„طھط³ظ„ظٹظ…', totals.delivery || 0],
+    ['النسيج', totals.weaving || 0],
+    ['المصبغة', totals.dyehouse || 0],
+    ['المخزن', totals.warehouse || 0],
+    ['التسليم', totals.delivery || 0],
   ];
-  summaryBox.innerHTML = cards.map(([label, value]) => `<button type="button" data-stage-filter="${escapeHtml(label === 'ط§ظ„ظ†ط³ظٹط¬' ? 'weaving' : label === 'ط§ظ„ظ…طµط¨ط؛ط©' ? 'dyehouse' : label === 'ط§ظ„ظ…ط®ط²ظ†' ? 'warehouse' : 'delivery')}"><span>${escapeHtml(label)}</span><strong>${Number(value || 0).toLocaleString('en-US')}</strong></button>`).join('');
+  summaryBox.innerHTML = cards.map(([label, value]) => `<button type="button" data-stage-filter="${escapeHtml(label === 'النسيج' ? 'weaving' : label === 'المصبغة' ? 'dyehouse' : label === 'المخزن' ? 'warehouse' : 'delivery')}"><span>${escapeHtml(label)}</span><strong>${Number(value || 0).toLocaleString('en-US')}</strong></button>`).join('');
   body.innerHTML = rows.length ? rows.map(({ order, stage }) => `
     <tr>
-      <td data-label="ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨">${escapeHtml(order.orderNumber || '-')}</td>
-      <td data-label="ط§ظ„ط¹ظ…ظٹظ„">${escapeHtml(order.customer || '-')}</td>
-      <td data-label="ط§ظ„طµظ†ظپ">${escapeHtml(order.fabricType || '-')}</td>
-      <td data-label="ط§ظ„ظ…ط±ط­ظ„ط©"><span class="status in-progress">${escapeHtml(operationStagePlace(order, stage))}</span></td>
-      <td data-label="ظˆط§ظ‚ظپ ظ…ظ†">${escapeHtml(stage.startDate || '-')}</td>
-      <td data-label="ط§ظ„ط£ظٹط§ظ…">${Number(stage.days || 0).toLocaleString('en-US')}</td>
-      <td data-label="ط§ظ„ط³ط¨ط¨">${escapeHtml(stage.reason || '-')}</td>
-      <td data-label="ط¥ط¬ط±ط§ط،"><button type="button" class="mini-btn" data-view="${escapeHtml(order.id)}">ظپطھط­</button></td>
+      <td data-label="رقم الطلب">${escapeHtml(order.orderNumber || '-')}</td>
+      <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
+      <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
+      <td data-label="المرحلة"><span class="status in-progress">${escapeHtml(operationStagePlace(order, stage))}</span></td>
+      <td data-label="واقف من">${escapeHtml(stage.startDate || '-')}</td>
+      <td data-label="الأيام">${Number(stage.days || 0).toLocaleString('en-US')}</td>
+      <td data-label="السبب">${escapeHtml(stage.reason || '-')}</td>
+      <td data-label="إجراء"><button type="button" class="mini-btn" data-view="${escapeHtml(order.id)}">فتح</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="8"><div class="empty-state">ظ„ط§ طھظˆط¬ط¯ ط·ظ„ط¨ط§طھ طھط­طھط§ط¬ ظ…طھط§ط¨ط¹ط© طھط´ط؛ظٹظ„ ط­ط§ظ„ظٹط§ظ‹.</div></td></tr>';
+  `).join('') : '<tr><td colspan="8"><div class="empty-state">لا توجد طلبات تحتاج متابعة تشغيل حالياً.</div></td></tr>';
 }
 
 async function refreshOperationFollowPanel() {
@@ -5143,9 +5143,9 @@ function gluingPurchaseDetails(batch = {}) {
 function gluingSourceLabel(batch = {}) {
   const purchase = gluingPurchaseDetails(batch);
   if (purchase) {
-    const material = purchase.materialName || batch.outputName || 'ط®ط§ظ…ط© ظ„ط²ظ‚';
+    const material = purchase.materialName || batch.outputName || 'خامة لزق';
     const supplier = purchase.supplier ? ` - ${purchase.supplier}` : '';
-    return `ط´ط±ط§ط، ظˆط¥ط±ط³ط§ظ„ ${material}${supplier}`;
+    return `شراء وإرسال ${material}${supplier}`;
   }
   const order = orders.find((item)=>item.id === batch.orderId) || {};
   const allocation = allocations.find((item)=>item.id === batch.allocationId) || {};
@@ -5161,7 +5161,7 @@ function gluingSourceLabel(batch = {}) {
 }
 
 function gluingSourceTypeLabel(batch = {}) {
-  return gluingPurchaseDetails(batch) ? 'ط´ط±ط§ط، ط®ط§ظ…ط© ظ„ط²ظ‚ + ط¥ط±ط³ط§ظ„' : 'ط®ط§ظ… ظ…ط¬ظ‡ط² ظ…ط±ط³ظ„ ظ„ظ„ط²ظ‚';
+  return gluingPurchaseDetails(batch) ? 'شراء خامة لزق + إرسال' : 'خام مجهز مرسل للزق';
 }
 
 function gluingAllocationAvailable(order, allocation) {
@@ -5179,7 +5179,7 @@ function gluingWarehouseSourceOptions() {
       const available = gluingAllocationAvailable(calculatedOrder, allocation);
       if (available <= 0) return '';
       const label = gluingSourceLabel({ orderId: order.id, allocationId: allocation.id });
-      return `<option value="${escapeHtml(order.id)}|${escapeHtml(allocation.id)}">${escapeHtml(label)} - ظ…طھط§ط­ ${formatNumber(available)}</option>`;
+      return `<option value="${escapeHtml(order.id)}|${escapeHtml(allocation.id)}">${escapeHtml(label)} - متاح ${formatNumber(available)}</option>`;
     }).filter(Boolean);
   }).join('');
 }
@@ -5212,11 +5212,11 @@ function openGluingQueueDialog() {
     const inGluing = roundNumber(Math.max(sent - received, 0));
     const sourceRows = group.sources.map((batch)=>`<tr><td>${escapeHtml(gluingSourceTypeLabel(batch))}</td><td>${escapeHtml(gluingSourceLabel(batch))}</td><td>${formatNumber(batch.quantity || 0)}</td></tr>`).join('');
     const outputRows = group.received.map((batch)=>`<tr><td>${escapeHtml(batch.outputName || '-')}</td><td>${formatNumber(batch.quantity || 0)}</td><td>${escapeHtml(batch.date || '-')}</td></tr>`).join('');
-    return `<div class="subsection"><div class="subsection-head"><div><h3>ط¹ظ…ظ„ظٹط© ط¯ظ…ط¬ ${escapeHtml(group.key)}</h3><p class="eyebrow">ط¥ط±ط³ط§ظ„ ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط¬ظ‡ط² ظ„ظ…طµظ†ط¹ ط§ظ„ظ„ط²ظ‚طŒ ط«ظ… ط´ط±ط§ط، ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ ظˆط¥ط±ط³ط§ظ„ظ‡ط§طŒ ط«ظ… طھط³ط¬ظٹظ„ ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬.</p></div></div><div class="summary-grid"><div class="metric"><span>ط®ط§ظ…ط§طھ ط¯ط§ط®ظ„ط©</span><strong>${formatNumber(sent)}</strong></div><div class="metric"><span>ظ…ظ†طھط¬ ظ†ط§طھط¬</span><strong>${formatNumber(received)}</strong></div><div class="metric"><span>ظ…طھط¨ظ‚ظٹ ط¯ط§ط®ظ„ ط§ظ„ط¯ظ…ط¬</span><strong>${formatNumber(inGluing)}</strong></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>ظ†ظˆط¹ ط§ظ„ط­ط±ظƒط©</th><th>ط§ظ„ط®ط§ظ…ط© / ط§ظ„ظ…طµط¯ط±</th><th>ط§ظ„ظƒظ…ظٹط©</th></tr></thead><tbody>${sourceRows}</tbody></table></div>${outputRows ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬</th><th>ط§ظ„ظƒظ…ظٹط©</th><th>ط§ظ„طھط§ط±ظٹط®</th></tr></thead><tbody>${outputRows}</tbody></table></div>` : ''}</div>`;
-  }).join('') : '<div class="empty-state">ظ„ط§ طھظˆط¬ط¯ ط®ط§ظ…ط§طھ ظپظٹ ط¯ظ…ط¬ ط§ظ„ط®ط§ظ…ط§طھ ط­طھظ‰ ط§ظ„ط¢ظ†.</div>';
-  refs.documentTitle.textContent = 'ط¯ظ…ط¬ ط®ط§ظ…ط§طھ';
+    return `<div class="subsection"><div class="subsection-head"><div><h3>عملية دمج ${escapeHtml(group.key)}</h3><p class="eyebrow">إرسال الخام المجهز لمصنع اللزق، ثم شراء خامة اللزق وإرسالها، ثم تسجيل المنتج الناتج.</p></div></div><div class="summary-grid"><div class="metric"><span>خامات داخلة</span><strong>${formatNumber(sent)}</strong></div><div class="metric"><span>منتج ناتج</span><strong>${formatNumber(received)}</strong></div><div class="metric"><span>متبقي داخل الدمج</span><strong>${formatNumber(inGluing)}</strong></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>نوع الحركة</th><th>الخامة / المصدر</th><th>الكمية</th></tr></thead><tbody>${sourceRows}</tbody></table></div>${outputRows ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>المنتج الناتج</th><th>الكمية</th><th>التاريخ</th></tr></thead><tbody>${outputRows}</tbody></table></div>` : ''}</div>`;
+  }).join('') : '<div class="empty-state">لا توجد خامات في دمج الخامات حتى الآن.</div>';
+  refs.documentTitle.textContent = 'دمج خامات';
   refs.documentBody.dataset.documentType = 'gluing-queue';
-  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>ط¥ط±ط³ط§ظ„ ط®ط§ظ…ط§طھ ظ„ظ…طµظ†ط¹ ط§ظ„ظ„ط²ظ‚</h3><p class="eyebrow">ط³ط¬ظ„ ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط¬ظ‡ط² ط§ظ„ط®ط§ط±ط¬ ظ…ظ† ط§ظ„ط£ظˆط±ط¯ط±طŒ ظˆظ…ط¹ظ‡ ط´ط±ط§ط، ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ ظˆط¥ط±ط³ط§ظ„ظ‡ط§ ظپظٹ ظ†ظپط³ ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬" required><select name="sourceKey"><option value="">ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط¬ظ‡ط² ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†</option>${warehouseSourceOptions}</select><input name="quantity" type="number" step="0.01" placeholder="ظƒظ…ظٹط© ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط¬ظ‡ط²"><input name="adhesiveName" placeholder="ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ / ط§ظ„ظ‚ط·ظٹظپط©"><input name="adhesiveQuantity" type="number" step="0.01" placeholder="ظƒظ…ظٹط© ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ ط§ظ„ظ…ط´طھط±ط§ط©"><input name="adhesiveSupplier" placeholder="ظ…ظˆط±ط¯ ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚"><input name="adhesiveUnitPrice" type="number" step="0.01" placeholder="ط³ط¹ط± ط§ظ„ظƒظٹظ„ظˆ"><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ"><button type="button" class="mini-btn full" data-save-gluing-source>ط­ظپط¸ ط¥ط±ط³ط§ظ„ ط§ظ„ط®ط§ظ… ظˆط´ط±ط§ط، ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>ط¯ظ…ط¬ ط§ظ„ط®ط§ظ…ط§طھ ظˆط§ط³طھظ„ط§ظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬</h3><p class="eyebrow">ط§ط®طھط± ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬ ط¨ط¹ط¯ طھط³ط¬ظٹظ„ ط®ط§ظ… ط§ظ„ظ…طµظ†ط¹ ظˆط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚طŒ ط«ظ… ط³ط¬ظ„ ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">ط§ط®طھط± ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬" required><input name="quantity" type="number" step="0.01" placeholder="ظƒظ…ظٹط© ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬" required><input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ"><button type="button" class="mini-btn full" data-save-gluing-merge>طھط³ط¬ظٹظ„ ط§ظ„ط¯ظ…ط¬ ظˆط§ط³طھظ„ط§ظ… ط§ظ„ظ…ظ†طھط¬</button></form></div>${cards}</div>`;
+  refs.documentBody.innerHTML = `<div class="doc-root">${groupDatalist}<div class="subsection"><div class="subsection-head"><div><h3>إرسال خامات لمصنع اللزق</h3><p class="eyebrow">سجل الخام المجهز الخارج من الأوردر، ومعه شراء خامة اللزق وإرسالها في نفس رقم عملية الدمج.</p></div></div><form class="batch-form" data-gluing-source-form><input name="operationKey" list="gluingOperationKeys" placeholder="رقم عملية الدمج" required><select name="sourceKey"><option value="">الخام المجهز من رصيد المخزن</option>${warehouseSourceOptions}</select><input name="quantity" type="number" step="0.01" placeholder="كمية الخام المجهز"><input name="adhesiveName" placeholder="خامة اللزق / القطيفة"><input name="adhesiveQuantity" type="number" step="0.01" placeholder="كمية خامة اللزق المشتراة"><input name="adhesiveSupplier" placeholder="مورد خامة اللزق"><input name="adhesiveUnitPrice" type="number" step="0.01" placeholder="سعر الكيلو"><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-source>حفظ إرسال الخام وشراء خامة اللزق</button></form></div><div class="subsection"><div class="subsection-head"><div><h3>دمج الخامات واستلام المنتج الناتج</h3><p class="eyebrow">اختر عملية الدمج بعد تسجيل خام المصنع وخامة اللزق، ثم سجل المنتج الناتج.</p></div></div><form class="batch-form" data-gluing-merge-form><select name="operationKey" required><option value="">اختر رقم عملية الدمج</option>${groupOptions}</select><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required><input name="outputName" placeholder="اسم المنتج الناتج" required><input name="quantity" type="number" step="0.01" placeholder="كمية المنتج الناتج" required><input class="full" name="notes" placeholder="ملاحظات"><button type="button" class="mini-btn full" data-save-gluing-merge>تسجيل الدمج واستلام المنتج</button></form></div>${cards}</div>`;
   if (!refs.documentDialog.open) refs.documentDialog.showModal();
 }
 
@@ -5228,14 +5228,14 @@ async function saveGluingSourceFromDialog(form) {
   if (!(await ensureBackendForWrite())) return;
   const data = Object.fromEntries(new FormData(form).entries());
   const operationKey = String(data.operationKey || '').trim();
-  if (!operationKey) { alert('ط§ظƒطھط¨ ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬.'); return; }
+  if (!operationKey) { alert('اكتب رقم عملية الدمج.'); return; }
   const sourceRows = [
     { sourceKey:data.sourceKey, quantity:data.quantity }
   ].filter((row)=>String(row.sourceKey || '').trim() && Number(row.quantity || 0) > 0);
   const adhesiveQuantity = Number(data.adhesiveQuantity || 0);
   const adhesiveName = String(data.adhesiveName || '').trim();
-  if (!sourceRows.length && !adhesiveQuantity) { alert('ط§ط®طھط± ط®ط§ظ… ظ…ط¬ظ‡ط² ط£ظˆ ط³ط¬ظ„ ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ ط§ظ„ظ…ط´طھط±ط§ط©.'); return; }
-  if (adhesiveQuantity && !adhesiveName) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ / ط§ظ„ظ‚ط·ظٹظپط© ظ‚ط¨ظ„ ط§ظ„ط­ظپط¸.'); return; }
+  if (!sourceRows.length && !adhesiveQuantity) { alert('اختر خام مجهز أو سجل خامة اللزق المشتراة.'); return; }
+  if (adhesiveQuantity && !adhesiveName) { alert('اكتب اسم خامة اللزق / القطيفة قبل الحفظ.'); return; }
   let savedAny = false;
   let primaryOrderId = selectedOrderId || '';
   for (const row of sourceRows) {
@@ -5243,12 +5243,12 @@ async function saveGluingSourceFromDialog(form) {
     primaryOrderId = primaryOrderId || orderId;
     const order = orders.find((item)=>item.id === orderId);
     const allocation = allocations.find((item)=>item.id === allocationId);
-    if (!order || !allocation) { alert('طھط¹ط°ط± ظ‚ط±ط§ط،ط© ط§ظ„ط®ط§ظ…ط© ط§ظ„ظ…ط®طھط§ط±ط© ظ…ظ† ط§ظ„ط·ظ„ط¨.'); return; }
+    if (!order || !allocation) { alert('تعذر قراءة الخامة المختارة من الطلب.'); return; }
     const calculatedOrder = calculateOrder(order);
     const available = gluingAllocationAvailable(calculatedOrder, allocation);
     const quantity = Number(row.quantity || 0);
     let notes = data.notes || '';
-    if (quantity > available) notes = [notes, 'طھظ†ط¨ظٹظ‡: ط§ظ„ظƒظ…ظٹط© ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ظ…طھط§ط­ ظ„ظ‡ط°ظ‡ ط§ظ„ط®ط§ظ…ط©'].filter(Boolean).join(' - ');
+    if (quantity > available) notes = [notes, 'تنبيه: الكمية أكبر من رصيد المخزن المتاح لهذه الخامة'].filter(Boolean).join(' - ');
     const saved = await postBackend('/batches/gluing', batchToApi({
       id: uid(),
       orderId,
@@ -5260,18 +5260,18 @@ async function saveGluingSourceFromDialog(form) {
       partnerFabric: operationKey,
       notes
     }));
-    if (!saved) { alert('طھط¹ط°ط± ط¥ط±ط³ط§ظ„ ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط¬ظ‡ط² ط¥ظ„ظ‰ ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬.'); return; }
+    if (!saved) { alert('تعذر إرسال الخام المجهز إلى عملية الدمج.'); return; }
     savedAny = true;
   }
   if (adhesiveQuantity) {
     primaryOrderId = primaryOrderId || orders[0]?.id || '';
-    if (!primaryOrderId) { alert('ظ„ط§ ظٹظˆط¬ط¯ ط·ظ„ط¨ ظٹظ…ظƒظ† ط±ط¨ط· ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚ ط¨ظ‡.'); return; }
+    if (!primaryOrderId) { alert('لا يوجد طلب يمكن ربط خامة اللزق به.'); return; }
     const unitPrice = Number(data.adhesiveUnitPrice || 0);
     const purchaseNotes = [
       data.notes || '',
-      `ط´ط±ط§ط، ظˆط¥ط±ط³ط§ظ„ ${adhesiveName}`,
-      data.adhesiveSupplier ? `ط§ظ„ظ…ظˆط±ط¯: ${data.adhesiveSupplier}` : '',
-      unitPrice ? `ط³ط¹ط± ط§ظ„ظƒظٹظ„ظˆ: ${formatNumber(unitPrice)}` : ''
+      `شراء وإرسال ${adhesiveName}`,
+      data.adhesiveSupplier ? `المورد: ${data.adhesiveSupplier}` : '',
+      unitPrice ? `سعر الكيلو: ${formatNumber(unitPrice)}` : ''
     ].filter(Boolean).join(' - ');
     const saved = await postBackend('/batches/gluing', batchToApi({
       id: uid(),
@@ -5291,7 +5291,7 @@ async function saveGluingSourceFromDialog(form) {
         totalPrice: roundNumber(adhesiveQuantity * unitPrice)
       }
     }));
-    if (!saved) { alert('طھط¹ط°ط± ط­ظپط¸ ط´ط±ط§ط، ظˆط¥ط±ط³ط§ظ„ ط®ط§ظ…ط© ط§ظ„ظ„ط²ظ‚.'); return; }
+    if (!saved) { alert('تعذر حفظ شراء وإرسال خامة اللزق.'); return; }
     savedAny = true;
   }
   if (!savedAny) return;
@@ -5303,13 +5303,13 @@ async function saveGluingMergeFromDialog(form) {
   const data = Object.fromEntries(new FormData(form).entries());
   const group = findGluingGroup(data.operationKey);
   const source = group?.sources?.[0];
-  if (!group || !source) { alert('ط§ط®طھط± ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط¯ظ…ط¬ طھط­طھظˆظٹ ط¹ظ„ظ‰ ط®ط§ظ…ط§طھ ط¯ط§ط®ظ„ط© ط£ظˆظ„ط§.'); return; }
-  if (!String(data.outputName || '').trim()) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ط¬ط¯ظٹط¯.'); return; }
+  if (!group || !source) { alert('اختر رقم عملية دمج تحتوي على خامات داخلة أولا.'); return; }
+  if (!String(data.outputName || '').trim()) { alert('اكتب اسم المنتج الجديد.'); return; }
   const sent = sum(group.sources);
   const returned = sum(group.returns);
   const received = sum(group.received);
   const available = Math.max(sent - returned - received, 0);
-  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬ ط£ظƒط¨ط± ظ…ظ† ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…ظˆط¬ظˆط¯ ط¯ط§ط®ظ„ ط§ظ„ط¯ظ…ط¬'].filter(Boolean).join(' - ');
+  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: كمية المنتج الناتج أكبر من الرصيد الموجود داخل الدمج'].filter(Boolean).join(' - ');
   const saved = await postBackend('/batches/gluing', batchToApi({
     id: uid(),
     orderId: source.orderId,
@@ -5322,7 +5322,7 @@ async function saveGluingMergeFromDialog(form) {
     partnerFabric: group.key,
     notes: data.notes || ''
   }));
-  if (!saved) { alert('طھط¹ط°ط± ط­ظپط¸ ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ.'); return; }
+  if (!saved) { alert('تعذر حفظ عملية الدمج في قاعدة البيانات.'); return; }
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -5333,11 +5333,11 @@ async function saveGluingReturnFromDialog(form) {
   const [operationKey, allocationId] = String(data.sourceKey || '').split('|');
   const group = findGluingGroup(operationKey);
   const source = group?.sources?.find((batch)=>batch.allocationId === allocationId);
-  if (!group || !source || !allocationId) { alert('ط§ط®طھط± ط§ظ„ط®ط§ظ…ط© ط§ظ„ظ…طµط¯ط± ط£ظˆظ„ط§.'); return; }
+  if (!group || !source || !allocationId) { alert('اختر الخامة المصدر أولا.'); return; }
   const sent = sum(group.sources.filter((batch)=>batch.allocationId === allocationId));
   const returned = sum(group.returns.filter((batch)=>batch.allocationId === allocationId));
   const available = Math.max(sent - returned, 0);
-  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ط§ظ„ظ…ط±طھط¬ط¹ ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ظ‡ط°ظ‡ ط§ظ„ط®ط§ظ…ط© ط¯ط§ط®ظ„ ط§ظ„ط¯ظ…ط¬'].filter(Boolean).join(' - ');
+  if (Number(data.quantity || 0) > available) data.notes = [data.notes, 'تنبيه: المرتجع أكبر من رصيد هذه الخامة داخل الدمج'].filter(Boolean).join(' - ');
   const saved = await postBackend('/batches/gluing', batchToApi({
     id: uid(),
     orderId: source.orderId,
@@ -5349,7 +5349,7 @@ async function saveGluingReturnFromDialog(form) {
     partnerFabric: group.key,
     notes: data.notes || ''
   }));
-  if (!saved) { alert('طھط¹ط°ط± ط­ظپط¸ ط±ط¬ظˆط¹ ط§ظ„ظ…طھط¨ظ‚ظٹ ظ…ظ† ط§ظ„ط¯ظ…ط¬.'); return; }
+  if (!saved) { alert('تعذر حفظ رجوع المتبقي من الدمج.'); return; }
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -5359,11 +5359,11 @@ async function saveGluingCustomerFromDialog(form) {
   const data = Object.fromEntries(new FormData(form).entries());
   const group = findGluingGroup(data.operationKey);
   const source = group?.sources?.[0];
-  if (!group || !source) { alert('ط§ط®طھط± ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬ ط£ظˆظ„ط§.'); return; }
-  if (!String(data.outputName || '').trim() || !String(data.customerName || '').trim()) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬ ظˆط§ظ„ط¹ظ…ظٹظ„ ظ‚ط¨ظ„ ط§ظ„طھط³ظ„ظٹظ….'); return; }
+  if (!group || !source) { alert('اختر رقم عملية الدمج أولا.'); return; }
+  if (!String(data.outputName || '').trim() || !String(data.customerName || '').trim()) { alert('اكتب اسم المنتج والعميل قبل التسليم.'); return; }
   const received = sum(group.received.filter((batch)=>normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
   const delivered = sum(group.delivered.filter((batch)=>normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
-  if (Number(data.quantity || 0) > Math.max(received - delivered, 0)) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„طھط³ظ„ظٹظ… ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬'].filter(Boolean).join(' - ');
+  if (Number(data.quantity || 0) > Math.max(received - delivered, 0)) data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المنتج الناتج'].filter(Boolean).join(' - ');
   const saved = await postBackend('/batches/gluing', batchToApi({
     id: uid(),
     orderId: source.orderId,
@@ -5376,7 +5376,7 @@ async function saveGluingCustomerFromDialog(form) {
     partnerFabric: group.key,
     notes: data.notes || ''
   }));
-  if (!saved) { alert('طھط¹ط°ط± ط­ظپط¸ طھط³ظ„ظٹظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬.'); return; }
+  if (!saved) { alert('تعذر حفظ تسليم المنتج الناتج.'); return; }
   await loadBackendData();
   openGluingQueueDialog();
 }
@@ -5386,8 +5386,8 @@ function batchItemHtml(type, batch, label) {
     ? String(label)
       .replace('تسليم قماش للعميل', 'مرتجع قماش من العميل')
       .replace('تسليم إكسسوار للعميل', 'مرتجع إكسسوار من العميل')
-      .replace('طھط³ظ„ظٹظ… ظ‚ظ…ط§ط´ ظ„ظ„ط¹ظ…ظٹظ„', 'مرتجع قماش من العميل')
-      .replace('طھط³ظ„ظٹظ… ط¥ظƒط³ط³ظˆط§ط± ظ„ظ„ط¹ظ…ظٹظ„', 'مرتجع إكسسوار من العميل')
+      .replace('تسليم قماش للعميل', 'مرتجع قماش من العميل')
+      .replace('تسليم إكسسوار للعميل', 'مرتجع إكسسوار من العميل')
       .replace(String(batch.quantity), formatNumber(Math.abs(quantity)))
     : label;
   return `<div class="batch-item" data-batch-row title="اضغط لعرض وقت الإدخال والمدخل"><div class="batch-main"><span>${displayLabel}</span>${batchMovementMetaHtml(batch)}</div><div class="batch-actions"><button class="mini-btn" data-batch-action="edit" data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-batch-action="delete" data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}">حذف</button>` : ''}</div></div>`;
@@ -5427,9 +5427,9 @@ function allocationWidthSuffix(order, allocation) {
   const width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '';
   const finishedWeight = allocation.targetFinishedWeight || allocation.finishedWeight || '';
   const parts = [];
-  if (inch) parts.push(`ط¨ظˆطµط© ${inch}`);
-  if (width) parts.push(`ط¹ط±ط¶ ${width}`);
-  if (finishedWeight) parts.push(`ظˆط²ظ† ${finishedWeight}`);
+  if (inch) parts.push(`بوصة ${inch}`);
+  if (width) parts.push(`عرض ${width}`);
+  if (finishedWeight) parts.push(`وزن ${finishedWeight}`);
   return parts.length ? ` / ${parts.join(' - ')}` : '';
 }
 function allocationWidthLabel(order, allocation) {
@@ -5441,7 +5441,7 @@ function allocationInchWidthLabel(order, allocation) {
   const widthLine = findAllocationWidthLine(order, allocation);
   const inch = allocation.rawInch || widthLine.inch || order.inchWidth || '-';
   const width = allocation.rawWidth || allocation.targetFinishedWidth || widthLine.width || '-';
-  return `ط¨ظˆطµط© ${inch} - ط¹ط±ط¶ ${width}`;
+  return `بوصة ${inch} - عرض ${width}`;
 }
 function allocationMovementLabel(order, allocation) {
   if (!allocation) return '-';
@@ -5452,11 +5452,11 @@ function allocationAvailableToCustomer(allocation) {
 }
 function allocationOrdinalLabel(order, allocation) {
   const index = (order?.allocations || []).findIndex((item)=>item.id === allocation?.id);
-  return index >= 0 ? `ط¨ظ†ط¯ ${index + 1}` : '';
+  return index >= 0 ? `بند ${index + 1}` : '';
 }
 function allocationOptionLabel(order, allocation) {
   if (!allocation) return '-';
-  const planned = Number(allocation.plannedQuantity || 0) ? ` / ظ…ط®ط·ط· ${formatNumber(allocation.plannedQuantity)}` : '';
+  const planned = Number(allocation.plannedQuantity || 0) ? ` / مخطط ${formatNumber(allocation.plannedQuantity)}` : '';
   const ordinal = allocationOrdinalLabel(order, allocation);
   return `${ordinal ? `${ordinal} / ` : ''}${allocation.color || '-'} / ${allocation.dyehouse || '-'}${allocationWidthSuffix(order, allocation)}${planned}`;
 }
@@ -5466,14 +5466,14 @@ function allocationColorLabel(order, allocation) {
 }
 function customerDeliveryAllocationLabel(order, allocation) {
   if (!allocation) return '-';
-  return `${allocationOptionLabel(order, allocation)} / ظ…طھط§ط­ ${formatNumber(allocationAvailableToCustomer(allocation))}`;
+  return `${allocationOptionLabel(order, allocation)} / متاح ${formatNumber(allocationAvailableToCustomer(allocation))}`;
 }
 function rawDispatchOptions(order) {
   const widthLines = Array.isArray(order?.widthLines) ? order.widthLines : [];
   if (widthLines.length) {
     return widthLines.map((line)=>({
       id: line.id,
-      label: `ط¨ظˆطµط© ${line.inch || '-'} - ط¹ط±ط¶ ${line.width || '-'} - ظƒظ…ظٹط© ${formatNumber(line.quantity || 0)}`,
+      label: `بوصة ${line.inch || '-'} - عرض ${line.width || '-'} - كمية ${formatNumber(line.quantity || 0)}`,
     })).filter((item)=>item.id);
   }
   return (order?.allocations || []).map((allocation)=>({
@@ -5499,14 +5499,14 @@ function ensureRawDispatchSelect(form, order) {
     dateInput?.insertAdjacentElement('afterend', select);
   }
   const current = select.value;
-  select.innerHTML = `<option value="">ط§ط®طھط± ط§ظ„ط¹ط±ط¶ / ط§ظ„ط¨ظ†ط¯ ط¹ظ†ط¯ ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ…</option>${options.map((item)=>`<option value="${item.id}">${item.label}</option>`).join('')}`;
+  select.innerHTML = `<option value="">اختر العرض / البند عند خروج الخام</option>${options.map((item)=>`<option value="${item.id}">${item.label}</option>`).join('')}`;
   if ([...select.options].some((option)=>option.value === current)) select.value = current;
 }
 function movementLine(...parts) {
   return parts.map((part)=>String(part ?? '').trim()).filter(Boolean).join(' - ');
 }
 function noteSuffix(batch) {
-  return batch?.noteNumber ? ` / ط±ظ‚ظ… ط¥ط°ظ† ${batch.noteNumber}` : '';
+  return batch?.noteNumber ? ` / رقم إذن ${batch.noteNumber}` : '';
 }
 
 function order360StageClass(done, active) {
@@ -5519,12 +5519,12 @@ function order360Alerts(order, stage) {
   const expectedWaste = Number(order.expectedWastePercent || 0);
   const actualWaste = Number(order.totalWastePercent || 0);
   const overDelivered = Math.max(Number(order.totalDeliveredToCustomer || 0) - Number(order.totalFinishedReceived || 0), 0);
-  if (Number(stage.days || 0) >= 7 && !['completed','closed'].includes(stage.key)) alerts.push(`ظˆط§ظ‚ظپ ${stage.days} ظٹظˆظ… ظپظٹ ظ…ط±ط­ظ„ط© ${stage.label}`);
-  if (overDelivered > 0) alerts.push(`طھظ†ط¨ظٹظ‡ ط¨ظٹط§ظ†ط§طھ: طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„ ط£ظƒط¨ط± ظ…ظ† ط§ظ„ظ…ط¬ظ‡ط² ط¨ظ€ ${formatNumber(overDelivered)} ظƒط¬ظ… - ط§ظ„ظ…ط¬ظ‡ط² ${formatNumber(order.totalFinishedReceived || 0)} ظƒط¬ظ… / ط§ظ„ظ…ط³ظ„ظ… ${formatNumber(order.totalDeliveredToCustomer || 0)} ظƒط¬ظ…`);
-  if (actualWaste > 0 && actualWaste >= Math.max(8, expectedWaste + 2)) alerts.push(`ط§ظ„ظ‡ط§ظ„ظƒ ط§ظ„ظپط¹ظ„ظٹ ${formatNumber(actualWaste, 1)}% ط£ط¹ظ„ظ‰ ظ…ظ† ط§ظ„ظ…طھظˆظ‚ط¹ ${formatNumber(expectedWaste, 1)}%`);
-  if (Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0) alerts.push(`ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط© ${formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} ظƒط¬ظ… ظ„ظ… ظٹط±ط¬ط¹ ظ…ط¬ظ‡ط²ظ‹ط§`);
-  if (Number(order.warehouseBalance || 0) > 0) alerts.push(`ط±طµظٹط¯ ظ…ط®ط²ظ† ظ…طھط§ط­ ظ„ظ„طھط³ظ„ظٹظ… ${formatNumber(order.warehouseBalance)} ظƒط¬ظ…`);
-  if (order.allocationExceedsRaw) alerts.push('ظƒظ…ظٹط© ط®ط·ط© ط§ظ„ط£ظ„ظˆط§ظ† ط£ظƒط¨ط± ظ…ظ† ط§ظ„ط®ط§ظ… ط§ظ„ظ…طھط§ط­');
+  if (Number(stage.days || 0) >= 7 && !['completed','closed'].includes(stage.key)) alerts.push(`واقف ${stage.days} يوم في مرحلة ${stage.label}`);
+  if (overDelivered > 0) alerts.push(`تنبيه بيانات: تسليم العميل أكبر من المجهز بـ ${formatNumber(overDelivered)} كجم - المجهز ${formatNumber(order.totalFinishedReceived || 0)} كجم / المسلم ${formatNumber(order.totalDeliveredToCustomer || 0)} كجم`);
+  if (actualWaste > 0 && actualWaste >= Math.max(8, expectedWaste + 2)) alerts.push(`الهالك الفعلي ${formatNumber(actualWaste, 1)}% أعلى من المتوقع ${formatNumber(expectedWaste, 1)}%`);
+  if (Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0) > 0) alerts.push(`داخل المصبغة ${formatNumber(order.rawAtDyehouseAvailable || order.remainingAtDyehouse)} كجم لم يرجع مجهزًا`);
+  if (Number(order.warehouseBalance || 0) > 0) alerts.push(`رصيد مخزن متاح للتسليم ${formatNumber(order.warehouseBalance)} كجم`);
+  if (order.allocationExceedsRaw) alerts.push('كمية خطة الألوان أكبر من الخام المتاح');
   return alerts;
 }
 function order360Html(order) {
@@ -5532,12 +5532,12 @@ function order360Html(order) {
   const movementDates = orderMovementDates(order);
   const dyehouseBalance = Number(order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0);
   const steps = [
-    { key:'order', label:'ط·ظ„ط¨ ط§ظ„ط¹ظ…ظٹظ„', value:formatNumber(order.totalRawOrdered || 0), sub:`ط®ط§ظ… ظ…ط·ظ„ظˆط¨ / ${movementDates.orderDate}`, done:true },
-    { key:'weaving', label:'ط§ظ„ظ†ط³ظٹط¬', value:formatNumber(order.totalRawReceived || 0), sub:`ط®ط§ظ… ط®ط±ط¬ ظ„ظ„ظ…طµط¨ط؛ط© / ${movementDates.weavingDate}`, done:Number(order.totalRawReceived || 0) > 0, active:stage.key === 'weaving' },
-    { key:'dyehouse', label:'ط§ظ„ظ…طµط¨ط؛ط©', value:formatNumber(dyehouseBalance), sub:`ظ…طھط¨ظ‚ظٹ ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط© / ${movementDates.weavingDate}`, done:Number(order.totalFinishedReceived || 0) > 0 || dyehouseBalance === 0, active:stage.key === 'dyehouse' },
-    { key:'warehouse', label:'ط§ظ„ظ…ط®ط²ظ†', value:formatNumber(order.warehouseBalance || 0), sub:`ط±طµظٹط¯ ظ…ط¬ظ‡ط² / ${movementDates.dyehouseDate}`, done:Number(order.totalFinishedReceived || 0) > 0, active:stage.key === 'warehouse' },
-    { key:'delivery', label:'ط§ظ„طھط³ظ„ظٹظ…', value:formatNumber(order.totalDeliveredToCustomer || 0), sub:`ظ…ط³ظ„ظ… ظ„ظ„ط¹ظ…ظٹظ„ / ${movementDates.customerDate}`, done:Number(order.remainingToCustomer || 0) === 0 && Number(order.totalDeliveredToCustomer || 0) > 0, active:stage.key === 'delivery' },
-    { key:'close', label:'ط§ظ„ط¥ط؛ظ„ط§ظ‚', value:stage.key === 'closed' ? 'ظ…ط؛ظ„ظ‚' : (stage.key === 'completed' ? 'ظ…ظƒطھظ…ظ„' : 'ظ…ظپطھظˆط­'), sub:'ط­ط§ظ„ط© ط§ظ„طھط´ط؛ظٹظ„', done:['completed','closed'].includes(stage.key), active:stage.key === 'closed' },
+    { key:'order', label:'طلب العميل', value:formatNumber(order.totalRawOrdered || 0), sub:`خام مطلوب / ${movementDates.orderDate}`, done:true },
+    { key:'weaving', label:'النسيج', value:formatNumber(order.totalRawReceived || 0), sub:`خام خرج للمصبغة / ${movementDates.weavingDate}`, done:Number(order.totalRawReceived || 0) > 0, active:stage.key === 'weaving' },
+    { key:'dyehouse', label:'المصبغة', value:formatNumber(dyehouseBalance), sub:`متبقي داخل المصبغة / ${movementDates.weavingDate}`, done:Number(order.totalFinishedReceived || 0) > 0 || dyehouseBalance === 0, active:stage.key === 'dyehouse' },
+    { key:'warehouse', label:'المخزن', value:formatNumber(order.warehouseBalance || 0), sub:`رصيد مجهز / ${movementDates.dyehouseDate}`, done:Number(order.totalFinishedReceived || 0) > 0, active:stage.key === 'warehouse' },
+    { key:'delivery', label:'التسليم', value:formatNumber(order.totalDeliveredToCustomer || 0), sub:`مسلم للعميل / ${movementDates.customerDate}`, done:Number(order.remainingToCustomer || 0) === 0 && Number(order.totalDeliveredToCustomer || 0) > 0, active:stage.key === 'delivery' },
+    { key:'close', label:'الإغلاق', value:stage.key === 'closed' ? 'مغلق' : (stage.key === 'completed' ? 'مكتمل' : 'مفتوح'), sub:'حالة التشغيل', done:['completed','closed'].includes(stage.key), active:stage.key === 'closed' },
   ];
   const alerts = order360Alerts(order, stage);
   const progressBase = Number(order.totalRawOrdered || order.totalAllocated || 0);
@@ -5545,17 +5545,17 @@ function order360Html(order) {
   return `<section class="order-360">
     <div class="order-360-head">
       <div><p class="eyebrow">Order 360</p><h2>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</h2><p>${escapeHtml(order.fabricType || '-')} / ${escapeHtml(order.dyehouse || '-')} / ${escapeHtml(order.weavingSource || '-')}</p></div>
-      <div class="order-360-stage"><span>${escapeHtml(stage.label)}</span><strong>${Number(stage.days || 0).toLocaleString('en-US')} ظٹظˆظ…</strong></div>
+      <div class="order-360-stage"><span>${escapeHtml(stage.label)}</span><strong>${Number(stage.days || 0).toLocaleString('en-US')} يوم</strong></div>
     </div>
     <div class="order-360-flow">${steps.map((step)=>`<article class="${order360StageClass(step.done, step.active)}"><span>${escapeHtml(step.label)}</span><strong>${escapeHtml(step.value)}</strong><small>${escapeHtml(step.sub)}</small></article>`).join('')}</div>
     <div class="order-360-progress"><span style="width:${deliveredPercent}%"></span></div>
     <div class="order-360-kpis">
-      <div><span>ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©</span><strong>${formatNumber(dyehouseBalance)}</strong></div>
-      <div><span>ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ†</span><strong>${formatNumber(order.warehouseBalance || 0)}</strong></div>
-      <div><span>ظ…طھط¨ظ‚ظٹ ظ„ظ„ط¹ظ…ظٹظ„</span><strong>${formatNumber(order.remainingToCustomer || 0)}</strong></div>
-      <div><span>ط§ظ„ظ‡ط§ظ„ظƒ ط§ظ„ظپط¹ظ„ظٹ</span><strong>${formatNumber(order.totalWaste || 0)} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div>
+      <div><span>داخل المصبغة</span><strong>${formatNumber(dyehouseBalance)}</strong></div>
+      <div><span>رصيد المخزن</span><strong>${formatNumber(order.warehouseBalance || 0)}</strong></div>
+      <div><span>متبقي للعميل</span><strong>${formatNumber(order.remainingToCustomer || 0)}</strong></div>
+      <div><span>الهالك الفعلي</span><strong>${formatNumber(order.totalWaste || 0)} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div>
     </div>
-    <div class="order-360-alerts">${alerts.length ? alerts.map((alert)=>`<span>${escapeHtml(alert)}</span>`).join('') : '<span class="ok">ظ„ط§ طھظˆط¬ط¯ طھظ†ط¨ظٹظ‡ط§طھ ط­ط±ط¬ط© ط¹ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨ ط­ط§ظ„ظٹظ‹ط§.</span>'}</div>
+    <div class="order-360-alerts">${alerts.length ? alerts.map((alert)=>`<span>${escapeHtml(alert)}</span>`).join('') : '<span class="ok">لا توجد تنبيهات حرجة على هذا الطلب حاليًا.</span>'}</div>
   </section>`;
 }
 
@@ -5682,27 +5682,27 @@ function renderDetails() {
   order.widthLines = Array.isArray(order.widthLines) ? order.widthLines : [];
   order.accessoryLines = Array.isArray(order.accessoryLines) ? order.accessoryLines : [];
   const allocationPercent = order.totalRawReceived ? Math.min(order.totalAllocated / order.totalRawReceived * 100, 100) : 0;
-  const rawItems = (()=>{ const outgoing = rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>{ const widthLabel = rawDispatchLabel(order, batch.widthLineId); return { type:'raw', batch, label:movementLine('ط®ط±ظˆط¬ ط®ط§ظ… ظ„ظ„ظ…طµط¨ط؛ط©', batch.date, batch.quantity, batch.supplier || '-', widthLabel) + noteSuffix(batch) }; }); const returns = rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return { type:'rawReturn', batch, label:movementLine('ظ…ط±طھط¬ط¹ ط®ط§ظ… ظ„ظ„ظ†ط³ظٹط¬', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch) }; }); const rows = outgoing.concat(returns).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">ظ„ط§ طھظˆط¬ط¯ ط¯ظپط¹ط§طھ ط¨ط¹ط¯.</div>'; })();
+  const rawItems = (()=>{ const outgoing = rawBatches.filter((batch)=>batch.orderId===order.id).map((batch)=>{ const widthLabel = rawDispatchLabel(order, batch.widthLineId); return { type:'raw', batch, label:movementLine('خروج خام للمصبغة', batch.date, batch.quantity, batch.supplier || '-', widthLabel) + noteSuffix(batch) }; }); const returns = rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return { type:'rawReturn', batch, label:movementLine('مرتجع خام للنسيج', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch) }; }); const rows = outgoing.concat(returns).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">لا توجد دفعات بعد.</div>'; })();
   const accessoryColor = (batch)=>order.allocations.find((item)=>item.id===batch.allocationId)?.color || batch.color || '-';
   const accessoryTypeOptions = order.accessoryLines.map((line)=>`<option value="${line.type}">${line.type}</option>`).join('');
   const accessoryAllocationLabel = (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return allocation ? allocationMovementLabel(order, allocation) : accessoryColor(batch); };
   const transferAllocationLabel = (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId) || order.allocations.find((item)=>item.color===batch.color && (item.dyehouse===batch.fromDyehouse || item.dyehouse===batch.toDyehouse)); return allocation ? allocationMovementLabel(order, allocation) : (batch.color || '-'); };
-  const accessoryTypeSelect = `<select name="accessoryType" required><option value="">ط§ط®طھط± ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</option>${accessoryTypeOptions}</select>`;
-  const accessoryItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'sent'), (batch)=>batchItemHtml('accessory', batch, movementLine('ط®ط±ظˆط¬ ط¥ظƒط³ط³ظˆط§ط±', batch.date, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'ط¥ظƒط³ط³ظˆط§ط±') + noteSuffix(batch)));
-  const accessoryReceivedItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'), (batch)=>batchItemHtml('accessory', batch, movementLine('ط§ط³طھظ„ط§ظ… ط¥ظƒط³ط³ظˆط§ط±', batch.date, accessoryAllocationLabel(batch), batch.quantity, batch.accessoryType || 'ط¥ظƒط³ط³ظˆط§ط±') + noteSuffix(batch)));
-  const productionItems = listHtml(productionBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('production', batch, movementLine('ط§ط³طھظ„ط§ظ… ظ…ط¬ظ‡ط²', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch)); });
-  const customerItems = (()=>{ const cloth = customerBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : '-'; return { type:'customer', batch, label:movementLine('طھط³ظ„ظٹظ… ظ‚ظ…ط§ط´ ظ„ظ„ط¹ظ…ظٹظ„', batch.date, label, batch.quantity) }; }); const accessories = accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer').map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : accessoryColor(batch); return { type:'accessory', batch, label:movementLine('طھط³ظ„ظٹظ… ط¥ظƒط³ط³ظˆط§ط± ظ„ظ„ط¹ظ…ظٹظ„', batch.date, label, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'ط¥ظƒط³ط³ظˆط§ط±') + noteSuffix(batch) }; }); const rows = cloth.concat(accessories).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">ظ„ط§ طھظˆط¬ط¯ ط¯ظپط¹ط§طھ ط¨ط¹ط¯.</div>'; })();
-  const transferItems = listHtml(dyehouseTransfers.filter((batch)=>batch.orderId===order.id), (batch)=>{ const transferTitle = transferRecordMode(batch) === 'accessory' ? 'ظ†ظ‚ظ„ ط®ط§ظ… ط¥ظƒط³ط³ظˆط§ط±' : 'طھط­ظˆظٹظ„ ظ…طµط¨ط؛ط©'; return batchItemHtml('transfer', batch, movementLine(transferTitle, batch.date, transferAllocationLabel(batch), batch.fromDyehouse || '-', batch.toDyehouse || '-', batch.quantity) + noteSuffix(batch)); });
-  const rawReturnItems = listHtml(rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('rawReturn', batch, movementLine('ظ…ط±طھط¬ط¹ ط®ط§ظ… ظ„ظ„ظ†ط³ظٹط¬', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch)); });
+  const accessoryTypeSelect = `<select name="accessoryType" required><option value="">اختر نوع الإكسسوار</option>${accessoryTypeOptions}</select>`;
+  const accessoryItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'sent'), (batch)=>batchItemHtml('accessory', batch, movementLine('خروج إكسسوار', batch.date, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'إكسسوار') + noteSuffix(batch)));
+  const accessoryReceivedItems = listHtml(accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'), (batch)=>batchItemHtml('accessory', batch, movementLine('استلام إكسسوار', batch.date, accessoryAllocationLabel(batch), batch.quantity, batch.accessoryType || 'إكسسوار') + noteSuffix(batch)));
+  const productionItems = listHtml(productionBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('production', batch, movementLine('استلام مجهز', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch)); });
+  const customerItems = (()=>{ const cloth = customerBatches.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)).map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : '-'; return { type:'customer', batch, label:movementLine('تسليم قماش للعميل', batch.date, label, batch.quantity) }; }); const accessories = accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'customer').map((batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); const label = allocation ? allocationColorLabel(order, allocation) : accessoryColor(batch); return { type:'accessory', batch, label:movementLine('تسليم إكسسوار للعميل', batch.date, label, batch.quantity, batch.accessoryType || order.accessoryLines[0]?.type || 'إكسسوار') + noteSuffix(batch) }; }); const rows = cloth.concat(accessories).sort((a,b)=>String(b.batch.date||'').localeCompare(String(a.batch.date||''))); return rows.length ? rows.map((item)=>batchItemHtml(item.type, item.batch, item.label)).join('') : '<div class="empty-state">لا توجد دفعات بعد.</div>'; })();
+  const transferItems = listHtml(dyehouseTransfers.filter((batch)=>batch.orderId===order.id), (batch)=>{ const transferTitle = transferRecordMode(batch) === 'accessory' ? 'نقل خام إكسسوار' : 'تحويل مصبغة'; return batchItemHtml('transfer', batch, movementLine(transferTitle, batch.date, transferAllocationLabel(batch), batch.fromDyehouse || '-', batch.toDyehouse || '-', batch.quantity) + noteSuffix(batch)); });
+  const rawReturnItems = listHtml(rawReturns.filter((batch)=>order.allocations.some((allocation)=>allocation.id===batch.allocationId)), (batch)=>{ const allocation=order.allocations.find((item)=>item.id===batch.allocationId); return batchItemHtml('rawReturn', batch, movementLine('مرتجع خام للنسيج', batch.date, allocationMovementLabel(order, allocation), batch.quantity) + noteSuffix(batch)); });
   const stockRows = order.allocations.map((allocation)=>{ const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===allocation.id)); const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent')); const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return')); const balance = roundNumber(Number(allocation.finishedReceived || 0) - delivered - sentGlue + returnedGlue); const widthInfo = allocationInchWidthLabel(order, allocation); return `<tr><td>${escapeHtml(allocation.color)}</td><td>${escapeHtml(widthInfo)}</td><td>${formatNumber(allocation.finishedReceived || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; }).join('');
   const accessoryStockRows = order.accessoryLines.length ? order.allocations.flatMap((allocation)=>order.accessoryLines.map((line)=>{ const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type)); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type)); const balance = roundNumber(received - delivered); return `<tr><td>${escapeHtml(allocation.color)}</td><td>${escapeHtml(line.type)}</td><td>${formatNumber(received || 0)}</td><td>${formatNumber(delivered || 0)}</td><td><strong>${formatNumber(balance)}</strong></td></tr>`; })).join('') : '';
   const stockFlowRows = order.allocations.map((allocation)=>{ const clothDelivered = sum(customerBatches.filter((batch)=>batch.allocationId===allocation.id)); const sentGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'sent')); const returnedGlue = sum(gluingBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement === 'return')); const clothBalance = roundNumber(Number(allocation.finishedReceived || 0) - clothDelivered - sentGlue + returnedGlue); const accessorySentParts = accessoryFlowPartsForOrder(order, allocation, 'sent'); const accessoryReceivedParts = accessoryFlowPartsForOrder(order, allocation, 'received'); const accessoryDeliveredParts = accessoryFlowPartsForOrder(order, allocation, 'customer'); const accessoryBalanceParts = (order.accessoryLines || []).map((line)=>{ const received = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='received' && (batch.accessoryType || line.type) === line.type)); const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId===allocation.id && batch.movement==='customer' && (batch.accessoryType || line.type) === line.type)); const balance = roundNumber(received - delivered); return balance ? `${formatNumber(balance)} ${line.type}` : ''; }).filter(Boolean); return `<tr><td>${escapeHtml(allocation.color || '-')}</td><td>${stockFlowText(allocation.sentToDyehouse || 0, accessorySentParts)}</td><td>${stockFlowText(allocation.finishedReceived || 0, accessoryReceivedParts)}</td><td>${stockFlowText(clothDelivered || 0, accessoryDeliveredParts)}</td><td><strong>${stockFlowText(clothBalance || 0, accessoryBalanceParts)}</strong></td></tr>`; }).join('');
-  const inventorySection = `<div class="subsection stock-flow-section"><div class="subsection-head"><div><h3>ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط­ط§ظ„ظٹ</h3><p class="eyebrow">ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط­ط³ط¨ ط§ظ„طھط´ط؛ظٹظ„ ظˆط§ظ„طھط³ظ„ظٹظ…</p></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†</th><th>طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„</th><th>ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ</th></tr></thead><tbody>${stockRows}</tbody></table></div>${order.accessoryLines.length ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†</th><th>طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„</th><th>ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ</th></tr></thead><tbody>${accessoryStockRows}</tbody></table></div>` : ''}</div>`;
-  refs.orderDetailsPanel.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber)}</p><h2>${escapeHtml(order.customer)}</h2></div><div class="actions"><button class="mini-btn" id="editOrderBtn">طھط¹ط¯ظٹظ„ ط§ظ„ط·ظ„ط¨</button><button class="mini-btn ${order.operationClosed ? 'gold' : 'danger'}" id="toggleOperationClosedBtn">${order.operationClosed ? 'ط¥ط¹ط§ط¯ط© ظپطھط­ ط§ظ„طھط´ط؛ظٹظ„' : 'ط¥ط؛ظ„ط§ظ‚ ط¯ظˆط±ط© ط§ظ„طھط´ط؛ظٹظ„'}</button><span class="status ${order.status}">${statusLabel(order.status)}</span></div></div><h3>&#1605;&#1604;&#1582;&#1589; &#1583;&#1608;&#1585;&#1577; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;</h3><div class="summary-grid"><div class="metric"><span>&#1573;&#1580;&#1605;&#1575;&#1604;&#1610; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;</span><strong>${order.totalRawOrdered}</strong></div><div class="metric"><span>&#1582;&#1585;&#1580; &#1605;&#1606; &#1575;&#1604;&#1606;&#1587;&#1610;&#1580; &#1573;&#1604;&#1609; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalRawReceived}</strong></div><div class="metric"><span>ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©</span><strong>${order.rawAtDyehouseAvailable}</strong></div><div class="metric"><span>ظ…ط¬ظ‡ط² ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†</span><strong>${order.totalFinishedReceived}</strong></div><div class="metric emphasis"><span>ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† / ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…</span><strong>${order.warehouseBalance}</strong></div><div class="metric"><span>&#1578;&#1605; &#1578;&#1587;&#1604;&#1610;&#1605;&#1607; &#1604;&#1604;&#1593;&#1605;&#1610;&#1604;</span><strong>${order.totalDeliveredToCustomer}</strong></div><div class="metric"><span>ظ…ط±طھط¬ط¹ ط®ط§ظ… ظ„ظ„ظ†ط³ظٹط¬</span><strong>${order.totalRawReturnedToWeaving}</strong></div><div class="metric"><span>ظ‡ط§ظ„ظƒ طھظ‚ط¯ظٹط±ظٹ</span><strong>${order.expectedWasteQuantity} (${order.expectedWastePercent}%)</strong></div><div class="metric"><span>ظ‡ط§ظ„ظƒ ظپط¹ظ„ظٹ</span><strong>${order.totalWaste} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div></div>${order.widthMode === 'multiple' ? `<div class="subsection"><div class="subsection-head"><h3>طھظˆط²ظٹط¹ ط§ظ„ط¹ط±ظˆط¶</h3></div>${order.widthDistributionMatches ? '' : `<div class="warning">طھظ†ط¨ظٹظ‡: ظ…ط¬ظ…ظˆط¹ ط§ظ„ط¹ط±ظˆط¶ ظ„ط§ ظٹط·ط§ط¨ظ‚ ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط·ظ„ط¨</div>`}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>ط§ظ„ط¨ظˆطµط©</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط§ظ„ظƒظ…ظٹط©</th></tr></thead><tbody>${order.widthLines.map((item)=>`<tr><td>${item.inch}</td><td>${item.width}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<div class="subsection"><div class="subsection-head"><div><h3>&#1582;&#1591;&#1577; &#1578;&#1608;&#1586;&#1610;&#1593; &#1575;&#1604;&#1571;&#1604;&#1608;&#1575;&#1606;</h3><p class="eyebrow">${order.totalAllocated} / ${order.totalRawReceived} ظƒط¬ظ… ظ…ظ† ط§ظ„ط®ط§ظ… ط§ظ„ط®ط§ط±ط¬ ظ„ظ„ظ…طµط¨ط؛ط©</p></div><button class="mini-btn" id="addAllocationBtn">+ &#1573;&#1590;&#1575;&#1601;&#1577; &#1604;&#1608;&#1606;</button></div><div class="allocation-bar"><div class="allocation-fill" style="width:${allocationPercent}%"></div></div>${order.allocationExceedsRaw ? `<div class="warning">ظƒظ…ظٹط© ط§ظ„طµط¨ط§ط؛ط© ط§ظ„ظ…ط®ط·ط·ط© ط£ظƒط¨ط± ظ…ظ† ظƒظ…ظٹط© ط§ظ„ط®ط§ظ… ط§ظ„ط®ط§ط±ط¬ ظ„ظ„ظ…طµط¨ط؛ط©</div>` : ''}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>&#1575;&#1604;&#1604;&#1608;&#1606;</th><th>&#1575;&#1604;&#1605;&#1582;&#1591;&#1591;</th><th>&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</th><th>&#1575;&#1604;&#1593;&#1585;&#1590;</th><th>&#1575;&#1604;&#1608;&#1586;&#1606; &#1605;&#1580;&#1607;&#1586;</th>${order.accessoryLines.length ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>&#1578;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604;&#1607;</th><th>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</th><th>ظ‡ط§ظ„ظƒ طھظ‚ط¯ظٹط±ظٹ</th><th>ظ‡ط§ظ„ظƒ ظپط¹ظ„ظٹ</th><th>ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${order.allocations.map((allocation)=>`<tr><td>${escapeHtml(allocation.color)}</td><td>${allocation.plannedQuantity}</td><td>${escapeHtml(allocation.dyehouse)}</td><td>${escapeHtml(allocationWidthLabel(order, allocation))}</td><td>${allocation.targetFinishedWeight}</td>${order.accessoryLines.length ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${allocation.expectedWasteQuantity || 0} (${allocation.expectedWastePercent || 0}%)</td><td>${allocation.wasteQuantity} (${formatNumber(actualWastePercentForDisplay(allocation), 1)}%)</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">&#1578;&#1593;&#1583;&#1610;&#1604;</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">&#1606;&#1602;&#1604; &#1605;&#1589;&#1576;&#1594;&#1577;</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">&#1581;&#1584;&#1601;</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>${inventorySection}<div class="batch-grid compact"><div class="batch-box"><h3>ط®ط±ظˆط¬ ط®ط§ظ…</h3><form class="batch-form" data-form="raw"><select name="movementKind" class="full"><option value="out">ط®ط±ظˆط¬ ط®ط§ظ… ظ„ظ„ظ…طµط¨ط؛ط©</option><option value="return">ط§ط±طھط¬ط§ط¹ ط®ط§ظ… ظ„ظ„ظ†ط³ظٹط¬</option></select><input name="date" type="date" required>${order.widthMode === 'multiple' ? `<select name="widthLineId" data-out-only><option value="">ط§ط®طھط± ط§ظ„ط¹ط±ط¶ ط¹ظ†ط¯ ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ…</option>${order.widthLines.map((item)=>`<option value="${item.id}">ط¨ظˆطµط© ${item.inch} - ط¹ط±ط¶ ${item.width} - ظƒظ…ظٹط© ${item.quantity}</option>`).join('')}</select>` : ''}<select name="allocationId" data-return-only class="field-hidden"><option value="">ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ظ…طµط¨ط؛ط© ظ„ظ„ظ…ط±طھط¬ط¹</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="ط§ظ„ظƒظ…ظٹط©" required><input name="supplier" placeholder="ظ…طµط¯ط± ط§ظ„ظ†ط³ظٹط¬" value="${escapeHtml(order.weavingSource)}"><input name="noteNumber" placeholder="ط±ظ‚ظ… ط¥ط°ظ†"><input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ"><label class="full batch-file-label" data-out-only><span>طµظˆط±ط© ط¥ط°ظ† ط§ظ„ط®ط§ظ…</span><input name="sourceDocumentFile" type="file" accept="image/*"></label><button class="mini-btn full">ط¥ط¶ط§ظپط© ط­ط±ظƒط©</button></form><div class="batch-list">${rawItems}</div></div>${order.accessoryLines.length ? `<div class="batch-box"><h3>ط®ط±ظˆط¬ ط¥ظƒط³ط³ظˆط§ط±</h3><form class="batch-form" data-form="accessory"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<input name="quantity" type="number" step="0.01" placeholder="ط§ظ„ظƒظ…ظٹط©" required><input name="noteNumber" placeholder="ط±ظ‚ظ… ط¥ط°ظ†"><input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ"><button class="mini-btn full">ط¥ط¶ط§ظپط© ط®ط±ظˆط¬</button></form><div class="batch-list">${accessoryItems}</div></div><div class="batch-box"><h3>ط§ط³طھظ„ط§ظ… ط¥ظƒط³ط³ظˆط§ط±</h3><form class="batch-form" data-form="accessoryReceived"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<select name="allocationId" required><option value="">ط§ط®طھط± ط§ظ„ظ„ظˆظ†</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="ط§ظ„ظƒظ…ظٹط© ط§ظ„ظ…ط³طھظ„ظ…ط©" required><input name="noteNumber" placeholder="ط±ظ‚ظ… ط¥ط°ظ†"><input class="full" name="notes" placeholder="ظ…ظ„ط§ط­ط¸ط§طھ"><button class="mini-btn full">ط¥ط¶ط§ظپط© ط§ط³طھظ„ط§ظ…</button></form><div class="batch-list">${accessoryReceivedItems}</div></div>` : ''}<div class="batch-box"><h3>ط§ط³طھظ„ط§ظ… ظ…ط¬ظ‡ط²</h3><form class="batch-form" data-form="production"><select name="allocationId"><option value="raw">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1573;&#1584;&#1606; &#1575;&#1604;&#1575;&#1587;&#1578;&#1604;&#1575;&#1605;"><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1575;&#1587;&#1578;&#1604;&#1575;&#1605;</button></form><div class="batch-list">${productionItems}</div></div><div class="batch-box"><h3>طھط³ظ„ظٹظ… ط¹ظ…ظٹظ„</h3><form class="batch-form" data-form="customer"><select name="movementKind" class="full"><option value="cloth">طھط³ظ„ظٹظ… ظ‚ظ…ط§ط´</option>${order.accessoryLines.length ? '<option value="accessory">طھط³ظ„ظٹظ… ط¥ظƒط³ط³ظˆط§ط±</option>' : ''}</select><select name="allocationId">${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required>${order.accessoryLines.length ? `<span data-accessory-only class="field-hidden">${accessoryTypeSelectHtml(order)}</span>` : ''}<input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class="batch-list">${customerItems}</div></div><div class="batch-box"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class="eyebrow">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class="batch-list">${transferItems}</div></div></div>`;
+  const inventorySection = `<div class="subsection stock-flow-section"><div class="subsection-head"><div><h3>رصيد المخزن الحالي</h3><p class="eyebrow">رصيد المخزن حسب التشغيل والتسليم</p></div></div><div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${stockRows}</tbody></table></div>${order.accessoryLines.length ? `<div class="table-wrap"><table class="allocation-table"><thead><tr><th>اللون</th><th>العرض</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${accessoryStockRows}</tbody></table></div>` : ''}</div>`;
+  refs.orderDetailsPanel.innerHTML = `<div class="section-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber)}</p><h2>${escapeHtml(order.customer)}</h2></div><div class="actions"><button class="mini-btn" id="editOrderBtn">تعديل الطلب</button><button class="mini-btn ${order.operationClosed ? 'gold' : 'danger'}" id="toggleOperationClosedBtn">${order.operationClosed ? 'إعادة فتح التشغيل' : 'إغلاق دورة التشغيل'}</button><span class="status ${order.status}">${statusLabel(order.status)}</span></div></div><h3>&#1605;&#1604;&#1582;&#1589; &#1583;&#1608;&#1585;&#1577; &#1575;&#1604;&#1578;&#1588;&#1594;&#1610;&#1604;</h3><div class="summary-grid"><div class="metric"><span>&#1573;&#1580;&#1605;&#1575;&#1604;&#1610; &#1575;&#1604;&#1582;&#1575;&#1605; &#1575;&#1604;&#1605;&#1591;&#1604;&#1608;&#1576;</span><strong>${order.totalRawOrdered}</strong></div><div class="metric"><span>&#1582;&#1585;&#1580; &#1605;&#1606; &#1575;&#1604;&#1606;&#1587;&#1610;&#1580; &#1573;&#1604;&#1609; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</span><strong>${order.totalRawReceived}</strong></div><div class="metric"><span>داخل المصبغة</span><strong>${order.rawAtDyehouseAvailable}</strong></div><div class="metric"><span>مجهز دخل المخزن</span><strong>${order.totalFinishedReceived}</strong></div><div class="metric emphasis"><span>رصيد المخزن / جاهز للتسليم</span><strong>${order.warehouseBalance}</strong></div><div class="metric"><span>&#1578;&#1605; &#1578;&#1587;&#1604;&#1610;&#1605;&#1607; &#1604;&#1604;&#1593;&#1605;&#1610;&#1604;</span><strong>${order.totalDeliveredToCustomer}</strong></div><div class="metric"><span>مرتجع خام للنسيج</span><strong>${order.totalRawReturnedToWeaving}</strong></div><div class="metric"><span>هالك تقديري</span><strong>${order.expectedWasteQuantity} (${order.expectedWastePercent}%)</strong></div><div class="metric"><span>هالك فعلي</span><strong>${order.totalWaste} (${formatNumber(order.totalWastePercent || 0, 1)}%)</strong></div></div>${order.widthMode === 'multiple' ? `<div class="subsection"><div class="subsection-head"><h3>توزيع العروض</h3></div>${order.widthDistributionMatches ? '' : `<div class="warning">تنبيه: مجموع العروض لا يطابق إجمالي الطلب</div>`}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${order.widthLines.map((item)=>`<tr><td>${item.inch}</td><td>${item.width}</td><td>${item.quantity}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<div class="subsection"><div class="subsection-head"><div><h3>&#1582;&#1591;&#1577; &#1578;&#1608;&#1586;&#1610;&#1593; &#1575;&#1604;&#1571;&#1604;&#1608;&#1575;&#1606;</h3><p class="eyebrow">${order.totalAllocated} / ${order.totalRawReceived} كجم من الخام الخارج للمصبغة</p></div><button class="mini-btn" id="addAllocationBtn">+ &#1573;&#1590;&#1575;&#1601;&#1577; &#1604;&#1608;&#1606;</button></div><div class="allocation-bar"><div class="allocation-fill" style="width:${allocationPercent}%"></div></div>${order.allocationExceedsRaw ? `<div class="warning">كمية الصباغة المخططة أكبر من كمية الخام الخارج للمصبغة</div>` : ''}<div class="table-wrap"><table class="allocation-table"><thead><tr><th>&#1575;&#1604;&#1604;&#1608;&#1606;</th><th>&#1575;&#1604;&#1605;&#1582;&#1591;&#1591;</th><th>&#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</th><th>&#1575;&#1604;&#1593;&#1585;&#1590;</th><th>&#1575;&#1604;&#1608;&#1586;&#1606; &#1605;&#1580;&#1607;&#1586;</th>${order.accessoryLines.length ? `<th>${accessoryTypesLabel(order)}</th>` : ''}<th>&#1578;&#1605; &#1578;&#1588;&#1594;&#1610;&#1604;&#1607;</th><th>&#1583;&#1582;&#1604; &#1575;&#1604;&#1605;&#1582;&#1586;&#1606;</th><th>هالك تقديري</th><th>هالك فعلي</th><th>إجراء</th></tr></thead><tbody>${order.allocations.map((allocation)=>`<tr><td>${escapeHtml(allocation.color)}</td><td>${allocation.plannedQuantity}</td><td>${escapeHtml(allocation.dyehouse)}</td><td>${escapeHtml(allocationWidthLabel(order, allocation))}</td><td>${allocation.targetFinishedWeight}</td>${order.accessoryLines.length ? `<td>${allocation.accessoryQuantity}</td>` : ''}<td>${allocation.sentToDyehouse}</td><td>${allocation.finishedReceived}</td><td>${allocation.expectedWasteQuantity || 0} (${allocation.expectedWastePercent || 0}%)</td><td>${allocation.wasteQuantity} (${formatNumber(actualWastePercentForDisplay(allocation), 1)}%)</td><td><div class="batch-actions"><button class="mini-btn" data-edit-allocation="${allocation.id}">&#1578;&#1593;&#1583;&#1610;&#1604;</button><button class="mini-btn" data-transfer-allocation="${allocation.id}">&#1606;&#1602;&#1604; &#1605;&#1589;&#1576;&#1594;&#1577;</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-delete-allocation="${allocation.id}">&#1581;&#1584;&#1601;</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>${inventorySection}<div class="batch-grid compact"><div class="batch-box"><h3>خروج خام</h3><form class="batch-form" data-form="raw"><select name="movementKind" class="full"><option value="out">خروج خام للمصبغة</option><option value="return">ارتجاع خام للنسيج</option></select><input name="date" type="date" required>${order.widthMode === 'multiple' ? `<select name="widthLineId" data-out-only><option value="">اختر العرض عند خروج الخام</option>${order.widthLines.map((item)=>`<option value="${item.id}">بوصة ${item.inch} - عرض ${item.width} - كمية ${item.quantity}</option>`).join('')}</select>` : ''}<select name="allocationId" data-return-only class="field-hidden"><option value="">اختر اللون / المصبغة للمرتجع</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="supplier" placeholder="مصدر النسيج" value="${escapeHtml(order.weavingSource)}"><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><label class="full batch-file-label" data-out-only><span>صورة إذن الخام</span><input name="sourceDocumentFile" type="file" accept="image/*"></label><button class="mini-btn full">إضافة حركة</button></form><div class="batch-list">${rawItems}</div></div>${order.accessoryLines.length ? `<div class="batch-box"><h3>خروج إكسسوار</h3><form class="batch-form" data-form="accessory"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<input name="quantity" type="number" step="0.01" placeholder="الكمية" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة خروج</button></form><div class="batch-list">${accessoryItems}</div></div><div class="batch-box"><h3>استلام إكسسوار</h3><form class="batch-form" data-form="accessoryReceived"><input name="date" type="date" required>${accessoryTypeSelectHtml(order)}<select name="allocationId" required><option value="">اختر اللون</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="quantity" type="number" step="0.01" placeholder="الكمية المستلمة" required><input name="noteNumber" placeholder="رقم إذن"><input class="full" name="notes" placeholder="ملاحظات"><button class="mini-btn full">إضافة استلام</button></form><div class="batch-list">${accessoryReceivedItems}</div></div>` : ''}<div class="batch-box"><h3>استلام مجهز</h3><form class="batch-form" data-form="production"><select name="allocationId"><option value="raw">&#1575;&#1582;&#1578;&#1585; &#1575;&#1604;&#1604;&#1608;&#1606; / &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</option>${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationOptionLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required><input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577; &#1575;&#1604;&#1605;&#1587;&#1578;&#1604;&#1605;&#1577;" required><input name="noteNumber" placeholder="&#1585;&#1602;&#1605; &#1573;&#1584;&#1606; &#1575;&#1604;&#1575;&#1587;&#1578;&#1604;&#1575;&#1605;"><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1575;&#1587;&#1578;&#1604;&#1575;&#1605;</button></form><div class="batch-list">${productionItems}</div></div><div class="batch-box"><h3>تسليم عميل</h3><form class="batch-form" data-form="customer"><select name="movementKind" class="full"><option value="cloth">تسليم قماش</option>${order.accessoryLines.length ? '<option value="accessory">تسليم إكسسوار</option>' : ''}</select><select name="allocationId">${order.allocations.map((allocation)=>`<option value="${allocation.id}">${allocationColorLabel(order, allocation)}</option>`).join('')}</select><input name="date" type="date" required>${order.accessoryLines.length ? `<span data-accessory-only class="field-hidden">${accessoryTypeSelectHtml(order)}</span>` : ''}<input name="quantity" type="number" step="0.01" placeholder="&#1575;&#1604;&#1603;&#1605;&#1610;&#1577;" required><input class="full" name="notes" placeholder="&#1605;&#1604;&#1575;&#1581;&#1592;&#1575;&#1578;"><button class="mini-btn full">&#1573;&#1590;&#1575;&#1601;&#1577; &#1581;&#1585;&#1603;&#1577;</button></form><div class="batch-list">${customerItems}</div></div><div class="batch-box"><h3>&#1578;&#1581;&#1608;&#1610;&#1604;&#1575;&#1578; &#1575;&#1604;&#1605;&#1589;&#1576;&#1594;&#1577;</h3><p class="eyebrow">&#1578;&#1587;&#1580;&#1610;&#1604; &#1571;&#1610; &#1606;&#1602;&#1604; &#1605;&#1606; &#1605;&#1589;&#1576;&#1594;&#1577; &#1604;&#1571;&#1582;&#1585;&#1609; &#1576;&#1583;&#1608;&#1606; &#1601;&#1602;&#1583;&#1575;&#1606; &#1575;&#1604;&#1578;&#1575;&#1585;&#1610;&#1582;.</p><div class="batch-list">${transferItems}</div></div></div>`;
   const hasMixedClothAndAccessory = order.accessoryLines.length > 0 && Number(order.totalRawOrdered || order.totalRawQuantity || 0) > 0;
   refs.orderDetailsPanel.querySelector('.section-head')?.insertAdjacentHTML('afterend', order360Html(order));
   if (hasMixedClothAndAccessory) {
-    const combinedInventorySectionHtml = `<div class="subsection stock-flow-section"><div class="subsection-head"><div><h3>ط±طµظٹط¯ ط§ظ„ظ‚ظ…ط§ط´ ظˆط§ظ„ط¥ظƒط³ط³ظˆط§ط±</h3><p class="eyebrow">ظ…طھط§ط¨ط¹ط© ظ…ظˆط­ط¯ط©: ط§ظ„ظ‚ظ…ط§ط´ ظˆظ…ط¹ظ‡ ط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط§ظ„ظ…ط±طھط¨ط· ط¨ظƒظ„ ظ„ظˆظ†.</p></div></div><div class="table-wrap"><table class="allocation-table stock-flow-table"><thead><tr><th>ط§ظ„ظ„ظˆظ†</th><th>ظ…ط±ط³ظ„ ظ„ظ„ظ…طµط¨ط؛ط©</th><th>ط¯ط®ظ„ ط§ظ„ظ…ط®ط²ظ†</th><th>طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„</th><th>ط§ظ„ط±طµظٹط¯ ط§ظ„ط­ط§ظ„ظٹ</th></tr></thead><tbody>${stockFlowRows}</tbody></table></div></div>`;
+    const combinedInventorySectionHtml = `<div class="subsection stock-flow-section"><div class="subsection-head"><div><h3>رصيد القماش والإكسسوار</h3><p class="eyebrow">متابعة موحدة: القماش ومعه الإكسسوار المرتبط بكل لون.</p></div></div><div class="table-wrap"><table class="allocation-table stock-flow-table"><thead><tr><th>اللون</th><th>مرسل للمصبغة</th><th>دخل المخزن</th><th>تسليم العميل</th><th>الرصيد الحالي</th></tr></thead><tbody>${stockFlowRows}</tbody></table></div></div>`;
     const batchGrid = refs.orderDetailsPanel.querySelector('.batch-grid.compact');
     const oldInventorySection = batchGrid?.previousElementSibling;
     if (oldInventorySection?.classList?.contains('subsection')) {
@@ -5710,7 +5710,7 @@ function renderDetails() {
     }
   }
   if (Number(order.gluingBalance || 0) > 0 || Number(order.gluedProductBalance || 0) > 0) {
-    refs.orderDetailsPanel.querySelector('.summary-grid')?.insertAdjacentHTML('beforeend', `<div class="metric"><span>ظˆط§ظ‚ظپ ظپظٹ ط¯ظ…ط¬ ط§ظ„ط®ط§ظ…ط§طھ</span><strong>${formatNumber(order.gluingBalance || 0)}</strong></div><div class="metric"><span>ظ…ظ†طھط¬ ظ…ط¯ظ…ط¬ ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…</span><strong>${formatNumber(order.gluedProductBalance || 0)}</strong></div>`);
+    refs.orderDetailsPanel.querySelector('.summary-grid')?.insertAdjacentHTML('beforeend', `<div class="metric"><span>واقف في دمج الخامات</span><strong>${formatNumber(order.gluingBalance || 0)}</strong></div><div class="metric"><span>منتج مدمج جاهز للتسليم</span><strong>${formatNumber(order.gluedProductBalance || 0)}</strong></div>`);
   }
   consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
@@ -5721,10 +5721,10 @@ function renderDetails() {
   });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"] select[name="movementKind"]').forEach((select) => {
     if (![...select.options].some((option)=>option.value === 'clothReturn')) {
-      select.options.add(new Option('ظ…ط±طھط¬ط¹ ظ‚ظ…ط§ط´ ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„', 'clothReturn'), 1);
+      select.options.add(new Option('مرتجع قماش من العميل', 'clothReturn'), 1);
     }
     if (order.accessoryLines.length && ![...select.options].some((option)=>option.value === 'accessoryReturn')) {
-      select.options.add(new Option('ظ…ط±طھط¬ط¹ ط¥ظƒط³ط³ظˆط§ط± ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„', 'accessoryReturn'));
+      select.options.add(new Option('مرتجع إكسسوار من العميل', 'accessoryReturn'));
     }
   });
   refs.orderDetailsPanel.querySelectorAll('form[data-form="customer"]').forEach(updateCustomerDeliveryFields);
@@ -5744,7 +5744,7 @@ async function toggleOperationClosed() {
     const backendCustomer = await ensureBackendCustomer(updatedOrder.customer);
     const savedOrder = await putBackend(`/orders/${updatedOrder.id}`, orderToApi(updatedOrder, backendCustomer));
     if (!savedOrder) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط­ط§ظ„ط© ط¯ظˆط±ط© ط§ظ„طھط´ط؛ظٹظ„ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ حالة دورة التشغيل في قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
   }
@@ -5777,7 +5777,7 @@ function fillOrderForm(order) {
 async function addOrder(event) {
   event.preventDefault();
   const widthLines = refs.widthMode.value === 'multiple' ? readWidthLinesFromEditor() : [];
-  if (refs.widthMode.value === 'multiple' && widthLines.length === 0) { alert('ط£ط¶ظپ ط¹ط±ط¶ظ‹ط§ ظˆط§ط­ط¯ظ‹ط§ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„ ط¹ظ†ط¯ ط§ط®طھظٹط§ط± ط£ظƒط«ط± ظ…ظ† ط¹ط±ط¶.'); return; }
+  if (refs.widthMode.value === 'multiple' && widthLines.length === 0) { alert('أضف عرضًا واحدًا على الأقل عند اختيار أكثر من عرض.'); return; }
   const currentOrder = editingOrderId ? orders.find((order)=>order.id === editingOrderId) : null;
   const accessoryLines = readAccessoryLinesFromEditor();
   const firstAccessory = accessoryLines[0] || {};
@@ -5795,7 +5795,7 @@ async function addOrder(event) {
   const groupedSourcePricingId = hasGroupedOrderItems ? payload.pricingId : '';
   if (hasGroupedOrderItems) {
     const incomplete = groupedItems.find((item)=>!item.fabricType || !(item.totalRawQuantity > 0));
-    if (incomplete) { alert('ط±ط§ط¬ط¹ ط£طµظ†ط§ظپ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط¬ظ…ط¹: ظƒظ„ طµظ†ظپ ظٹط¬ط¨ ط£ظ† ظٹط­طھظˆظٹ ط¹ظ„ظ‰ ط§ط³ظ… طµظ†ظپ ظˆظƒظ…ظٹط©.'); return; }
+    if (incomplete) { alert('راجع أصناف الطلب المجمع: كل صنف يجب أن يحتوي على اسم صنف وكمية.'); return; }
   }
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
@@ -5815,11 +5815,11 @@ async function addOrder(event) {
     });
     const savedOrder = await putBackend(`/orders/${editingOrderId}`, orderToApi(updatedOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ طھط¹ط¯ظٹظ„ ط§ظ„ط·ظ„ط¨ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الطلب في قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
     if (!(await verifyOrderPersisted(editingOrderId, payload))) {
-      await rollbackAfterBackendWriteFailure('طھظ… ط¥ط±ط³ط§ظ„ طھط¹ط¯ظٹظ„ ط§ظ„ط·ظ„ط¨ ظ„ظƒظ† ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±ط§طھ ظ„ظ… طھط±ط¬ط¹ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تم إرسال تعديل الطلب لكن بيانات الإكسسوارات لم ترجع من قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
     const changedAllocations = updatedAllocations.filter((allocation) => {
@@ -5829,7 +5829,7 @@ async function addOrder(event) {
     for (const allocation of changedAllocations) {
       const savedAllocation = await putBackend(`/allocations/${allocation.id}`, allocationToApi(allocation));
       if (backendSaveRequired && !savedAllocation) {
-        await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ ط§ظ„ط·ظ„ط¨طŒ ظ„ظƒظ† طھط¹ط°ط± طھط­ط¯ظٹط« ظ…طµط¨ط؛ط© ط§ظ„ط£ظ„ظˆط§ظ† ط§ظ„ظ…ط±طھط¨ط·ط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„ ظƒط§ظ…ظ„ظ‹ط§.');
+        await rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث مصبغة الألوان المرتبطة في قاعدة البيانات. لم يتم اعتماد التعديل كاملًا.');
         return;
       }
     }
@@ -5866,16 +5866,16 @@ async function addOrder(event) {
       try {
         savedGroupedOrders = await postBackendStrict('/orders/bulk', { orders: groupedOrders.map((order)=>orderToApi(order, backendCustomer)) });
       } catch (error) {
-        alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط¬ظ…ط¹.');
+        alert(error.message || 'تعذر حفظ الطلب المجمع.');
         return;
       }
       if (backendSaveRequired && (!Array.isArray(savedGroupedOrders) || savedGroupedOrders.length !== groupedOrders.length)) {
-        await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط¬ظ…ط¹ ط¨ط§ظ„ظƒط§ظ…ظ„ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط³ط¬ظٹظ„.');
+        await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب المجمع بالكامل في قاعدة البيانات. لم يتم اعتماد التسجيل.');
         return;
       }
       const pricingMarked = await markPricingConverted(payload.orderNumber, savedGroupedOrders[0]?.id || groupedOrders[0]?.id, groupedSourcePricingId);
       if (backendSaveRequired && !pricingMarked) {
-        await rollbackAfterBackendWriteFailure('طھط¹ط°ط± طھط­ط¯ظٹط« ط­ط§ظ„ط© ط§ظ„طھط³ط¹ظٹط±ط© ط¨ط¹ط¯ ط­ظپط¸ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط¬ظ…ط¹. ط±ط§ط¬ط¹ ط§ظ„ط·ظ„ط¨ ظˆط§ظ„طھط³ط¹ظٹط±ط© ظ‚ط¨ظ„ ط§ظ„ظ…طھط§ط¨ط¹ط©.');
+        await rollbackAfterBackendWriteFailure('تعذر تحديث حالة التسعيرة بعد حفظ الطلب المجمع. راجع الطلب والتسعيرة قبل المتابعة.');
         return;
       }
       selectedOrderId = savedGroupedOrders[0]?.id || groupedOrders[0]?.id || null;
@@ -5891,17 +5891,17 @@ async function addOrder(event) {
     const newOrder = { id:uid(), status:'pending', ...payload };
     const savedOrder = await postBackend('/orders', orderToApi(newOrder, backendCustomer));
     if (backendSaveRequired && !savedOrder) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط·ظ„ط¨ ط§ظ„ط¬ط¯ظٹط¯ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط·ظ„ط¨.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب الجديد في قاعدة البيانات. لم يتم اعتماد الطلب.');
       return;
     }
     if (!(await verifyOrderPersisted(savedOrder.id || newOrder.id, payload))) {
-      await rollbackAfterBackendWriteFailure('طھظ… ط¥ط±ط³ط§ظ„ ط§ظ„ط·ظ„ط¨ ظ„ظƒظ† ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±ط§طھ ظ„ظ… طھط±ط¬ط¹ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط·ظ„ط¨.');
+      await rollbackAfterBackendWriteFailure('تم إرسال الطلب لكن بيانات الإكسسوارات لم ترجع من قاعدة البيانات. لم يتم اعتماد الطلب.');
       return;
     }
     selectedOrderId = savedOrder.id || newOrder.id;
     const pricingMarked = await markPricingConverted(payload.orderNumber, newOrder.id, payload.pricingId);
     if (backendSaveRequired && !pricingMarked) {
-      await rollbackAfterBackendWriteFailure('طھظ… ط­ظپط¸ ط§ظ„ط·ظ„ط¨طŒ ظ„ظƒظ† طھط¹ط°ط± طھط­ط¯ظٹط« ط­ط§ظ„ط© ط§ظ„طھط³ط¹ظٹط±ط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ط±ط§ط¬ط¹ ط§ظ„ط·ظ„ط¨ ظˆط§ظ„طھط³ط¹ظٹط±ط© ظ‚ط¨ظ„ ط§ظ„ظ…طھط§ط¨ط¹ط©.');
+      await rollbackAfterBackendWriteFailure('تم حفظ الطلب، لكن تعذر تحديث حالة التسعيرة في قاعدة البيانات. راجع الطلب والتسعيرة قبل المتابعة.');
       return;
     }
   }
@@ -5927,71 +5927,71 @@ async function addBatch(event) {
   if (type === 'raw') {
     const currentOrder = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
     if (data.movementKind === 'return') {
-      if (!data.allocationId) { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ظ…طµط¨ط؛ط© ظ‚ط¨ظ„ طھط³ط¬ظٹظ„ ظ…ط±طھط¬ط¹ ط§ظ„ط®ط§ظ….'); return; }
+      if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; }
       backendResult = await postBackend('/batches/raw-return', { ...batchToApi(data), reason:data.reason || data.notes || '' });
     } else {
-      if (rawDispatchOptions(currentOrder).length && !data.widthLineId) { alert('ط§ط®طھط± ط§ظ„ط¹ط±ط¶ / ط§ظ„ط¨ظ†ط¯ ط§ظ„ظ…ط±طھط¨ط· ظ‚ط¨ظ„ طھط³ط¬ظٹظ„ ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ….'); return; }
+      if (rawDispatchOptions(currentOrder).length && !data.widthLineId) { alert('اختر العرض / البند المرتبط قبل تسجيل خروج الخام.'); return; }
       if (rawDocumentFile) data.sourceDocument = { type:'raw-batch-image', image: await resizeSlipImage(rawDocumentFile) };
       backendResult = await postBackend('/batches/dyehouse', batchToApi(data));
     }
   }
   if (type === 'rawReturn') {
-    if (!data.allocationId) { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ظ…طµط¨ط؛ط© ظ‚ط¨ظ„ طھط³ط¬ظٹظ„ ظ…ط±طھط¬ط¹ ط§ظ„ط®ط§ظ….'); return; }
+    if (!data.allocationId) { alert('اختر اللون / المصبغة قبل تسجيل مرتجع الخام.'); return; }
     backendResult = await postBackend('/batches/raw-return', { ...batchToApi(data), reason:data.reason || data.notes || '' });
   }
   if (type === 'accessory') {
-    if (!data.accessoryType) { alert('ط§ط®طھط± ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط£ظˆظ„ظ‹ط§.'); return; }
+    if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
     data.movement = 'sent'; delete data.allocationId;
     backendResult = await postBackend('/batches/accessory', batchToApi(data));
   }
   if (type === 'accessoryReceived') {
-    if (!data.accessoryType) { alert('ط§ط®طھط± ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط£ظˆظ„ظ‹ط§.'); return; }
-    if (!data.allocationId) { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط±طھط¨ط· ط¨ط§ط³طھظ„ط§ظ… ط§ظ„ط¥ظƒط³ط³ظˆط§ط±.'); return; }
+    if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
+    if (!data.allocationId) { alert('اختر اللون المرتبط باستلام الإكسسوار.'); return; }
     data.movement = 'received';
     backendResult = await postBackend('/batches/accessory', batchToApi(data));
   }
   if (type === 'production') {
-    if (!data.allocationId || data.allocationId === 'raw') { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ظ…طµط¨ط؛ط© ظ‚ط¨ظ„ طھط³ط¬ظٹظ„ ط§ط³طھظ„ط§ظ… ط§ظ„ظ…ط¬ظ‡ط².'); return; }
+    if (!data.allocationId || data.allocationId === 'raw') { alert('اختر اللون / المصبغة قبل تسجيل استلام المجهز.'); return; }
     backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'gluing') {
     data.movement = ['return', 'received', 'customer'].includes(data.movementKind) ? data.movementKind : 'sent';
     if (data.movement === 'sent' || data.movement === 'return') {
-      if (!data.allocationId) { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ط®ط§ظ…ط© ط§ظ„ظ…طµط¯ط± ظ‚ط¨ظ„ طھط³ط¬ظٹظ„ ط­ط±ظƒط© ط§ظ„ط¯ظ…ط¬.'); return; }
-      if (!String(data.noteNumber || '').trim()) { alert('ط§ظƒطھط¨ ط±ظ‚ظ… ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬ ط­طھظ‰ طھط¸ظ‡ط± ط§ظ„ط®ط§ظ…ط© ط¯ط§ط®ظ„ ظ‚ط§ط¦ظ…ط© ط¯ظ…ط¬ ط§ظ„ط®ط§ظ…ط§طھ ط§ظ„ظ…ط³طھظ‚ظ„ط©.'); return; }
+      if (!data.allocationId) { alert('اختر اللون / الخامة المصدر قبل تسجيل حركة الدمج.'); return; }
+      if (!String(data.noteNumber || '').trim()) { alert('اكتب رقم عملية الدمج حتى تظهر الخامة داخل قائمة دمج الخامات المستقلة.'); return; }
       const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
       const delivered = sum(customerBatches.filter((batch)=>batch.allocationId===data.allocationId));
       const sentToGluing = sum(gluingBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement === 'sent'));
       const returnedFromGluing = sum(gluingBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement === 'return'));
       if (data.movement === 'sent') {
         const available = Math.max(Number(allocation.finishedReceived || 0) - delivered - sentToGluing + returnedFromGluing, 0);
-        if (data.quantity > available) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„ط¯ظ…ط¬ ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ظ…طھط§ط­'].filter(Boolean).join(' - ');
+        if (data.quantity > available) data.notes = [data.notes, 'تنبيه: كمية الدمج أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - ');
       } else {
         const availableAtGluing = Math.max(sentToGluing - returnedFromGluing, 0);
-        if (data.quantity > availableAtGluing) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ط§ظ„ظ…ط±طھط¬ط¹ ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„ط®ط§ظ…ط© ظپظٹ ط§ظ„ط¯ظ…ط¬'].filter(Boolean).join(' - ');
+        if (data.quantity > availableAtGluing) data.notes = [data.notes, 'تنبيه: المرتجع أكبر من رصيد الخامة في الدمج'].filter(Boolean).join(' - ');
       }
     } else {
       delete data.allocationId;
-      if (!data.outputName) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬.'); return; }
-      if (data.movement === 'customer' && !data.customerName) { alert('ط§ظƒطھط¨ ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„ ظ‚ط¨ظ„ طھط³ظ„ظٹظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬.'); return; }
+      if (!data.outputName) { alert('اكتب اسم المنتج الناتج.'); return; }
+      if (data.movement === 'customer' && !data.customerName) { alert('اكتب اسم العميل قبل تسليم المنتج الناتج.'); return; }
       if (data.movement === 'customer') {
         const received = sum(gluingBatches.filter((batch)=>batch.orderId===selectedOrderId && batch.movement === 'received' && normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
         const delivered = sum(gluingBatches.filter((batch)=>batch.orderId===selectedOrderId && batch.movement === 'customer' && normalizeForCompare(batch.outputName) === normalizeForCompare(data.outputName)));
-        if (data.quantity > Math.max(received - delivered, 0)) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„طھط³ظ„ظٹظ… ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬'].filter(Boolean).join(' - ');
+        if (data.quantity > Math.max(received - delivered, 0)) data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المنتج الناتج'].filter(Boolean).join(' - ');
       }
     }
     backendResult = await postBackend('/batches/gluing', batchToApi(data));
   }
   if (type === 'finished') {
     const allocation = calculateAllocation(allocations.find((item)=>item.id===data.allocationId));
-    if (data.quantity > allocation.remainingAtDyehouse) { data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ط§ظ„ظƒظ…ظٹط© ط§ظ„ظ…ط³طھظ„ظ…ط© ط£ظƒط¨ط± ظ…ظ† ط§ظ„ظ…طھط¨ظ‚ظٹ ط¯ط§ط®ظ„ ط§ظ„ظ…طµط¨ط؛ط©'].filter(Boolean).join(' - '); }
+    if (data.quantity > allocation.remainingAtDyehouse) { data.notes = [data.notes, 'تنبيه: الكمية المستلمة أكبر من المتبقي داخل المصبغة'].filter(Boolean).join(' - '); }
     data.finishedWidth = +data.finishedWidth; data.finishedWeight = +data.finishedWeight;
     backendResult = await postBackend('/batches/finished', batchToApi(data));
   }
   if (type === 'customer') {
     if (data.movementKind === 'accessory' || data.movementKind === 'accessoryReturn') {
-      if (!data.accessoryType) { alert('ط§ط®طھط± ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط£ظˆظ„ظ‹ط§.'); return; }
-      if (!data.allocationId) { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط±طھط¨ط· ط¨طھط³ظ„ظٹظ… ط§ظ„ط¥ظƒط³ط³ظˆط§ط±.'); return; }
+      if (!data.accessoryType) { alert('اختر نوع الإكسسوار أولًا.'); return; }
+      if (!data.allocationId) { alert('اختر اللون المرتبط بتسليم الإكسسوار.'); return; }
       const isAccessoryReturn = data.movementKind === 'accessoryReturn';
       data.movement = 'customer';
       const receivedAccessory = sum(accessoryBatches.filter((batch)=>batch.allocationId===data.allocationId && batch.movement==='received' && batch.accessoryType===data.accessoryType));
@@ -5999,10 +5999,10 @@ async function addBatch(event) {
       const availableAccessory = Math.max(receivedAccessory - deliveredAccessory, 0);
       if (isAccessoryReturn) {
         const returnQuantity = Math.abs(Number(data.quantity || 0));
-        if (returnQuantity > Math.max(deliveredAccessory, 0)) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ظ…ط±طھط¬ط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط£ظƒط¨ط± ظ…ظ† طµط§ظپظٹ ط§ظ„ظ…ط³ظ„ظ… ظ„ظ„ط¹ظ…ظٹظ„'].filter(Boolean).join(' - ');
+        if (returnQuantity > Math.max(deliveredAccessory, 0)) data.notes = [data.notes, 'تنبيه: كمية مرتجع الإكسسوار أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
         data.quantity = -returnQuantity;
-        data.notes = [data.notes, 'ظ…ط±طھط¬ط¹ ط¥ظƒط³ط³ظˆط§ط± ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„'].filter(Boolean).join(' - ');
-      } else if (data.quantity > availableAccessory) { data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط§ظ„ظ…ط³ظ„ظ…ط© ط£ظƒط¨ط± ظ…ظ† ط§ظ„ط±طµظٹط¯ ط§ظ„ظ…طھط§ط­'].filter(Boolean).join(' - '); }
+        data.notes = [data.notes, 'مرتجع إكسسوار من العميل'].filter(Boolean).join(' - ');
+      } else if (data.quantity > availableAccessory) { data.notes = [data.notes, 'تنبيه: كمية الإكسسوار المسلمة أكبر من الرصيد المتاح'].filter(Boolean).join(' - '); }
       backendResult = await postBackend('/batches/accessory', batchToApi(data));
     } else {
       const isCustomerReturn = data.movementKind === 'clothReturn';
@@ -6011,15 +6011,15 @@ async function addBatch(event) {
       const warehouseAvailable = Math.max(allocation.finishedReceived - alreadyDelivered, 0);
       if (isCustomerReturn) {
         const returnQuantity = Math.abs(Number(data.quantity || 0));
-        if (returnQuantity > Math.max(alreadyDelivered, 0)) data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„ظ…ط±طھط¬ط¹ ط£ظƒط¨ط± ظ…ظ† طµط§ظپظٹ ط§ظ„ظ…ط³ظ„ظ… ظ„ظ„ط¹ظ…ظٹظ„'].filter(Boolean).join(' - ');
+        if (returnQuantity > Math.max(alreadyDelivered, 0)) data.notes = [data.notes, 'تنبيه: كمية المرتجع أكبر من صافي المسلم للعميل'].filter(Boolean).join(' - ');
         data.quantity = -returnQuantity;
-        data.notes = [data.notes, 'ظ…ط±طھط¬ط¹ ظ…ظ† ط§ظ„ط¹ظ…ظٹظ„'].filter(Boolean).join(' - ');
-      } else if (data.quantity > warehouseAvailable) { data.notes = [data.notes, 'طھظ†ط¨ظٹظ‡: ظƒظ…ظٹط© ط§ظ„طھط³ظ„ظٹظ… ط£ظƒط¨ط± ظ…ظ† ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ظ…طھط§ط­'].filter(Boolean).join(' - '); }
+        data.notes = [data.notes, 'مرتجع من العميل'].filter(Boolean).join(' - ');
+      } else if (data.quantity > warehouseAvailable) { data.notes = [data.notes, 'تنبيه: كمية التسليم أكبر من رصيد المخزن المتاح'].filter(Boolean).join(' - '); }
       backendResult = await postBackend('/batches/customer', batchToApi(data));
     }
   }
   if (backendSaveRequired && !backendResult) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط­ط±ظƒط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط±ظƒط©.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ الحركة في قاعدة البيانات. لم يتم اعتماد الحركة.');
     return;
   }
   event.target.reset();
@@ -6050,15 +6050,15 @@ function combinedMovementConfig(source) {
   return {
     key: movementKey,
     title: {
-      dyehouse: 'ط£ظ…ط± طµط±ظپ ظ„ظ„ظ…طµط¨ط؛ط©',
-      finished: 'ط£ظ…ط± ط§ط³طھظ„ط§ظ… ظ…ظ† ط§ظ„ظ…طµط¨ط؛ط©',
-      customer: 'ط£ظ…ط± طھط³ظ„ظٹظ… ظ„ظ„ط¹ظ…ظٹظ„',
-    }[movementKey] || 'ط¥ط¯ط®ط§ظ„ ط¬ظ…ط§ط¹ظٹ',
+      dyehouse: 'أمر صرف للمصبغة',
+      finished: 'أمر استلام من المصبغة',
+      customer: 'أمر تسليم للعميل',
+    }[movementKey] || 'إدخال جماعي',
     description: {
-      dyehouse: 'ط£ط¯ط®ظ„ ط§ظ„ظ‚ظ…ط§ط´ ط§ظ„ط®ط§ط±ط¬ ظ„ظ„ظ…طµط¨ط؛ط© ظˆط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط§ظ„ظ…طµط±ظˆظپ ظپظٹ ظ†ظپط³ ط§ظ„ط¥ط°ظ†.',
-      finished: 'ط£ط¯ط®ظ„ ط§ظ„ظ‚ظ…ط§ط´ ط§ظ„ظ…ط¬ظ‡ط² ط§ظ„ظ…ط³طھظ„ظ… ظˆط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط§ظ„ظ…ط³طھظ„ظ… ظپظٹ ظ†ظپط³ ط§ظ„ط¥ط°ظ†.',
-      customer: 'ط£ط¯ط®ظ„ ط§ظ„ظ‚ظ…ط§ط´ ظˆط§ظ„ط¥ظƒط³ط³ظˆط§ط± ط§ظ„ظ…ط³ظ„ظ… ظ„ظ„ط¹ظ…ظٹظ„ ظپظٹ ظ†ظپط³ ط§ظ„ط¥ط°ظ†.',
-    }[movementKey] || 'ط§ظƒطھط¨ ط§ظ„ظƒظ…ظٹط§طھ ط§ظ„ظ…ط·ظ„ظˆط¨ط© ظˆط§طھط±ظƒ ط§ظ„طµظپظˆظپ ط§ظ„ظپط§ط±ط؛ط© ط¨ط¯ظˆظ† ط­ظپط¸.',
+      dyehouse: 'أدخل القماش الخارج للمصبغة والإكسسوار المصروف في نفس الإذن.',
+      finished: 'أدخل القماش المجهز المستلم والإكسسوار المستلم في نفس الإذن.',
+      customer: 'أدخل القماش والإكسسوار المسلم للعميل في نفس الإذن.',
+    }[movementKey] || 'اكتب الكميات المطلوبة واترك الصفوف الفارغة بدون حفظ.',
     clothMovement: {
       dyehouse: 'rawOut',
       finished: 'finished',
@@ -6094,8 +6094,8 @@ function combinedMovementClothRows(order, movement) {
     });
     return [...groups.values()].map((group) => {
       const available = Math.max(group.planned - group.sent, 0);
-      const colorLabel = group.colors.length > 1 ? 'ظƒظ„ ط§ظ„ط£ظ„ظˆط§ظ†' : (group.colors[0] || 'ظƒظ„ ط§ظ„ط£ظ„ظˆط§ظ†');
-      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td>ظƒظ„ ط§ظ„ط¹ط±ظˆط¶</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
+      const colorLabel = group.colors.length > 1 ? 'كل الألوان' : (group.colors[0] || 'كل الألوان');
+      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td>كل العروض</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
     }).join('');
   }
   return order.allocations.map((allocation)=>{
@@ -6119,16 +6119,16 @@ function accessoryRowsForCombinedMovement(order, config) {
 
 function bulkExtraRawRowHtml(dyehouse = '') {
   return `<tr data-bulk-extra-raw-row>
-    <td><input data-bulk-extra-raw-label value="ط®ط§ظ… ط¥ط¶ط§ظپظٹ" placeholder="ط§ظ„ط¨ظٹط§ظ†"></td>
-    <td><input data-bulk-extra-raw-dyehouse value="${escapeHtml(dyehouse || '')}" placeholder="ط§ظ„ظ…طµط¨ط؛ط©"></td>
-    <td>ظƒظ„ ط§ظ„ط¹ط±ظˆط¶</td>
+    <td><input data-bulk-extra-raw-label value="خام إضافي" placeholder="البيان"></td>
+    <td><input data-bulk-extra-raw-dyehouse value="${escapeHtml(dyehouse || '')}" placeholder="المصبغة"></td>
+    <td>كل العروض</td>
     <td>-</td>
-    <td><div class="inline-control-row"><input type="number" step="0.01" data-bulk-extra-raw-quantity placeholder="0"><button type="button" class="mini-btn danger" data-remove-bulk-extra-raw>ط­ط°ظپ</button></div></td>
+    <td><div class="inline-control-row"><input type="number" step="0.01" data-bulk-extra-raw-quantity placeholder="0"><button type="button" class="mini-btn danger" data-remove-bulk-extra-raw>حذف</button></div></td>
   </tr>`;
 }
 
 function bulkNoteNumberFieldHtml(value = '') {
-  return `<label data-bulk-note-row><span>ط±ظ‚ظ… ط¥ط°ظ†</span><div class="inline-control-row"><input data-bulk-note-number value="${escapeHtml(value || '')}" placeholder="ط±ظ‚ظ… ط§ظ„ط¥ط°ظ†"><button type="button" class="mini-btn danger" data-remove-bulk-note-number>ط­ط°ظپ</button></div></label>`;
+  return `<label data-bulk-note-row><span>رقم إذن</span><div class="inline-control-row"><input data-bulk-note-number value="${escapeHtml(value || '')}" placeholder="رقم الإذن"><button type="button" class="mini-btn danger" data-remove-bulk-note-number>حذف</button></div></label>`;
 }
 
 function openBulkBatchDialog(source) {
@@ -6149,20 +6149,20 @@ function openBulkBatchDialog(source) {
   refs.documentBody.innerHTML = `<div class="document-sheet bulk-entry-sheet" data-bulk-group="${config.key}" data-bulk-movement="${movement}" data-bulk-accessory-movement="${config.accessoryMovement}">
     <div class="subsection-head"><div><h2>${title}</h2><p class="muted">${config.description}</p></div></div>
     <div class="summary-grid">
-      <label><span>ط§ظ„طھط§ط±ظٹط®</span><input type="date" data-bulk-date value="${escapeHtml(date)}"></label>
+      <label><span>التاريخ</span><input type="date" data-bulk-date value="${escapeHtml(date)}"></label>
       <div class="full-row" data-bulk-note-list>
-        <div class="subsection-head compact-head"><h3>ط£ط±ظ‚ط§ظ… ط§ظ„ط£ط°ظˆظ†</h3><button type="button" class="mini-btn" data-add-bulk-note-number>+ ط¥ط°ظ†</button></div>
+        <div class="subsection-head compact-head"><h3>أرقام الأذون</h3><button type="button" class="mini-btn" data-add-bulk-note-number>+ إذن</button></div>
         ${bulkNoteNumberFieldHtml(noteNumber)}
       </div>
-      <label class="full-row"><span>ظ…ظ„ط§ط­ط¸ط§طھ</span><input data-bulk-notes value="${escapeHtml(notes)}"></label>
+      <label class="full-row"><span>ملاحظات</span><input data-bulk-notes value="${escapeHtml(notes)}"></label>
     </div>
-    <div class="subsection-head"><h3>ط§ظ„ظ‚ظ…ط§ط´</h3>${movement === 'rawOut' ? '<button type="button" class="mini-btn" data-add-bulk-extra-raw>+ ط¥ط¶ط§ظپط© ط®ط§ظ…</button>' : ''}</div>
-    <table class="bulk-entry-table"><thead><tr><th>ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ظ…طµط¨ط؛ط©</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط§ظ„ظ…طھط§ط­</th><th>ط§ظ„ظƒظ…ظٹط©</th></tr></thead><tbody>
+    <div class="subsection-head"><h3>القماش</h3>${movement === 'rawOut' ? '<button type="button" class="mini-btn" data-add-bulk-extra-raw>+ إضافة خام</button>' : ''}</div>
+    <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th><th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
       ${combinedMovementClothRows(order, movement)}
       ${movement === 'rawOut' ? `<tr data-bulk-extra-raw-anchor></tr>${bulkExtraRawRowHtml(defaultDyehouse)}` : ''}
     </tbody></table>
-    ${accessoryRows ? `<div class="subsection-head"><h3>ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</h3></div><table class="bulk-entry-table"><thead><tr><th>ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±</th><th>ط§ظ„ظ„ظˆظ†</th><th>ط§ظ„ط¹ط±ط¶</th><th>ط§ظ„ظ…طھط§ط­/ط§ظ„ظ…ط·ظ„ظˆط¨</th><th>ط§ظ„ظƒظ…ظٹط©</th></tr></thead><tbody>${accessoryRows}</tbody></table>` : ''}
-    <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>ط­ظپط¸ ط§ظ„ط£ظ…ط± ط§ظ„ظ…ط¬ظ…ط¹</button></div>
+    ${accessoryRows ? `<div class="subsection-head"><h3>الإكسسوار</h3></div><table class="bulk-entry-table"><thead><tr><th>نوع الإكسسوار</th><th>اللون</th><th>العرض</th><th>المتاح/المطلوب</th><th>الكمية</th></tr></thead><tbody>${accessoryRows}</tbody></table>` : ''}
+    <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>حفظ الأمر المجمع</button></div>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
@@ -6177,7 +6177,7 @@ function bulkBatchItemsFromDialog() {
   const noteNumber = [...body.querySelectorAll('[data-bulk-note-number]')]
     .map((input)=>input.value.trim())
     .filter(Boolean)
-    .join('طŒ ');
+    .join('، ');
   const notes = body.querySelector('[data-bulk-notes]')?.value || '';
   const clothRows = [...body.querySelectorAll('[data-bulk-cloth-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
   const extraRawRows = [...body.querySelectorAll('[data-bulk-extra-raw-quantity]')].map((input)=>input.closest('tr')).filter(Boolean);
@@ -6196,14 +6196,14 @@ function bulkBatchItemsFromDialog() {
     const quantity = Number(row.querySelector('[data-bulk-extra-raw-quantity]')?.value || 0);
     if (!quantity || movement !== 'rawOut') return null;
     const dyehouse = row.querySelector('[data-bulk-extra-raw-dyehouse]')?.value.trim() || '';
-    const label = row.querySelector('[data-bulk-extra-raw-label]')?.value.trim() || 'ط®ط§ظ… ط¥ط¶ط§ظپظٹ';
+    const label = row.querySelector('[data-bulk-extra-raw-label]')?.value.trim() || 'خام إضافي';
     return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber, notes:[notes, label].filter(Boolean).join(' - '), dyehouse }) };
   }).filter(Boolean);
   const accessoryItems = accessoryRows.map((row) => {
     const quantity = Number(row.querySelector('[data-bulk-accessory-quantity]')?.value || 0);
     if (!quantity) return null;
     const allocationId = row.dataset.bulkAllocation || '';
-    const accessoryType = row.dataset.bulkAccessoryType || 'ط¥ظƒط³ط³ظˆط§ط±';
+    const accessoryType = row.dataset.bulkAccessoryType || 'إكسسوار';
     if (accessoryMovement === 'accessoryReceived') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'received' }) };
     if (accessoryMovement === 'accessorySent') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'sent' }) };
     if (accessoryMovement === 'accessoryCustomer') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'customer' }) };
@@ -6214,19 +6214,19 @@ function bulkBatchItemsFromDialog() {
 
 async function saveBulkBatchesFromDialog() {
   const items = bulkBatchItemsFromDialog();
-  if (!items.length) { alert('ط§ظƒطھط¨ ظƒظ…ظٹط© ط¹ظ„ظ‰ ظ„ظˆظ† ظˆط§ط­ط¯ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„.'); return; }
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط­ظپط¸ ط§ظ„ط¥ط¯ط®ط§ظ„ ط§ظ„ط¬ظ…ط§ط¹ظٹ.'))) return;
+  if (!items.length) { alert('اكتب كمية على لون واحد على الأقل.'); return; }
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ الإدخال الجماعي.'))) return;
   let result = null;
   try {
     result = await postBackendStrict('/batches/bulk', { items });
   } catch (error) {
-    const message = `طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط¥ط¯ط®ط§ظ„ ط§ظ„ط¬ظ…ط§ط¹ظٹ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ط§ظ„ط³ط¨ط¨: ${error.message || error}`;
+    const message = `تعذر حفظ الإدخال الجماعي في قاعدة البيانات. السبب: ${error.message || error}`;
     await rollbackAfterBackendWriteFailure(message);
     alert(message);
     return;
   }
   if (!result?.ok) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط¥ط¯ط®ط§ظ„ ط§ظ„ط¬ظ…ط§ط¹ظٹ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط£ظٹ ط­ط±ظƒط©.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ الإدخال الجماعي في قاعدة البيانات. لم يتم اعتماد أي حركة.');
     return;
   }
   refs.documentDialog.close();
@@ -6234,25 +6234,25 @@ async function saveBulkBatchesFromDialog() {
 }
 async function addAllocation() {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
-  const color = prompt('ط§ظƒطھط¨ ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط·ظ„ظˆط¨'); if (!color) return;
+  const color = prompt('اكتب اللون المطلوب'); if (!color) return;
   const createdAllocations = [];
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   if (order.widthMode === 'multiple') {
-    const targetFinishedWeight = Number(prompt('ط§ظƒطھط¨ ط§ظ„ظˆط²ظ† ط§ظ„ظ…ط¬ظ‡ط² ط§ظ„ظ…ط·ظ„ظˆط¨')); if (!targetFinishedWeight) return;
+    const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
     order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; createdAllocations.push(allocation); });
   } else {
-    const plannedQuantity = Number(prompt('ط§ظƒطھط¨ ظƒظ…ظٹط© ط§ظ„ظ„ظˆظ†')); if (!plannedQuantity) return;
+    const plannedQuantity = Number(prompt('اكتب كمية اللون')); if (!plannedQuantity) return;
     const existing = order.allocations[0];
-    const targetFinishedWidth = existing?.targetFinishedWidth || Number(prompt('ط§ظƒطھط¨ ط§ظ„ط¹ط±ط¶')); if (!targetFinishedWidth) return;
-    const targetFinishedWeight = existing?.targetFinishedWeight || Number(prompt('ط§ظƒطھط¨ ط§ظ„ظˆط²ظ† ط§ظ„ظ…ط¬ظ‡ط²')); if (!targetFinishedWeight) return;
+    const targetFinishedWidth = existing?.targetFinishedWidth || Number(prompt('اكتب العرض')); if (!targetFinishedWidth) return;
+    const targetFinishedWeight = existing?.targetFinishedWeight || Number(prompt('اكتب الوزن المجهز')); if (!targetFinishedWeight) return;
     const allocation = { id:uid(), orderId:order.id, color, plannedQuantity, dyehouse:order.dyehouse, targetFinishedWidth, targetFinishedWeight };
     createdAllocations.push(allocation);
   }
   const savedAllocations = [];
   for (const allocation of createdAllocations) savedAllocations.push(await postBackend(`/orders/${order.id}/allocations`, allocationToApi(allocation)));
   if (backendSaveRequired && savedAllocations.some((item)=>!item)) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ظ„ظˆظ† ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط¥ط¶ط§ظپط©.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ اللون في قاعدة البيانات. لم يتم اعتماد الإضافة.');
     return;
   }
   await loadBackendData();
@@ -6261,13 +6261,13 @@ async function editAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   const order = orders.find((item)=>item.id===allocation.orderId);
-  const colorValue = prompt('ط§ظƒطھط¨ ط§ظ„ظ„ظˆظ† / ظƒظˆط¯ ط§ظ„ظ„ظˆظ†', allocation.color || allocation.pantoneCode || '');
+  const colorValue = prompt('اكتب اللون / كود اللون', allocation.color || allocation.pantoneCode || '');
   if (colorValue === null) return;
   const cleanedColor = colorValue.trim();
   if (!cleanedColor) return;
-  const targetFinishedWidth = Number(prompt('ط§ظƒطھط¨ ط§ظ„ط¹ط±ط¶', allocation.targetFinishedWidth));
+  const targetFinishedWidth = Number(prompt('اكتب العرض', allocation.targetFinishedWidth));
   if (!targetFinishedWidth) return;
-  const targetFinishedWeight = Number(prompt('ط§ظƒطھط¨ ط§ظ„ظˆط²ظ† ط§ظ„ظ…ط¬ظ‡ط²', allocation.targetFinishedWeight));
+  const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
   if (!targetFinishedWeight) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
@@ -6294,7 +6294,7 @@ async function editAllocation(id) {
     const savedAllocations = [];
     for (const item of changedAllocations) savedAllocations.push(await putBackend(`/allocations/${item.id}`, allocationToApi(item)));
     if (savedAllocations.some((item)=>!item)) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ طھط¹ط¯ظٹظ„ ط§ظ„ظ„ظˆظ† ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل اللون في قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
   }
@@ -6436,7 +6436,7 @@ async function transferAllocationDyehouse(id, context = {}) {
     const insertedAllocation = newAllocation ? await postBackend(`/orders/${allocation.orderId}/allocations`, allocationToApi(newAllocation)) : true;
     const insertedTransfer = transferRecord ? await postBackend('/transfers', transferToApi(transferRecord)) : true;
     if (!updatedAllocation || !insertedAllocation || !insertedTransfer) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ طھط­ظˆظٹظ„ ط§ظ„ظ…طµط¨ط؛ط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط­ظˆظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تحويل المصبغة في قاعدة البيانات. لم يتم اعتماد التحويل.');
       return;
     }
   }
@@ -6445,40 +6445,40 @@ async function transferAllocationDyehouse(id, context = {}) {
 async function deleteAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
-  if (!confirm(`ظ‡ظ„ طھط±ظٹط¯ ط­ط°ظپ ط§ظ„ظ„ظˆظ† ${allocation.color || allocation.pantoneCode || '-'}طں ط³ظٹطھظ… ط­ط°ظپ ط§ظ„ط­ط±ظƒط§طھ ط§ظ„ظ…ط±طھط¨ط·ط© ط¨ظ‡ ظ…ظ† ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨.`)) return;
+  if (!confirm(`هل تريد حذف اللون ${allocation.color || allocation.pantoneCode || '-'}؟ سيتم حذف الحركات المرتبطة به من هذا الطلب.`)) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   if (backendSaveRequired) {
     const deleted = await deleteBackend(`/allocations/${id}`);
     if (!deleted) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ظ„ظˆظ† ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط°ظپ.');
+      await rollbackAfterBackendWriteFailure('تعذر حذف اللون من قاعدة البيانات. لم يتم اعتماد الحذف.');
       return;
     }
   }
-  recordAudit('delete', 'allocation', id, allocation, null, `ط­ط°ظپ ط§ظ„ظ„ظˆظ† ${allocation.color || allocation.pantoneCode || '-'}`);
+  recordAudit('delete', 'allocation', id, allocation, null, `حذف اللون ${allocation.color || allocation.pantoneCode || '-'}`);
   await persistAuditLog();
   await loadBackendData();
 }
 async function deleteOrder(id) {
   const order = orders.find((item)=>item.id===id);
   if (!order) return;
-  if (!confirm(`ظ‡ظ„ طھط±ظٹط¯ ط­ط°ظپ ط§ظ„ط·ظ„ط¨ ط±ظ‚ظ… ${order.orderNumber || '-'}طں ط³ظٹطھظ… ط­ط°ظپ ط§ظ„ط£ظ„ظˆط§ظ† ظˆط§ظ„ط­ط±ظƒط§طھ ط§ظ„ظ…ط±طھط¨ط·ط© ط¨ظ‡.`)) return;
+  if (!confirm(`هل تريد حذف الطلب رقم ${order.orderNumber || '-'}؟ سيتم حذف الألوان والحركات المرتبطة به.`)) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   if (backendSaveRequired) {
     const deleted = await deleteBackend(`/orders/${id}`);
     if (!deleted) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ط·ظ„ط¨ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط°ظپ.');
+      await rollbackAfterBackendWriteFailure('تعذر حذف الطلب من قاعدة البيانات. لم يتم اعتماد الحذف.');
       return;
     }
   }
-  recordAudit('delete', 'order', id, order, null, `ط­ط°ظپ ط§ظ„ط·ظ„ط¨ ط±ظ‚ظ… ${order.orderNumber || ''}`);
+  recordAudit('delete', 'order', id, order, null, `حذف الطلب رقم ${order.orderNumber || ''}`);
   await persistAuditLog();
   if (selectedOrderId === id) selectedOrderId = null;
   await loadBackendData();
 }
 async function deleteBatch(type, id) {
-  if (!confirm('ظ‡ظ„ طھط±ظٹط¯ ط­ط°ظپ ظ‡ط°ظ‡ ط§ظ„ط­ط±ظƒط©طں ط³ظٹطھظ… ط­ط°ظپظ‡ط§ ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ط£ظٹط¶ظ‹ط§.')) return;
+  if (!confirm('هل تريد حذف هذه الحركة؟ سيتم حذفها من قاعدة البيانات أيضًا.')) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   let transfer = null;
@@ -6505,7 +6505,7 @@ async function deleteBatch(type, id) {
           }
           allocations = allocations.filter((allocation)=>allocation.id !== transfer.newAllocationId);
         } else if (hasLinkedMovements) {
-          alert('ظ„ط§ ظٹظ…ظƒظ† ط­ط°ظپ ط§ظ„طھط­ظˆظٹظ„ ظ„ط£ظ† ط§ظ„ظ„ظˆظ† ط§ظ„ظ…ط­ظˆظ„ ط¹ظ„ظٹظ‡ طھظˆط¬ط¯ ط¹ظ„ظٹظ‡ ط­ط±ظƒط§طھ طھط´ط؛ظٹظ„. ط§ط­ط°ظپ ط§ظ„ط­ط±ظƒط§طھ ط§ظ„ظ…ط±طھط¨ط·ط© ط£ظˆظ„ظ‹ط§ ط£ظˆ ط§طھط±ظƒ ط§ظ„طھط­ظˆظٹظ„ ظƒظ…ط§ ظ‡ظˆ.');
+          alert('لا يمكن حذف التحويل لأن اللون المحول عليه توجد عليه حركات تشغيل. احذف الحركات المرتبطة أولًا أو اترك التحويل كما هو.');
           return;
         }
       } else if (transfer.mode === 'full' && transfer.allocationId) {
@@ -6527,7 +6527,7 @@ async function deleteBatch(type, id) {
     }
     const results = await Promise.all(backendTasks);
     if (results.some((item)=>!item)) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ط­ط±ظƒط© ظ…ظ† ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ط­ط°ظپ.');
+      await rollbackAfterBackendWriteFailure('تعذر حذف الحركة من قاعدة البيانات. لم يتم اعتماد الحذف.');
       return;
     }
   }
@@ -6539,41 +6539,41 @@ async function editBatch(type, id) {
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   const updatedBatch = { ...batch };
-  const quantity = Number(prompt('ط§ظ„ظƒظ…ظٹط©', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
-  updatedBatch.date = prompt('ط§ظ„طھط§ط±ظٹط®', updatedBatch.date) || updatedBatch.date;
-  if (type === 'raw') { updatedBatch.supplier = prompt('ط§ظ„ط¬ظ‡ط© / ط§ظ„ظ…طµط¯ط±', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = prompt('ط±ظ‚ظ… ط§ظ„ط¥ط°ظ†', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
+  const quantity = Number(prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
+  updatedBatch.date = prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
+  if (type === 'raw') { updatedBatch.supplier = prompt('الجهة / المصدر', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; if (updatedBatch.mode === 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ACCESSORY_MARKER)) updatedBatch.reason = [TRANSFER_ACCESSORY_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode === 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_RAW_MARKER)) updatedBatch.reason = [TRANSFER_RAW_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode !== 'raw' && updatedBatch.mode !== 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ALLOCATION_MARKER)) updatedBatch.reason = [TRANSFER_ALLOCATION_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); }
-  if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('ط±ظ‚ظ… ط¥ط°ظ† ط§ظ„ظ…ط±طھط¬ط¹', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
-  if (type === 'accessory') { updatedBatch.accessoryType = prompt('ظ†ظˆط¹ ط§ظ„ط¥ظƒط³ط³ظˆط§ط±', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('ط±ظ‚ظ… ط§ظ„ط¥ط°ظ†', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
-  if (type === 'gluing') { updatedBatch.movement = prompt('ظ†ظˆط¹ ط§ظ„ط­ط±ظƒط© sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('ظ…طµط¯ط± ط§ظ„ط¯ظ…ط¬ / ط§ظ„ط¹ظ…ظ„ظٹط©', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('ط§ظ„ط¹ظ…ظٹظ„', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('ط±ظ‚ظ… ط§ظ„ط¥ط°ظ†', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
-  if (type === 'dye') { updatedBatch.noteNumber = prompt('ط±ظ‚ظ… ط§ظ„ط¥ط°ظ†', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
-  if (type === 'production') { updatedBatch.noteNumber = prompt('ط±ظ‚ظ… ط¥ط°ظ† ط§ط³طھظ„ط§ظ… ط§ظ„ظ…ط¬ظ‡ط²', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
-  if (type === 'finished') { updatedBatch.finishedWidth = Number(prompt('ط§ظ„ط¹ط±ط¶', updatedBatch.finishedWidth)); updatedBatch.finishedWeight = Number(prompt('ط§ظ„ظˆط²ظ† ط§ظ„ظ…ط¬ظ‡ط²', updatedBatch.finishedWeight)); updatedBatch.notes = prompt('ظ…ظ„ط§ط­ط¸ط§طھ', updatedBatch.notes || '') || ''; }
+  if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'accessory') { updatedBatch.accessoryType = prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('مصدر الدمج / العملية', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('اسم المنتج الناتج', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'dye') { updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'production') { updatedBatch.noteNumber = prompt('رقم إذن استلام المجهز', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'finished') { updatedBatch.finishedWidth = Number(prompt('العرض', updatedBatch.finishedWidth)); updatedBatch.finishedWeight = Number(prompt('الوزن المجهز', updatedBatch.finishedWeight)); updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (backendSaveRequired) {
     const saved = type === 'transfer'
       ? await putBackend(`/transfers/${id}`, transferToApi(updatedBatch))
       : await putBackend(`/batches/${backendBatchType(type)}/${id}`, type === 'rawReturn' ? { ...batchToApi(updatedBatch), reason:updatedBatch.reason || updatedBatch.notes || '' } : batchToApi(updatedBatch));
     if (!saved) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ طھط¹ط¯ظٹظ„ ط§ظ„ط­ط±ظƒط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط¹ط¯ظٹظ„.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الحركة في قاعدة البيانات. لم يتم اعتماد التعديل.');
       return;
     }
   }
   await loadBackendData();
 }
 function getOperationalStage(order) {
-  if (order.totalRawReceived === 0 && order.totalAllocated > 0) return 'ط¨ط§ظ†طھط¸ط§ط± ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ…';
-  if (order.totalRawReceived === 0) return 'ط¨ط§ظ†طھط¸ط§ط± ط§ط³طھظ„ط§ظ… ط§ظ„ط®ط§ظ…';
-  if (order.totalAllocated === 0) return 'ط¨ط§ظ†طھط¸ط§ط± طھظˆط²ظٹط¹ ط§ظ„ط£ظ„ظˆط§ظ†';
-  if (Number(order.gluingBalance || 0) > 0) return 'ظˆط§ظ‚ظپ ظپظٹ ط¯ظ…ط¬ ط§ظ„ط®ط§ظ…ط§طھ';
-  if (Number(order.gluedProductBalance || 0) > 0) return 'ظ…ظ†طھط¬ ظ…ط¯ظ…ط¬ ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…';
-  if (order.rawAtDyehouseAvailable > 0 || order.remainingAtDyehouse > 0) return 'طھط­طھ ط§ظ„طھط´ط؛ظٹظ„ ط¨ط§ظ„ظ…طµط¨ط؛ط©';
-  if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'ط¨ط§ظ„ظ…ط®ط²ظ†';
-  if (order.totalDeliveredToCustomer < order.totalAllocated) return 'طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„';
-  return 'ظ…ظƒطھظ…ظ„';
+  if (order.totalRawReceived === 0 && order.totalAllocated > 0) return 'بانتظار خروج الخام';
+  if (order.totalRawReceived === 0) return 'بانتظار استلام الخام';
+  if (order.totalAllocated === 0) return 'بانتظار توزيع الألوان';
+  if (Number(order.gluingBalance || 0) > 0) return 'واقف في دمج الخامات';
+  if (Number(order.gluedProductBalance || 0) > 0) return 'منتج مدمج جاهز للتسليم';
+  if (order.rawAtDyehouseAvailable > 0 || order.remainingAtDyehouse > 0) return 'تحت التشغيل بالمصبغة';
+  if (order.warehouseBalance > 0 && order.totalDeliveredToCustomer < order.totalFinishedReceived) return 'بالمخزن';
+  if (order.totalDeliveredToCustomer < order.totalAllocated) return 'تسليم العميل';
+  return 'مكتمل';
 }
 function cleanOperationalStage(stage) {
   const text = String(stage || '').trim();
-  return isLegacyRecoveredText(text) ? 'ظ…ط±ط§ط¬ط¹ط©' : (text || '-');
+  return isLegacyRecoveredText(text) ? 'مراجعة' : (text || '-');
 }
 function firstDate(items) {
   return (items || []).map((item)=>item.date || item.orderDate || item.batchDate || '').filter(Boolean).sort()[0] || '';
@@ -6585,39 +6585,39 @@ function orderStageInfo(order) {
   const finishedDate = firstDate(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId)));
   const customerDate = firstDate(customerBatches.filter((batch)=>allocationIds.includes(batch.allocationId)));
   let key = 'completed';
-  let label = 'ظ…ظƒطھظ…ظ„';
+  let label = 'مكتمل';
   let startDate = customerDate || finishedDate || rawDate || order.orderDate || '';
-  let reason = 'ط§ظƒطھظ…ظ„طھ ط¯ظˆط±ط© ط§ظ„طھط´ط؛ظٹظ„.';
+  let reason = 'اكتملت دورة التشغيل.';
   if (order.operationClosed || order.status === 'closed') {
-    key = 'closed'; label = 'ظ…ط؛ظ„ظ‚ طھط´ط؛ظٹظ„ظٹظ‹ط§'; reason = 'طھظ… ط¥ط؛ظ„ط§ظ‚ ط¯ظˆط±ط© ط§ظ„طھط´ط؛ظٹظ„.';
+    key = 'closed'; label = 'مغلق تشغيليًا'; reason = 'تم إغلاق دورة التشغيل.';
   } else if (Number(order.totalRawReceived || 0) === 0 && Number(order.totalAllocated || 0) > 0) {
-    key = 'weaving'; label = 'ظˆط§ظ‚ظپ ظپظٹ ط§ظ„ظ†ط³ظٹط¬'; startDate = order.orderDate || ''; reason = 'طھظ… طھظˆط²ظٹط¹ ط§ظ„ط£ظ„ظˆط§ظ† ظˆظ„ظ… ظٹطھظ… ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ… ظ„ظ„ظ…طµط¨ط؛ط©.';
+    key = 'weaving'; label = 'واقف في النسيج'; startDate = order.orderDate || ''; reason = 'تم توزيع الألوان ولم يتم خروج الخام للمصبغة.';
   } else if (Number(order.totalRawReceived || 0) === 0) {
-    key = 'weaving'; label = 'ظˆط§ظ‚ظپ ظپظٹ ط§ظ„ظ†ط³ظٹط¬'; startDate = order.orderDate || ''; reason = 'ظ„ظ… ظٹطھظ… طھط³ط¬ظٹظ„ ط®ط±ظˆط¬ ط®ط§ظ… ظ…ظ† ط§ظ„ظ†ط³ظٹط¬ ظ„ظ„ظ…طµط¨ط؛ط©.';
+    key = 'weaving'; label = 'واقف في النسيج'; startDate = order.orderDate || ''; reason = 'لم يتم تسجيل خروج خام من النسيج للمصبغة.';
   } else if (Number(order.totalAllocated || 0) === 0) {
-    key = 'color-planning'; label = 'ط¨ط§ظ†طھط¸ط§ط± طھظˆط²ظٹط¹ ط§ظ„ط£ظ„ظˆط§ظ†'; startDate = order.orderDate || rawDate || ''; reason = 'ط§ظ„ط®ط§ظ… ظ…ظˆط¬ظˆط¯ ظ„ظƒظ† ظ„ظ… ظٹطھظ… طھظˆط²ظٹط¹ ط§ظ„ط£ظ„ظˆط§ظ†.';
+    key = 'color-planning'; label = 'بانتظار توزيع الألوان'; startDate = order.orderDate || rawDate || ''; reason = 'الخام موجود لكن لم يتم توزيع الألوان.';
   } else if (Number(order.gluingBalance || 0) > 0) {
-    key = 'gluing'; label = 'ظˆط§ظ‚ظپ ظپظٹ ط¯ظ…ط¬ ط§ظ„ط®ط§ظ…ط§طھ'; startDate = gluingDate || rawDate || order.orderDate || ''; reason = 'ط®ط±ط¬ ط®ط§ظ… ظ„ظ„ط¯ظ…ط¬ ظˆظ„ظ… ظٹظƒطھظ…ظ„ ط§ط³طھظ„ط§ظ… ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ†ط§طھط¬.';
+    key = 'gluing'; label = 'واقف في دمج الخامات'; startDate = gluingDate || rawDate || order.orderDate || ''; reason = 'خرج خام للدمج ولم يكتمل استلام المنتج الناتج.';
   } else if (Number(order.gluedProductBalance || 0) > 0) {
-    key = 'glued-ready'; label = 'ظ…ظ†طھط¬ ظ…ط¯ظ…ط¬ ط¬ط§ظ‡ط² ظ„ظ„طھط³ظ„ظٹظ…'; startDate = gluingDate || finishedDate || order.orderDate || ''; reason = 'طھظ… ط§ط³طھظ„ط§ظ… ظ…ظ†طھط¬ ظ…ط¯ظ…ط¬ ظˆظ„ظ… ظٹظƒطھظ…ظ„ طھط³ظ„ظٹظ…ظ‡ ظ„ظ„ط¹ظ…ظٹظ„.';
+    key = 'glued-ready'; label = 'منتج مدمج جاهز للتسليم'; startDate = gluingDate || finishedDate || order.orderDate || ''; reason = 'تم استلام منتج مدمج ولم يكتمل تسليمه للعميل.';
   } else if (Number(order.rawAtDyehouseAvailable || 0) > 0 || Number(order.remainingAtDyehouse || 0) > 0) {
-    key = 'dyehouse'; label = 'ظˆط§ظ‚ظپ ظپظٹ ط§ظ„ظ…طµط¨ط؛ط©'; startDate = rawDate || order.orderDate || ''; reason = 'طھظ… طھط³ظ„ظٹظ… ط®ط§ظ… ظ„ظ„ظ…طµط¨ط؛ط© ظˆظ„ظ… ظٹظƒطھظ…ظ„ ط§ط³طھظ„ط§ظ… ط§ظ„ظ…ط¬ظ‡ط².';
+    key = 'dyehouse'; label = 'واقف في المصبغة'; startDate = rawDate || order.orderDate || ''; reason = 'تم تسليم خام للمصبغة ولم يكتمل استلام المجهز.';
   } else if (Number(order.warehouseBalance || 0) > 0 && Number(order.totalDeliveredToCustomer || 0) < Number(order.totalFinishedReceived || 0)) {
-    key = 'warehouse'; label = 'ظˆط§ظ‚ظپ ظپظٹ ط§ظ„ظ…ط®ط²ظ†'; startDate = finishedDate || order.orderDate || ''; reason = 'ط¯ط®ظ„ ظ…ط¬ظ‡ط² ط¥ظ„ظ‰ ط§ظ„ظ…ط®ط²ظ† ظˆظ„ظ… ظٹظƒطھظ…ظ„ طھط³ظ„ظٹظ…ظ‡ ظ„ظ„ط¹ظ…ظٹظ„.';
+    key = 'warehouse'; label = 'واقف في المخزن'; startDate = finishedDate || order.orderDate || ''; reason = 'دخل مجهز إلى المخزن ولم يكتمل تسليمه للعميل.';
   } else if (Number(order.totalDeliveredToCustomer || 0) < Number(order.totalAllocated || 0)) {
-    key = 'delivery'; label = 'طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„'; startDate = finishedDate || order.orderDate || ''; reason = 'ط§ظ„طھط³ظ„ظٹظ… ظ„ظ„ط¹ظ…ظٹظ„ ظ„ظ… ظٹظƒطھظ…ظ„.';
+    key = 'delivery'; label = 'تسليم العميل'; startDate = finishedDate || order.orderDate || ''; reason = 'التسليم للعميل لم يكتمل.';
   }
   return { key, label, startDate, days:daysSince(startDate), reason };
 }
 function operationStagePlace(order, stage = orderStageInfo(order)) {
-  if (stage.key === 'weaving') return order.weavingSource || 'ط§ظ„ظ†ط³ظٹط¬';
-  if (stage.key === 'dyehouse') return order.dyehouse || 'ط§ظ„ظ…طµط¨ط؛ط©';
-  if (stage.key === 'warehouse') return 'ط§ظ„ظ…ط®ط²ظ†';
-  if (stage.key === 'delivery') return order.customer || 'ط§ظ„طھط³ظ„ظٹظ…';
+  if (stage.key === 'weaving') return order.weavingSource || 'النسيج';
+  if (stage.key === 'dyehouse') return order.dyehouse || 'المصبغة';
+  if (stage.key === 'warehouse') return 'المخزن';
+  if (stage.key === 'delivery') return order.customer || 'التسليم';
   return stage.label || '-';
 }
 function orderFilterLabel(value) {
-  const labels = { all:'ظƒظ„ ط§ظ„ط·ظ„ط¨ط§طھ', pending:'ط¨ط§ظ†طھط¸ط§ط± ط§ظ„ط§ط³طھظ„ط§ظ…', 'in-progress':'ظ‚ظٹط¯ ط§ظ„طھط´ط؛ظٹظ„', completed:'ظ…ظƒطھظ…ظ„', closed:'ظ…ط؛ظ„ظ‚ طھط´ط؛ظٹظ„ظٹظ‹ط§', 'stage:weaving':'ط§ظ„ظ†ط³ظٹط¬', 'stage:color-planning':'ط§ظ„ظ†ط³ظٹط¬', 'stage:gluing':'ط¯ظ…ط¬', 'stage:glued-ready':'ط¯ظ…ط¬', 'stage:dyehouse':'ط§ظ„ظ…طµط¨ط؛ط©', 'stage:warehouse':'ط§ظ„ظ…ط®ط²ظ†' };
+  const labels = { all:'كل الطلبات', pending:'بانتظار الاستلام', 'in-progress':'قيد التشغيل', completed:'مكتمل', closed:'مغلق تشغيليًا', 'stage:weaving':'النسيج', 'stage:color-planning':'النسيج', 'stage:gluing':'دمج', 'stage:glued-ready':'دمج', 'stage:dyehouse':'المصبغة', 'stage:warehouse':'المخزن' };
   return labels[value] || statusLabel(value) || value || '-';
 }
 function ensureStageFilterOptions() {
@@ -6627,7 +6627,7 @@ function ensureStageFilterOptions() {
     .filter((option)=>['stage:ready-to-dyehouse', 'stage:delivery', 'stage:color-planning', 'stage:glued-ready'].includes(option.value))
     .forEach((option)=>option.remove());
   const before = [...select.options].find((item)=>item.value === 'stage:dyehouse');
-  if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('ط¯ظ…ط¬', 'stage:gluing'), before || null);
+  if (![...select.options].some((option)=>option.value === 'stage:gluing')) select.add(new Option('دمج', 'stage:gluing'), before || null);
 }
 function dateRangeLabel(items) {
   const dates = items.map((item)=>item.date).filter(Boolean).sort();
@@ -6661,9 +6661,9 @@ function daysSince(dateValue) {
 function stageStartDate(order) {
   const allocationIds = order.allocations.map((allocation)=>allocation.id);
   const stage = getOperationalStage(order);
-  if (stage === 'ط¨ط§ظ†طھط¸ط§ط± ط§ط³طھظ„ط§ظ… ط§ظ„ط®ط§ظ…' || stage === 'ط¨ط§ظ†طھط¸ط§ط± ط®ط±ظˆط¬ ط§ظ„ط®ط§ظ…' || stage === 'ط¨ط§ظ†طھط¸ط§ط± طھظˆط²ظٹط¹ ط§ظ„ط£ظ„ظˆط§ظ†') return order.orderDate || '';
-  if (stage === 'طھط­طھ ط§ظ„طھط´ط؛ظٹظ„ ط¨ط§ظ„ظ…طµط¨ط؛ط©') return dateRangeLabel(rawBatches.filter((batch)=>batch.orderId===order.id)).split(' - ')[0] || order.orderDate || '';
-  if (stage === 'ط¨ط§ظ„ظ…ط®ط²ظ†' || stage === 'طھط³ظ„ظٹظ… ط§ظ„ط¹ظ…ظٹظ„') return dateRangeLabel(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId))).split(' - ')[0] || order.orderDate || '';
+  if (stage === 'بانتظار استلام الخام' || stage === 'بانتظار خروج الخام' || stage === 'بانتظار توزيع الألوان') return order.orderDate || '';
+  if (stage === 'تحت التشغيل بالمصبغة') return dateRangeLabel(rawBatches.filter((batch)=>batch.orderId===order.id)).split(' - ')[0] || order.orderDate || '';
+  if (stage === 'بالمخزن' || stage === 'تسليم العميل') return dateRangeLabel(productionBatches.filter((batch)=>allocationIds.includes(batch.allocationId))).split(' - ')[0] || order.orderDate || '';
   return order.orderDate || '';
 }
 ({
@@ -6705,7 +6705,7 @@ function stageStartDate(order) {
   getCustomerBatches: () => customerBatches,
   getRawReturns: () => rawReturns,
 }));
-function emptyRow(colspan, text = 'ظ„ط§ طھظˆط¬ط¯ ط¨ظٹط§ظ†ط§طھ ظ…ط³ط¬ظ„ط©.') {
+function emptyRow(colspan, text = 'لا توجد بيانات مسجلة.') {
   return `<tr><td colspan="${colspan}">${text}</td></tr>`;
 }
 function dyehouseNamesForOrder(order) {
@@ -6849,14 +6849,14 @@ function operationNotesKey(type, dyehouseName = '') {
 }
 function combinedOperationNotes(order) {
   const sections = [];
-  if (String(order?.notes || '').trim()) sections.push(`ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„ط·ظ„ط¨: ${String(order.notes).trim()}`);
+  if (String(order?.notes || '').trim()) sections.push(`ملاحظات الطلب: ${String(order.notes).trim()}`);
   const notes = order?.operationNotes && typeof order.operationNotes === 'object' && !Array.isArray(order.operationNotes) ? order.operationNotes : {};
-  if (String(notes.weaving || '').trim()) sections.push(`ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„ظ†ط³ظٹط¬: ${String(notes.weaving).trim()}`);
+  if (String(notes.weaving || '').trim()) sections.push(`ملاحظات النسيج: ${String(notes.weaving).trim()}`);
   Object.entries(notes)
     .filter(([key, value]) => key.startsWith('dyeing:') && String(value || '').trim())
     .forEach(([key, value]) => {
-      const dyehouseName = key.slice('dyeing:'.length) || 'ط§ظ„ظ…طµط¨ط؛ط©';
-      sections.push(`ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„طµط¨ط§ط؛ط© - ${dyehouseName}: ${String(value).trim()}`);
+      const dyehouseName = key.slice('dyeing:'.length) || 'المصبغة';
+      sections.push(`ملاحظات الصباغة - ${dyehouseName}: ${String(value).trim()}`);
     });
   return uniqueNonEmpty(sections).join('\n') || '-';
 }
@@ -6959,14 +6959,14 @@ function reportOperationNotes(order) {
 
 
 function installAmalReviewUi() {
-  refs.weavingSlipType.innerHTML = '<option value="weaving">ط¥ط°ظ† ط®ط§ظ… ط±ط§ظٹط­ ظ„ظ„ظ…طµط¨ط؛ط©</option>';
+  refs.weavingSlipType.innerHTML = '<option value="weaving">إذن خام رايح للمصبغة</option>';
   document.getElementById('amalReviewBox')?.remove();
 }
 function toggleAmalReviewMode() {
   const normalGrid = refs.weavingSlipOrderNumber.closest('.form-grid');
   if (normalGrid) normalGrid.style.display = '';
   document.getElementById('amalReviewBox')?.remove();
-  refs.weavingSlipForm.querySelector('.dialog-actions .primary-btn').textContent = 'طھط³ط¬ظٹظ„ ط§ظ„ظ…ط³طھظ†ط¯';
+  refs.weavingSlipForm.querySelector('.dialog-actions .primary-btn').textContent = 'تسجيل المستند';
 }
 function renderAmalSuggestion(suggestion = {}) {
   pendingAmalSuggestion = cloneAmalSuggestion(suggestion);
@@ -6976,19 +6976,19 @@ function renderAmalSuggestion(suggestion = {}) {
   $('amalOrderDate').value = pendingAmalSuggestion.orderDate || '';
   $('amalDyehouse').value = pendingAmalSuggestion.dyehouse || '';
   $('amalRawNote').value = pendingAmalSuggestion.rawNoteNumber || '';
-  $('amalWeavingSource').value = pendingAmalSuggestion.weavingSource || 'ظ…طµط¯ط± ط§ظ„ظ†ط³ظٹط¬';
+  $('amalWeavingSource').value = pendingAmalSuggestion.weavingSource || 'مصدر النسيج';
   $('amalSpecs').value = pendingAmalSuggestion.specs || '';
   const rows = (pendingAmalSuggestion.rows && pendingAmalSuggestion.rows.length) ? pendingAmalSuggestion.rows : [{}];
   $('amalLinesBody').innerHTML = rows.map((row, index)=>`
     <tr data-amal-row="${index}">
-      <td><select data-amal="rowType"><option value="cloth" ${!isAccessoryRow(row)?'selected':''}>ظ‚ظ…ط§ط´</option><option value="accessory" ${isAccessoryRow(row)?'selected':''}>ط¥ظƒط³ط³ظˆط§ط±</option></select></td>
+      <td><select data-amal="rowType"><option value="cloth" ${!isAccessoryRow(row)?'selected':''}>قماش</option><option value="accessory" ${isAccessoryRow(row)?'selected':''}>إكسسوار</option></select></td>
       <td><input data-amal="fabricType" value="${escapeHtml(row.fabricType || '')}"></td>
       <td><input data-amal="inch" value="${escapeHtml(row.inch || '')}"></td>
       <td><input data-amal="quantity" type="number" step="0.01" value="${escapeHtml(row.quantity || '')}"></td>
       <td><input data-amal="pantoneCode" value="${escapeHtml(row.pantoneCode || row.color || '')}"></td>
       <td><input data-amal="width" type="number" step="0.01" value="${row.width || ''}"></td>
       <td><input data-amal="weight" type="number" step="0.01" value="${row.weight || ''}"></td>
-      <td><select data-amal="accessoryType"><option value="">-</option><option value="ط±ظٹط¨" ${row.accessoryType==='ط±ظٹط¨'?'selected':''}>ط±ظٹط¨</option><option value="ظ„ظٹط§ظ‚ط©" ${row.accessoryType==='ظ„ظٹط§ظ‚ط©'?'selected':''}>ظ„ظٹط§ظ‚ط©</option><option value="ط¥ظƒط³ط³ظˆط§ط± ط¢ط®ط±" ${row.accessoryType==='ط¥ظƒط³ط³ظˆط§ط± ط¢ط®ط±'?'selected':''}>ط¥ظƒط³ط³ظˆط§ط± ط¢ط®ط±</option></select></td>
+      <td><select data-amal="accessoryType"><option value="">-</option><option value="ريب" ${row.accessoryType==='ريب'?'selected':''}>ريب</option><option value="لياقة" ${row.accessoryType==='لياقة'?'selected':''}>لياقة</option><option value="إكسسوار آخر" ${row.accessoryType==='إكسسوار آخر'?'selected':''}>إكسسوار آخر</option></select></td>
     </tr>`).join('');
 }
 function applyAmalSuggestionFromFile(file) {
@@ -6997,9 +6997,9 @@ function applyAmalSuggestionFromFile(file) {
       orderNumber:'',
       customer:'',
       orderDate:new Date().toISOString().slice(0,10),
-      dyehouse:'ط¬ظٹظ…ط§',
+      dyehouse:'جيما',
       rawNoteNumber:'',
-      weavingSource:'ط¯ظ„طھط§ طھظƒط³طھط§ظٹظ„',
+      weavingSource:'دلتا تكستايل',
       specs:'',
       rows:[],
     };
@@ -7008,13 +7008,13 @@ function applyAmalSuggestionFromFile(file) {
     if (existingOrder) refs.weavingSlipOrderNumber.value = existingOrder.id;
     refs.weavingSlipDate.value = rawIssueSuggestion.orderDate || refs.weavingSlipDate.value || new Date().toISOString().slice(0,10);
     refs.weavingSlipQuantity.value = rawIssueSuggestion.rawIssueQuantity || rawIssueSuggestion.rows?.filter((row)=>!isAccessoryRow(row)).reduce((total,row)=>total + Number(row.quantity || 0), 0) || '';
-    refs.weavingSlipSupplier.value = rawIssueSuggestion.weavingSource || 'ط¯ظ„طھط§ طھظƒط³طھط§ظٹظ„';
+    refs.weavingSlipSupplier.value = rawIssueSuggestion.weavingSource || 'دلتا تكستايل';
     refs.weavingSlipNoteNumber.value = rawIssueSuggestion.rawNoteNumber || '';
     refs.weavingSlipNotes.value = rawIssueSuggestion.specs || '';
     updateDocumentReviewFields();
     refs.reviewMatchStatus.textContent = existingOrder
-      ? `طھظ…طھ ظ…ط·ط§ط¨ظ‚ط© ط¥ط°ظ† ط§ظ„ط®ط§ظ… ط±ظ‚ظ… ${rawIssueSuggestion.rawNoteNumber || '-'} ظ…ط¹ ط§ظ„ط·ظ„ط¨ ${existingOrder.orderNumber}. ط±ط§ط¬ط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯.`
-      : `ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط·ظ„ط¨ ظ…ط±طھط¨ط· ط¨ط¥ط°ظ† ط§ظ„ط®ط§ظ… ط±ظ‚ظ… ${rawIssueSuggestion.rawNoteNumber || '-'}. ط§ط®طھط± ط§ظ„ط·ظ„ط¨ ظٹط¯ظˆظٹظ‹ط§ ظ‚ط¨ظ„ ط§ظ„طھط³ط¬ظٹظ„.`;
+      ? `تمت مطابقة إذن الخام رقم ${rawIssueSuggestion.rawNoteNumber || '-'} مع الطلب ${existingOrder.orderNumber}. راجع البيانات قبل الاعتماد.`
+      : `لم يتم العثور على طلب مرتبط بإذن الخام رقم ${rawIssueSuggestion.rawNoteNumber || '-'}. اختر الطلب يدويًا قبل التسجيل.`;
     return;
   }
   const rawIssueSuggestion = getRawIssueSuggestionFromFile(file);
@@ -7023,38 +7023,38 @@ function applyAmalSuggestionFromFile(file) {
     const existingOrder = findOrderForRawIssueSuggestion(rawIssueSuggestion);
     if (existingOrder) refs.weavingSlipOrderNumber.value = existingOrder.id;
     refs.reviewMatchStatus.textContent = existingOrder
-      ? `طھظ…طھ ظ…ط·ط§ط¨ظ‚ط© ط¥ط°ظ† ط§ظ„ط®ط§ظ… ط±ظ‚ظ… ${rawIssueSuggestion.rawNoteNumber || '-'} ظ…ط¹ ط§ظ„ط·ظ„ط¨ ${existingOrder.orderNumber}. ط±ط§ط¬ط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯.`
-      : `ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط·ظ„ط¨ ظ…ط±طھط¨ط· ط¨ط¥ط°ظ† ط§ظ„ط®ط§ظ… ط±ظ‚ظ… ${rawIssueSuggestion.rawNoteNumber || '-'}. ط§ط®طھط± ط§ظ„ط·ظ„ط¨ ظٹط¯ظˆظٹظ‹ط§ ظ‚ط¨ظ„ ط§ظ„طھط³ط¬ظٹظ„.`;
+      ? `تمت مطابقة إذن الخام رقم ${rawIssueSuggestion.rawNoteNumber || '-'} مع الطلب ${existingOrder.orderNumber}. راجع البيانات قبل الاعتماد.`
+      : `لم يتم العثور على طلب مرتبط بإذن الخام رقم ${rawIssueSuggestion.rawNoteNumber || '-'}. اختر الطلب يدويًا قبل التسجيل.`;
     return;
   }
   const orderNumber = getAmalOrderNumberFromFile(file);
   const suggestion = cloneAmalSuggestion(AMAL_FASHION_ORDER_LIBRARY[orderNumber] || { orderNumber, customer:'', rows:[] });
   renderAmalSuggestion(suggestion);
-  refs.reviewMatchStatus.textContent = orderNumber && AMAL_FASHION_ORDER_LIBRARY[orderNumber] ? `طھظ… ط§ظ„طھط¹ط±ظپ ط¹ظ„ظ‰ ط§ظ„ظ…ط³طھظ†ط¯ ظ„ظ„ط·ظ„ط¨ ${orderNumber}. ط±ط§ط¬ط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯.` : 'ظ„ظ… ظٹطھظ… ط§ظ„طھط¹ط±ظپ ط¹ظ„ظ‰ ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط³طھظ†ط¯ طھظ„ظ‚ط§ط¦ظٹظ‹ط§. ط£ط¯ط®ظ„ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط£ظˆ ط§ط®طھط± ط§ظ„ط·ظ„ط¨ ظٹط¯ظˆظٹظ‹ط§.';
+  refs.reviewMatchStatus.textContent = orderNumber && AMAL_FASHION_ORDER_LIBRARY[orderNumber] ? `تم التعرف على المستند للطلب ${orderNumber}. راجع البيانات قبل الاعتماد.` : 'لم يتم التعرف على بيانات المستند تلقائيًا. أدخل البيانات أو اختر الطلب يدويًا.';
 }
 function readAmalSuggestionFromUi() {
   const $ = (id)=>document.getElementById(id);
   const rows = [...document.querySelectorAll('#amalLinesBody tr[data-amal-row]')].map((tr)=>{
     const value = (name)=>tr.querySelector(`[data-amal="${name}"]`)?.value?.trim() || '';
     const rowType = value('rowType');
-    return { fabricType:value('fabricType'), inch:value('inch'), quantity:Number(value('quantity') || 0), pantoneCode:value('pantoneCode'), width:Number(value('width') || 0), weight:Number(value('weight') || 0), accessoryType: rowType === 'accessory' ? value('accessoryType') || 'ط¥ظƒط³ط³ظˆط§ط±' : '' };
+    return { fabricType:value('fabricType'), inch:value('inch'), quantity:Number(value('quantity') || 0), pantoneCode:value('pantoneCode'), width:Number(value('width') || 0), weight:Number(value('weight') || 0), accessoryType: rowType === 'accessory' ? value('accessoryType') || 'إكسسوار' : '' };
   }).filter((row)=>row.fabricType || row.pantoneCode || row.quantity);
   return { orderNumber:$('amalOrderNumber').value.trim(), customer:$('amalCustomer').value.trim(), orderDate:$('amalOrderDate').value, dyehouse:$('amalDyehouse').value.trim(), rawNoteNumber:$('amalRawNote').value.trim(), weavingSource:$('amalWeavingSource').value.trim(), specs:$('amalSpecs').value.trim(), rows };
 }
 async function confirmAmalOrderImport() {
   const suggestion = readAmalSuggestionFromUi();
   const reviewType = refs.weavingSlipType.value;
-  if (!suggestion.orderNumber || !suggestion.customer || !suggestion.orderDate || !suggestion.dyehouse) { alert('ط±ط§ط¬ط¹ ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨ ظˆط§ظ„ط¹ظ…ظٹظ„ ظˆط§ظ„طھط§ط±ظٹط® ظˆط§ظ„ظ…طµط¨ط؛ط© ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯.'); return; }
+  if (!suggestion.orderNumber || !suggestion.customer || !suggestion.orderDate || !suggestion.dyehouse) { alert('راجع رقم الطلب والعميل والتاريخ والمصبغة قبل الاعتماد.'); return; }
   const clothRows = suggestion.rows.filter((row)=>!isAccessoryRow(row));
   const accessoryRows = suggestion.rows.filter(isAccessoryRow);
-  if (!clothRows.length) { alert('ظٹط¬ط¨ ظˆط¬ظˆط¯ ط¨ظ†ط¯ ظ‚ظ…ط§ط´ ظˆط§ط­ط¯ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„ ظ‚ط¨ظ„ ط§ظ„ط§ط¹طھظ…ط§ط¯.'); return; }
+  if (!clothRows.length) { alert('يجب وجود بند قماش واحد على الأقل قبل الاعتماد.'); return; }
   const existing = orders.find((order)=>String(order.orderNumber) === String(suggestion.orderNumber));
-  if (existing && !confirm(`ظٹظˆط¬ط¯ ط·ظ„ط¨ ظ…ط³ط¬ظ„ ط¨ظ†ظپط³ ط§ظ„ط±ظ‚ظ… ${suggestion.orderNumber}. ظ‡ظ„ طھط±ظٹط¯ ط§ط³طھط¨ط¯ط§ظ„ظ‡ ط¨ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ط­ط§ظ„ظٹط©طں`)) return;
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط³طھظ†ط¯.'))) return;
+  if (existing && !confirm(`يوجد طلب مسجل بنفس الرقم ${suggestion.orderNumber}. هل تريد استبداله بالبيانات الحالية؟`)) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم اعتماد المستند.'))) return;
   if (existing) {
     const deleted = await deleteBackend(`/orders/${existing.id}`);
     if (!deleted) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط§ط³طھط¨ط¯ط§ظ„ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ‚ط¯ظٹظ… ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط³طھظ†ط¯.');
+      await rollbackAfterBackendWriteFailure('تعذر استبدال الطلب القديم في قاعدة البيانات. لم يتم اعتماد المستند.');
       return;
     }
   }
@@ -7067,7 +7067,7 @@ async function confirmAmalOrderImport() {
   const importedOrder = { id:orderId, orderNumber:suggestion.orderNumber, customer:suggestion.customer, orderDate:suggestion.orderDate, fabricType:firstCloth.fabricType || '', totalRawQuantity, widthMode:'single', inchWidth:firstCloth.inch || '', widthLines:[], kiloPrice:0, paymentTerms:'', accessoryType, accessoryPercent, dyehouse:suggestion.dyehouse, weavingSource:suggestion.weavingSource || '', notes:suggestion.specs || '', status:'pending' };
   const savedOrder = await postBackend('/orders', orderToApi(importedOrder, backendCustomer));
   if (!savedOrder) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط³طھظˆط±ط¯ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط³طھظ†ط¯.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ الطلب المستورد في قاعدة البيانات. لم يتم اعتماد المستند.');
     return;
   }
   for (const row of clothRows) {
@@ -7075,21 +7075,21 @@ async function confirmAmalOrderImport() {
     const allocation = { id:uid(), orderId, color:row.pantoneCode || row.fabricType || '-', pantoneCode:row.pantoneCode || '', fabricType:row.fabricType || firstCloth.fabricType || '', plannedQuantity:Number(row.quantity || 0), dyehouse:suggestion.dyehouse, targetFinishedWidth:row.width || '', targetFinishedWeight:row.weight || '', accessoryQuantityManual: relatedAccessory ? Number(relatedAccessory.quantity || 0) : null };
     const savedAllocation = await postBackend(`/orders/${orderId}/allocations`, allocationToApi(allocation));
     if (!savedAllocation) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط£ظ„ظˆط§ظ† ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط³طھظˆط±ط¯ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط³طھظ†ط¯ ظƒط§ظ…ظ„ظ‹ط§.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ ألوان الطلب المستورد في قاعدة البيانات. لم يتم اعتماد المستند كاملًا.');
       return;
     }
   }
   if (suggestion.rawNoteNumber) {
-    const rawSaved = await postBackend('/batches/dyehouse', batchToApi({ id:uid(), orderId, date:suggestion.orderDate, quantity:totalRawQuantity, supplier:suggestion.weavingSource || '', noteNumber:suggestion.rawNoteNumber, notes:reviewType === 'deltexIssue' ? 'طھظ… طھط³ط¬ظٹظ„ ط¥ط°ظ† طµط±ظپ ط®ط§ظ… ظ…ظ† ظ…ط±ط§ط¬ط¹ط© ط§ظ„ظ…ط³طھظ†ط¯' : 'طھظ… طھط³ط¬ظٹظ„ ط£ظ…ط± طµط¨ط§ط؛ط© ظ…ط­ظپظˆط¸ ظ…ظ† ظ…ط±ط§ط¬ط¹ط© ط§ظ„ظ…ط³طھظ†ط¯', sourceDocument: pendingWeavingSlipImage ? { type:reviewType === 'deltexIssue' ? 'raw-issue-review-image' : 'saved-order-review-image', image:pendingWeavingSlipImage } : null }));
+    const rawSaved = await postBackend('/batches/dyehouse', batchToApi({ id:uid(), orderId, date:suggestion.orderDate, quantity:totalRawQuantity, supplier:suggestion.weavingSource || '', noteNumber:suggestion.rawNoteNumber, notes:reviewType === 'deltexIssue' ? 'تم تسجيل إذن صرف خام من مراجعة المستند' : 'تم تسجيل أمر صباغة محفوظ من مراجعة المستند', sourceDocument: pendingWeavingSlipImage ? { type:reviewType === 'deltexIssue' ? 'raw-issue-review-image' : 'saved-order-review-image', image:pendingWeavingSlipImage } : null }));
     if (!rawSaved) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¥ط°ظ† ط§ظ„ط®ط§ظ… ط§ظ„ظ…ط³طھظˆط±ط¯ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط³طھظ†ط¯ ظƒط§ظ…ظ„ظ‹ط§.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ إذن الخام المستورد في قاعدة البيانات. لم يتم اعتماد المستند كاملًا.');
       return;
     }
   }
   for (const row of accessoryRows) {
-    const savedAccessory = await postBackend('/batches/accessory', batchToApi({ id:uid(), orderId, date:suggestion.orderDate, accessoryType:row.accessoryType || accessoryType || 'ط¥ظƒط³ط³ظˆط§ط±', quantity:Number(row.quantity || 0), noteNumber:suggestion.rawNoteNumber || '', notes:`ظ„ظˆظ† ظ…ط±طھط¨ط·: ${row.pantoneCode || '-'}`, movement:'sent' }));
+    const savedAccessory = await postBackend('/batches/accessory', batchToApi({ id:uid(), orderId, date:suggestion.orderDate, accessoryType:row.accessoryType || accessoryType || 'إكسسوار', quantity:Number(row.quantity || 0), noteNumber:suggestion.rawNoteNumber || '', notes:`لون مرتبط: ${row.pantoneCode || '-'}`, movement:'sent' }));
     if (!savedAccessory) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¥ظƒط³ط³ظˆط§ط± ط§ظ„ظ…ط³طھظ†ط¯ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ…ط³طھظ†ط¯ ظƒط§ظ…ظ„ظ‹ط§.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ إكسسوار المستند في قاعدة البيانات. لم يتم اعتماد المستند كاملًا.');
       return;
     }
   }
@@ -7099,7 +7099,7 @@ async function confirmAmalOrderImport() {
 }
 function repairGlobalArabicText() {
   document.querySelectorAll('#documentTitle, button, h2, h3, th, .eyebrow, .empty-state').forEach((element)=>{
-    if (isLegacyRecoveredText(element.textContent || '')) element.textContent = 'ظ…ط±ط§ط¬ط¹ط©';
+    if (isLegacyRecoveredText(element.textContent || '')) element.textContent = 'مراجعة';
   });
 }
 
@@ -7132,13 +7132,13 @@ function getReviewedOrder() {
   return orderId ? calculateOrder(orders.find((item)=>item.id===orderId)) : null;
 }
 function fillReviewOrderOptions() {
-  refs.weavingSlipOrderNumber.innerHTML = `<option value="">ط§ط®طھط± ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط±طھط¨ط· ط¨ط§ظ„ظ…ط³طھظ†ط¯</option>${orders.map((order)=>`<option value="${escapeHtml(order.id)}">${escapeHtml(order.orderNumber)} - ${escapeHtml(order.customer)} - ${escapeHtml(order.fabricType)}</option>`).join('')}`;
+  refs.weavingSlipOrderNumber.innerHTML = `<option value="">اختر الطلب المرتبط بالمستند</option>${orders.map((order)=>`<option value="${escapeHtml(order.id)}">${escapeHtml(order.orderNumber)} - ${escapeHtml(order.customer)} - ${escapeHtml(order.fabricType)}</option>`).join('')}`;
 }
 function normalizeNote(value) {
-  const arabicDigits = 'ظ ظ،ظ¢ظ£ظ¤ظ¥ظ¦ظ§ظ¨ظ©';
+  const arabicDigits = 'ظ ١٢٣٤٥٦٧٨٩';
   const persianDigits = 'غ°غ±غ²غ³غ´غµغ¶غ·غ¸غ¹';
   return String(value || '').trim()
-    .replace(/[ظ -ظ©]/g, (digit)=>String(arabicDigits.indexOf(digit)))
+    .replace(/[ظ -٩]/g, (digit)=>String(arabicDigits.indexOf(digit)))
     .replace(/[غ°-غ¹]/g, (digit)=>String(persianDigits.indexOf(digit)))
     .replace(/\s+/g, '');
 }
@@ -7146,17 +7146,17 @@ function findOrderByReviewedNote(noteNumber) {
   const note = normalizeNote(noteNumber);
   if (!note) return null;
   const sources = [
-    ...rawBatches.map((batch)=>({ kind:'ط¯ظپط¹ط© ط®ط±ظˆط¬ ط®ط§ظ… ظ„ظ„ظ…طµط¨ط؛ط©', orderId:batch.orderId, allocationId:'', batch })),
-    ...accessoryBatches.map((batch)=>({ kind:'ط¥ظƒط³ط³ظˆط§ط±', orderId:batch.orderId, allocationId:'', batch })),
-    ...productionBatches.map((batch)=>({ kind:'ط§ط³طھظ„ط§ظ… ظ…ط¬ظ‡ط² ظ…ظ† ط§ظ„ظ…طµط¨ط؛ط©', orderId:allocations.find((item)=>item.id===batch.allocationId)?.orderId || '', allocationId:batch.allocationId, batch })),
-    ...customerBatches.map((batch)=>({ kind:'طھط³ظ„ظٹظ… ط¹ظ…ظٹظ„', orderId:allocations.find((item)=>item.id===batch.allocationId)?.orderId || '', allocationId:batch.allocationId, batch })),
+    ...rawBatches.map((batch)=>({ kind:'دفعة خروج خام للمصبغة', orderId:batch.orderId, allocationId:'', batch })),
+    ...accessoryBatches.map((batch)=>({ kind:'إكسسوار', orderId:batch.orderId, allocationId:'', batch })),
+    ...productionBatches.map((batch)=>({ kind:'استلام مجهز من المصبغة', orderId:allocations.find((item)=>item.id===batch.allocationId)?.orderId || '', allocationId:batch.allocationId, batch })),
+    ...customerBatches.map((batch)=>({ kind:'تسليم عميل', orderId:allocations.find((item)=>item.id===batch.allocationId)?.orderId || '', allocationId:batch.allocationId, batch })),
   ];
   return sources.find((item)=> item.orderId && normalizeNote(item.batch.noteNumber) === note) || null;
 }
 function matchReviewByNoteNumber() {
   const match = findOrderByReviewedNote(refs.weavingSlipNoteNumber.value);
   if (!match) {
-    refs.reviewMatchStatus.textContent = 'ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط·ظ„ط¨ ظ…ط±طھط¨ط· ط¨ظ‡ط°ط§ ط§ظ„ط±ظ‚ظ…. ط±ط§ط¬ط¹ ط±ظ‚ظ… ط§ظ„ط¥ط°ظ† ط£ظˆ ط§ط®طھط± ط§ظ„ط·ظ„ط¨ ظٹط¯ظˆظٹظ‹ط§.';
+    refs.reviewMatchStatus.textContent = 'لم يتم العثور على طلب مرتبط بهذا الرقم. راجع رقم الإذن أو اختر الطلب يدويًا.';
     return;
   }
   refs.weavingSlipOrderNumber.value = match.orderId;
@@ -7164,7 +7164,7 @@ function matchReviewByNoteNumber() {
   if (match.allocationId && refs.weavingSlipAllocation) refs.weavingSlipAllocation.value = match.allocationId;
   if (!refs.weavingSlipQuantity.value && match.batch.quantity) refs.weavingSlipQuantity.value = match.batch.quantity;
   const order = orders.find((item)=>item.id===match.orderId);
-  refs.reviewMatchStatus.textContent = `طھظ…طھ ط§ظ„ظ…ط·ط§ط¨ظ‚ط© ظ…ط¹ ط§ظ„ط·ظ„ط¨ ${order?.orderNumber || '-'} / ${order?.customer || '-'} ظ…ظ† ط®ظ„ط§ظ„ ${match.kind}. ط±ط§ط¬ط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ‚ط¨ظ„ ط§ظ„طھط³ط¬ظٹظ„.`;
+  refs.reviewMatchStatus.textContent = `تمت المطابقة مع الطلب ${order?.orderNumber || '-'} / ${order?.customer || '-'} من خلال ${match.kind}. راجع البيانات قبل التسجيل.`;
 }
 function updateDocumentReviewFields() {
   const type = refs.weavingSlipType.value;
@@ -7178,15 +7178,15 @@ function updateDocumentReviewFields() {
   refs.weavingSlipWidthLine.closest('label').style.display = needsRawIssueFields ? '' : 'none';
   refs.weavingSlipSupplier.closest('label').style.display = needsRawIssueFields ? '' : 'none';
   refs.weavingSlipSupplier.required = needsRawIssueFields;
-  refs.weavingSlipWidthLine.innerHTML = '<option value="">ط§ط®طھط± ط§ظ„ط¹ط±ط¶ / ط§ظ„ط¨ظˆطµط© ط¨ط¹ط¯ ط§ط®طھظٹط§ط± ط§ظ„ط·ظ„ط¨</option>';
-  refs.weavingSlipAllocation.innerHTML = '<option value="">ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ط¨ظ†ط¯ ط¨ط¹ط¯ ط§ط®طھظٹط§ط± ط§ظ„ط·ظ„ط¨</option>';
+  refs.weavingSlipWidthLine.innerHTML = '<option value="">اختر العرض / البوصة بعد اختيار الطلب</option>';
+  refs.weavingSlipAllocation.innerHTML = '<option value="">اختر اللون / البند بعد اختيار الطلب</option>';
   refs.weavingSlipWidthLine.required = false;
   if (!order) return;
   refs.weavingSlipWidthLine.innerHTML = order.widthMode === 'multiple'
-    ? `<option value="">ط§ط®طھط± ط§ظ„ط¹ط±ط¶ ط§ظ„ظ…ط·ظ„ظˆط¨</option>${order.widthLines.map((item)=>`<option value="${item.id}">ط¨ظˆطµط© ${item.inch} / ط¹ط±ط¶ ${item.width} / ظƒظ…ظٹط© ${item.quantity}</option>`).join('')}`
-    : `<option value="">ط؛ظٹط± ظ…ط·ظ„ظˆط¨ ظ„ط·ظ„ط¨ ط¹ط±ط¶ ظˆط§ط­ط¯</option>`;
+    ? `<option value="">اختر العرض المطلوب</option>${order.widthLines.map((item)=>`<option value="${item.id}">بوصة ${item.inch} / عرض ${item.width} / كمية ${item.quantity}</option>`).join('')}`
+    : `<option value="">غير مطلوب لطلب عرض واحد</option>`;
   refs.weavingSlipWidthLine.required = needsRawIssueFields && order.widthMode === 'multiple';
-  refs.weavingSlipAllocation.innerHTML = `<option value="">ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ط¨ظ†ط¯</option>${order.allocations.map((item)=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.color)} / ط¹ط±ط¶ ${escapeHtml(item.targetFinishedWidth)} / ظƒظ…ظٹط© ${escapeHtml(item.plannedQuantity)}</option>`).join('')}`;
+  refs.weavingSlipAllocation.innerHTML = `<option value="">اختر اللون / البند</option>${order.allocations.map((item)=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.color)} / عرض ${escapeHtml(item.targetFinishedWidth)} / كمية ${escapeHtml(item.plannedQuantity)}</option>`).join('')}`;
 }
 function openDocumentReviewDialog() {
   pendingWeavingSlipImage = '';
@@ -7214,13 +7214,13 @@ async function confirmWeavingSlip(event) {
   event.preventDefault();
   if (refs.weavingSlipType.value === 'amalOrder') { await confirmAmalOrderImport(); return; }
   const order = getReviewedOrder();
-  if (!order) { alert('ط§ط®طھط± ط§ظ„ط·ظ„ط¨ ط§ظ„ظ…ط±طھط¨ط· ط¨ط§ظ„ظ…ط³طھظ†ط¯ ظ‚ط¨ظ„ ط§ظ„طھط³ط¬ظٹظ„.'); return; }
+  if (!order) { alert('اختر الطلب المرتبط بالمستند قبل التسجيل.'); return; }
   const type = refs.weavingSlipType.value;
   const isRawIssue = type === 'weaving' || type === 'deltexIssue';
-  if (isRawIssue && order.widthMode === 'multiple' && !refs.weavingSlipWidthLine.value) { alert('ط§ط®طھط± ط§ظ„ط¹ط±ط¶ / ط§ظ„ط¨ظˆطµط© ط§ظ„ظ…ط±طھط¨ط·ط© ط¨ط¥ط°ظ† ط§ظ„ط®ط§ظ….'); return; }
-  if ((type === 'production' || type === 'customer') && !refs.weavingSlipAllocation.value) { alert('ط§ط®طھط± ط§ظ„ظ„ظˆظ† / ط§ظ„ط¨ظ†ط¯ ط§ظ„ظ…ط±طھط¨ط· ط¨ط§ظ„ط­ط±ظƒط©.'); return; }
+  if (isRawIssue && order.widthMode === 'multiple' && !refs.weavingSlipWidthLine.value) { alert('اختر العرض / البوصة المرتبطة بإذن الخام.'); return; }
+  if ((type === 'production' || type === 'customer') && !refs.weavingSlipAllocation.value) { alert('اختر اللون / البند المرتبط بالحركة.'); return; }
   const quantity = Number(refs.weavingSlipQuantity.value || 0);
-  if (!quantity) { alert('ط£ط¯ط®ظ„ ط§ظ„ظƒظ…ظٹط© ظ‚ط¨ظ„ ط§ظ„طھط³ط¬ظٹظ„.'); return; }
+  if (!quantity) { alert('أدخل الكمية قبل التسجيل.'); return; }
   const common = {
     id: uid(),
     date: refs.weavingSlipDate.value,
@@ -7243,7 +7243,7 @@ async function confirmWeavingSlip(event) {
     refs.pricingDialog.showModal();
     return;
   }
-  if (!(await ensureBackendForWrite('طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„ ط¨ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… طھط³ط¬ظٹظ„ ط§ظ„ظ…ط³طھظ†ط¯.'))) return;
+  if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم تسجيل المستند.'))) return;
   let saved = null;
   if (isRawIssue) {
     const existingRawBatch = rawBatches.find((batch)=>batch.orderId === order.id && normalizeDigits(batch.noteNumber) === normalizeDigits(common.noteNumber));
@@ -7257,7 +7257,7 @@ async function confirmWeavingSlip(event) {
   if (type === 'production') saved = await postBackend('/batches/finished', batchToApi({ ...common, orderId:order.id, allocationId:refs.weavingSlipAllocation.value }));
   if (type === 'customer') saved = await postBackend('/batches/customer', batchToApi({ ...common, orderId:order.id, allocationId:refs.weavingSlipAllocation.value }));
   if (!saved) {
-    await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط³طھظ†ط¯ ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ط§ط¹طھظ…ط§ط¯ ط§ظ„طھط³ط¬ظٹظ„.');
+    await rollbackAfterBackendWriteFailure('تعذر حفظ بيانات المستند في قاعدة البيانات. لم يتم اعتماد التسجيل.');
     return;
   }
   await loadBackendData();
@@ -7265,7 +7265,7 @@ async function confirmWeavingSlip(event) {
 }
 
 function documentHeader() {
-  return '<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>ط§ظ„ط¹ط§ط´ط± ظ…ظ† ط±ظ…ط¶ط§ظ†</span><span>ط®ط¯ظ…ط© ط§ظ„ط¹ظ…ظ„ط§ط،: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>ظ„ظ„ظ†ط³ظٹط¬ ظˆط§ظ„طµط¨ط§ط؛ط© ظˆط§ظ„طھط¬ظ‡ظٹط²</span></div></div>';
+  return '<div class="document-brand"><div class="document-brand-info"><strong>2B Tex</strong><span>العاشر من رمضان</span><span>خدمة العملاء: 01000343835</span></div><div class="document-brand-logo"><img src="./2b-mark.svg" alt="2B Tex"><span>للنسيج والصباغة والتجهيز</span></div></div>';
 }
 
 
@@ -7283,23 +7283,23 @@ function rawPermitImagesSection(order, rawNotes = null) {
     : orderImages;
   if (!images.length && orderImages.length) images = orderImages;
   if (!images.length) return '';
-  const cards = images.map((item)=>`<figure><img src="${item.image}" alt="طµظˆط±ط© ط¥ط°ظ† ط§ظ„ط®ط§ظ… ${item.noteNumber}"><figcaption>ط¥ط°ظ† ط®ط§ظ…: ${item.noteNumber}</figcaption></figure>`).join('');
-  return `<section class="report-section raw-permit-section"><h3>طµظˆط±ط© ط¥ط°ظ† ط§ظ„ط®ط§ظ…</h3><div class="raw-permit-gallery">${cards}</div></section>`;
+  const cards = images.map((item)=>`<figure><img src="${item.image}" alt="صورة إذن الخام ${item.noteNumber}"><figcaption>إذن خام: ${item.noteNumber}</figcaption></figure>`).join('');
+  return `<section class="report-section raw-permit-section"><h3>صورة إذن الخام</h3><div class="raw-permit-gallery">${cards}</div></section>`;
 }
 
 function renderDyehouseDocumentPicker(order) {
   const names = dyehouseNamesForOrder(order);
-  refs.documentTitle.textContent = 'ط§ط®طھظٹط§ط± ط£ظ…ط± طµط¨ط§ط؛ط©';
+  refs.documentTitle.textContent = 'اختيار أمر صباغة';
   refs.documentBody.dataset.documentType = 'dyeing-picker';
   refs.documentBody.dataset.dyehouseName = '';
   refs.documentBody.innerHTML = `<div class="document-sheet">
     ${documentHeader()}
-    <div class="report-title"><h2>ط§ط®طھظٹط§ط± ط£ظ…ط± طµط¨ط§ط؛ط©</h2><span>ط§ط®طھط± ط§ظ„ظ…طµط¨ط؛ط© ط§ظ„ظ…ط·ظ„ظˆط¨ط© ظ„ظپطھط­ ط£ظ…ط± طھط´ط؛ظٹظ„ ظ…ظ†ظپطµظ„ ظ„ظƒظ„ ظ…طµط¨ط؛ط©.</span></div>
-    <table><thead><tr><th>ط§ظ„ظ…طµط¨ط؛ط©</th><th>ط¹ط¯ط¯ ط§ظ„ط£ظ„ظˆط§ظ†</th><th>ط¥ط¬ظ…ط§ظ„ظٹ ظƒظ…ظٹط© ط§ظ„طµط¨ط§ط؛ط©</th><th>ط¥ط¬ط±ط§ط،</th></tr></thead><tbody>${names.map((name)=>{
+    <div class="report-title"><h2>اختيار أمر صباغة</h2><span>اختر المصبغة المطلوبة لفتح أمر تشغيل منفصل لكل مصبغة.</span></div>
+    <table><thead><tr><th>المصبغة</th><th>عدد الألوان</th><th>إجمالي كمية الصباغة</th><th>إجراء</th></tr></thead><tbody>${names.map((name)=>{
       const rows = scopedDyehouseRowsForPicker(order, name);
       const quantity = rows.reduce((total, row)=>total + Number(row.plannedQuantity || 0), 0);
-      return `<tr><td>${escapeHtml(name)}</td><td>${rows.length}</td><td>${formatNumber(quantity)}</td><td><button class="mini-btn gold" type="button" data-open-dyeing-for="${escapeHtml(name)}">ظپطھط­ ط£ظ…ط± ط§ظ„طµط¨ط§ط؛ط©</button></td></tr>`;
-    }).join('') || emptyRow(4, 'ظ„ط§ طھظˆط¬ط¯ ظ…طµط§ط¨ط؛ ظ…ط±طھط¨ط·ط© ط¨ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨.')}</tbody></table>
+      return `<tr><td>${escapeHtml(name)}</td><td>${rows.length}</td><td>${formatNumber(quantity)}</td><td><button class="mini-btn gold" type="button" data-open-dyeing-for="${escapeHtml(name)}">فتح أمر الصباغة</button></td></tr>`;
+    }).join('') || emptyRow(4, 'لا توجد مصابغ مرتبطة بهذا الطلب.')}</tbody></table>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
   refs.documentDialog.showModal();
@@ -7311,8 +7311,8 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   const savedNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
   const current = Object.prototype.hasOwnProperty.call(savedNotes, key) ? savedNotes[key] : '';
   const title = type === 'dyeing'
-    ? `ظ…ظ„ط§ط­ط¸ط§طھ ط£ظ…ط± طھط´ط؛ظٹظ„ ط§ظ„طµط¨ط§ط؛ط©${dyehouseName ? ` - ${dyehouseName}` : ''}`
-    : 'ظ…ظ„ط§ط­ط¸ط§طھ ط£ظ…ط± طھط´ط؛ظٹظ„ ط§ظ„ظ†ط³ظٹط¬';
+    ? `ملاحظات أمر تشغيل الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
+    : 'ملاحظات أمر تشغيل النسيج';
   const value = prompt(title, current);
   if (value === null) return null;
   sourceOrder.operationNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
@@ -7321,7 +7321,7 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
     const customerId = await ensureBackendCustomer(sourceOrder.customer);
     const savedOrder = await putBackend(`/orders/${sourceOrder.id}`, orderToApi(sourceOrder, customerId));
     if (!savedOrder) {
-      await rollbackAfterBackendWriteFailure('طھط¹ط°ط± ط­ظپط¸ ظ…ظ„ط§ط­ط¸ط§طھ ط§ظ„طھظ‚ط±ظٹط± ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ. ظ„ظ… ظٹطھظ… ظپطھط­ ط§ظ„طھظ‚ط±ظٹط±.');
+      await rollbackAfterBackendWriteFailure('تعذر حفظ ملاحظات التقرير في قاعدة البيانات. لم يتم فتح التقرير.');
       return null;
     }
     await loadBackendData();
@@ -7339,7 +7339,7 @@ applyPricingDyehouseOptions();
 ensurePricingItemsUi();
 installGroupedOrderUi();
 refs.openPricingFormBtn.onclick = () => { editingPricingId = null; pendingPricingOrderId = null; if (refs.deletePricingBtn) refs.deletePricingBtn.style.display = 'none'; refs.pricingForm.reset(); refs.pricingNumber.value = nextPricingNumber(); refs.pricingDate.value = new Date().toISOString().slice(0,10); applyPricingMaterialOptions(); applyPricingDyehouseOptions(); renderPricingItemsEditor(); syncAutoCodes(); updatePricingPreview(); refs.pricingDialog.showModal(); };
-refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط§ظ„طھط³ط¹ظٹط±ط©.'); }); };
+refs.deletePricingBtn.onclick = () => { if (editingPricingId) deletePricing(editingPricingId).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); }); };
 if (refs.openDocumentReviewBtn) refs.openDocumentReviewBtn.onclick = openDocumentReviewDialog;
 refs.openOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; editingOrderId = null; refs.orderForm.reset(); refs.orderNumber.value = nextPricingNumber(); refs.orderDate.value = new Date().toISOString().slice(0,10); syncAutoCodes(); renderWidthLinesEditor(); renderAccessoryLinesEditor(); syncWidthModeUi(); resetGroupedOrderRows(); refs.orderDialog.showModal(); };
 if (refs.openOrdersReportBtn) refs.openOrdersReportBtn.onclick = openOrdersReport;
@@ -7401,7 +7401,7 @@ document.addEventListener('click', (event) => {
   const docType = event.target.closest('[data-doc-menu]')?.dataset.docMenu;
   if (docType) {
     event.preventDefault();
-    if (!selectedOrderId) { alert('ط§ط®طھط± ط·ظ„ط¨ظ‹ط§ ط£ظˆظ„ظ‹ط§ ظ„ظپطھط­ ط§ظ„ظ…ط³طھظ†ط¯.'); return; }
+    if (!selectedOrderId) { alert('اختر طلبًا أولًا لفتح المستند.'); return; }
     closeSidebar();
     safeOpenDocument(docType);
   }
@@ -7422,11 +7422,11 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
     return;
   }
   if (event.target.closest('[data-save-gluing-source]')) {
-    saveGluingSourceFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-source-save-error', error); alert('طھط¹ط°ط± ط³ط­ط¨ ط§ظ„ط®ط§ظ…ط© ط¥ظ„ظ‰ ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬.'); });
+    saveGluingSourceFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-source-save-error', error); alert('تعذر سحب الخامة إلى عملية الدمج.'); });
     return;
   }
   if (event.target.closest('[data-save-gluing-merge]')) {
-    saveGluingMergeFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-merge-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط¹ظ…ظ„ظٹط© ط§ظ„ط¯ظ…ط¬.'); });
+    saveGluingMergeFromDialog(event.target.closest('form')).catch((error)=>{ console.error('gluing-merge-save-error', error); alert('تعذر حفظ عملية الدمج.'); });
     return;
   }
   const button = event.target.closest('[data-management-report]');
@@ -7441,7 +7441,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   const addGroupButton = event.target.closest('[data-add-whatsapp-group-row]');
   if (addGroupButton) {
     const type = addGroupButton.dataset.addWhatsappGroupRow || 'dyehouse';
-    const label = addGroupButton.dataset.rowLabel || 'ط§ط³ظ… ط§ظ„ط¨ظ†ط¯';
+    const label = addGroupButton.dataset.rowLabel || 'اسم البند';
     [...refs.documentBody.querySelectorAll('[data-whatsapp-group-rows]')].find((body)=>body.dataset.whatsappGroupRows === type)?.insertAdjacentHTML('beforeend', whatsappSettingsRowHtml(type, label));
     refs.documentBody.querySelectorAll('[data-group-name]').forEach((input)=>input.setAttribute('list', 'whatsappGroupNames'));
   }
@@ -7459,18 +7459,18 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
       includeWaste: !!refs.documentBody.querySelector('[data-schedule-section="includeWaste"]')?.checked,
     };
     const row = enqueueScheduledWhatsappReport(currentSettings, `manual-${Date.now()}`);
-    alert(row ? 'طھظ…طھ ط¥ط¶ط§ظپط© طھظ‚ط±ظٹط± طھط¬ط±ط¨ط© ط¥ظ„ظ‰ ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط±ط³ط§ظ„.' : 'ط­ط¯ط¯ ط¬ط±ظˆط¨ ط§ظ„طھظ‚ط±ظٹط± ط§ظ„ط¯ظˆط±ظٹ ط£ظˆظ„ظ‹ط§.');
+    alert(row ? 'تمت إضافة تقرير تجربة إلى قائمة الإرسال.' : 'حدد جروب التقرير الدوري أولًا.');
     return;
   }
-  if (event.target.closest('[data-save-whatsapp-settings]')) saveWhatsappSettingsFromDialog().catch((error)=>{ console.error('whatsapp-settings-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط¥ط¹ط¯ط§ط¯ط§طھ ظˆط§طھط³ط§ط¨.'); });
+  if (event.target.closest('[data-save-whatsapp-settings]')) saveWhatsappSettingsFromDialog().catch((error)=>{ console.error('whatsapp-settings-save-error', error); alert('تعذر حفظ إعدادات واتساب.'); });
   if (event.target.closest('[data-add-price-row]')) {
     refs.documentBody.querySelector('[data-dyehouse-price-rows]')?.insertAdjacentHTML('beforeend', dyehousePriceRowHtml());
   }
   const deletePriceButton = event.target.closest('[data-delete-price-row]');
   if (deletePriceButton) deletePriceButton.closest('[data-dyehouse-price-row]')?.remove();
-  if (event.target.closest('[data-save-dyehouse-prices]')) saveDyehousePricesFromDialog().catch((error)=>{ console.error('dyehouse-prices-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط£ط³ط¹ط§ط± ط§ظ„ظ…طµط§ط¨ط؛.'); });
+  if (event.target.closest('[data-save-dyehouse-prices]')) saveDyehousePricesFromDialog().catch((error)=>{ console.error('dyehouse-prices-save-error', error); alert('تعذر حفظ أسعار المصابغ.'); });
   const dyeingDocButton = event.target.closest('[data-open-dyeing-for]');
-  if (dyeingDocButton) openDyeingDocumentForDyehouse(dyeingDocButton.dataset.openDyeingFor).catch((error)=>{ console.error('dyeing-document-open-error', error); alert('طھط¹ط°ط± ظپطھط­ ط£ظ…ط± ط§ظ„طµط¨ط§ط؛ط© ط­ط§ظ„ظٹظ‹ط§.'); });
+  if (dyeingDocButton) openDyeingDocumentForDyehouse(dyeingDocButton.dataset.openDyeingFor).catch((error)=>{ console.error('dyeing-document-open-error', error); alert('تعذر فتح أمر الصباغة حاليًا.'); });
   if (event.target.closest('[data-refresh-a5-accounts]')) renderA5AccountsDialog();
   const a5LedgerButton = event.target.closest('[data-a5-ledger]');
   if (a5LedgerButton) renderA5LedgerDialog(a5LedgerButton.dataset.a5Ledger);
@@ -7480,16 +7480,16 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   const editCustomerMasterButton = event.target.closest('[data-edit-customer-master]');
   if (editCustomerMasterButton) fillCustomerMasterForm(editCustomerMasterButton.dataset.editCustomerMaster);
   const deleteCustomerMasterButton = event.target.closest('[data-delete-customer-master]');
-  if (deleteCustomerMasterButton) deleteCustomerMaster(deleteCustomerMasterButton.dataset.deleteCustomerMaster).catch((error)=>{ console.error('customer-master-delete-error', error); alert(error.message || 'طھط¹ط°ط± ط­ط°ظپ ط§ظ„ط¹ظ…ظٹظ„.'); });
+  if (deleteCustomerMasterButton) deleteCustomerMaster(deleteCustomerMasterButton.dataset.deleteCustomerMaster).catch((error)=>{ console.error('customer-master-delete-error', error); alert(error.message || 'تعذر حذف العميل.'); });
   if (event.target.closest('[data-clear-customer-master]')) clearCustomerMasterForm();
-  if (event.target.closest('[data-save-customer-master]')) saveCustomerMasterFromDialog().catch((error)=>{ console.error('customer-master-save-error', error); alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¹ظ…ظٹظ„.'); });
+  if (event.target.closest('[data-save-customer-master]')) saveCustomerMasterFromDialog().catch((error)=>{ console.error('customer-master-save-error', error); alert(error.message || 'تعذر حفظ بيانات العميل.'); });
   if (event.target.closest('[data-back-customer-accounts]')) renderCustomerAccountsDialog();
   const openingButton = event.target.closest('[data-save-opening-balance]');
-  if (openingButton) saveCustomerOpeningBalance(openingButton.dataset.saveOpeningBalance).catch((error)=>{ console.error('customer-opening-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط±طµظٹط¯ ط§ظ„ط¹ظ…ظٹظ„.'); });
+  if (openingButton) saveCustomerOpeningBalance(openingButton.dataset.saveOpeningBalance).catch((error)=>{ console.error('customer-opening-save-error', error); alert('تعذر حفظ رصيد العميل.'); });
   const paymentButton = event.target.closest('[data-add-customer-payment]');
-  if (paymentButton) addCustomerPayment(paymentButton.dataset.addCustomerPayment).catch((error)=>{ console.error('customer-payment-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط¯ظپط¹ط© ط§ظ„ط¹ظ…ظٹظ„.'); });
+  if (paymentButton) addCustomerPayment(paymentButton.dataset.addCustomerPayment).catch((error)=>{ console.error('customer-payment-save-error', error); alert('تعذر حفظ دفعة العميل.'); });
   const deletePaymentButton = event.target.closest('[data-delete-customer-payment]');
-  if (deletePaymentButton) deleteCustomerPayment(deletePaymentButton.dataset.customerName, deletePaymentButton.dataset.deleteCustomerPayment).catch((error)=>{ console.error('customer-payment-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط¯ظپط¹ط© ط§ظ„ط¹ظ…ظٹظ„.'); });
+  if (deletePaymentButton) deleteCustomerPayment(deletePaymentButton.dataset.customerName, deletePaymentButton.dataset.deleteCustomerPayment).catch((error)=>{ console.error('customer-payment-delete-error', error); alert('تعذر حذف دفعة العميل.'); });
   if (event.target.closest('[data-new-system-user]')) openSystemUserForm();
   if (event.target.closest('[data-back-system-users]')) openUsersDialog();
   const editUserButton = event.target.closest('[data-edit-system-user]');
@@ -7498,9 +7498,9 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
     openSystemUserForm(users.find((user)=>user.id === editUserButton.dataset.editSystemUser) || null);
   }
   const saveUserButton = event.target.closest('[data-save-system-user]');
-  if (saveUserButton) saveSystemUser(saveUserButton.dataset.saveSystemUser).catch((error)=>{ console.error('system-user-save-error', error); alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ظ…ط³طھط®ط¯ظ….'); });
+  if (saveUserButton) saveSystemUser(saveUserButton.dataset.saveSystemUser).catch((error)=>{ console.error('system-user-save-error', error); alert(error.message || 'تعذر حفظ المستخدم.'); });
   const deleteUserButton = event.target.closest('[data-delete-system-user]');
-  if (deleteUserButton) deleteSystemUser(deleteUserButton.dataset.deleteSystemUser).catch((error)=>{ console.error('system-user-delete-error', error); alert(error.message || 'طھط¹ط°ط± ط­ط°ظپ ط§ظ„ظ…ط³طھط®ط¯ظ….'); });
+  if (deleteUserButton) deleteSystemUser(deleteUserButton.dataset.deleteSystemUser).catch((error)=>{ console.error('system-user-delete-error', error); alert(error.message || 'تعذر حذف المستخدم.'); });
   if (event.target.closest('[data-add-bulk-note-number]')) {
     refs.documentBody.querySelector('[data-bulk-note-list]')?.insertAdjacentHTML('beforeend', bulkNoteNumberFieldHtml());
   }
@@ -7519,12 +7519,12 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   }
   const removeBulkExtraRawButton = event.target.closest('[data-remove-bulk-extra-raw]');
   if (removeBulkExtraRawButton) removeBulkExtraRawButton.closest('[data-bulk-extra-raw-row]')?.remove();
-  if (event.target.closest('[data-save-bulk-batches]')) saveBulkBatchesFromDialog().catch((error)=>{ console.error('bulk-batches-save-error', error); alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط¥ط¯ط®ط§ظ„ ط§ظ„ط¬ظ…ط§ط¹ظٹ.'); });
+  if (event.target.closest('[data-save-bulk-batches]')) saveBulkBatchesFromDialog().catch((error)=>{ console.error('bulk-batches-save-error', error); alert(error.message || 'تعذر حفظ الإدخال الجماعي.'); });
 });
 
 refs.closePricingFormBtn.onclick = () => { pendingPricingOrderId = null; refs.pricingDialog.close(); };
 refs.closeOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; refs.orderDialog.close(); };
-refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط§ظ„طھط³ط¹ظٹط±ط©.'); });
+refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
 if (refs.savePricingBtn) refs.savePricingBtn.onclick = refs.pricingForm.onsubmit;
 refs.pricingNumber.readOnly = true;
 ['pricingQuantity','pricingRawCost','pricingDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg'].forEach((key)=>refs[key].oninput = updatePricingPreview);
@@ -7535,7 +7535,7 @@ refs.addWidthLineBtn.onclick = () => refs.widthLinesEditor.insertAdjacentHTML('b
 refs.widthLinesEditor.onclick = (event) => { if (event.target.dataset.removeWidthLine !== undefined) event.target.closest('.width-line-row')?.remove(); };
 refs.addAccessoryLineBtn.onclick = () => refs.accessoryLinesEditor.insertAdjacentHTML('beforeend', accessoryLineRowHtml());
 refs.accessoryLinesEditor.onclick = (event) => { if (event.target.dataset.removeAccessoryLine !== undefined) event.target.closest('.accessory-line-row')?.remove(); };
-refs.orderForm.onsubmit = (event) => addOrder(event).catch((error)=>{ console.error('order-save-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط·ظ„ط¨.'); });
+refs.orderForm.onsubmit = (event) => addOrder(event).catch((error)=>{ console.error('order-save-error', error); alert('تعذر حفظ الطلب.'); });
 refs.orderNumber.oninput = syncAutoCodes;
 refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.oninput = refs.dyehouseFilter.oninput = refs.fabricFilter.oninput = renderOrders;
 [refs.pricingSearchInput, refs.pricingCustomerFilter, refs.pricingStatusFilter].filter(Boolean).forEach((input)=>{
@@ -7554,7 +7554,7 @@ refs.pricingTableBody.onclick = (event) => {
   const editPricingButton = event.target.closest('[data-edit-pricing]');
   if (editPricingButton) { editPricing(editPricingButton.dataset.editPricing); return; }
   const deletePricingButton = event.target.closest('[data-delete-pricing]');
-  if (deletePricingButton) deletePricing(deletePricingButton.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط§ظ„طھط³ط¹ظٹط±ط©.'); });
+  if (deletePricingButton) deletePricing(deletePricingButton.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); });
 };
 function handleOrderTableClick(event) {
   const button = event.target.closest('button');
@@ -7568,10 +7568,10 @@ function handleOrderTableClick(event) {
       openOrderFocusMode(button.dataset.view);
     } catch (error) {
       console.error('Order details failed', error);
-      recordAudit('error', 'orderDetails', button.dataset.view, null, { message: error && error.message ? error.message : String(error) }, 'ظپط´ظ„ ظپطھط­ طھظپط§طµظٹظ„ ط§ظ„ط·ظ„ط¨');
+      recordAudit('error', 'orderDetails', button.dataset.view, null, { message: error && error.message ? error.message : String(error) }, 'فشل فتح تفاصيل الطلب');
       persistAuditLog().catch((saveError)=>console.warn('audit-save-failed', saveError));
-      refs.orderDetailsPanel.innerHTML = '<div class="empty-state">طھط¹ط°ط± ظپطھط­ طھظپط§طµظٹظ„ ط§ظ„ط·ظ„ط¨ ط­ط§ظ„ظٹظ‹ط§. ط±ط§ط¬ط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط«ظ… ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰.</div>';
-      alert(`طھط¹ط°ط± ظپطھط­ طھظپط§طµظٹظ„ ط§ظ„ط·ظ„ط¨. ط³ط¨ط¨ ط§ظ„ط®ط·ط£: ${error && error.message ? error.message : String(error)}`);
+      refs.orderDetailsPanel.innerHTML = '<div class="empty-state">تعذر فتح تفاصيل الطلب حاليًا. راجع البيانات ثم حاول مرة أخرى.</div>';
+      alert(`تعذر فتح تفاصيل الطلب. سبب الخطأ: ${error && error.message ? error.message : String(error)}`);
     }
     return;
   }
@@ -7585,7 +7585,7 @@ function handleOrderTableClick(event) {
     if (order) { selectedOrderId = order.id; fillOrderForm(order); refs.orderDialog.showModal(); }
     return;
   }
-  if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch((error)=>{ console.error('order-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ط·ظ„ط¨.'); });
+  if (button.dataset.deleteOrder) deleteOrder(button.dataset.deleteOrder).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
 }
 [refs.ordersTableBody, refs.weavingOrdersTableBody, refs.dyehouseOrdersTableBody, refs.warehouseOrdersTableBody]
   .filter(Boolean)
@@ -7642,26 +7642,26 @@ document.addEventListener('submit', (event) => {
   if (event.target?.id === 'mainWarehouseStockForm') {
     saveMainWarehouseStock(event).catch((error)=>{
       console.error('main-warehouse-stock-save-error', error);
-      alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط±طµظٹط¯ ط§ظ„ظ…ط®ط²ظ† ط§ظ„ط±ط¦ظٹط³ظٹ.');
+      alert(error.message || 'تعذر حفظ رصيد المخزن الرئيسي.');
     });
   }
   if (event.target?.id === 'finishedSaleForm') {
     saveFinishedStockSale(event).catch((error)=>{
       console.error('finished-sale-save-error', error);
-      alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط¨ظٹط¹ ظ…ط¬ظ‡ط².');
+      alert(error.message || 'تعذر حفظ بيع مجهز.');
     });
   }
   if (event.target?.id === 'finishedTransferForm') {
     saveFinishedStockTransfer(event).catch((error)=>{
       console.error('finished-transfer-save-error', error);
-      alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ طھط­ظˆظٹظ„ ط±طµظٹط¯ ظ…ط¬ظ‡ط².');
+      alert(error.message || 'تعذر حفظ تحويل رصيد مجهز.');
     });
   }
 });
 refs.orderDetailsPanel.addEventListener('submit', (event) => {
   addBatch(event).catch((error) => {
     console.error('batch-save-error', error);
-    alert('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط­ط±ظƒط©. ط±ط§ط¬ط¹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط«ظ… ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰.');
+    alert('تعذر حفظ الحركة. راجع البيانات ثم حاول مرة أخرى.');
   });
 });
 refs.orderDetailsPanel.addEventListener('input', (event) => {
@@ -7693,12 +7693,12 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
     return;
   }
   if (target.id === 'focusDeleteOrderBtn') {
-    if (selectedOrderId) deleteOrder(selectedOrderId).then(()=>{ if (!selectedOrderId) closeOrderFocusMode(); }).catch((error)=>{ console.error('order-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ط·ظ„ط¨.'); });
+    if (selectedOrderId) deleteOrder(selectedOrderId).then(()=>{ if (!selectedOrderId) closeOrderFocusMode(); }).catch((error)=>{ console.error('order-delete-error', error); alert('تعذر حذف الطلب.'); });
     return;
   }
   if (target.id === 'editOrderBtn') { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
-  if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط­ط§ظ„ط© ط¯ظˆط±ط© ط§ظ„طھط´ط؛ظٹظ„.'); }); return; }
-  if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('طھط¹ط°ط± ط­ظپط¸ ط§ظ„ظ„ظˆظ†.'); });
+  if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
+  if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
   if (target.dataset.openCombinedMovement) {
     event.preventDefault();
     openBulkBatchDialog(target.dataset.openCombinedMovement);
@@ -7709,19 +7709,19 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
     openBulkBatchDialog(target.closest('.batch-form'));
     return;
   }
-  if (target.dataset.editAllocation) editAllocation(target.dataset.editAllocation).catch((error)=>{ console.error('allocation-edit-error', error); alert('طھط¹ط°ط± طھط¹ط¯ظٹظ„ ط§ظ„ظ„ظˆظ†.'); });
-  if (target.dataset.deleteAllocation) deleteAllocation(target.dataset.deleteAllocation).catch((error)=>{ console.error('allocation-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ظ„ظˆظ†.'); });
+  if (target.dataset.editAllocation) editAllocation(target.dataset.editAllocation).catch((error)=>{ console.error('allocation-edit-error', error); alert('تعذر تعديل اللون.'); });
+  if (target.dataset.deleteAllocation) deleteAllocation(target.dataset.deleteAllocation).catch((error)=>{ console.error('allocation-delete-error', error); alert('تعذر حذف اللون.'); });
   if (target.dataset.transferAllocation) {
     const transferContext = {
       sourceDyehouse: target.dataset.transferSourceDyehouse || '',
       availableQuantity: target.dataset.transferAvailableQuantity || '',
       accessorySummary: target.dataset.transferAccessorySummary || '',
     };
-    transferAllocationDyehouse(target.dataset.transferAllocation, transferContext).catch((error)=>{ console.error('allocation-transfer-error', error); alert('طھط¹ط°ط± ط­ظپط¸ طھط­ظˆظٹظ„ ط§ظ„ظ…طµط¨ط؛ط©.'); });
+    transferAllocationDyehouse(target.dataset.transferAllocation, transferContext).catch((error)=>{ console.error('allocation-transfer-error', error); alert('تعذر حفظ تحويل المصبغة.'); });
   }
   const action = target.dataset.batchAction;
-  if (action === 'delete') deleteBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-delete-error', error); alert('طھط¹ط°ط± ط­ط°ظپ ط§ظ„ط­ط±ظƒط©.'); });
-  if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-edit-error', error); alert('طھط¹ط°ط± طھط¹ط¯ظٹظ„ ط§ظ„ط­ط±ظƒط©.'); });
+  if (action === 'delete') deleteBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-delete-error', error); alert('تعذر حذف الحركة.'); });
+  if (action === 'edit') editBatch(target.dataset.batchType, target.dataset.batchId).catch((error)=>{ console.error('batch-edit-error', error); alert('تعذر تعديل الحركة.'); });
   if (target.dataset.retryOutbox) retryOutbox(target.dataset.retryOutbox);
 });
 installDocumentsUiHandlers();
@@ -7732,12 +7732,12 @@ if (refs.weavingSlipDialog) {
   refs.weavingSlipType.onchange = () => { updateDocumentReviewFields(); if ((refs.weavingSlipType.value === 'amalOrder' || refs.weavingSlipType.value === 'deltexIssue') && refs.weavingSlipFile.files?.[0]) applyAmalSuggestionFromFile(refs.weavingSlipFile.files[0]); };
   refs.weavingSlipOrderNumber.onchange = updateDocumentReviewFields;
   refs.reviewMatchNoteBtn.onclick = matchReviewByNoteNumber;
-  refs.weavingSlipFile.onchange = () => handleWeavingSlipFile().catch(()=>alert('طھط¹ط°ط± ظ‚ط±ط§ط،ط© طµظˆط±ط© ط§ظ„ظ…ط³طھظ†ط¯. ط¬ط±ظ‘ط¨ طµظˆط±ط© ط£ظˆط¶ط­ ط£ظˆ ظ…ظ„ظپظ‹ط§ ط¢ط®ط±.'));
-refs.weavingSlipForm.onsubmit = (event) => confirmWeavingSlip(event).catch((error)=>{ console.error('document-review-save-error', error); alert('طھط¹ط°ط± طھط³ط¬ظٹظ„ ط§ظ„ظ…ط³طھظ†ط¯.'); });
+  refs.weavingSlipFile.onchange = () => handleWeavingSlipFile().catch(()=>alert('تعذر قراءة صورة المستند. جرّب صورة أوضح أو ملفًا آخر.'));
+refs.weavingSlipForm.onsubmit = (event) => confirmWeavingSlip(event).catch((error)=>{ console.error('document-review-save-error', error); alert('تعذر تسجيل المستند.'); });
 }
 refs.documentBody?.addEventListener('click', (event) => {
   if (event.target.closest('[data-create-backup]')) createBackupFromStatusDialog();
-  if (event.target.closest('[data-save-fabric-master]')) saveFabricMasterFromDialog().catch((error)=>{ console.error('fabric-master-save-error', error); alert(error.message || 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط£طµظ†ط§ظپ ط§ظ„ط±ط³ظ…ظٹط©.'); });
+  if (event.target.closest('[data-save-fabric-master]')) saveFabricMasterFromDialog().catch((error)=>{ console.error('fabric-master-save-error', error); alert(error.message || 'تعذر حفظ الأصناف الرسمية.'); });
 });
 installAiUiHandlers();
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
