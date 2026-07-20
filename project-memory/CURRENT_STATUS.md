@@ -1,5 +1,24 @@
 # Current Status
 
+## Latest Production Server Migration To 2B-Server
+
+- Date: 2026-07-20.
+- Goal: move the production runtime off Ibrahim's laptop onto the dedicated company server `2B-Server`.
+- New production server: `2B-Server` (Windows Server 2019 Datacenter, domain member of `Delta.Local`, static IP `192.168.11.191`).
+- Runtime location on the server: `C:\2B Tex` (local copy of `system`, `server-tools`, `backups`, `logs`); the runtime no longer runs over the network share.
+- Database: SQL Server Express 2022 instance `SQLEXPRESS` installed locally on 2B-Server, TCP `1433`; database `2BTex` restored from a fresh cutover backup taken after laptop services were stopped (orders=77, customers=28, users=3).
+- Services run as the Windows scheduled task `2B Tex Server` (SYSTEM, at-startup trigger, restart-on-failure), so the system survives server reboots and does not depend on any logged-in session.
+- Env vars `SYSTEM_USER`, `SYSTEM_PASS`, `OPENAI_API_KEY` were set at Machine level on 2B-Server; SQL credentials live in the local `C:\2B Tex\system\.env.sqlserver.local` written by the installer.
+- Firewall: inbound TCP `3000` and `3050` allowed on 2B-Server; File and Printer Sharing enabled for admin-share management.
+- Client entry point unchanged for employees: the shared icon `\\DELTA-DC\Dyeing\2B Tex\2B Tex.exe` still installs/updates and opens the app; only the target URL moved to `http://192.168.11.191:3000/login.html`.
+- Electron client improvement: `windows-app/src/main.js` now resolves `appUrl` from the local `client-app-manifest.json` first, so future server moves need only a manifest update, not an app rebuild.
+- Client distribution: version `2026.07.20-client.1`, `appAsarSha256` `AA57C51F991C61EB6D5D6013C648D28A7533E19B8F2C29630147148ED0F83964`; client health check passes 8/8 and the laptop client auto-updated and opened against the new server.
+- DELTA-DC cleanup: the SQL Express instance accidentally installed on the domain controller during the first migration attempt was stopped and disabled; DELTA-DC hosts only the file share.
+- Laptop: 2B Tex node services stopped; laptop SQL Server keeps the pre-migration data as an extra archive copy.
+- Development workflow note: the git workspace remains the share copy (`\\DELTA-DC\Dyeing\2B Tex\system`); deploying a change now requires syncing changed files to `C:\2B Tex\system` on 2B-Server and restarting the `2B Tex Server` scheduled task.
+- Known follow-up: WhatsApp service on 2B-Server needs the puppeteer Chrome build under the SYSTEM profile cache (copy in progress) and may need one QR re-link; 12 old pending daily reports sit in `whatsapp-service/data/outbox.json` and will all send once WhatsApp connects unless cancelled first.
+- Not touched: SQLite schema, backend calculations, stock formulas, waste formulas, AI backend logic, A5 service.
+
 ## Latest Arabic Encoding Repair
 
 - Date: 2026-07-20.

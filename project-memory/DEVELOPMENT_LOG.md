@@ -1,5 +1,23 @@
 # Development Log
 
+### Migrate Production Runtime To 2B-Server
+
+- Date: 2026-07-20
+- Commit: pending.
+- Goal: run 2B Tex on the dedicated company server `2B-Server` (192.168.11.191) instead of Ibrahim's laptop, with automatic startup after reboot.
+- Change: copied `system`, `server-tools`, and the latest SQL backup to local `C:\2B Tex` on 2B-Server (tar over the DELTA-DC share; WhatsApp session folders copied separately after stopping laptop services because they were file-locked).
+- Change: installed Node.js v24.18.0 and SQL Server Express 2022 (`SQLEXPRESS`, TCP 1433) on 2B-Server; added `/UPDATEENABLED=0` to `install-sqlserver-express-admin.ps1` because the Windows Update search step fails with access-denied in remote sessions.
+- Change: added `server-tools/restore-sqlserver.ps1`, a node/mssql-based restore tool that reads `.env.sqlserver.local`, moves data files to the instance default path, and prints restored row counts.
+- Change: cutover sequence preserved data: laptop services stopped first, a fresh backup taken (`2btex-sqlserver-20260720-184513.bak`), restored on 2B-Server, then services started there.
+- Change: registered the Windows scheduled task `2B Tex Server` (SYSTEM, at-startup, no time limit, restart-on-failure) because processes started inside a remote session die when the session closes.
+- Change: set `SYSTEM_USER`/`SYSTEM_PASS`/`OPENAI_API_KEY` as Machine env vars on 2B-Server; frontend returned 503 until they were present.
+- Change: `windows-app/src/main.js` now reads `appUrl` from the local client manifest with a hardcoded fallback, and its constants point to 2B-Server; rebuilt the Electron app.
+- Change: updated `client-app-manifest.json` to version `2026.07.20-client.1` with the new URL and app.asar hash; updated the default server IP in `install-client-app.ps1`, `client-app-health-check.ps1`, `open-2btex-universal.ps1`, and `client-app/2B Tex Client.cmd`.
+- Change: stopped and disabled the SQL Express instance accidentally installed on DELTA-DC during the first attempt; restored the shared `.env.sqlserver.local` from the laptop copy.
+- Verification: client health check passes 8/8; login page HTTP 200 locally and from the network; backend health reports database `2BTex` with 17 tables; the laptop client auto-updated to `2026.07.20-client.1` and opened against 2B-Server.
+- Known follow-up: WhatsApp needs the puppeteer Chrome build in the SYSTEM profile cache on 2B-Server and possibly a QR re-link; old pending outbox reports should be reviewed before reconnecting.
+- Not touched: database schema, backend calculations, stock formulas, waste formulas, AI backend logic, A5 service.
+
 ### Repair Arabic Text Encoding Corruption In Frontend Sources
 
 - Date: 2026-07-20
