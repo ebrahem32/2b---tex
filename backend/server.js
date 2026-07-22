@@ -4,16 +4,21 @@ const crypto = require('crypto');
 const { AsyncLocalStorage } = require('async_hooks');
 const express = require('express');
 const cors = require('cors');
-const { DB_PATH, initDb, run, transaction, get, all, schemaHealth } = require('./db');
+const { DB_PATH, DB_CLIENT, IS_FILE_DATABASE, initDb, run, transaction, get, all, schemaHealth, backupDatabase } = require('./db');
 const { calculateOrderSummary } = require('./calculations');
 
 const PORT = Number(process.env.PORT || 3050);
 const HOST = process.env.BACKEND_HOST || '127.0.0.1';
 const SYSTEM_USER = process.env.SYSTEM_USER || 'admin';
 const SYSTEM_PASS = process.env.SYSTEM_PASS || '';
+const APP_ROOT = path.resolve(__dirname, '..', '..');
 const BACKUP_DIR = path.join(__dirname, 'backups');
+const SQL_BACKUP_DIR = path.resolve(process.env.SQLSERVER_BACKUP_DIR || path.join(APP_ROOT, 'backups', 'sqlserver'));
+const SQL_LOCAL_BACKUP_DIR = path.resolve(process.env.SQLSERVER_LOCAL_BACKUP_DIR || 'C:\\ProgramData\\2BTex\\backups\\sqlserver');
+const IS_MSSQL = DB_CLIENT === 'mssql';
 
 fs.mkdirSync(BACKUP_DIR, { recursive: true });
+if (IS_MSSQL) fs.mkdirSync(SQL_BACKUP_DIR, { recursive: true });
 
 const app = express();
 const requestContext = new AsyncLocalStorage();
@@ -285,7 +290,7 @@ async function ensureDefaultAdminUser() {
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
 const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
 const LOCAL_IMPORT_ENABLED = process.env.ALLOW_LOCAL_IMPORT === '1';
-const BACKUP_RETENTION_DAYS = Number(process.env.BACKUP_RETENTION_DAYS || 6);
+const BACKUP_RETENTION_DAYS = Number(process.env.BACKUP_RETENTION_DAYS || 30);
 let lastBackupCleanup = { deleted: 0, deletedFiles: [], retentionDays: BACKUP_RETENTION_DAYS, ranAt: null };
 const OPERATION_STAGE_DEFINITIONS = [
   { key: 'weaving', label: 'واقف في النسيج', description: 'طلب لم يكتمل خروج الخام من النسيج إلى المصبغة.' },
@@ -575,10 +580,9 @@ async function deleteAllocationGraph(allocationId) {
 async function deleteCustomerGraph(customerId) {
   const customer = await get('SELECT * FROM customers WHERE id = ?', [customerId]);
   if (!customer) return { deletedCustomer: 0, deletedOrders: 0, deletedPricings: 0, deletedCustomerBatches: 0, deletedOutbox: 0 };
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const safeName = String(customer.name || customer.id || 'customer').replace(/[^\u0600-\u06FF\w-]+/g, '-').slice(0, 80) || 'customer';
-  const backupPath = path.join(BACKUP_DIR, `before-full-customer-delete-${safeName}-${stamp}.sqlite`);
-  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, backupPath);
+  const backup = await createDatabaseBackup(`before-full-customer-delete-${safeName}`);
+  if (!backup?.ok) throw new Error('Protective database backup failed before customer deletion.');
   return transaction(async (tx) => {
     const orderRows = await tx.all('SELECT id FROM orders WHERE customer_id = ?', [customer.id]);
     let deletedOrders = 0;
@@ -593,7 +597,7 @@ async function deleteCustomerGraph(customerId) {
       deletedPricings: pricingResult.changes || 0,
       deletedCustomerBatches: customerBatchResult.changes || 0,
       deletedOutbox: outboxResult.changes || 0,
-      backup: path.basename(backupPath),
+      backup: backup.name,
     };
   });
 }
@@ -609,29 +613,35 @@ async function cleanupLegacyTestOrders() {
   );
   const matches = rows.filter((row) => LEGACY_TEST_CUSTOMERS.has(normalizeArabicName(row.customer)));
   if (!matches.length) return;
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const target = path.join(BACKUP_DIR, `before-legacy-test-orders-cleanup-${stamp}.sqlite`);
-  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, target);
+  const backup = await createDatabaseBackup('before-legacy-test-orders-cleanup');
+  if (!backup?.ok) throw new Error('Protective database backup failed before legacy cleanup.');
   for (const row of matches) await deleteOrderGraph(row.id);
-  console.log(`[2B Tex] Removed ${matches.length} legacy test orders after backup: ${target}`);
+  console.log(`[2B Tex] Removed ${matches.length} legacy test orders after backup: ${backup.file}`);
 }
 
-function sqliteBackupFiles() {
-  return fs.readdirSync(BACKUP_DIR)
-    .filter((name) => name.endsWith('.sqlite'))
+function filesInBackupDirectory(directory, extension, type) {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory)
+    .filter((name) => name.toLowerCase().endsWith(extension))
     .map((name) => {
-      const filePath = path.join(BACKUP_DIR, name);
+      const filePath = path.join(directory, name);
       const stat = fs.statSync(filePath);
-      return { name, path: filePath, size: stat.size, createdAt: stat.birthtime.toISOString(), updatedAt: stat.mtime.toISOString() };
+      return { name, path: filePath, type, size: stat.size, createdAt: stat.birthtime.toISOString(), updatedAt: stat.mtime.toISOString() };
     })
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
 }
 
+function databaseBackupFiles() {
+  return IS_MSSQL
+    ? filesInBackupDirectory(SQL_BACKUP_DIR, '.bak', 'sqlserver')
+    : filesInBackupDirectory(BACKUP_DIR, '.sqlite', 'sqlite');
+}
+
 async function cleanupOldBackups() {
   const cutoff = Date.now() - Math.max(1, BACKUP_RETENTION_DAYS) * 24 * 60 * 60 * 1000;
-  const backupRoot = path.resolve(BACKUP_DIR);
+  const backupRoot = path.resolve(IS_MSSQL ? SQL_BACKUP_DIR : BACKUP_DIR);
   const deletedFiles = [];
-  for (const file of sqliteBackupFiles()) {
+  for (const file of databaseBackupFiles()) {
     const resolved = path.resolve(file.path);
     if (!resolved.startsWith(backupRoot + path.sep)) continue;
     const fileTime = new Date(file.updatedAt || file.createdAt || 0).getTime();
@@ -649,6 +659,21 @@ async function cleanupOldBackups() {
 async function createDatabaseBackup(reason = 'manual') {
   await cleanupOldBackups();
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  if (IS_MSSQL) {
+    if (typeof backupDatabase !== 'function') throw new Error('SQL Server backup adapter is not available.');
+    fs.mkdirSync(SQL_LOCAL_BACKUP_DIR, { recursive: true });
+    fs.mkdirSync(SQL_BACKUP_DIR, { recursive: true });
+    const safeReason = String(reason || 'manual').replace(/[^a-z0-9_-]+/gi, '-');
+    const name = `2btex-sqlserver-${safeReason}-${stamp}.bak`;
+    const localTarget = path.join(SQL_LOCAL_BACKUP_DIR, name);
+    const sharedTarget = path.join(SQL_BACKUP_DIR, name);
+    await backupDatabase(localTarget);
+    if (!fs.existsSync(localTarget)) throw new Error(`SQL Server backup was not created: ${localTarget}`);
+    if (path.resolve(localTarget) !== path.resolve(sharedTarget)) fs.copyFileSync(localTarget, sharedTarget);
+    const stat = fs.statSync(sharedTarget);
+    await auditMutation('create', 'system_settings', 'backup', null, { file: sharedTarget, size: stat.size, reason, created_at: now(), type: 'sqlserver' }, 'Create SQL Server backup');
+    return { ok: true, file: sharedTarget, name, type: 'sqlserver', size: stat.size, createdAt: stat.birthtime.toISOString() };
+  }
   const target = path.join(BACKUP_DIR, `2btex-${reason}-${stamp}.sqlite`);
   if (!fs.existsSync(DB_PATH)) return { ok: false, error: 'DB_NOT_FOUND', file: target };
   fs.copyFileSync(DB_PATH, target);
@@ -659,11 +684,21 @@ async function createDatabaseBackup(reason = 'manual') {
 
 async function ensureDailyBackup() {
   await cleanupOldBackups();
-  if (!fs.existsSync(DB_PATH)) return null;
+  if (IS_FILE_DATABASE && !fs.existsSync(DB_PATH)) return null;
   const today = new Date().toISOString().slice(0, 10);
-  const exists = sqliteBackupFiles().some((file) => file.name.includes(`auto-${today}`) || file.updatedAt.startsWith(today));
+  const exists = databaseBackupFiles().some((file) => file.name.includes(`auto-${today}`) || file.updatedAt.startsWith(today));
   if (exists) return null;
   return createDatabaseBackup(`auto-${today}`);
+}
+
+async function databaseStorageInfo() {
+  if (IS_MSSQL) {
+    const row = await get('SELECT SUM(size) * 8192 AS size FROM sys.database_files');
+    return { exists: true, size: Number(row?.size || 0), detail: `SQL Server: ${DB_PATH}` };
+  }
+  const exists = fs.existsSync(DB_PATH);
+  const stat = exists ? fs.statSync(DB_PATH) : null;
+  return { exists, size: stat?.size || 0, detail: exists ? `${Math.round(stat.size / 1024 / 1024 * 100) / 100} MB` : 'Database file not found' };
 }
 
 async function tableCount(table) {
@@ -673,7 +708,7 @@ async function tableCount(table) {
 
 app.get('/api/health', asyncHandler(async (_req, res) => {
   const row = await get('SELECT COUNT(*) AS count FROM sqlite_master WHERE type = ?', ['table']);
-  const schema = schemaHealth();
+  const schema = await schemaHealth();
   const volumeRoot = path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data');
   res.json({
     ok: schema.ok,
@@ -683,8 +718,9 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
     schema,
     storage: {
       database: DB_PATH,
+      databaseClient: DB_CLIENT,
       railwayVolumeRoot: volumeRoot,
-      usesRailwayVolumePath: path.resolve(DB_PATH).startsWith(volumeRoot),
+      usesRailwayVolumePath: IS_FILE_DATABASE && path.resolve(DB_PATH).startsWith(volumeRoot),
       autoSeedAllowed: process.env.ALLOW_DB_SEED === '1',
       localImportEnabled: LOCAL_IMPORT_ENABLED,
     },
@@ -693,8 +729,8 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
 }));
 
 app.get('/api/system/check', asyncHandler(async (_req, res) => {
-  const schema = schemaHealth();
-  const backups = sqliteBackupFiles();
+  const schema = await schemaHealth();
+  const backups = databaseBackupFiles();
   const tables = {
     customers: await tableCount('customers'),
     pricings: await tableCount('pricings'),
@@ -726,15 +762,15 @@ app.get('/api/system/check', asyncHandler(async (_req, res) => {
       wasteQuantity: summaries.reduce((t, s) => t + s.wasteQuantity, 0),
     };
   })();
-  const dbExists = fs.existsSync(DB_PATH);
-  const dbStat = dbExists ? fs.statSync(DB_PATH) : null;
+  const databaseStorage = await databaseStorageInfo();
+  const dbExists = databaseStorage.exists;
   const checks = [
-    { key: 'database', label: 'قاعدة البيانات', ok: dbExists, detail: dbExists ? `${Math.round(dbStat.size / 1024 / 1024 * 100) / 100} MB` : 'غير موجودة' },
+    { key: 'database', label: 'قاعدة البيانات', ok: dbExists, detail: databaseStorage.detail },
     { key: 'schema', label: 'هيكل قاعدة البيانات', ok: schema.ok, detail: schema.ok ? 'مكتمل' : `${schema.missing.length} أعمدة ناقصة` },
     { key: 'orders', label: 'بيانات الطلبات', ok: tables.orders > 0, detail: `${tables.orders} طلب` },
     { key: 'movements', label: 'حركات التشغيل', ok: (tables.rawReceiving + tables.dyehouseDelivery + tables.finishedReceiving + tables.customerDelivery) > 0, detail: `${tables.rawReceiving + tables.dyehouseDelivery + tables.finishedReceiving + tables.customerDelivery} حركة` },
     { key: 'backup', label: 'النسخ الاحتياطي', ok: backups.length > 0, detail: backups[0]?.name || 'لا توجد نسخ' },
-    { key: 'ai', label: 'Gemini AI', ok: Boolean(process.env.GEMINI_API_KEY), detail: process.env.GEMINI_API_KEY ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite') : 'غير مضبوط' },
+    { key: 'ai', label: 'Operational AI', ok: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY), detail: process.env.GEMINI_API_KEY ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite') : (process.env.OPENAI_API_KEY ? (process.env.OPENAI_MODEL || 'gpt-4.1-mini') : 'غير مضبوط') },
     { key: 'audit', label: 'سجل التعديلات', ok: tables.auditLog > 0, detail: `${tables.auditLog} حركة مسجلة` },
   ];
   res.json({
@@ -746,8 +782,9 @@ app.get('/api/system/check', asyncHandler(async (_req, res) => {
     orderStages: OPERATION_STAGE_DEFINITIONS,
     storage: {
       database: DB_PATH,
-      databaseSize: dbStat?.size || 0,
-      backupsDir: BACKUP_DIR,
+      databaseClient: DB_CLIENT,
+      databaseSize: databaseStorage.size,
+      backupsDir: IS_MSSQL ? SQL_BACKUP_DIR : BACKUP_DIR,
       latestBackup: backups[0] || null,
       backupsCount: backups.length,
       retentionDays: BACKUP_RETENTION_DAYS,
@@ -832,7 +869,7 @@ app.post('/api/backup', requireRole('admin'), asyncHandler(async (_req, res) => 
 }));
 
 app.get('/api/backups', asyncHandler(async (_req, res) => {
-  res.json({ retentionDays: BACKUP_RETENTION_DAYS, lastCleanup: lastBackupCleanup, backups: sqliteBackupFiles() });
+  res.json({ databaseClient: DB_CLIENT, retentionDays: BACKUP_RETENTION_DAYS, lastCleanup: lastBackupCleanup, backups: databaseBackupFiles() });
 }));
 
 app.get('/api/audit-log', asyncHandler(async (req, res) => {
@@ -1285,10 +1322,9 @@ function sourceDocumentValue(row) {
 }
 
 async function backupDatabaseForImport() {
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const target = path.join(BACKUP_DIR, `before-import-local-${stamp}.sqlite`);
-  if (fs.existsSync(DB_PATH)) fs.copyFileSync(DB_PATH, target);
-  return target;
+  const backup = await createDatabaseBackup('before-import-local');
+  if (!backup?.ok) throw new Error('Protective database backup failed before import.');
+  return backup.file;
 }
 
 async function upsertMapped(table, data, stats) {

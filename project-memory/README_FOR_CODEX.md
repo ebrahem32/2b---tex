@@ -7,11 +7,14 @@ Read this folder before making any change to the 2B Tex System.
 - Project name: 2B Tex System.
 - The system runs and manages a real textile and dyeing factory workflow.
 - This is not an invoicing app and not a demo project.
-- GitHub is the official source of code.
-- Railway is the external runtime environment.
+- The authoritative company-server project root is `F:\2B Tex`.
+- The canonical code workspace and Git repository is `F:\2B Tex\system`.
+- The canonical project memory is `F:\2B Tex\system\project-memory`; the sibling
+  `F:\2B Tex\project-memory` is a synchronized operational copy, not a second source.
 - `project-memory/` is the persistent memory for any future Codex session.
-- The official local workspace is now `D:\Codex\2B TEX`.
-- Do not continue development from old copied project folders.
+- Do not continue development from old copied project folders or stale drive copies.
+- Git records code history, while the active company-server runtime is managed from
+  `F:\2B Tex` and its server tools.
 
 ## Required Working Rule
 

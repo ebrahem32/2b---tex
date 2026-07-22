@@ -1,7 +1,8 @@
 const client = String(process.env.DB_CLIENT || process.env.DATABASE_CLIENT || 'sqlite').trim().toLowerCase();
+const isMssql = client === 'mssql' || client === 'sqlserver' || client === 'sql-server';
+const adapter = isMssql ? require('./db-mssql') : require('./db-sqlite');
 
-if (client === 'mssql' || client === 'sqlserver' || client === 'sql-server') {
-  module.exports = require('./db-mssql');
-} else {
-  module.exports = require('./db-sqlite');
-}
+adapter.DB_CLIENT = isMssql ? 'mssql' : 'sqlite';
+adapter.IS_FILE_DATABASE = !isMssql;
+
+module.exports = adapter;

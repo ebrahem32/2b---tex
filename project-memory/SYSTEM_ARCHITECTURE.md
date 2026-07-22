@@ -1,5 +1,31 @@
 # System Architecture
 
+## Authoritative Deployment Architecture (2026-07-22)
+
+- Company-server root: `F:\2B Tex`.
+- Canonical Git workspace: `F:\2B Tex\system`.
+- Public frontend/gateway: port `3000`, bound to `0.0.0.0` for LAN clients.
+- Backend API: port `3050`, bound to `127.0.0.1` behind the gateway.
+- WhatsApp service: port `3020`, bound to `127.0.0.1` behind the gateway.
+- Database: central SQL Server (`2BTex`), normally local to the Windows server. Client devices never connect to SQL Server directly.
+- Windows service: `2BTexServer` (`2B Tex Server`), configured to start automatically and recover after process failure.
+- Server control panel: `2B Tex Server.exe` for status, start/stop/restart, opening logs, backup, restore, and server links.
+- Portable runtime: packaged `runtime\node\node.exe` plus `runtime\node_modules\mssql`; application child processes use the same executable through `process.execPath`.
+- Central configuration: `config\2btex.config.json`, loaded by both JavaScript and PowerShell tooling. The real file contains secrets and must not be committed.
+- Backup architecture: SQL `.bak` files are retained locally and copied off-machine to the company share by the scheduled backup workflow.
+
+Client topology:
+
+```text
+Windows client app / browser
+        |
+        v
+2B Tex gateway :3000
+        |
+        +--> backend API :3050 --> SQL Server 2BTex
+        +--> WhatsApp :3020
+```
+
 ## Frontend
 
 Main frontend files:
@@ -83,9 +109,7 @@ Important AI endpoints:
 
 ## Source and Runtime
 
-Decision 2026-07-05: GitHub and Railway are out of the workflow.
-
-- Official code source: `F:\2B Tex\system` on the company server.
-- Active local workspace until cutover: `D:\2B Tex نظام التشغيل`.
-- Runtime: the company server itself (`npm start` via `start.js`).
-- Database persistence in `backend/db.js` uses an atomic write (temp file + rename) to protect the SQLite file from corruption on power loss.
+Current decision: the company server is the production runtime and `F:\2B Tex\system`
+is the canonical workspace. SQL Server is the production database path; SQLite remains
+only for compatibility/development paths and must not be treated as the multi-user
+production store. Git remains the source-history mechanism, not the runtime host.

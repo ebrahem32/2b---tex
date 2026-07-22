@@ -1,5 +1,44 @@
 # Current Status
 
+## Latest Production And Windows Client Repair
+
+- Date: 2026-07-22.
+- Visible web application version: `v2026.07.22.01`.
+- Production database client: SQL Server (`mssql`) on the dedicated `2B-Server` host.
+- Fixed `/api/health` and `/api/system/check` to await the asynchronous SQL Server schema check; both endpoints now return successful results instead of HTTP 500.
+- Replaced placeholder SQLite-style backup behavior under SQL Server with real `BACKUP DATABASE` `.bak` files, checksum, retention, listing, and fail-closed protective backups.
+- Fixed Windows document sharing to use the currently rendered `.document-sheet` as the source of truth, so an open quotation/cost/operational document can be saved as PNG.
+- Windows printing now creates a PDF and opens it in the default PDF viewer as a real preview; browser printing remains the fallback if PDF creation fails.
+- The Windows client clears its Chromium cache at startup so deployed Arabic text and frontend fixes are not hidden by stale local assets.
+- Windows client version: `2026.07.22-client.1`; distribution hashes are recorded in `F:\2B Tex\client-app-manifest.json`.
+- WhatsApp remains intentionally unsent while the session is waiting for QR and the target group is not configured; pending outbox records must be reviewed before reconnecting.
+- Verification: `npm run check` and `Operational flow check` pass after these repairs.
+
+## Latest Cloud Server Application Packaging
+
+- Date reviewed: 2026-07-22.
+- Authoritative root: `F:\2B Tex`; canonical Git workspace: `F:\2B Tex\system`.
+- Latest committed code at review time: `3dc9b77d043f1c72c91d93f74e1a8beebc24d9e9` (`Document production migration to 2B-Server`).
+- Current cloud changes are still uncommitted: centralized `config.js`, portable runtime lookup in `start.js` and `backend/db-mssql.js`, package checks, server panel, installer/service tools, and backup/restore tools.
+- A portable server package directory exists at `F:\2B Tex\dist\2B-Tex-Server-2026.07.22`.
+- Verified package contents: `2B Tex Server.exe`, `install.cmd`, embedded `node.exe`, embedded `mssql`, config example, system code, and server tools.
+- The package ZIP does not exist yet, so the distributable archive is not complete.
+- WhatsApp dependencies are not embedded in this package build; a future build must use `build-server-package.ps1 -IncludeWhatsApp` when an offline all-in-one package is required.
+- The installer is designed to install/verify SQL Server Express, generate local configuration, restore the newest `.bak`, open the frontend firewall port, register the `2BTexServer` Windows service, and create the server shortcut.
+- Central configuration priority is: environment variables, `config\2btex.config.json`, legacy `.env.sqlserver.local`, then defaults. Real secrets must never enter Git or project memory.
+- Client devices remain thin clients: they open the central server URL and do not require SQL Server, Node.js, or the operational database locally.
+- Visible web application version is now `v2026.07.22.01`; server package date/version remains separate from the web UI version.
+- Verification on 2026-07-22: `npm run check` passed and reported `Operational flow check passed` with the current cloud changes present.
+- No production database, schema, stock formula, waste formula, or `backend/calculations.js` change was made during this memory review.
+
+## Latest Daily Backup And Deploy Automation
+
+- Date: 2026-07-20.
+- Scheduled task `2B Tex Daily Backup` on 2B-Server runs daily at 23:00: local SQL `.bak` (30-day retention) plus an off-machine copy to `\\DELTA-DC\Dyeing\2B Tex\backups\sqlserver` (30-day retention).
+- The computer account `DELTA\2B-Server$` has Modify rights on the share backups folder.
+- Deploying changes is now one command from the dev machine: `powershell -ExecutionPolicy Bypass -File "F:\2B Tex\server-tools\deploy-to-server.ps1"` (sync + service restart + health check); use `-NoRestart` to sync only.
+- Verification: first backup run succeeded end-to-end (result 0, `.bak` present on both machines).
+
 ## Latest Production Server Migration To 2B-Server
 
 - Date: 2026-07-20.
@@ -59,7 +98,7 @@
 
 ## Current Version
 
-`v2026.07.02.04`
+`v2026.07.22.01`
 
 ## Latest Refreshed Company Server Migration Package
 

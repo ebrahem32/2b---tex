@@ -1,5 +1,43 @@
 # Development Log
 
+## 2026-07-22 - Production Health, SQL Backup, And Windows Document Repair
+
+- Corrected async SQL Server health checks that caused `/api/health` and `/api/system/check` to return HTTP 500.
+- Implemented real SQL Server `.bak` creation, retention, listing, and protective backup behavior; SQLite behavior remains available only when SQLite is the selected database client.
+- Changed open-document PNG sharing to detect the visible rendered document rather than relying on transient dialog state.
+- Changed the Windows print bridge to generate and open a PDF preview, with browser printing as a failure fallback.
+- Added Windows-client cache clearing on startup to prevent stale Arabic/mojibake assets after deployment.
+- Bumped the web version to `v2026.07.22.01` and the Windows client to `2026.07.22-client.1`.
+- `npm run check` passed and reported `Operational flow check passed`.
+
+### Package The Company Server As A Portable Windows Application
+
+- Date: 2026-07-22
+- Commit: pending; changes were produced through the cloud workflow and reviewed locally.
+- Goal: make the server installable from one organized folder without depending on globally installed Node.js or scattered project copies.
+- Added centralized runtime configuration in `system/config.js` and `config/2btex.config.example.json`.
+- Updated `system/start.js` to resolve runtime/data paths from configuration, preserve legacy WhatsApp session locations, prefer the embedded Node runtime, and launch child services through `process.execPath`.
+- Updated `system/backend/db-mssql.js` to find the `mssql` driver from configured or embedded runtime locations before falling back to a normal package lookup.
+- Added the Windows server control panel project under `server-app` and generated `2B Tex Server.exe`.
+- Added package, install, uninstall, Windows service, SQL backup, SQL restore, configuration, and health-management scripts under `server-tools`.
+- Generated `F:\2B Tex\dist\2B-Tex-Server-2026.07.22` with embedded Node and `mssql`.
+- Current limitation: no ZIP was found at review time and WhatsApp dependencies were not embedded in the generated package.
+- Verification: `npm run check` passed, including `Operational flow check passed`, after reviewing the cloud changes.
+- Documentation: added `README-تطبيق-السيرفر.md` and refreshed project memory architecture/runbook/current status.
+- Not touched: production data, database schema, calculations, waste rules, stock rules, AI business logic, or operational records.
+
+### Add Daily Off-Machine Backup And One-Command Deploy
+
+- Date: 2026-07-20
+- Commit: pending.
+- Goal: automatic daily SQL backups stored on two machines, and a one-command deploy flow to the production server.
+- Change: added `server-tools/daily-backup-2bserver.ps1`; it runs `backup-sqlserver.ps1` locally on 2B-Server, copies fresh `.bak` files to `\\DELTA-DC\Dyeing\2B Tex\backups\sqlserver`, and prunes share copies older than 30 days.
+- Change: registered the scheduled task `2B Tex Daily Backup` on 2B-Server (SYSTEM, daily 23:00, StartWhenAvailable).
+- Change: granted the computer account `DELTA\2B-Server$` Modify rights on the share backups folder so the SYSTEM task can write to DELTA-DC.
+- Change: added `server-tools/deploy-to-server.ps1`; run from the dev machine it syncs `system` and `server-tools` to `C:\2B Tex` on 2B-Server (excluding runtime data: `server-data`, `data`, `logs`, `.git`, env files), restarts the `2B Tex Server` task, and verifies the login page.
+- Verification: the backup task ran with result 0 and the `.bak` appeared both locally on 2B-Server and on the DELTA-DC share.
+- Not touched: database schema, backend calculations, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
 ### Migrate Production Runtime To 2B-Server
 
 - Date: 2026-07-20

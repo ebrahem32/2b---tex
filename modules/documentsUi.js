@@ -267,7 +267,8 @@
       if (window.twoBTexDesktop?.print) {
         setTimeout(async () => {
           try {
-            await window.twoBTexDesktop.print();
+            const result = await window.twoBTexDesktop.print();
+            if (!result?.ok) throw new Error(result?.error || 'تعذر إنشاء معاينة PDF.');
           } catch (error) {
             console.warn('desktop-print-fallback', error);
             window.print();
@@ -323,7 +324,10 @@
     function currentOpenDocumentSharePayload() {
       const refs = deps.refs;
       const sheet = refs.documentBody?.querySelector('.document-sheet');
-      if (!sheet || !refs.documentDialog?.open) return null;
+      // The desktop shell can keep the document visible while Chromium briefly
+      // reports the dialog as not open during native actions. The rendered
+      // sheet is the reliable source of truth for sharing and printing.
+      if (!sheet || !sheet.isConnected || !sheet.getClientRects().length) return null;
       const documentType = refs.documentBody?.dataset.documentType || deps.getCurrentDocumentType() || 'document';
       const reportType = currentReportTypeFromDocument() || `document_${deps.cleanCodePart(documentType || 'open')}`;
       const title = (refs.documentBody?.dataset.reportTitle || refs.documentTitle?.textContent || '2B Tex').trim();

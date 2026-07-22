@@ -6,6 +6,11 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const appConfig = require('./config');
+
+// ينشر ملف الإعدادات الموحّد على process.env قبل أي قراءة تحته، بدون دهس أي
+// متغير بيئة موجود مسبقًا — فالسيرفر الحالي يفضل شغال بنفس متغيراته.
+appConfig.applyToEnv();
 
 const FRONTEND_PORT = process.env.PORT || '3000';
 function internalPort(value, fallback, reserved = []) {
@@ -24,15 +29,28 @@ const SEED_PATH = path.join(__dirname, 'backend', 'data', '2btex.sqlite');
 const IS_RAILWAY = !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_SERVICE_ID);
 const ALLOW_DB_SEED = process.env.ALLOW_DB_SEED === '1';
 const VOLUME_ROOT = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data';
-const WHATSAPP_DATA_DIR = process.env.WHATSAPP_DATA_DIR || (IS_RAILWAY ? path.join(VOLUME_ROOT, 'whatsapp') : path.join(__dirname, 'whatsapp-service', 'data'));
+const LEGACY_WHATSAPP_DATA_DIR = path.join(__dirname, 'whatsapp-service', 'data');
+// جلسة واتساب مرتبطة بمجلدها؛ لو المجلد القديم موجود نحترمه حتى لا يُفقد الربط.
+const WHATSAPP_DATA_DIR = process.env.WHATSAPP_DATA_DIR
+  || (IS_RAILWAY ? path.join(VOLUME_ROOT, 'whatsapp')
+    : (fs.existsSync(LEGACY_WHATSAPP_DATA_DIR) ? LEGACY_WHATSAPP_DATA_DIR : appConfig.paths.whatsappDataDir));
 const puppeteerExecutablePath = process.env.PUPPETEER_EXECUTABLE_PATH || (IS_RAILWAY ? '/usr/bin/chromium' : '');
 const WHATSAPP_SERVICE_DIR = path.join(__dirname, 'whatsapp-service');
-const LOCAL_WHATSAPP_SERVICE_DIR = process.env.WHATSAPP_SERVICE_RUNTIME || 'C:\\ProgramData\\2BTex\\whatsapp-service';
+// أماكن محتملة لنسخة تشغيل واتساب المثبّتة بـ node_modules، بالترتيب: المضبوطة
+// يدويًا، ثم المضمّنة في الحزمة (محمولة)، ثم مسار ProgramData القديم.
+const WHATSAPP_RUNTIME_CANDIDATES = [
+  process.env.WHATSAPP_SERVICE_RUNTIME,
+  appConfig.paths.whatsappRuntimeDir,
+  'C:\\ProgramData\\2BTex\\whatsapp-service',
+].filter(Boolean);
 
 function whatsappServiceCwd() {
-  if (!IS_RAILWAY && fs.existsSync(path.join(LOCAL_WHATSAPP_SERVICE_DIR, 'node_modules')) && fs.existsSync(path.join(LOCAL_WHATSAPP_SERVICE_DIR, 'package.json'))) {
-    fs.copyFileSync(path.join(WHATSAPP_SERVICE_DIR, 'server.js'), path.join(LOCAL_WHATSAPP_SERVICE_DIR, 'server.js'));
-    return LOCAL_WHATSAPP_SERVICE_DIR;
+  if (IS_RAILWAY) return WHATSAPP_SERVICE_DIR;
+  for (const candidate of WHATSAPP_RUNTIME_CANDIDATES) {
+    if (!fs.existsSync(path.join(candidate, 'node_modules'))) continue;
+    if (!fs.existsSync(path.join(candidate, 'package.json'))) continue;
+    fs.copyFileSync(path.join(WHATSAPP_SERVICE_DIR, 'server.js'), path.join(candidate, 'server.js'));
+    return candidate;
   }
   return WHATSAPP_SERVICE_DIR;
 }
@@ -74,7 +92,9 @@ console.log('==========================================');
 function launch(name, args, cwd, env = {}, options = {}) {
   const critical = options.critical !== false;
   const restartDelayMs = Number(options.restartDelayMs || 15000);
-  const proc = spawn('node', args, {
+  // process.execPath وليس 'node' من الـ PATH: الحزمة المحمولة تشغّل نسختها
+  // المضمّنة من Node على أجهزة لا يوجد بها Node مثبّت.
+  const proc = spawn(process.execPath, args, {
     cwd,
     env: { ...process.env, ...env },
     stdio: 'inherit'
@@ -84,7 +104,7 @@ function launch(name, args, cwd, env = {}, options = {}) {
     if (critical) process.exit(1);
   });
   proc.on('exit', (code, signal) => {
-    console.error(`[${name}] Exited â€” code=${code}, signal=${signal}`);
+    console.error(`[${name}] Exited - code=${code}, signal=${signal}`);
     if (critical) process.exit(code || 1);
     console.error(`[${name}] Restarting in ${Math.round(restartDelayMs / 1000)}s`);
     setTimeout(() => launch(name, args, cwd, env, options), restartDelayMs);

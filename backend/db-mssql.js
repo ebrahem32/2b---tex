@@ -2,12 +2,19 @@ const fs = require('fs');
 const path = require('path');
 
 function requireMssqlDriver() {
-  const preferredRoot =
-    process.env.MSSQL_NODE_MODULES ||
-    process.env.SQLSERVER_NODE_MODULES ||
-    'C:\\ProgramData\\2BTex\\node-test\\node_modules';
-  const preferredPath = path.join(preferredRoot, 'mssql');
-  if (fs.existsSync(preferredPath)) return require(preferredPath);
+  // بالترتيب: المضبوط يدويًا، ثم runtime المضمّن داخل الحزمة (يجعلها محمولة)،
+  // ثم مسار ProgramData القديم على السيرفر الحالي، وأخيرًا node_modules العادي.
+  const appRoot = path.resolve(__dirname, '..', '..');
+  const candidateRoots = [
+    process.env.MSSQL_NODE_MODULES,
+    process.env.SQLSERVER_NODE_MODULES,
+    path.join(appRoot, 'runtime', 'node_modules'),
+    'C:\\ProgramData\\2BTex\\node-test\\node_modules',
+  ].filter(Boolean);
+  for (const root of candidateRoots) {
+    const candidate = path.join(root, 'mssql');
+    if (fs.existsSync(candidate)) return require(candidate);
+  }
   return require('mssql');
 }
 
@@ -315,4 +322,18 @@ async function transaction(work) {
   }
 }
 
-module.exports = { get db() { return pool; }, DB_PATH, initDb, exec, run, transaction, get, all, schemaHealth };
+async function backupDatabase(filePath) {
+  await initDb();
+  const target = path.resolve(String(filePath || ''));
+  if (!path.isAbsolute(target) || path.extname(target).toLowerCase() !== '.bak') {
+    throw new Error('SQL Server backup target must be an absolute .bak path.');
+  }
+  const database = String(DB_PATH).replace(/]/g, ']]');
+  const safeTarget = target.replace(/'/g, "''");
+  await pool.request().batch(
+    `BACKUP DATABASE [${database}] TO DISK = N'${safeTarget}' WITH INIT, COPY_ONLY, CHECKSUM, STATS = 10`
+  );
+  return target;
+}
+
+module.exports = { get db() { return pool; }, DB_PATH, initDb, exec, run, transaction, get, all, schemaHealth, backupDatabase };
