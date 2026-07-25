@@ -21,10 +21,9 @@ ai-service/.env
 !**/.env.example
 
 # Database snapshots and local backups.
-# The main system database is intentionally kept in Git.
+# Production data lives in SQL Server on 2B-Server and must never be staged.
 backend/data/*
 !backend/data/
-!backend/data/2btex.sqlite
 backend/backups/
 server-data/
 server-backups/
@@ -42,3 +41,7 @@ whatsapp-service/.wwebjs_cache/
 cloudflared.exe
 *.lnk
 Codex/
+
+# Windows desktop app build/cache output
+windows-app/dist/
+windows-app/.app-stage*/

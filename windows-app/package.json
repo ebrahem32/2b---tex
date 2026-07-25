@@ -1,0 +1,63 @@
+{
+  "name": "2b-tex-windows-app",
+  "version": "2026.7.25",
+  "description": "2B Tex Windows desktop client for the central production server",
+  "main": "src/main.js",
+  "author": "2B Tex",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable nsis",
+    "build:unpacked": "electron-builder --win --dir"
+  },
+  "build": {
+    "appId": "com.2btex.operations",
+    "productName": "2B Tex",
+    "electronDist": "node_modules/electron/dist",
+    "artifactName": "2B Tex.exe",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/2B Tex.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "2B Tex Portable ${version}.${ext}"
+    },
+    "nsis": {
+      "artifactName": "2B Tex Setup ${version}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "2B Tex",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  }
+}

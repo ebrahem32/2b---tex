@@ -1835,3 +1835,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Verification: launched the root EXE and confirmed the active app path is `C:\Users\ebrahem.aseem\AppData\Local\2BTex\App\2B Tex.exe`.
 - Change: added `F:\2B Tex\فحص وتشغيل 2B Tex من أي جهاز.cmd` to run the check and open the app.
 - Verification: the check passed from the server for ping, port `3000`, login page HTTP 200, and shared app file existence.
+
+### Establish 2B-Server As The Only Production Host
+
+- Date: 2026-07-25
+- Canonical host: `2B-Server` (`192.168.11.191`).
+- Canonical repository: `C:\2B Tex\system`.
+- Canonical network share: `\\2B-Server\2B-Tex`.
+- Rebuilt the Electron workstation client from the canonical repository.
+- Added the native Windows bootstrap launcher source under `windows-app/launcher/2BTexLauncher.cs`.
+- Rebuilt `C:\2B Tex\2B Tex.exe` as the single shared entry point.
+- Updated `client-app-manifest.json` to version `2026.07.25.01` and to the new server/share paths.
+- Configured the SMB share with caching disabled so workstations always receive the current package.
+- Verified frontend HTTP 200, backend health, SQL Server database `2BTex`, 17 tables, and complete schema.
+- Verified that no active process, service, or scheduled task depends on DELTA-DC or the previous D/F project paths.
+- Updated Git ignore rules so Windows build output and local database files are never staged.

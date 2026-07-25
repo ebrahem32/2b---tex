@@ -111,6 +111,25 @@
 - Reminder: `F:\2B Tex` still blocks creating `.js`/`.ps1`/`.bat` files (verified 2026-07-05); IT must allow these extensions before extracting the archive on the company server.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
 
+## Canonical 2B-Server Production Architecture
+
+- Date: 2026-07-25.
+- Canonical host: `2B-Server` (`192.168.11.191`).
+- Canonical project root: `C:\2B Tex`.
+- Canonical Git repository: `C:\2B Tex\system`.
+- Canonical client share: `\\2B-Server\2B-Tex`.
+- Production URL: `http://192.168.11.191:3000/login.html`.
+- SQL Server database: `2BTex`; the health endpoint confirms 17 tables and a complete schema.
+- The frontend listens on `0.0.0.0:3000`; the backend remains private on `127.0.0.1:3050`.
+- The Windows client package is built at `system\windows-app\dist\win-unpacked`.
+- The single shared launcher is `C:\2B Tex\2B Tex.exe`. It verifies the server package, updates the workstation copy under `%LOCALAPPDATA%\2BTex\App`, then launches it.
+- Client computers do not require Node.js, SQL Server, Python, or a local project/database copy.
+- The SMB share uses `CachingMode=None` to prevent workstations from opening stale application builds.
+- No active process, Windows service, or scheduled task references DELTA-DC, `192.168.10.37`, `D:\2B Tex`, or `F:\2B Tex`.
+- Production SQL backups are stored under `C:\2B Tex\backups\sqlserver`.
+- The DELTA-DC deployment and older local folders are obsolete and must not be used for development or runtime.
+- All future code changes, builds, tests, memory updates, and Git operations must target the canonical repository on `2B-Server` only.
+
 ## Latest Desktop Launcher Update
 
 - Date: 2026-07-05.
