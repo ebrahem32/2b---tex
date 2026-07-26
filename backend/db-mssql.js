@@ -254,8 +254,10 @@ function normalizeSql(sqlText, params = []) {
     return `IF NOT EXISTS (SELECT 1 FROM ${table} WHERE ${firstColumnSql} = ?) INSERT INTO ${table} (${normalizedCols}) VALUES (${values})`;
   });
 
-  text = text.replace(/\bLIMIT\s+(\d+)\s*$/i, 'OFFSET 0 ROWS FETCH NEXT $1 ROWS ONLY');
-  text = text.replace(/\bLIMIT\s+\?\s*$/i, 'OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY');
+  text = text.replace(/\s+\bLIMIT\s+(\d+|\?)\s*$/i, (_match, limit) => {
+    const orderBy = /\bORDER\s+BY\b/i.test(text) ? '' : ' ORDER BY (SELECT NULL)';
+    return `${orderBy} OFFSET 0 ROWS FETCH NEXT ${limit} ROWS ONLY`;
+  });
 
   let index = 0;
   text = text.replace(/\?/g, () => `@p${index++}`);
@@ -336,4 +338,16 @@ async function backupDatabase(filePath) {
   return target;
 }
 
-module.exports = { get db() { return pool; }, DB_PATH, initDb, exec, run, transaction, get, all, schemaHealth, backupDatabase };
+module.exports = {
+  get db() { return pool; },
+  DB_PATH,
+  initDb,
+  exec,
+  run,
+  transaction,
+  get,
+  all,
+  schemaHealth,
+  backupDatabase,
+  normalizeSqlForTest: normalizeSql,
+};

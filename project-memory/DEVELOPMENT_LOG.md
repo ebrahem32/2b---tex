@@ -1850,3 +1850,49 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Verified frontend HTTP 200, backend health, SQL Server database `2BTex`, 17 tables, and complete schema.
 - Verified that no active process, service, or scheduled task depends on DELTA-DC or the previous D/F project paths.
 - Updated Git ignore rules so Windows build output and local database files are never staged.
+
+### Add Native Desktop Internal Navigation
+
+- Date: 2026-07-26
+- Version: `2026.07.26.01`
+- Added an Electron desktop shell with grouped internal ERP navigation inspired by the A5 Group application workflow.
+- Added `windows-app/src/shell.html`, `shell.css`, and `shell.js`.
+- Updated `windows-app/src/main.js` to host the operational web application inside the desktop shell and route embedded printing through the active document webview.
+- Existing web handlers remain the single source of operational behavior; the desktop menu only invokes those handlers.
+- Hid the legacy web sidebar inside Electron to remove duplicated menus while preserving browser behavior.
+- Rebuilt `windows-app/dist/win-unpacked` and updated the central client manifest hash.
+- Verification: `npm run check` passed with `Operational flow check passed`.
+
+### 2026-07-26 - Stabilize Electron Internal Menu Shell
+
+- Fixed the transparent/desktop-background Electron window caused by mutually conflicting graphics command-line switches.
+- Retained the A5-style grouped internal navigation shell and embedded operational application.
+- Added renderer diagnostics for startup and preload failures.
+- Rebuilt the server-owned Windows client as version `2026.07.26.02`.
+- Full check and operational-flow verification passed.
+
+### 2026-07-26 - Fix Desktop Shell Load Lifecycle
+
+- Released Windows client manifest version `2026.07.26.03`.
+- Restricted offline fallback handling to main-frame load failures only.
+- Changed the local Electron shell to an opaque, ready-to-show window and removed sandbox interference with the embedded operational view.
+- Rebuilt the server-owned unpacked client.
+- `npm run check` and `Operational flow check` passed.
+
+### 2026-07-26 - Fix SQL Server New Order Saves
+
+- Traced the generic new-order save failure to SQL Server rejecting generated `OFFSET ... FETCH NEXT` SQL without `ORDER BY`.
+- Corrected the shared SQL normalization layer in `backend/db-mssql.js`.
+- Added a focused regression check for all supported trailing `LIMIT` forms and included it in `npm run check`.
+- Restarted the production service and completed a live authenticated create/read/delete verification using a temporary order.
+- Preserved all operational calculations, database schema, stock logic, waste logic, and existing production data.
+
+### 2026-07-26 - Complete A5-Style Desktop Internal Menus
+
+- Released Windows desktop client `2026.07.26.04`.
+- Rebuilt `windows-app/src/shell.html` and `shell.js` with clean UTF-8 Arabic labels and grouped internal ERP navigation.
+- Stabilized `shell.css` with explicit application grid areas and bounded webview sizing.
+- Updated `windows-app/src/main.js` so the main application window opens maximized.
+- Kept the production web handlers as the single source of operational behavior; desktop navigation remains a presentation and routing layer only.
+- Rebuilt the server-owned unpacked client and updated the central launcher manifest SHA256.
+- `npm run check` and `Operational flow check` passed.

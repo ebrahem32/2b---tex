@@ -1,5 +1,22 @@
 # Current Status
 
+## Native Windows Internal Navigation
+
+- Date: 2026-07-26.
+- Windows client version: `2026.07.26.02`.
+- The Electron client is now a real desktop shell with its own fixed internal navigation, similar to the A5 Group desktop workflow.
+- The client provides grouped internal menus for Dashboard, sales, weaving, dyehouse, warehouse, reports, WhatsApp, and administration.
+- Menu commands invoke the existing web application handlers, so calculations, persistence, reports, and operational rules are not duplicated or rewritten.
+- The old web sidebar is hidden only inside the Windows client to prevent two navigation systems appearing together; browser access keeps the existing responsive sidebar.
+- The desktop shell includes back, refresh, connection state, loading state, offline recovery, collapsible navigation, and a mobile-width drawer.
+- Printing from an embedded operational document continues through the Electron print bridge and PDF preview.
+- Distribution manifest: `C:\2B Tex\client-app-manifest.json`, version `2026.07.26.02`.
+- Canonical build: `C:\2B Tex\system\windows-app\dist\win-unpacked`.
+- Conflicting Electron GPU/compositor switches were removed after they caused the native window to show the Windows desktop background instead of the internal navigation shell.
+- Renderer, preload, and console diagnostics now record desktop startup failures without changing operational behavior.
+- Verification: `npm run check`, all JavaScript syntax checks, and `Operational flow check` pass.
+- Not touched: SQL Server data, database schema, `backend/calculations.js`, stock logic, waste logic, AI backend, WhatsApp service, or A5 service.
+
 ## Latest Production And Windows Client Repair
 
 - Date: 2026-07-22.
@@ -110,6 +127,28 @@
 - Change: updated `F:\2B Tex\README-نقل-السيرفر.md` with the new archive name and removed the plaintext system password from the document.
 - Reminder: `F:\2B Tex` still blocks creating `.js`/`.ps1`/`.bat` files (verified 2026-07-05); IT must allow these extensions before extracting the archive on the company server.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
+## Latest SQL Server Order Save Hotfix
+
+- Date: 2026-07-26.
+- Fixed new-order saves failing with the UI message `تعذر حفظ الطلب الجديد في قاعدة البيانات`.
+- Root cause: SQLite-style `LIMIT` queries without `ORDER BY` were translated to SQL Server `OFFSET ... FETCH NEXT`, which SQL Server rejects unless an `ORDER BY` clause exists.
+- Updated `backend/db-mssql.js` to add `ORDER BY (SELECT NULL)` only when translating a trailing `LIMIT` query that has no existing ordering.
+- Added `scripts/db-mssql-normalize-check.js` to cover ordered and unordered literal/parameterized `LIMIT` queries.
+- Updated `npm run check` so the SQL Server normalization regression test runs automatically.
+- Production server processes were restarted from the server-owned scheduled task.
+- Live verification passed against `http://192.168.11.191:3000`: authenticated, created a temporary order, read it back from SQL Server, deleted it, and confirmed HTTP 404 afterwards.
+- Not touched: calculations, waste logic, stock logic, schema, or production order data.
+
+## Latest Desktop Internal Navigation Stabilization
+
+- Date: 2026-07-26.
+- Version: `2026.07.26.03`.
+- The Windows application uses one internal A5-style navigation sidebar with grouped factory modules.
+- Fixed the Electron shell so guest-frame load failures cannot replace the main desktop interface.
+- Disabled sandboxing only for the local desktop shell while retaining `contextIsolation` and disabled Node integration.
+- The application window is opaque and shown only after its local shell is ready.
+- Backend calculations, operational formulas, SQL Server data, schema, AI backend, WhatsApp, and A5 integration were not changed.
 
 ## Canonical 2B-Server Production Architecture
 
@@ -1609,6 +1648,19 @@ For Phase 3.1 local verification before commit:
 - The installer verifies SHA256 before and after copying. Verified SHA256: `8EB7B12FCAE5C7ABE27B8E1F5689DCB1B73BB47EB583070F8813009E89375542`.
 - The installer creates a Desktop shortcut and Start Menu shortcut pointing to the local app copy.
 - Client devices still do not need SQL Server, Node.js, Python, or local database files.
+
+## Latest A5-Style Desktop Internal Menus
+
+- Date: 2026-07-26.
+- Windows client manifest version: `2026.07.26.04`.
+- The desktop client is one maximized application window with a fixed right-side module menu and one shared operational workspace.
+- Internal groups: Dashboard, Sales, Knitting, Dyehouse, Warehouse and Delivery, Reports, WhatsApp, and Administration.
+- Desktop shell labels were rebuilt as valid UTF-8 Arabic.
+- The legacy web sidebar is hidden inside the Windows client to avoid duplicated navigation.
+- Desktop grid and webview sizing were stabilized so the workspace fills the available window.
+- The production server remains the only source of data and operational behavior.
+- Not touched: backend calculations, operational rules, SQL Server schema or data, AI backend, WhatsApp service, and A5 service.
+- Verification: `npm run check` passed with `Operational flow check passed`.
 - Verification on the server workstation passed: server ping true, frontend port `3000` true, login page HTTP 200, source app hash verified, local app hash verified, shortcuts created, and local app launch tested.
 
 ## Latest Client App Self-Update Launcher
