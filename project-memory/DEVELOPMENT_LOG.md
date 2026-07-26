@@ -1879,6 +1879,15 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Rebuilt the server-owned unpacked client.
 - `npm run check` and `Operational flow check` passed.
 
+### 2026-07-26 - Correct Accessory Pricing Totals
+
+- Replaced the accessory editor's raw-plus-stage subtotal with the central pricing calculation.
+- Included accessory waste, deferred terms, and profit in cost and sale totals.
+- Added cost-per-kilo, sale-price-per-kilo, and total summaries for every accessory line.
+- Added an exact Derby regression test for 195 kg at 238 EGP raw, 80.5 EGP stages, 4% net waste, and 20 EGP profit.
+- Rotated the `app.js` and `pricing.js` asset versions to invalidate stale Windows-client and browser caches.
+- Released web version `v2026.07.26.06`.
+
 ### 2026-07-26 - Fix Stale Windows Document Code
 
 - Reproduced order `72090` against the live production server and confirmed that its weaving document opens correctly in the browser.

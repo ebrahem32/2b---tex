@@ -463,6 +463,9 @@
 .pricing-money-field [data-pricing-currency-badge]{display:inline-flex;align-items:center;justify-content:center;min-width:43px;color:var(--accent2);font-size:11px;font-weight:900;background:rgba(200,165,106,.08);border:1px solid rgba(200,165,106,.18);border-radius:999px;padding:5px 7px;line-height:1.2;white-space:nowrap}
 .pricing-stage-total{color:var(--muted);font-size:12px}
 .pricing-stage-total strong{color:var(--accent2)}
+.pricing-accessory-summary{display:grid;gap:6px;color:var(--muted);font-size:12px}
+.pricing-accessory-summary-line{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.025)}
+.pricing-accessory-summary-line strong,.pricing-accessory-summary-line b{color:var(--accent2)}
 .pricing-formula-preview{margin-top:10px;padding:10px 12px;border:1px solid rgba(200,165,106,.22);border-radius:12px;background:rgba(200,165,106,.06);color:var(--muted);font-size:13px;line-height:1.7}
 .pricing-formula-preview strong{color:var(--accent2)}
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}

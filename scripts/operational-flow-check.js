@@ -726,6 +726,23 @@ function checkAccessoryPricingUsesWasteAndProfit() {
   assertClose(accessory.sellPrice, 162, 'pricing: accessory kilo sale price must include profit');
   assertClose(accessory.total, 1620, 'pricing: accessory total must use final accessory sale price');
   assertClose(pricing.accessoryTotal, 1620, 'pricing: accessory total must not be raw-plus-stage cost only');
+
+  const derby = pricingDomain.calculateAccessoryLine({
+    type: 'ديربي',
+    quantity: 195,
+    price: 238,
+    stageCost: 80.5,
+    wastePercent: 4,
+    wasteBasis: 'net',
+    profitPerKg: 20,
+  }, { currency: 'EGP' }, {});
+  assertClose(derby.costPerKg, 328.02, 'pricing: derby cost must include raw, selected stages, and net waste');
+  assertClose(derby.sellPrice, 348.02, 'pricing: derby sale price must include per-kilo profit');
+  assertClose(derby.total, 67863.9, 'pricing: derby total must use final sale price for the entered quantity');
+
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('pricingDomain.calculateAccessoryLine'), 'pricing ui: accessory editor must use the central pricing engine');
+  assert(!appSource.includes('إجمالي خام الإكسسوار'), 'pricing ui: accessory result must not be labeled as a raw-only subtotal');
 }
 
 function checkLegacyPricingItemsInheritCardTerms() {

@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.22.01';
-const APP_BUILD_TIME = '2026-07-02 19:45';
+const APP_VERSION = 'v2026.07.26.06';
+const APP_BUILD_TIME = '2026-07-26 18:52';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -3233,7 +3233,7 @@ function pricingItemRowHtml(item = {}) {
     <div class="pricing-stage-card pricing-accessory-card" data-pricing-accessory-card>
       <div class="pricing-stage-head"><span>الإكسسوار</span><button class="mini-btn" type="button" data-add-pricing-accessory>+ إكسسوار</button></div>
       <div class="pricing-stage-rows">${accessoriesHtml}</div>
-      <div class="pricing-stage-total">إجمالي خام الإكسسوار: <strong data-pricing-accessory-total>${formatNumber(pricingAccessoriesTotal(accessories))}</strong></div>
+      <div class="pricing-accessory-summary" data-pricing-accessory-summary>أدخل بيانات الإكسسوار لعرض التكلفة وسعر البيع.</div>
     </div>
     <input data-pricing-item-field="wastePercent" type="number" step="0.01" placeholder="هالك %" value="${item.wastePercent || ''}">
     ${pricingWasteBasisSelect(item.wasteBasis || item.accountingMode || 'net')}
@@ -3323,7 +3323,6 @@ function pricingAccessoriesFromRow(row) {
     const wasteInput = accessoryRow.querySelector('[data-pricing-accessory-waste-percent]')?.value;
     const wasteBasis = accessoryRow.querySelector('[data-pricing-accessory-waste-basis]')?.value || '';
     const profitInput = accessoryRow.querySelector('[data-pricing-accessory-profit]')?.value;
-    const unitPrice = roundNumber(price + pricingConvertEgpCost(stageCost, currency, exchangeRate));
     return {
       type: accessoryRow.querySelector('[data-pricing-accessory-type]')?.value.trim() || '',
       quantity,
@@ -3336,10 +3335,26 @@ function pricingAccessoriesFromRow(row) {
       wastePercent: wasteInput === '' ? undefined : Number(wasteInput || 0),
       wasteBasis,
       profitPerKg: profitInput === '' ? undefined : Number(profitInput || 0),
-      unitPrice,
-      total: roundNumber(quantity * unitPrice),
     };
   }).filter((line)=>line.type || line.quantity || line.price || line.stageNames.length);
+}
+
+function pricingContextFromRow(row) {
+  return {
+    currency: pricingCurrencyValue(),
+    exchangeRate: pricingExchangeRateValue(),
+    dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
+    wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
+    wasteBasis: row.querySelector('[data-pricing-item-field="wasteBasis"]')?.value || 'net',
+    deferredPercent: Number(row.querySelector('[data-pricing-item-field="deferredPercent"]')?.value || 0),
+    profitPerKg: Number(row.querySelector('[data-pricing-item-field="profitPerKg"]')?.value || 0),
+  };
+}
+
+function pricingCalculatedAccessoriesFromRow(row) {
+  const pricing = pricingContextFromRow(row);
+  const library = activeDyehousePriceLibrary()[pricing.dyehouse] || {};
+  return pricingAccessoriesFromRow(row).map((line)=>pricingDomain.calculateAccessoryLine(line, pricing, library));
 }
 
 function pricingAccessoriesTotal(lines = []) {
@@ -3348,6 +3363,19 @@ function pricingAccessoriesTotal(lines = []) {
     const unitPrice = Number(line.unitPrice ?? (Number(line.price || 0) + Number(line.stageCost || 0)));
     return total + Number(line.quantity ?? line.percent ?? 0) * unitPrice;
   }, 0));
+}
+
+function pricingAccessorySummaryHtml(lines = []) {
+  if (!lines.length) return 'لا توجد بنود إكسسوار في كرت التسعير.';
+  return lines.map((line)=>{
+    const currency = pricingCurrencyLabel(line.currency || pricingCurrencyValue());
+    return `<div class="pricing-accessory-summary-line">
+      <strong>${escapeHtml(line.type || 'إكسسوار')}</strong>
+      <span>تكلفة الكيلو: <b>${formatNumber(line.costPerKg || 0)} ${currency}</b></span>
+      <span>سعر البيع: <b>${formatNumber(line.sellPrice || line.unitPrice || 0)} ${currency}</b></span>
+      <span>الإجمالي: <b>${formatNumber(line.total || 0)} ${currency}</b></span>
+    </div>`;
+  }).join('');
 }
 
 function refreshPricingAccessoryStageOptions(row) {
@@ -3368,9 +3396,9 @@ function updatePricingStageTotals() {
     const totalEl = row.querySelector('[data-pricing-dye-total]');
     if (totalEl) totalEl.textContent = formatNumber(total);
     refreshPricingAccessoryStageOptions(row);
-    const accessoryTotal = pricingAccessoriesTotal(pricingAccessoriesFromRow(row));
-    const accessoryTotalEl = row.querySelector('[data-pricing-accessory-total]');
-    if (accessoryTotalEl) accessoryTotalEl.textContent = formatNumber(accessoryTotal);
+    const accessoryLines = pricingCalculatedAccessoriesFromRow(row);
+    const accessorySummaryEl = row.querySelector('[data-pricing-accessory-summary]');
+    if (accessorySummaryEl) accessorySummaryEl.innerHTML = pricingAccessorySummaryHtml(accessoryLines);
   });
 }
 
@@ -3378,28 +3406,31 @@ function syncPricingPrimaryItemRow() {}
 function readPricingItemsEditor() {
   const rows = [...document.querySelectorAll('#pricingItemsRows [data-pricing-item-row]')];
   if (!rows.length) return [pricingPrimaryItemFromRefs()].filter((item)=>item.fabricType || item.quantity > 0);
-  return rows.map((row)=>({
-    currency: pricingCurrencyValue(),
-    exchangeRate: pricingExchangeRateValue(),
-    fabricType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
-    materialType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
-    dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
-    weavingSource: row.querySelector('[data-pricing-item-field="weavingSource"]')?.value.trim() || refs.pricingWeavingSource?.value || '',
-    colorClass: '',
-    quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
-    inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
-    finishedWeight: row.querySelector('[data-pricing-item-field="finishedWeight"]')?.value.trim() || '',
-    rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
-    dyeCost: pricingStagesTotal(pricingStagesFromRow(row)),
-    dyeStages: pricingStagesFromRow(row),
-    accessoryLines: pricingAccessoriesFromRow(row),
-    accessoryCost: pricingAccessoriesTotal(pricingAccessoriesFromRow(row)),
-    wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
-    wasteBasis: row.querySelector('[data-pricing-item-field="wasteBasis"]')?.value || 'net',
-    deferredPercent: Number(row.querySelector('[data-pricing-item-field="deferredPercent"]')?.value || 0),
-    extraCost: 0,
-    profitPerKg: Number(row.querySelector('[data-pricing-item-field="profitPerKg"]')?.value || 0),
-  })).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.accessoryCost > 0 || item.deferredPercent > 0 || item.profitPerKg > 0);
+  return rows.map((row)=>{
+    const accessoryLines = pricingCalculatedAccessoriesFromRow(row);
+    return {
+      currency: pricingCurrencyValue(),
+      exchangeRate: pricingExchangeRateValue(),
+      fabricType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
+      materialType: canonicalFabricName(row.querySelector('[data-pricing-item-field="fabricType"]')?.value || ''),
+      dyehouse: row.querySelector('[data-pricing-item-field="dyehouse"]')?.value.trim() || '',
+      weavingSource: row.querySelector('[data-pricing-item-field="weavingSource"]')?.value.trim() || refs.pricingWeavingSource?.value || '',
+      colorClass: '',
+      quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
+      inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
+      finishedWeight: row.querySelector('[data-pricing-item-field="finishedWeight"]')?.value.trim() || '',
+      rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
+      dyeCost: pricingStagesTotal(pricingStagesFromRow(row)),
+      dyeStages: pricingStagesFromRow(row),
+      accessoryLines,
+      accessoryCost: pricingAccessoriesTotal(accessoryLines),
+      wastePercent: Number(row.querySelector('[data-pricing-item-field="wastePercent"]')?.value || 0),
+      wasteBasis: row.querySelector('[data-pricing-item-field="wasteBasis"]')?.value || 'net',
+      deferredPercent: Number(row.querySelector('[data-pricing-item-field="deferredPercent"]')?.value || 0),
+      extraCost: 0,
+      profitPerKg: Number(row.querySelector('[data-pricing-item-field="profitPerKg"]')?.value || 0),
+    };
+  }).filter((item)=>item.fabricType || item.quantity > 0 || item.rawCost > 0 || item.dyeCost > 0 || item.accessoryCost > 0 || item.deferredPercent > 0 || item.profitPerKg > 0);
 }
 function pricingCurrencyRef() {
   return document.getElementById('pricingCurrency');

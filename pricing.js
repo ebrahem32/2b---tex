@@ -361,6 +361,7 @@
     }
 
     return {
+      calculateAccessoryLine,
       calculatePricing,
       getSuggestedDyeCost,
       mergeDyehousePriceLibrary,

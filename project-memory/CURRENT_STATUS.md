@@ -128,6 +128,19 @@
 - Reminder: `F:\2B Tex` still blocks creating `.js`/`.ps1`/`.bat` files (verified 2026-07-05); IT must allow these extensions before extracting the archive on the company server.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
 
+## Latest Accessory Pricing Correction
+
+- Date: 2026-07-26.
+- Web version: `v2026.07.26.06`.
+- Corrected the pricing-card accessory editor to use the central `pricing.js` calculation engine.
+- Accessory cost now includes raw price, selected processing stages, waste according to net/gross basis, deferred cost when applicable, and profit per kilogram.
+- The editor now displays accessory cost per kilogram, sale price per kilogram, and final line total instead of a misleading raw-only subtotal.
+- Regression example: Derby 195 kg, raw 238 EGP/kg, selected stages 80.5 EGP/kg, net waste 4%, and profit 20 EGP/kg produces cost 328.02 EGP/kg, sale 348.02 EGP/kg, and total 67,863.90 EGP.
+- Existing pricing cards inherit the correction when opened because all accessory lines are recalculated from their saved inputs.
+- Updated the `index.html` asset versions for both `pricing.js` and `app.js` so Windows clients and browsers cannot retain the old accessory calculation.
+- Not touched: database schema or data, stock logic, operational waste quantities, AI backend, WhatsApp, or A5.
+- Verification: `npm run check` passed with `Operational flow check passed`.
+
 ## Latest Desktop Document Cache Fix
 
 - Date: 2026-07-26.
