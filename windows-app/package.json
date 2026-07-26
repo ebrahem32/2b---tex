@@ -1,6 +1,6 @@
 {
   "name": "2b-tex-windows-app",
-  "version": "2026.7.25",
+  "version": "2026.7.26",
   "description": "2B Tex Windows desktop client for the central production server",
   "main": "src/main.js",
   "author": "2B Tex",

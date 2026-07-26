@@ -8,6 +8,7 @@ const DEFAULT_APP_URL = "http://192.168.11.191:3000/login.html";
 const APP_URL = resolveAppUrl();
 const ICON_PATH = path.join(__dirname, "..", "assets", "2B Tex.ico");
 const PRELOAD_PATH = path.join(__dirname, "preload.js");
+const SHELL_PATH = path.join(__dirname, "shell.html");
 
 function resolveAppUrl() {
   // The client bootstrapper writes the shared manifest beside the local app
@@ -29,12 +30,6 @@ function resolveAppUrl() {
 
 let mainWindow;
 
-app.disableHardwareAcceleration();
-app.commandLine.appendSwitch("disable-gpu");
-app.commandLine.appendSwitch("disable-gpu-compositing");
-app.commandLine.appendSwitch("disable-gpu-sandbox");
-app.commandLine.appendSwitch("disable-accelerated-2d-canvas");
-app.commandLine.appendSwitch("in-process-gpu");
 app.commandLine.appendSwitch("no-sandbox");
 app.setAppUserModelId("com.2btex.operations");
 app.name = "2B Tex";
@@ -166,29 +161,68 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
-    minWidth: 1100,
-    minHeight: 720,
-    title: "2B Tex",
+    minWidth: 960,
+    minHeight: 640,
+    title: "2B Tex | نظام التشغيل",
     icon: fs.existsSync(ICON_PATH) ? ICON_PATH : undefined,
     autoHideMenuBar: true,
+    show: false,
+    transparent: false,
     backgroundColor: "#101820",
     webPreferences: {
       preload: fs.existsSync(PRELOAD_PATH) ? PRELOAD_PATH : undefined,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
+      webviewTag: true,
     },
   });
 
-  mainWindow.loadURL(APP_URL);
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.maximize();
+    mainWindow.show();
+  });
 
-  mainWindow.webContents.on("did-fail-load", () => {
+  mainWindow.loadFile(SHELL_PATH, {
+    query: {
+      appUrl: APP_URL,
+      preloadPath: PRELOAD_PATH,
+    },
+  });
+
+  mainWindow.webContents.on("did-fail-load", (
+    _event,
+    _errorCode,
+    _errorDescription,
+    _validatedUrl,
+    isMainFrame
+  ) => {
+    if (!isMainFrame) return;
     mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(createOfflineHtmlSafe())}`);
+  });
+
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    console.error("2B Tex shell renderer stopped:", details);
+  });
+
+  mainWindow.webContents.on("preload-error", (_event, preloadPath, error) => {
+    console.error(`2B Tex preload failed (${preloadPath}):`, error);
+  });
+
+  mainWindow.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+    if (level >= 2) console.error(`2B Tex renderer: ${message} (${sourceId}:${line})`);
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
+  });
+
+  mainWindow.webContents.on("did-attach-webview", (_event, guestContents) => {
+    guestContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+      return { action: "deny" };
+    });
   });
 }
 
@@ -224,13 +258,13 @@ function installDesktopBridge() {
     }
   });
 
-  ipcMain.handle("2btex:print", async () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, error: "Window is not ready." };
+  ipcMain.handle("2btex:print", async (event) => {
+    if (!event.sender || event.sender.isDestroyed()) return { ok: false, error: "Window is not ready." };
     try {
       const previewRoot = path.join(app.getPath("temp"), "2BTex", "PrintPreview");
       fs.mkdirSync(previewRoot, { recursive: true });
       const previewPath = path.join(previewRoot, `2B-Tex-${Date.now()}.pdf`);
-      const pdf = await mainWindow.webContents.printToPDF({
+      const pdf = await event.sender.printToPDF({
         printBackground: true,
         preferCSSPageSize: true,
         pageSize: "A4",
@@ -246,9 +280,14 @@ function installDesktopBridge() {
 }
 
 app.whenReady().then(async () => {
-  // The application is a thin client. Clearing Chromium's cache on startup
-  // prevents an old app.js or stylesheet from surviving a server deployment.
-  await session.defaultSession.clearCache().catch(() => {});
+  // The webview uses its own persistent partition, not defaultSession. Clear
+  // both caches so every launch reads the current server UI after a deployment.
+  const systemSession = session.fromPartition("persist:2btex");
+  await Promise.all([
+    session.defaultSession.clearCache().catch(() => {}),
+    systemSession.clearCache().catch(() => {}),
+    systemSession.clearCodeCaches({}).catch(() => {}),
+  ]);
   installDesktopBridge();
   createWindow();
 });

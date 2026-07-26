@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>2B Tex | نظام التشغيل</title>
+  <link rel="stylesheet" href="./shell.css">
+</head>
+<body>
+  <div class="desktop-shell">
+    <header class="app-bar">
+      <div class="app-brand">
+        <span class="brand-mark">2B</span>
+        <span><strong>2B Tex</strong><small>نظام تشغيل المصنع</small></span>
+      </div>
+      <div class="app-location">
+        <strong id="activeTitle">الرئيسية</strong>
+        <small id="connectionLabel">جاري الاتصال بالسيرفر</small>
+      </div>
+      <div class="window-tools">
+        <button type="button" id="backButton" title="رجوع" aria-label="رجوع">&lt;</button>
+        <button type="button" id="refreshButton" title="تحديث" aria-label="تحديث">R</button>
+        <button type="button" id="sidebarButton" title="إظهار أو إخفاء القائمة" aria-label="إظهار أو إخفاء القائمة">M</button>
+      </div>
+    </header>
+
+    <aside class="internal-nav" id="internalNav">
+      <div class="connection-card">
+        <span class="connection-dot" id="connectionDot"></span>
+        <div><strong id="connectionState">السيرفر</strong><small id="serverAddress">2B-Server</small></div>
+      </div>
+      <nav aria-label="قوائم النظام الداخلية">
+        <section class="nav-group open">
+          <button type="button" class="group-title" aria-expanded="true">الرئيسية</button>
+          <div class="group-items">
+            <button type="button" class="nav-command active" data-kind="action" data-command="workspaceHome">لوحة التشغيل</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="aiModel">مركز المتابعة الذكي</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="report:waste-analysis">الهالك</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="report:orders-follow">الطلبات المتأخرة</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">المبيعات</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="action" data-command="pricingNew">كرت تسعير</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="orderNew">طلب جديد</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="customerAccounts">العملاء</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="pricingList">عروض الأسعار</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="ordersList">طلبات العملاء</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">النسيج</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="stage" data-command="stage:weaving">رصيد واستلام الخام</button>
+            <button type="button" class="nav-command" data-kind="document" data-command="weaving">أوامر تشغيل النسيج</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">المصبغة</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="stage" data-command="stage:dyehouse">رصيد وحركة المصبغة</button>
+            <button type="button" class="nav-command" data-kind="document" data-command="dyeing">أوامر تشغيل الصباغة</button>
+            <button type="button" class="nav-command" data-kind="document" data-command="labSamples">عينات المعمل</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="gluingQueue">دمج الخامات</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="dyehousePrices">أسعار المصابغ</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="report:raw-returns">مرتجعات الخام</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">المخزن والتسليم</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="stage" data-command="stage:warehouse">رصيد المخزن</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="finishedSale">بيع مجهز</button>
+            <button type="button" class="nav-command" data-kind="document" data-command="stickers">طباعة الاستيكرات</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">التقارير</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="document" data-command="fullreport">التقرير الكامل</button>
+            <button type="button" class="nav-command" data-kind="document" data-command="waste">تقرير الهالك</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="report:dyehouse-balances">تقرير داخل المصبغة</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="report:customer">تقرير العميل</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">واتساب والإرسال</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="action" data-command="outbox">قائمة وسجل الإرسال</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="whatsappSettings">إعدادات المشاركة</button>
+          </div>
+        </section>
+        <section class="nav-group">
+          <button type="button" class="group-title" aria-expanded="false">الإدارة</button>
+          <div class="group-items">
+            <button type="button" class="nav-command" data-kind="action" data-command="systemStatus">الإعدادات</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="auditLog">سجل التعديل والحذف</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="a5Accounts">حسابات A5</button>
+            <button type="button" class="nav-command" data-kind="action" data-command="users">المستخدمون والصلاحيات</button>
+          </div>
+        </section>
+      </nav>
+    </aside>
+
+    <main class="workspace-frame">
+      <div class="loading-state" id="loadingState">
+        <span class="loading-mark">2B</span>
+        <strong>جاري فتح نظام التشغيل</strong>
+        <small>الاتصال بسيرفر 2B المركزي</small>
+      </div>
+      <webview id="systemView" partition="persist:2btex" allowpopups></webview>
+      <div class="offline-state" id="offlineState" hidden>
+        <strong>تعذر الاتصال بالسيرفر</strong>
+        <p>تأكد أن سيرفر 2B وخدمات النظام تعمل، ثم أعد المحاولة.</p>
+        <button type="button" id="retryButton">إعادة المحاولة</button>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+  <script src="./shell.js"></script>
+</body>
+</html>

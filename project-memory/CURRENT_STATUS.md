@@ -128,6 +128,19 @@
 - Reminder: `F:\2B Tex` still blocks creating `.js`/`.ps1`/`.bat` files (verified 2026-07-05); IT must allow these extensions before extracting the archive on the company server.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
 
+## Latest Desktop Document Cache Fix
+
+- Date: 2026-07-26.
+- Windows client manifest version: `2026.07.26.05`.
+- Incident: order `72090` opened its weaving document in the live browser, while the Windows application showed a generic document-open error.
+- Root cause: the operational webview uses Chromium partition `persist:2btex`, but startup cleared only Electron's `defaultSession`; old JavaScript therefore survived server deployments inside the desktop application.
+- Fix: `windows-app/src/main.js` now clears the default cache plus the `persist:2btex` cache and code cache before creating the application window.
+- Diagnostics: document-open failures now show the underlying technical error after the Arabic user message.
+- Verification: authenticated browser reproduction for order `72090` successfully opened `أمر تشغيل نسيج` with the correct order data.
+- Verification: Windows client `2026.7.26` was rebuilt; `resources/app.asar` SHA256 is `AD7EA25A267A639A054949B0FB8D83DFBE115834A3B51F02CE4F85FD526F1DDE`.
+- Verification: `npm run check` passed, including `Operational flow check passed`; production login returned HTTP 200.
+- Not touched: backend calculations, database schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, and A5 service.
+
 ## Latest SQL Server Order Save Hotfix
 
 - Date: 2026-07-26.

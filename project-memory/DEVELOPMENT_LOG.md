@@ -1879,6 +1879,16 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Rebuilt the server-owned unpacked client.
 - `npm run check` and `Operational flow check` passed.
 
+### 2026-07-26 - Fix Stale Windows Document Code
+
+- Reproduced order `72090` against the live production server and confirmed that its weaving document opens correctly in the browser.
+- Isolated the failure to stale Chromium assets inside Electron partition `persist:2btex`.
+- Updated `windows-app/src/main.js` to clear both the default Electron cache and the operational webview cache/code cache before launch.
+- Improved document-open diagnostics so future failures expose their actual technical cause.
+- Rebuilt Windows client `2026.7.26` and released manifest version `2026.07.26.05`.
+- Updated the central app hash to `AD7EA25A267A639A054949B0FB8D83DFBE115834A3B51F02CE4F85FD526F1DDE`.
+- Verification: `npm run check` passed with `Operational flow check passed`; production login returned HTTP 200.
+
 ### 2026-07-26 - Fix SQL Server New Order Saves
 
 - Traced the generic new-order save failure to SQL Server rejecting generated `OFFSET ... FETCH NEXT` SQL without `ORDER BY`.

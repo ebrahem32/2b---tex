@@ -231,7 +231,8 @@
         await openDocument(type === 'labsamples' ? 'labSamples' : type);
       } catch (error) {
         console.error('document-open-error', error);
-        alert('تعذر فتح المستند حاليًا. راجع بيانات الطلب ثم حاول مرة أخرى.');
+        const detail = error instanceof Error ? error.message : String(error || '');
+        alert(`تعذر فتح المستند حاليًا. راجع بيانات الطلب ثم حاول مرة أخرى.${detail ? `\n\nالتفاصيل الفنية: ${detail}` : ''}`);
       }
     }
 
