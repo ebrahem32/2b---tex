@@ -96,7 +96,6 @@ function pricingListRows() {
   return allPricings.flatMap((sourcePricing) => {
     const state = pricingState(sourcePricing);
     const listMode = state.linked ? 'linked' : 'active';
-    if (listMode === 'active' && !isActivePricing(sourcePricing)) return [];
     const effectiveSourcePricing = typeof pricingWithOperationalWastePercent === 'function'
       ? pricingWithOperationalWastePercent(sourcePricing)
       : sourcePricing;

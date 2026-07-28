@@ -1,5 +1,16 @@
 # Current Status
 
+## Pricing Cards Visibility Recovery
+
+- Date: 2026-07-28.
+- Version: `v2026.07.28.01`.
+- Restored every persisted pricing card to the pricing list.
+- Root cause: the UI applied an implicit active-card predicate before the selected list filter, hiding valid persisted cards.
+- The list now respects the explicit user filter and does not silently discard stored cards.
+- Updated the pricing module and application cache keys so desktop clients load the repaired UI.
+- No pricing records, orders, database schema, calculations, stock logic, or waste logic were changed.
+- Verification: `npm run check` passed and Operational flow check passed.
+
 ## Native Windows Internal Navigation
 
 - Date: 2026-07-26.

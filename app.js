@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.26.06';
-const APP_BUILD_TIME = '2026-07-26 18:52';
+const APP_VERSION = 'v2026.07.28.01';
+const APP_BUILD_TIME = '2026-07-28 10:24';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';

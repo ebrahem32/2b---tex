@@ -1,5 +1,14 @@
 # Development Log
 
+### 2026-07-28 - Restore Persisted Pricing Cards
+
+- Removed the implicit pre-filter that hid valid persisted pricing cards from the pricing list.
+- Kept the explicit active/linked/all list filters as the only list visibility control.
+- Bumped the pricing UI and application cache keys for desktop clients.
+- Updated version to `v2026.07.28.01`.
+- Did not modify production data, schema, calculations, stock logic, or waste logic.
+- `npm run check` and Operational flow check passed.
+
 ## 2026-07-22 - Production Health, SQL Backup, And Windows Document Repair
 
 - Corrected async SQL Server health checks that caused `/api/health` and `/api/system/check` to return HTTP 500.
