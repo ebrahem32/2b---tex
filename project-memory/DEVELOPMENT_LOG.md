@@ -1967,3 +1967,11 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Daily SQL backup now always verifies the local backup and treats off-machine copying as optional through the machine variable `TWOBTEX_OFFSITE_BACKUP_DIR`.
 - A live SYSTEM-context backup test created and verified `2btex-sqlserver-20260801-170017.bak`.
 - Git working tree was cleaned by moving retained code backups and inspection output outside the repository; no production data or calculation logic was changed.
+
+
+### 2026-08-01 - Correct Frontend Backup Health Status
+
+- Updated the frontend system-status endpoint to detect current SQL Server .bak files under the canonical application backup directory.
+- Retained the legacy folder check only as a fallback for non-SQL installations.
+- Updated the production version and cache key to v2026.08.01.02.
+- No database, schema, production records, calculations, stock, or waste logic was changed.

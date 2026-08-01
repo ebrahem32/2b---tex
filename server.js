@@ -35,19 +35,34 @@ const noStoreHeaders = {
 };
 
 function latestBackupInfo() {
-  const roots = [root, path.dirname(root)];
-  const found = [];
-  for (const base of roots) {
+  const sqlBackupDir = path.resolve(
+    process.env.SQLSERVER_BACKUP_DIR || path.join(path.dirname(root), 'backups', 'sqlserver'),
+  );
+  try {
+    const backups = fs.readdirSync(sqlBackupDir)
+      .filter((name) => /^2btex-sqlserver-.*\.bak$/i.test(name))
+      .map((name) => {
+        const fullPath = path.join(sqlBackupDir, name);
+        const stat = fs.statSync(fullPath);
+        return { name, path: fullPath, size: stat.size, modifiedAt: stat.mtime.toISOString(), type: 'sqlserver' };
+      })
+      .sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
+    if (backups.length) return backups[0];
+  } catch {}
+
+  const legacyRoots = [root, path.dirname(root)];
+  const legacy = [];
+  for (const base of legacyRoots) {
     try {
       for (const name of fs.readdirSync(base)) {
         if (!/^backup-before-|^backup-/.test(name)) continue;
         const fullPath = path.join(base, name);
         const stat = fs.statSync(fullPath);
-        if (stat.isDirectory()) found.push({ name, path: fullPath, modifiedAt: stat.mtime.toISOString() });
+        if (stat.isDirectory()) legacy.push({ name, path: fullPath, modifiedAt: stat.mtime.toISOString(), type: 'legacy' });
       }
     } catch {}
   }
-  return found.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt))[0] || null;
+  return legacy.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt))[0] || null;
 }
 
 function currentCloudflareUrl() {
