@@ -1795,3 +1795,14 @@ For Phase 3.1 local verification before commit:
 - Retained the legacy folder check only as a fallback for non-SQL installations.
 - Updated the production version and cache key to v2026.08.01.02.
 - No database, schema, production records, calculations, stock, or waste logic was changed.
+
+
+## DELTA F Drive Backup And Launcher Layout - 2026-08-01
+
+- The users' mapped drive `F:` is the DELTA share `\\DELTA-DC\Dyeing` (physical server path `G:\OU\Dyeing`).
+- `F:\2B Tex` contains only the browser launcher and the `backups` directory; it is not an application runtime or database location.
+- The launcher opens `http://192.168.11.191:3000/login.html` on 2B-Server.
+- Off-machine SQL backups are stored at `\\DELTA-DC\Dyeing\2B Tex\backups\sqlserver`.
+- `DELTA\2B-SERVER$` has inherited Modify permission on the backup directory only.
+- The machine variable `TWOBTEX_OFFSITE_BACKUP_DIR` on 2B-Server points to that UNC path.
+- A SYSTEM-context scheduled backup test succeeded and copied `2btex-sqlserver-20260801-173051.bak`; local and off-machine sets both contained 21 files after the test.

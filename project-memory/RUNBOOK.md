@@ -183,4 +183,4 @@ automatic seed in production.
 
 ### Optional Off-Machine Backup
 
-The scheduled task always creates and verifies the local SQL Server backup. To enable a second-machine copy, set the machine-level environment variable `TWOBTEX_OFFSITE_BACKUP_DIR` to an existing writable UNC directory and grant the computer account `2B-Server$` Modify permission. If the variable is not configured, the task logs a successful local-only backup and does not depend on DELTA-DC.
+The scheduled task always creates and verifies the local SQL Server backup. To enable a second-machine copy, set the machine-level environment variable `TWOBTEX_OFFSITE_BACKUP_DIR` to an existing writable UNC directory and grant the computer account `2B-Server$` Modify permission. Production currently sets this variable to `\\DELTA-DC\Dyeing\2B Tex\backups\sqlserver` (the users’ mapped `F:` drive). If the variable is not configured, the task logs a successful local-only backup.
