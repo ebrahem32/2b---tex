@@ -8,9 +8,23 @@ const path = require('path');
 const fs = require('fs');
 const appConfig = require('./config');
 
+const startupConfig = appConfig.load();
+const productionMssqlLock = path.join(appConfig.paths.configDir, 'production-mssql.lock');
+const isSqlServerClient = ['mssql', 'sqlserver', 'sql-server'].includes(
+  String(startupConfig.db.client || '').trim().toLowerCase(),
+);
+
+if (
+  fs.existsSync(productionMssqlLock)
+  && (!startupConfig.configFileExists || !isSqlServerClient)
+) {
+  console.error('[2B Tex] Startup blocked: production requires the external SQL Server configuration.');
+  process.exit(1);
+}
+
 // ينشر ملف الإعدادات الموحّد على process.env قبل أي قراءة تحته، بدون دهس أي
 // متغير بيئة موجود مسبقًا — فالسيرفر الحالي يفضل شغال بنفس متغيراته.
-appConfig.applyToEnv();
+appConfig.applyToEnv(startupConfig);
 
 const FRONTEND_PORT = process.env.PORT || '3000';
 function internalPort(value, fallback, reserved = []) {

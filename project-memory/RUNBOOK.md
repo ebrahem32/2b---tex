@@ -159,3 +159,22 @@ Required or relevant variables may include:
 - `BACKEND_PORT`
 
 Never write real secrets, passwords, tokens, or API keys into documentation or commits.
+
+## Canonical Production Layout
+
+- Application code: `C:\2B Tex\system` on `2B-Server`.
+- Production configuration: `C:\2B Tex\config\2btex.config.json`.
+- Production lock: `C:\2B Tex\config\production-mssql.lock`.
+- Production database: SQL Server database `2BTex` on the server itself.
+- SQL Server backups: `C:\ProgramData\2BTex\backups\sqlserver`.
+- Legacy SQLite archive: `C:\2B Tex\data\legacy-sqlite` (archive only, never runtime).
+- Network/browser launcher only: `F:\2B Tex\2B Tex - فتح من المتصفح.url`.
+
+Do not deploy the `config`, `data`, or backup directories as part of a code update. A release updates
+only `C:\2B Tex\system`. Before a production update, create and verify a SQL Server `.bak`, record
+the main table counts, deploy code, restart the `2B Tex Server` scheduled task, check
+`/api/health`, and compare the counts again.
+
+If `production-mssql.lock` exists, production must not start with SQLite or without the external
+configuration. Never restore a SQLite file into the runtime path and never enable local import or
+automatic seed in production.

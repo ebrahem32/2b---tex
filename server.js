@@ -174,6 +174,7 @@ function isAuthorized(req) {
 function isAuthPublicRequest(req) {
   const url = req.url || '/';
   return url === '/login.html'
+    || url.startsWith('/server-identity.json')
     || url.startsWith('/api/auth/login')
     || url.startsWith('/api/auth/logout')
     || url.startsWith('/api/auth/me')

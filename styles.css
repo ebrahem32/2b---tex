@@ -734,6 +734,9 @@
 .transfer-choice-card p{margin:0;color:var(--muted);line-height:1.8}
 .transfer-choice-close{position:absolute;top:12px;left:12px}
 .transfer-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.operation-notes-label{color:var(--muted);font-weight:700}
+.operation-notes-field{width:100%;min-height:130px;resize:vertical;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);font:inherit;line-height:1.7}
+.operation-notes-field:focus{outline:2px solid var(--accent);outline-offset:1px}
 @media(max-width:640px){.transfer-choice-actions{grid-template-columns:1fr}.transfer-choice-card{min-width:calc(100vw - 28px)}}
 
 .app-shell{max-width:none;display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}

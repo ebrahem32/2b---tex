@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.07.28.01';
-const APP_BUILD_TIME = '2026-07-28 10:24';
+const APP_VERSION = 'v2026.08.01.01';
+const APP_BUILD_TIME = '2026-08-01 16:30';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -6265,18 +6265,18 @@ async function saveBulkBatchesFromDialog() {
 }
 async function addAllocation() {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
-  const color = prompt('اكتب اللون المطلوب'); if (!color) return;
+  const color = await window.TwoBTexInput.prompt('اكتب اللون المطلوب'); if (!color) return;
   const createdAllocations = [];
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   if (order.widthMode === 'multiple') {
-    const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
+    const targetFinishedWeight = Number(await window.TwoBTexInput.prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
     order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; createdAllocations.push(allocation); });
   } else {
-    const plannedQuantity = Number(prompt('اكتب كمية اللون')); if (!plannedQuantity) return;
+    const plannedQuantity = Number(await window.TwoBTexInput.prompt('اكتب كمية اللون')); if (!plannedQuantity) return;
     const existing = order.allocations[0];
-    const targetFinishedWidth = existing?.targetFinishedWidth || Number(prompt('اكتب العرض')); if (!targetFinishedWidth) return;
-    const targetFinishedWeight = existing?.targetFinishedWeight || Number(prompt('اكتب الوزن المجهز')); if (!targetFinishedWeight) return;
+    const targetFinishedWidth = existing?.targetFinishedWidth || Number(await window.TwoBTexInput.prompt('اكتب العرض')); if (!targetFinishedWidth) return;
+    const targetFinishedWeight = existing?.targetFinishedWeight || Number(await window.TwoBTexInput.prompt('اكتب الوزن المجهز')); if (!targetFinishedWeight) return;
     const allocation = { id:uid(), orderId:order.id, color, plannedQuantity, dyehouse:order.dyehouse, targetFinishedWidth, targetFinishedWeight };
     createdAllocations.push(allocation);
   }
@@ -6292,13 +6292,13 @@ async function editAllocation(id) {
   const allocation = allocations.find((item)=>item.id===id);
   if (!allocation) return;
   const order = orders.find((item)=>item.id===allocation.orderId);
-  const colorValue = prompt('اكتب اللون / كود اللون', allocation.color || allocation.pantoneCode || '');
+  const colorValue = await window.TwoBTexInput.prompt('اكتب اللون / كود اللون', allocation.color || allocation.pantoneCode || '');
   if (colorValue === null) return;
   const cleanedColor = colorValue.trim();
   if (!cleanedColor) return;
-  const targetFinishedWidth = Number(prompt('اكتب العرض', allocation.targetFinishedWidth));
+  const targetFinishedWidth = Number(await window.TwoBTexInput.prompt('اكتب العرض', allocation.targetFinishedWidth));
   if (!targetFinishedWidth) return;
-  const targetFinishedWeight = Number(prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
+  const targetFinishedWeight = Number(await window.TwoBTexInput.prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
   if (!targetFinishedWeight) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
@@ -6333,8 +6333,8 @@ async function editAllocation(id) {
 }
 
 function chooseDyehouseTransferType(hasAccessories = false) {
-  const fallbackPrompt = () => {
-    const value = prompt(`\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646${hasAccessories ? '\n3 - \u0646\u0642\u0644 \u062e\u0627\u0645 \u0625\u0643\u0633\u0633\u0648\u0627\u0631' : ''}`, '1');
+  const fallbackPrompt = async () => {
+    const value = await window.TwoBTexInput.prompt(`\u0627\u062e\u062a\u0631 \u0646\u0648\u0639 \u0627\u0644\u0646\u0642\u0644:\n1 - \u0646\u0642\u0644 \u062e\u0627\u0645\n2 - \u0646\u0642\u0644 \u0644\u0648\u0646${hasAccessories ? '\n3 - \u0646\u0642\u0644 \u062e\u0627\u0645 \u0625\u0643\u0633\u0633\u0648\u0627\u0631' : ''}`, '1');
     if (value === null) return null;
     const normalized = String(value).trim();
     if (/^1\b|\u062e\u0627\u0645/.test(normalized)) return 'raw';
@@ -6396,7 +6396,7 @@ async function transferAllocationDyehouse(id, context = {}) {
   const isRawTransfer = normalizedTransferType === 'raw';
   const isAllocationTransfer = normalizedTransferType === 'allocation';
   const isAccessoryTransfer = normalizedTransferType === 'accessory';
-  const newDyehouseValue = prompt('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629', currentDyehouse);
+  const newDyehouseValue = await window.TwoBTexInput.prompt('\u0627\u0644\u0645\u0635\u0628\u063a\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629', currentDyehouse);
   if (newDyehouseValue === null) return;
   const newDyehouse = newDyehouseValue.trim();
   if (!newDyehouse) return;
@@ -6408,7 +6408,7 @@ async function transferAllocationDyehouse(id, context = {}) {
   let accessoryAvailable = 0;
   if (isAccessoryTransfer) {
     const accessoryNames = (order.accessoryLines || []).map((line)=>accessoryLineName(line, order));
-    const selectedAccessoryValue = prompt('\u0646\u0648\u0639 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631', accessoryNames[0] || '\u0631\u064a\u0628');
+    const selectedAccessoryValue = await window.TwoBTexInput.prompt('\u0646\u0648\u0639 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631', accessoryNames[0] || '\u0631\u064a\u0628');
     if (selectedAccessoryValue === null) return;
     accessoryType = selectedAccessoryValue.trim();
     if (!accessoryType) return;
@@ -6424,7 +6424,7 @@ async function transferAllocationDyehouse(id, context = {}) {
     : isRawTransfer
     ? (scopedAvailableQuantity || Number(calculated.remainingAtDyehouse || 0) || Number(calculated.sentToDyehouse || 0) || originalQuantity || '')
     : (Math.max(originalQuantity - Number(calculated.sentToDyehouse || 0), 0) || originalQuantity || '');
-  const quantityValue = prompt('\u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062d\u0648\u0644\u0629', suggestedQuantity);
+  const quantityValue = await window.TwoBTexInput.prompt('\u0627\u0644\u0643\u0645\u064a\u0629 \u0627\u0644\u0645\u062d\u0648\u0644\u0629', suggestedQuantity);
   if (quantityValue === null) return;
   const quantity = Number(quantityValue);
   if (!quantity || quantity <= 0) { alert('\u0627\u062f\u062e\u0644 \u0643\u0645\u064a\u0629 \u0635\u062d\u064a\u062d\u0629 \u0644\u0644\u062a\u062d\u0648\u064a\u0644.'); return; }
@@ -6435,10 +6435,10 @@ async function transferAllocationDyehouse(id, context = {}) {
   if (isAccessoryTransfer && quantity > accessoryAvailable + 0.01) transferWarnings.push('\u062a\u0646\u0628\u064a\u0647: \u0643\u0645\u064a\u0629 \u0646\u0642\u0644 \u062e\u0627\u0645 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0623\u0643\u0628\u0631 \u0645\u0646 \u0627\u0644\u0645\u062e\u0631\u0648\u062c \u0641\u0639\u0644\u064a\u0627\u064b \u0644\u0647\u0630\u0627 \u0627\u0644\u0644\u0648\u0646.');
   const accessorySummary = String(context.accessorySummary || '').trim();
   if (isRawTransfer && accessorySummary && !confirm(`\u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0627\u0644\u0645\u0631\u062a\u0628\u0637 \u0628\u0647\u0630\u0627 \u0627\u0644\u0635\u0641:\n${accessorySummary}\n\n\u0647\u0644 \u062a\u0645\u0631\u0631 \u0646\u0642\u0644 \u0627\u0644\u062e\u0627\u0645 \u0645\u0639 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0625\u0643\u0633\u0633\u0648\u0627\u0631\u061f`)) return;
-  const dateValue = prompt('\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062a\u062d\u0648\u064a\u0644', new Date().toISOString().slice(0,10));
+  const dateValue = await window.TwoBTexInput.prompt('\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062a\u062d\u0648\u064a\u0644', new Date().toISOString().slice(0,10));
   if (dateValue === null) return;
-  const noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '') || '';
-  const reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '\u062a\u062d\u0648\u064a\u0644 \u0645\u0635\u0628\u063a\u0629') || '';
+  const noteNumber = await window.TwoBTexInput.prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '') || '';
+  const reason = await window.TwoBTexInput.prompt('\u0633\u0628\u0628 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', '\u062a\u062d\u0648\u064a\u0644 \u0645\u0635\u0628\u063a\u0629') || '';
   const accessoryReason = isRawTransfer && accessorySummary ? `\u0625\u0643\u0633\u0633\u0648\u0627\u0631 \u0645\u0631\u062a\u0628\u0637: ${accessorySummary}` : '';
   const newAllocationId = uid();
   const roundedQuantity = roundNumber(quantity);
@@ -6570,16 +6570,16 @@ async function editBatch(type, id) {
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   const updatedBatch = { ...batch };
-  const quantity = Number(prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
-  updatedBatch.date = prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
-  if (type === 'raw') { updatedBatch.supplier = prompt('الجهة / المصدر', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'transfer') { updatedBatch.fromDyehouse = prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; if (updatedBatch.mode === 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ACCESSORY_MARKER)) updatedBatch.reason = [TRANSFER_ACCESSORY_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode === 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_RAW_MARKER)) updatedBatch.reason = [TRANSFER_RAW_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode !== 'raw' && updatedBatch.mode !== 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ALLOCATION_MARKER)) updatedBatch.reason = [TRANSFER_ALLOCATION_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); }
-  if (type === 'rawReturn') { updatedBatch.noteNumber = prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'accessory') { updatedBatch.accessoryType = prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'gluing') { updatedBatch.movement = prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = prompt('مصدر الدمج / العملية', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = prompt('اسم المنتج الناتج', updatedBatch.outputName || '') || ''; updatedBatch.customerName = prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'dye') { updatedBatch.noteNumber = prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'production') { updatedBatch.noteNumber = prompt('رقم إذن استلام المجهز', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
-  if (type === 'finished') { updatedBatch.finishedWidth = Number(prompt('العرض', updatedBatch.finishedWidth)); updatedBatch.finishedWeight = Number(prompt('الوزن المجهز', updatedBatch.finishedWeight)); updatedBatch.notes = prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  const quantity = Number(await window.TwoBTexInput.prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
+  updatedBatch.date = await window.TwoBTexInput.prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
+  if (type === 'raw') { updatedBatch.supplier = await window.TwoBTexInput.prompt('الجهة / المصدر', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'transfer') { updatedBatch.fromDyehouse = await window.TwoBTexInput.prompt('\u0645\u0646 \u0645\u0635\u0628\u063a\u0629', updatedBatch.fromDyehouse || '') || updatedBatch.fromDyehouse; updatedBatch.toDyehouse = await window.TwoBTexInput.prompt('\u0625\u0644\u0649 \u0645\u0635\u0628\u063a\u0629', updatedBatch.toDyehouse || '') || updatedBatch.toDyehouse; updatedBatch.noteNumber = await window.TwoBTexInput.prompt('\u0631\u0642\u0645 \u0625\u0630\u0646 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', updatedBatch.noteNumber || '') || ''; updatedBatch.reason = await window.TwoBTexInput.prompt('\u0633\u0628\u0628 \u0627\u0644\u0646\u0642\u0644', updatedBatch.reason || '') || ''; if (updatedBatch.mode === 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ACCESSORY_MARKER)) updatedBatch.reason = [TRANSFER_ACCESSORY_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode === 'raw' && !String(updatedBatch.reason || '').includes(TRANSFER_RAW_MARKER)) updatedBatch.reason = [TRANSFER_RAW_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); if (updatedBatch.mode !== 'raw' && updatedBatch.mode !== 'accessory' && !String(updatedBatch.reason || '').includes(TRANSFER_ALLOCATION_MARKER)) updatedBatch.reason = [TRANSFER_ALLOCATION_MARKER, updatedBatch.reason].filter(Boolean).join(' - '); }
+  if (type === 'rawReturn') { updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم إذن المرتجع', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'accessory') { updatedBatch.accessoryType = await window.TwoBTexInput.prompt('نوع الإكسسوار', updatedBatch.accessoryType) || updatedBatch.accessoryType; updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'gluing') { updatedBatch.movement = await window.TwoBTexInput.prompt('نوع الحركة sent/received/customer', updatedBatch.movement || 'sent') || updatedBatch.movement; updatedBatch.partnerFabric = await window.TwoBTexInput.prompt('مصدر الدمج / العملية', updatedBatch.partnerFabric || '') || ''; updatedBatch.outputName = await window.TwoBTexInput.prompt('اسم المنتج الناتج', updatedBatch.outputName || '') || ''; updatedBatch.customerName = await window.TwoBTexInput.prompt('العميل', updatedBatch.customerName || '') || ''; updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'dye') { updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'production') { updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم إذن استلام المجهز', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
+  if (type === 'finished') { updatedBatch.finishedWidth = Number(await window.TwoBTexInput.prompt('العرض', updatedBatch.finishedWidth)); updatedBatch.finishedWeight = Number(await window.TwoBTexInput.prompt('الوزن المجهز', updatedBatch.finishedWeight)); updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }
   if (backendSaveRequired) {
     const saved = type === 'transfer'
       ? await putBackend(`/transfers/${id}`, transferToApi(updatedBatch))
@@ -7336,6 +7336,87 @@ function renderDyehouseDocumentPicker(order) {
   refs.documentDialog.showModal();
 }
 
+function requestTextInput({ title, value = '', label = '', multiline = false }) {
+  if (typeof document === 'undefined' || !document.createElement || typeof HTMLDialogElement === 'undefined') {
+    return Promise.resolve(value);
+  }
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'transfer-choice-dialog';
+
+    const form = document.createElement('form');
+    form.method = 'dialog';
+    form.className = 'transfer-choice-card';
+    form.dir = 'rtl';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    form.appendChild(heading);
+
+    if (label) {
+      const fieldLabel = document.createElement('label');
+      fieldLabel.className = 'operation-notes-label';
+      fieldLabel.textContent = label;
+      form.appendChild(fieldLabel);
+    }
+
+    const field = multiline ? document.createElement('textarea') : document.createElement('input');
+    field.className = 'operation-notes-field';
+    field.value = value;
+    if (multiline) field.rows = 5;
+    form.appendChild(field);
+
+    const actions = document.createElement('div');
+    actions.className = 'transfer-choice-actions';
+
+    const saveButton = document.createElement('button');
+    saveButton.type = 'submit';
+    saveButton.className = 'primary';
+    saveButton.textContent = 'حفظ وفتح المستند';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'mini-btn';
+    cancelButton.textContent = 'إلغاء';
+
+    actions.append(saveButton, cancelButton);
+    form.appendChild(actions);
+    dialog.appendChild(form);
+    document.body.appendChild(dialog);
+
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      dialog.remove();
+      resolve(result);
+    };
+    cancelButton.addEventListener('click', () => {
+      dialog.close();
+      finish(null);
+    });
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      dialog.close();
+      finish(null);
+    });
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      dialog.close();
+      finish(field.value);
+    });
+    dialog.addEventListener('close', () => finish(null));
+
+    try {
+      dialog.showModal();
+      field.focus();
+      if (!multiline) field.select();
+    } catch (error) {
+      finish(value);
+    }
+  });
+}
+
 async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   if (!sourceOrder) return null;
   const key = operationNotesKey(type, dyehouseName);
@@ -7344,7 +7425,12 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   const title = type === 'dyeing'
     ? `ملاحظات أمر تشغيل الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
     : 'ملاحظات أمر تشغيل النسيج';
-  const value = prompt(title, current);
+  const value = await requestTextInput({
+    title,
+    value: current,
+    label: 'ملاحظات المستند',
+    multiline: true
+  });
   if (value === null) return null;
   sourceOrder.operationNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
   sourceOrder.operationNotes[key] = value.trim();
@@ -7780,3 +7866,133 @@ loadCurrentUser().finally(() => {
 loadBackendData().finally(startWhatsappScheduleTimer);
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
+
+
+/* 2BTEX_INTERNAL_PROMPT_V1 */
+(() => {
+  if (window.TwoBTexInput?.prompt) return;
+
+  const finishPrevious = () => {
+    const previous = document.getElementById("two-b-tex-input-overlay");
+    if (previous) previous.remove();
+  };
+
+  window.TwoBTexInput = window.TwoBTexInput || {};
+  window.TwoBTexInput.prompt = (message, defaultValue = "") =>
+    new Promise((resolve) => {
+      finishPrevious();
+
+      const overlay = document.createElement("div");
+      overlay.id = "two-b-tex-input-overlay";
+      overlay.dir = "rtl";
+      Object.assign(overlay.style, {
+        position: "fixed",
+        inset: "0",
+        zIndex: "2147483647",
+        display: "grid",
+        placeItems: "center",
+        padding: "20px",
+        background: "rgba(0, 0, 0, 0.72)",
+      });
+
+      const panel = document.createElement("section");
+      Object.assign(panel.style, {
+        width: "min(520px, 100%)",
+        padding: "24px",
+        border: "1px solid #5f5130",
+        borderRadius: "8px",
+        background: "#121921",
+        color: "#f6f7f8",
+        boxShadow: "0 24px 70px rgba(0, 0, 0, 0.5)",
+        fontFamily: "inherit",
+      });
+
+      const label = document.createElement("label");
+      label.textContent = String(message || "");
+      Object.assign(label.style, {
+        display: "block",
+        marginBottom: "12px",
+        fontSize: "18px",
+        fontWeight: "700",
+      });
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = defaultValue == null ? "" : String(defaultValue);
+      Object.assign(input.style, {
+        boxSizing: "border-box",
+        width: "100%",
+        minHeight: "48px",
+        padding: "10px 12px",
+        border: "1px solid #566270",
+        borderRadius: "6px",
+        outline: "none",
+        background: "#19232e",
+        color: "#fff",
+        font: "inherit",
+      });
+
+      const actions = document.createElement("div");
+      Object.assign(actions.style, {
+        display: "flex",
+        gap: "10px",
+        marginTop: "18px",
+      });
+
+      const confirmButton = document.createElement("button");
+      confirmButton.type = "button";
+      confirmButton.textContent = "حفظ";
+      Object.assign(confirmButton.style, {
+        minWidth: "110px",
+        minHeight: "44px",
+        border: "0",
+        borderRadius: "6px",
+        background: "#cdb06c",
+        color: "#111",
+        font: "inherit",
+        fontWeight: "700",
+        cursor: "pointer",
+      });
+
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.textContent = "إلغاء";
+      Object.assign(cancelButton.style, {
+        minWidth: "110px",
+        minHeight: "44px",
+        border: "1px solid #566270",
+        borderRadius: "6px",
+        background: "#1a2430",
+        color: "#fff",
+        font: "inherit",
+        cursor: "pointer",
+      });
+
+      let completed = false;
+      const finish = (value) => {
+        if (completed) return;
+        completed = true;
+        overlay.remove();
+        resolve(value);
+      };
+
+      confirmButton.addEventListener("click", () => finish(input.value));
+      cancelButton.addEventListener("click", () => finish(null));
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) finish(null);
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") finish(input.value);
+        if (event.key === "Escape") finish(null);
+      });
+
+      actions.append(confirmButton, cancelButton);
+      panel.append(label, input, actions);
+      overlay.append(panel);
+      document.body.append(overlay);
+      window.setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 0);
+    });
+})();

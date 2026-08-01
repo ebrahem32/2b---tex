@@ -1924,3 +1924,31 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Kept the production web handlers as the single source of operational behavior; desktop navigation remains a presentation and routing layer only.
 - Rebuilt the server-owned unpacked client and updated the central launcher manifest SHA256.
 - `npm run check` and `Operational flow check` passed.
+- 2026-07-28: Separated the production SQL Server database and runtime configuration from the application source. The canonical code remains only at `C:\2B Tex\system` on `2B-Server`; configuration moved to `C:\2B Tex\config\2btex.config.json`; a production MSSQL lock was added; legacy SQLite files were archived outside the repository; the internal SQL environment file was removed; production was restarted and health/data counts were verified without loss.
+
+### 2026-07-28 - Global Production Server Identity
+
+- Added `modules/serverIdentityUi.js` to login and main application pages.
+- Added live identity verification through `server-identity.json`.
+- The UI now visibly distinguishes the one canonical 2B production server from offline or copied instances.
+- Updated the application version to `v2026.07.28.02`.
+
+### 2026-07-28 - Desktop Document Notes Dialog
+
+- Replaced the native `prompt()` in `promptOperationNotes` with an internal text dialog compatible with the Windows desktop application and browsers.
+- Added focused styling for the notes field.
+- Updated the application version to `v2026.07.28.03`.
+- No backend, database, schema, calculations, inventory, or waste logic was changed.
+
+### 2026-07-29 - Server Identity Version Guard
+
+- Corrected the production identity badge from `v2026.07.28.02` to `v2026.07.28.03`.
+- Added `scripts/check-version-consistency.js`.
+- Added `check:version` at the start of `npm run check` so a version mismatch blocks validation.
+- Updated project memory only; no database, schema, calculations, inventory, waste, or production-data changes were made.
+
+### 2026-08-01 - Complete Desktop Input Dialog Migration
+
+- Replaced every remaining native prompt() in allocation editing, dyehouse transfers, and movement editing with the internal TwoBTexInput dialog used by the Windows application.
+- Updated the web version and server identity to v2026.08.01.01 and rotated the app.js cache key.
+- No database schema, production records, calculations, stock logic, or waste logic were changed.

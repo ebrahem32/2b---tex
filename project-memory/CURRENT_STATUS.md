@@ -139,6 +139,21 @@
 - Reminder: `F:\2B Tex` still blocks creating `.js`/`.ps1`/`.bat` files (verified 2026-07-05); IT must allow these extensions before extracting the archive on the company server.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
 
+## Production Source And Database Separation
+
+- Date: 2026-07-28.
+- The only canonical full application copy is `C:\2B Tex\system` on `2B-Server`.
+- The only production database is SQL Server database `2BTex` on `localhost` of `2B-Server`.
+- Production database configuration is outside the code repository at `C:\2B Tex\config\2btex.config.json`.
+- The marker `C:\2B Tex\config\production-mssql.lock` prevents production startup if the external SQL Server configuration is missing or changed to SQLite.
+- Production SQL Server backups are stored outside the code repository under `C:\ProgramData\2BTex\backups\sqlserver`.
+- Historical SQLite files are archived only under `C:\2B Tex\data\legacy-sqlite`; they are not runtime databases.
+- The old internal `.env.sqlserver.local` file was removed after restart verification proved that production reads the external configuration.
+- `F:\2B Tex` is allowed to contain only the browser launcher `2B Tex - فتح من المتصفح.url`; it is not an application or database copy.
+- `D:\2B Tex نظام التشغيل` is an empty Codex workspace shell and is not runnable. Its root cannot be removed while this task uses it as the current workspace.
+- Production health after restart: frontend `3000`, WhatsApp `3020`, and backend `3050` are listening; `/api/health` reports `databaseClient=mssql`, database `2BTex`, schema complete, local import disabled, and auto-seed disabled.
+- The production database counts were preserved after separation. The latest checked totals included 81 orders, 239 allocations, 158 dyehouse deliveries, 226 finished receipts, 188 customer deliveries, 203 accessory batches, and 1760 audit entries.
+
 ## Latest Accessory Pricing Correction
 
 - Date: 2026-07-26.
@@ -1732,3 +1747,28 @@ For Phase 3.1 local verification before commit:
 - Client devices still do not need SQL Server, Node.js, Python, or local database files.
 - Verification: launching `F:\2B Tex\2B Tex.exe` opened `C:\Users\ebrahem.aseem\AppData\Local\2BTex\App\2B Tex.exe` with window title `2B Tex | نظام التشغيل`.
 - Not touched: backend calculations, SQLite schema, production data contents, stock formulas, waste formulas, AI backend, WhatsApp internals, A5 service.
+
+## Production Server Identity - 2026-07-28
+
+- Version: `v2026.07.28.02`.
+- Every web and desktop entry point displays a live server identity badge.
+- The badge is green only for the canonical production origin `192.168.11.191:3000` with instance id `2B-PRODUCTION-PRIMARY`; offline or non-canonical copies show a red warning.
+
+## Desktop Document Notes Fix - 2026-07-28
+
+- Version: `v2026.07.28.03`.
+- Replaced the unsupported browser `prompt()` used by weaving and dyeing document notes with an internal application dialog.
+- The document data, calculations, persistence behavior, and report builders were not changed.
+
+## Server Identity Version Consistency - 2026-07-29
+
+- Canonical version: `v2026.07.28.03`.
+- Synchronized `server-identity.json` with the version declared in `app.js`.
+- `npm run check` now starts with `check:version` and fails when the application and server identity versions differ.
+- No database, schema, calculations, inventory, waste, or production-data changes were made.
+
+### 2026-08-01 - Complete Desktop Input Dialog Migration
+
+- Replaced every remaining native prompt() in allocation editing, dyehouse transfers, and movement editing with the internal TwoBTexInput dialog used by the Windows application.
+- Updated the web version and server identity to v2026.08.01.01 and rotated the app.js cache key.
+- No database schema, production records, calculations, stock logic, or waste logic were changed.
