@@ -1952,3 +1952,18 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Replaced every remaining native prompt() in allocation editing, dyehouse transfers, and movement editing with the internal TwoBTexInput dialog used by the Windows application.
 - Updated the web version and server identity to v2026.08.01.01 and rotated the app.js cache key.
 - No database schema, production records, calculations, stock logic, or waste logic were changed.
+
+
+## Full Production Server Compatibility Review - 2026-08-01
+
+- Canonical runtime verified at `C:\2B Tex\system` on `2B-Server` (`192.168.11.191`).
+- External configuration and `production-mssql.lock` are present; production uses SQL Server `2BTex` on localhost and cannot fall back to SQLite.
+- Frontend port 3000 and SQL Server port 1433 are reachable; backend 3050 and WhatsApp 3020 remain private to the server as designed.
+- Authenticated health, system check, bootstrap, dashboard, backups, AI health, and current-user endpoints all returned HTTP 200.
+- Database schema is complete with 17 tables; local import and automatic seed are disabled.
+- Windows client manifest URL, source share, and app.asar SHA256 all match the canonical server package.
+- Full validation passed: npm run check, 43 JavaScript source syntax checks, and 26 PowerShell syntax checks.
+- Updated active server-tools launchers to derive their paths instead of referencing obsolete F: locations; the universal launcher now identifies 2B-Server.
+- Daily SQL backup now always verifies the local backup and treats off-machine copying as optional through the machine variable `TWOBTEX_OFFSITE_BACKUP_DIR`.
+- A live SYSTEM-context backup test created and verified `2btex-sqlserver-20260801-170017.bak`.
+- Git working tree was cleaned by moving retained code backups and inspection output outside the repository; no production data or calculation logic was changed.

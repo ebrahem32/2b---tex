@@ -166,9 +166,10 @@ Never write real secrets, passwords, tokens, or API keys into documentation or c
 - Production configuration: `C:\2B Tex\config\2btex.config.json`.
 - Production lock: `C:\2B Tex\config\production-mssql.lock`.
 - Production database: SQL Server database `2BTex` on the server itself.
-- SQL Server backups: `C:\ProgramData\2BTex\backups\sqlserver`.
+- SQL Server staging backups: `C:\ProgramData\2BTex\backups\sqlserver`.
+- Verified application-visible backups: `C:\2B Tex\backups\sqlserver`.
 - Legacy SQLite archive: `C:\2B Tex\data\legacy-sqlite` (archive only, never runtime).
-- Network/browser launcher only: `F:\2B Tex\2B Tex - فتح من المتصفح.url`.
+- Canonical Windows client launcher: `\\2B-Server\2B-Tex\2B Tex.exe`.
 
 Do not deploy the `config`, `data`, or backup directories as part of a code update. A release updates
 only `C:\2B Tex\system`. Before a production update, create and verify a SQL Server `.bak`, record
@@ -178,3 +179,8 @@ the main table counts, deploy code, restart the `2B Tex Server` scheduled task, 
 If `production-mssql.lock` exists, production must not start with SQLite or without the external
 configuration. Never restore a SQLite file into the runtime path and never enable local import or
 automatic seed in production.
+
+
+### Optional Off-Machine Backup
+
+The scheduled task always creates and verifies the local SQL Server backup. To enable a second-machine copy, set the machine-level environment variable `TWOBTEX_OFFSITE_BACKUP_DIR` to an existing writable UNC directory and grant the computer account `2B-Server$` Modify permission. If the variable is not configured, the task logs a successful local-only backup and does not depend on DELTA-DC.
