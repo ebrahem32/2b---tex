@@ -2012,3 +2012,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Compatibility: group lookup now reads only group IDs and names from the WhatsApp chat collection, avoiding the upstream full-chat serialization error `r`.
 - Verification: full `npm run check` passed; service returned `connected`, `clientReady: true`, `sendMode: optional`, and no report remained in `sending`.
 - Release: `v2026.08.02.03`.
+
+
+## Pantone Number Beside Color Name - 2026-08-02
+
+- Change: added a shared color/Pantone display rule to dyeing work-order document rows and WhatsApp dyeing report text.
+- Behavior: display both values when distinct, suppress duplicates when equal, and preserve color-only fallback.
+- Release: `v2026.08.02.04` with refreshed document and application asset cache keys.

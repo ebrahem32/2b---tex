@@ -1833,3 +1833,11 @@ For Phase 3.1 local verification before commit:
 - Improved failed-attempt diagnostics so future errors retain the error name, message, and stack instead of a one-character message.
 - Production verification: WhatsApp status `connected`, client ready, send mode `optional`, zero reports in `sending`; old failed/pending reports were not retried automatically.
 - Production version updated to `v2026.08.02.03` and the frontend cache key was rotated.
+
+
+## Pantone Number Beside Color Name - 2026-08-02
+
+- Dyeing work-order color tables now show the Pantone number beside the color name when both values exist, using `اسم اللون — بانتون الرقم`.
+- If the color and Pantone values are identical, the value is shown once; if Pantone is absent, the existing color-only display is preserved.
+- WhatsApp dyeing-order text uses the same display rule.
+- Rotated the `documents.js` and `app.js` cache keys and released `v2026.08.02.04`.

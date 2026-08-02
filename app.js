@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.03';
-const APP_BUILD_TIME = '2026-08-02 13:00';
+const APP_VERSION = 'v2026.08.02.04';
+const APP_BUILD_TIME = '2026-08-02 13:10';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -1379,6 +1379,12 @@ function targetGroupForReport(reportType, order = null) {
 function reportNeedsManualWhatsappGroup(reportType) {
   return ['weaving_production_order','dyeing_production_order','customerreport_pdf_report','quotation_pdf_report'].includes(reportType);
 }
+function colorWithPantoneLabel(line) {
+  const color = String(line?.color || '').trim();
+  const pantone = String(line?.pantoneCode || line?.pantone_code || '').trim();
+  if (color && pantone && color.toLocaleLowerCase('ar') !== pantone.toLocaleLowerCase('ar')) return `${color} — بانتون ${pantone}`;
+  return color || pantone || '-';
+}
 // LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic reportMessage implementation.
 function reportMessage(reportType, order) {
   const rawNote = getFirstRawNoteNumber(order) || '-';
@@ -1389,7 +1395,7 @@ function reportMessage(reportType, order) {
     const dyehouseName = String(order.whatsappDyehouseName || order.dyehouse || '').trim();
     const dyeingLines = (order.allocations || [])
       .filter((line)=>!dyehouseName || String(line.dyehouse || order.dyehouse || '').trim() === dyehouseName)
-      .map((line)=>`${line.color || line.pantoneCode || '-'}: ${formatNumber(line.plannedQuantity || 0)} كجم`)
+      .map((line)=>`${colorWithPantoneLabel(line)}: ${formatNumber(line.plannedQuantity || 0)} كجم`)
       .join('\n');
     return `أمر تشغيل صباغة\nرقم الطلب: ${order.orderNumber || '-'}\nإذن الخام: ${rawNote}\nالعميل: ${order.customer || '-'}\nالمصبغة: ${dyehouseName || '-'}\nالصنف: ${order.fabricType || '-'}\nالألوان والكميات:\n${dyeingLines || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
   }

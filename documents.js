@@ -26,6 +26,12 @@
     const safeText = (value) => escapeHtml(value === undefined || value === null || value === '' ? '-' : value);
     const fmt = (value, digits = 3) => formatNumber(Number(value || 0), digits);
     const clean = (value) => String(value || '').trim();
+    const colorWithPantone = (line) => {
+      const color = clean(line?.color);
+      const pantone = clean(line?.pantoneCode || line?.pantone_code);
+      if (color && pantone && color.toLocaleLowerCase('ar') !== pantone.toLocaleLowerCase('ar')) return `${color} — بانتون ${pantone}`;
+      return color || pantone || '-';
+    };
     const transferTextLooksRaw = (value) => {
       const text = String(value || '');
       if (text.includes('[allocation-transfer]')) return false;
@@ -181,7 +187,7 @@
       ].filter(Boolean);
       const body = rows.map((line) => {
         const cells = [
-          safeText(line.color || line.pantoneCode),
+          safeText(colorWithPantone(line)),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
           flowCell(line.plannedQuantity, plannedAccessoryParts(order, line)),
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
