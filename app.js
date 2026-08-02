@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.02';
+const APP_VERSION = 'v2026.08.02.03';
 const APP_BUILD_TIME = '2026-08-02 13:00';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -131,7 +131,7 @@ const defaults = {
   pricings: [],
   customerAccounts: {},
   reportOutbox: [],
-  whatsappSettings: { weavingGroupName: '2B - النسيج', dyeingGroupName: '2B - المصبغة', dyehousesReportGroupName: 'اوردرات 2B', dyehouseGroups: {}, weavingGroups: {}, customerGroups: {}, sendingEnabled: false, scheduledReports: { enabled:false, time:'09:00', groupName:'', includeOperations:true, includeDyehouse:true, includeReady:true, includeDelayed:true, includeWaste:true, lastRunKey:'' } },
+  whatsappSettings: { weavingGroupName: '2B - النسيج', dyeingGroupName: '2B - المصبغة', dyehousesReportGroupName: 'اوردرات 2B', dyehouseGroups: {}, weavingGroups: {}, customerGroups: {}, sendingEnabled: false, sendMode: 'optional', scheduledReports: { enabled:false, time:'09:00', groupName:'', includeOperations:true, includeDyehouse:true, includeReady:true, includeDelayed:true, includeWaste:true, lastRunKey:'' } },
   fabricMaster: [],
   auditLog: [],
   whatsappStatus: { status: 'disconnected', updatedAt: '', errorMessage: '', qrDataUrl: '', processing:null, outboxSummary:null },
@@ -1419,7 +1419,7 @@ function enqueueReport(reportType, order, attachmentPath = '') {
     persistAuditLog().catch((error)=>console.warn('audit-save-failed', error));
   });
   save();
-  syncOutboxToWhatsappService();
+  syncOutboxToWhatsappService({ approvalIds:rows.filter((row)=>row.status === 'pending').map((row)=>row.id) });
   return rows[0] || null;
 }
 function refreshQueuedReportRows(reportType, order, attachmentPath = '') {
@@ -1523,7 +1523,7 @@ function enqueueScheduledWhatsappReport(settings = scheduledReportSettings(), ru
   reportOutbox.unshift(row);
   recordAudit('create', 'reportOutbox', row.id, null, row, 'إضافة تقرير التشغيل الدوري إلى قائمة الإرسال');
   save();
-  syncOutboxToWhatsappService();
+  syncOutboxToWhatsappService({ approvalIds:[row.id] });
   return row;
 }
 function runScheduledWhatsappReports(force = false) {
@@ -1548,7 +1548,7 @@ function startWhatsappScheduleTimer() {
   whatsappScheduleTimer = setInterval(()=>runScheduledWhatsappReports(false), 60000);
   runScheduledWhatsappReports(false);
 }
-async function syncOutboxToWhatsappService() {
+async function syncOutboxToWhatsappService({ approvalIds = [] } = {}) {
   try {
     const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/outbox/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ outbox:reportOutbox, settings:whatsappSettings }) });
     if (!response.ok) throw new Error('service-offline');
@@ -1556,6 +1556,25 @@ async function syncOutboxToWhatsappService() {
     whatsappStatus = { ...(data.whatsapp || whatsappStatus), processing:data.processing || null, outboxSummary:data.outboxSummary || null };
     save();
     updateWhatsappStatusBadge();
+    const pendingIds = [...new Set(approvalIds)].filter((id)=>data.outbox?.some((row)=>row.id === id && row.status === 'pending' && !row.sendApprovedAt));
+    if (whatsappSettings.sendingEnabled && whatsappSettings.sendMode === 'optional' && pendingIds.length) {
+      const pendingRows = data.outbox.filter((row)=>pendingIds.includes(row.id));
+      const groups = [...new Set(pendingRows.map((row)=>row.targetGroup).filter(Boolean))];
+      const groupText = groups.length ? `\nالمجموعة: ${groups.join('، ')}` : '';
+      if (confirm(`هل تود إرسال التقارير إلى المجموعة؟\nعدد التقارير: ${pendingRows.length}${groupText}`)) {
+        const approvalResponse = await fetch(`${WHATSAPP_SERVICE_URL}/api/outbox/approve`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ ids:pendingIds }) });
+        if (!approvalResponse.ok) throw new Error('approval-failed');
+        const approvedData = await approvalResponse.json();
+        whatsappStatus = { ...(approvedData.whatsapp || whatsappStatus), processing:approvedData.processing || null, outboxSummary:approvedData.outboxSummary || null };
+        if (Array.isArray(approvedData.outbox)) {
+          const approvedById = new Map(approvedData.outbox.map((row)=>[row.id,row]));
+          reportOutbox = reportOutbox.map((row)=>approvedById.has(row.id) ? { ...row, ...approvedById.get(row.id) } : row);
+        }
+        save();
+        updateWhatsappStatusBadge();
+        return approvedData;
+      }
+    }
     return data;
   } catch (error) {
     whatsappStatus = { ...whatsappStatus, errorMessage:'خدمة واتساب غير متاحة للمزامنة', processing:{ blockedReason:error.message || String(error) } };
@@ -1698,11 +1717,12 @@ function renderWhatsappSettingsDialog(groupNames = []) {
   refs.documentBody.dataset.documentType = 'whatsapp-settings';
   refs.documentBody.innerHTML = `<div class="document-sheet whatsapp-settings-sheet">
     <h2>إعدادات واتساب</h2>
-    <p class="muted">اربط كل عميل أو مصبغة أو مصدر نسيج بالجروب الصحيح. الإرسال التلقائي لا يعمل إلا عند تفعيله صراحة.</p>
+    <p class="muted">اربط كل عميل أو مصبغة أو مصدر نسيج بالجروب الصحيح، ثم اختر طريقة الإرسال المناسبة.</p>
     <div data-whatsapp-connection-panel>${whatsappConnectionPanelHtml()}</div>
     <div class="summary-grid">
       <label><span>جروب التقارير العامة</span><input type="text" data-general-report-group value="${escapeHtml(whatsappSettings.dyehousesReportGroupName || '')}" placeholder="مثال: تقارير المصابغ"></label>
-      <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل الإرسال التلقائي عند تشغيل خدمة واتساب</span></label>
+      <label class="checkbox-row"><input type="checkbox" data-sending-enabled ${whatsappSettings.sendingEnabled ? 'checked' : ''}> <span>تفعيل إرسال تقارير واتساب</span></label>
+      <label><span>طريقة الإرسال</span><select data-send-mode><option value="optional" ${whatsappSettings.sendMode !== 'automatic' ? 'selected' : ''}>اختياري - طلب الموافقة قبل الإرسال</option><option value="automatic" ${whatsappSettings.sendMode === 'automatic' ? 'selected' : ''}>تلقائي - إرسال مباشر</option></select></label>
     </div>
     <section class="whatsapp-settings-section">
       <div class="subsection-head">
@@ -1753,6 +1773,7 @@ async function saveWhatsappSettingsFromDialog() {
     weavingGroups: nextMaps.weaving,
     customerGroups: nextMaps.customer,
     sendingEnabled: !!refs.documentBody.querySelector('[data-sending-enabled]')?.checked,
+    sendMode: refs.documentBody.querySelector('[data-send-mode]')?.value === 'automatic' ? 'automatic' : 'optional',
     scheduledReports: {
       ...scheduledReportSettings(),
       enabled: !!refs.documentBody.querySelector('[data-schedule-enabled]')?.checked,
@@ -1778,7 +1799,7 @@ async function saveWhatsappSettingsFromDialog() {
   syncOutboxToWhatsappService();
   await loadBackendData();
   renderWhatsappSettingsDialog();
-  alert(whatsappSettings.sendingEnabled ? 'تم حفظ إعدادات واتساب وتفعيل الإرسال.' : 'تم حفظ إعدادات واتساب مع بقاء الإرسال التلقائي متوقفًا.');
+  alert(!whatsappSettings.sendingEnabled ? 'تم حفظ إعدادات واتساب مع إيقاف الإرسال.' : whatsappSettings.sendMode === 'automatic' ? 'تم حفظ الإعدادات: الإرسال التلقائي مفعل.' : 'تم حفظ الإعدادات: سيطلب النظام موافقتك قبل كل إرسال.');
 }
 function isLegacyRecoveredText(value) {
   const text = String(value || '');
@@ -2682,7 +2703,7 @@ async function retryOutbox(id) {
   recordAudit('retry', 'reportOutbox', id, null, item, 'إعادة إرسال التقرير');
   await persistAuditLog();
   save();
-  await syncOutboxToWhatsappService();
+  await syncOutboxToWhatsappService({ approvalIds:[id] });
   openOutboxDialog();
   pollWhatsappService();
 }

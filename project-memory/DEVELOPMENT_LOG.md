@@ -2001,3 +2001,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Replaced three WhatsApp settings labels that had been stored as literal question marks with clean UTF-8 Arabic text.
 - Rotated the app.js cache key and updated production version to v2026.08.02.02 so browsers and the Windows client load the repaired labels.
 - WhatsApp session data, QR state, outbox entries, sending settings, database records, and calculations were not changed.
+
+
+## WhatsApp Optional/Automatic Sending And Browser Runtime Fix - 2026-08-02
+
+- Change: added optional confirmation and automatic direct-send modes to WhatsApp settings.
+- Safety: optional mode requires a persisted per-report approval before the worker can send.
+- Fix: installed a server-owned Chrome runtime under `C:\2B Tex\runtime\chrome` because no compatible browser existed on 2B-Server and remote browser downloads were blocked.
+- Fix: the WhatsApp worker now selects the server-owned browser automatically and records complete failure diagnostics.
+- Compatibility: group lookup now reads only group IDs and names from the WhatsApp chat collection, avoiding the upstream full-chat serialization error `r`.
+- Verification: full `npm run check` passed; service returned `connected`, `clientReady: true`, `sendMode: optional`, and no report remained in `sending`.
+- Release: `v2026.08.02.03`.

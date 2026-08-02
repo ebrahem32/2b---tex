@@ -12,6 +12,7 @@ const REPORTS_DIR = process.env.REPORTS_DIR || path.join(DATA_DIR, 'reports');
 const OUTBOX_FILE = path.join(DATA_DIR, 'outbox.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const ATTEMPTS_FILE = path.join(DATA_DIR, 'attempts.json');
+const BUNDLED_CHROME_PATH = path.join(__dirname, '..', '..', 'runtime', 'chrome', 'chrome.exe');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(REPORTS_DIR, { recursive: true });
@@ -23,7 +24,8 @@ const defaultSettings = {
   dyehouseGroups: {},
   weavingGroups: {},
   customerGroups: {},
-  sendingEnabled: false
+  sendingEnabled: false,
+  sendMode: 'optional'
 };
 const statuses = new Set(['pending', 'sending', 'sent', 'failed', 'cancelled']);
 
@@ -91,16 +93,19 @@ function outboxSummary() {
 
 function processingDiagnosis() {
   const pending = outbox.find((item) => item.status === 'pending');
+  const sendablePending = outbox.find((item) => item.status === 'pending' && (settings.sendMode === 'automatic' || item.sendApprovedAt));
   let blockedReason = '';
-  if (!settings.sendingEnabled) blockedReason = 'الإرسال التلقائي غير مفعل من إعدادات واتساب.';
+  if (!settings.sendingEnabled) blockedReason = 'إرسال واتساب غير مفعل من الإعدادات.';
+  else if (settings.sendMode !== 'automatic' && pending && !sendablePending) blockedReason = 'التقارير بانتظار موافقة المستخدم على الإرسال.';
   else if (!clientReady || whatsapp.status !== 'connected') blockedReason = 'واتساب غير متصل أو لم يكتمل الربط.';
   else if (isProcessing) blockedReason = 'الخدمة ترسل تقريرًا آخر الآن.';
   else if (!pending) blockedReason = 'لا توجد تقارير pending في قائمة الإرسال.';
-  else if (!isTargetAllowed(pending)) blockedReason = 'الجروب المستهدف غير مربوط يدويًا في إعدادات واتساب.';
+  else if (!isTargetAllowed(sendablePending)) blockedReason = 'الجروب المستهدف غير مربوط يدويًا في إعدادات واتساب.';
   return {
     readyToSend: !blockedReason,
     blockedReason,
     sendingEnabled: Boolean(settings.sendingEnabled),
+    sendMode: settings.sendMode === 'automatic' ? 'automatic' : 'optional',
     clientReady: Boolean(clientReady),
     nextPending: pending ? {
       id: pending.id,
@@ -138,13 +143,13 @@ function mergeOutbox(incoming = []) {
     }
     // إذا طلبت الواجهة إعادة مشاركة تقرير مرسل بالفعل، نسمح بإرجاعه للطابور.
     if (local.status === 'sent' && normalized.status === 'pending') {
-      byId.set(row.id, { ...local, ...normalized, sentAt: null, sendingAt: null, errorMessage: '' });
+      byId.set(row.id, { ...local, ...normalized, sentAt: null, sendingAt: null, errorMessage: '', sendApprovedAt: null });
     } else if (local.status === 'sent') {
       byId.set(row.id, { ...normalized, ...local });
     } else if (local.status === 'sending') {
       byId.set(row.id, { ...normalized, ...local, messageText: normalized.messageText || local.messageText, attachmentPath: normalized.attachmentPath || local.attachmentPath });
     } else {
-      byId.set(row.id, { ...local, ...normalized, status: normalized.status });
+      byId.set(row.id, { ...local, ...normalized, status: normalized.status, sendApprovedAt: local.sendApprovedAt || null });
     }
   }
   outbox = [...byId.values()].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
@@ -166,7 +171,7 @@ app.use(express.json({ limit: '100mb' }));
 app.get('/api/status', (req, res) => {
   res.json({
     whatsapp: publicWhatsappState(),
-    settings: { sendingEnabled: Boolean(settings.sendingEnabled) },
+    settings: { sendingEnabled: Boolean(settings.sendingEnabled), sendMode: settings.sendMode === 'automatic' ? 'automatic' : 'optional' },
     processing: processingDiagnosis(),
     outboxSummary: outboxSummary(),
     outbox,
@@ -178,12 +183,7 @@ app.get('/api/groups', async (req, res) => {
     if (!clientReady || whatsapp.status !== 'connected') {
       return res.status(409).json({ ok: false, error: 'whatsapp_not_connected', whatsapp: publicWhatsappState(), groups: [] });
     }
-    const chats = await client.getChats();
-    const groups = chats
-      .filter((chat) => chat.isGroup)
-      .map((chat) => ({ id: chat.id?._serialized || chat.id || '', name: String(chat.name || '').trim() }))
-      .filter((group) => group.name)
-      .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    const groups = await listWhatsappGroups();
     res.json({ ok: true, groups });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message, groups: [] });
@@ -193,7 +193,16 @@ app.get('/api/outbox', (req, res) => res.json({ outbox }));
 app.post('/api/outbox/sync', (req, res) => {
   if (req.body && req.body.settings) settings = { ...settings, ...req.body.settings };
   mergeOutbox(Array.isArray(req.body?.outbox) ? req.body.outbox : []);
-  res.json({ ok: true, whatsapp: publicWhatsappState(), settings: { sendingEnabled: Boolean(settings.sendingEnabled) }, processing: processingDiagnosis(), outboxSummary: outboxSummary(), outbox });
+  res.json({ ok: true, whatsapp: publicWhatsappState(), settings: { sendingEnabled: Boolean(settings.sendingEnabled), sendMode: settings.sendMode === 'automatic' ? 'automatic' : 'optional' }, processing: processingDiagnosis(), outboxSummary: outboxSummary(), outbox });
+});
+app.post('/api/outbox/approve', (req, res) => {
+  const ids = new Set(Array.isArray(req.body?.ids) ? req.body.ids.map(String) : []);
+  const approvedAt = nowIso();
+  outbox.forEach((row) => {
+    if (ids.has(String(row.id)) && row.status === 'pending') row.sendApprovedAt = approvedAt;
+  });
+  persist();
+  res.json({ ok: true, whatsapp: publicWhatsappState(), settings: { sendingEnabled: Boolean(settings.sendingEnabled), sendMode: settings.sendMode === 'automatic' ? 'automatic' : 'optional' }, processing: processingDiagnosis(), outboxSummary: outboxSummary(), outbox });
 });
 app.post('/api/outbox/:id/retry', (req, res) => {
   const row = outbox.find((item) => item.id === req.params.id);
@@ -202,6 +211,7 @@ app.post('/api/outbox/:id/retry', (req, res) => {
     row.status = 'pending';
     row.errorMessage = '';
     row.sendingAt = null;
+    row.sendApprovedAt = null;
   }
   persist();
   res.json({ ok: true, row });
@@ -236,11 +246,24 @@ app.post('/api/reports/upload', (req, res) => {
 async function findGroupByName(groupName) {
   const wanted = String(groupName || '').trim();
   if (!wanted) throw new Error('اسم الجروب غير محدد');
-  const chats = await client.getChats();
+  const groups = await listWhatsappGroups();
   const compact = (value) => String(value || '').replace(/\*/g, '').replace(/[ـ\-\s]+/g, '').trim().toLowerCase();
   const normalizedWanted = compact(wanted);
-  return chats.find((chat) => chat.isGroup && String(chat.name || '').trim() === wanted)
-      || chats.find((chat) => chat.isGroup && compact(chat.name) === normalizedWanted);
+  return groups.find((group) => group.name === wanted)
+      || groups.find((group) => compact(group.name) === normalizedWanted);
+}
+async function listWhatsappGroups() {
+  const groups = await client.pupPage.evaluate(() => {
+    const chats = window.require('WAWebCollections').Chat.getModelsArray();
+    return chats
+      .filter((chat) => String(chat?.id?._serialized || chat?.id || '').endsWith('@g.us'))
+      .map((chat) => ({
+        id: String(chat?.id?._serialized || chat?.id || ''),
+        name: String(chat?.name || chat?.formattedTitle || chat?.contact?.name || '').trim(),
+      }))
+      .filter((group) => group.id && group.name);
+  });
+  return groups.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 }
 function addAttempt(row, ok, message) {
   attempts.push({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, reportId: row.id, reportType: row.reportType, orderNumber: row.orderNumber, targetGroup: row.targetGroup, ok, message, createdAt: nowIso() });
@@ -265,7 +288,7 @@ async function processNextReport() {
       item.errorMessage = '';
     }
   });
-  const row = outbox.find((item) => item.status === 'pending');
+  const row = outbox.find((item) => item.status === 'pending' && (settings.sendMode === 'automatic' || item.sendApprovedAt));
   if (!row) return;
   isProcessing = true;
   row.status = 'sending';
@@ -279,9 +302,9 @@ async function processNextReport() {
     const text = row.messageText || 'تقرير من نظام 2B Tex';
     if (row.attachmentPath && fs.existsSync(row.attachmentPath)) {
       const media = MessageMedia.fromFilePath(row.attachmentPath);
-      await group.sendMessage(media, { caption: text });
+      await client.sendMessage(group.id, media, { caption: text });
     } else {
-      await group.sendMessage(text);
+      await client.sendMessage(group.id, text);
     }
     row.status = 'sent';
     row.sentAt = nowIso();
@@ -289,7 +312,7 @@ async function processNextReport() {
     addAttempt(row, true, 'تم الإرسال');
   } catch (error) {
     row.retryCount = Number(row.retryCount || 0) + 1;
-    row.errorMessage = error.message || String(error);
+    row.errorMessage = [error?.name, error?.message || String(error), error?.stack].filter(Boolean).join(' | ').slice(0, 1200);
     row.status = row.retryCount < 3 ? 'pending' : 'failed';
     addAttempt(row, false, row.errorMessage);
   } finally {
@@ -316,7 +339,7 @@ function createWhatsappClient() {
     authStrategy: new LocalAuth({ clientId: '2b-tex-ops', dataPath: path.join(DATA_DIR, 'sessions') }),
     puppeteer: {
       headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (fs.existsSync(BUNDLED_CHROME_PATH) ? BUNDLED_CHROME_PATH : undefined),
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     }
   });

@@ -1821,3 +1821,15 @@ For Phase 3.1 local verification before commit:
 - Replaced three WhatsApp settings labels that had been stored as literal question marks with clean UTF-8 Arabic text.
 - Rotated the app.js cache key and updated production version to v2026.08.02.02 so browsers and the Windows client load the repaired labels.
 - WhatsApp session data, QR state, outbox entries, sending settings, database records, and calculations were not changed.
+
+
+## WhatsApp Optional/Automatic Sending And Browser Runtime Fix - 2026-08-02
+
+- Added an explicit `optional` sending mode that requires user confirmation before approving newly queued reports.
+- Added an `automatic` mode that allows direct sending, while retaining the master sending enable/disable switch.
+- The WhatsApp worker now enforces approval server-side; pending legacy reports cannot bypass the optional-mode confirmation.
+- Fixed the production sending failure by provisioning a dedicated Chrome runtime at `C:\2B Tex\runtime\chrome` and configuring the worker to use it.
+- Replaced the failing full-chat serializer with a minimal group ID/name lookup; production group discovery now succeeds and finds `اوردارات 2B`.
+- Improved failed-attempt diagnostics so future errors retain the error name, message, and stack instead of a one-character message.
+- Production verification: WhatsApp status `connected`, client ready, send mode `optional`, zero reports in `sending`; old failed/pending reports were not retried automatically.
+- Production version updated to `v2026.08.02.03` and the frontend cache key was rotated.
