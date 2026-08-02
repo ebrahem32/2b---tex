@@ -1841,3 +1841,12 @@ For Phase 3.1 local verification before commit:
 - If the color and Pantone values are identical, the value is shown once; if Pantone is absent, the existing color-only display is preserved.
 - WhatsApp dyeing-order text uses the same display rule.
 - Rotated the `documents.js` and `app.js` cache keys and released `v2026.08.02.04`.
+
+
+## Separate Pantone Input For Colors - 2026-08-02
+
+- The `إضافة لون` flow now asks separately for the required color name and an optional Pantone number.
+- The color edit flow also edits the two values independently instead of copying the color into `pantone_code`.
+- Both single-width and multi-width allocations persist the Pantone number through the existing SQL Server allocation API.
+- Allocation selection labels now show the Pantone number beside the color when present.
+- Released `v2026.08.02.05` and rotated the application cache key.

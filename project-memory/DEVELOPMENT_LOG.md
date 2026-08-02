@@ -2019,3 +2019,11 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: added a shared color/Pantone display rule to dyeing work-order document rows and WhatsApp dyeing report text.
 - Behavior: display both values when distinct, suppress duplicates when equal, and preserve color-only fallback.
 - Release: `v2026.08.02.04` with refreshed document and application asset cache keys.
+
+
+## Separate Pantone Input For Colors - 2026-08-02
+
+- Fix: added an optional Pantone prompt immediately after the color-name prompt in new allocation creation.
+- Fix: color editing now preserves independent `color` and `pantoneCode` values.
+- Persistence: both values continue through `allocationToApi` into SQL Server columns `color` and `pantone_code`.
+- Release: `v2026.08.02.05`.
