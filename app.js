@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.13';
-const APP_BUILD_TIME = '2026-08-02 20:05';
+const APP_VERSION = 'v2026.08.02.14';
+const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -6838,12 +6838,19 @@ function emptyRow(colspan, text = 'لا توجد بيانات مسجلة.') {
 }
 function dyehouseNamesForOrder(order) {
   const originalDyehouse = String(order?.dyehouse || '').trim();
+  const dispatchDyehouses = rawBatches
+    .filter((batch)=>batch.orderId === order?.id)
+    .map((batch)=>batch.dyehouse);
   const transferDyehouses = dyehouseTransfers
     .filter((transfer)=>transferBelongsToOrderScope(order, transfer))
     .flatMap((transfer)=>[transfer.fromDyehouse, transfer.toDyehouse]);
   const allocationDyehouses = (order?.allocations || [])
     .map((allocation)=>allocation.dyehouse || originalDyehouse);
-  return uniqueNonEmpty([originalDyehouse, ...allocationDyehouses, ...transferDyehouses]);
+  return uniqueNonEmpty([originalDyehouse, ...dispatchDyehouses, ...allocationDyehouses, ...transferDyehouses]);
+}
+function rawDispatchQuantityForDyehouse(order, dyehouseName) {
+  const name = String(dyehouseName || '').trim();
+  return roundNumber(sum(rawBatches.filter((batch)=>batch.orderId === order?.id && String(batch.dyehouse || order?.dyehouse || '').trim() === name)));
 }
 function transferAllocationIdForScope(transfer = {}) {
   return transfer.allocationId || transfer.fromAllocationId || transfer.from_allocation_id || '';
@@ -7425,7 +7432,8 @@ function renderDyehouseDocumentPicker(order) {
     <div class="report-title"><h2>اختيار أمر صباغة</h2><span>اختر المصبغة المطلوبة لفتح أمر تشغيل منفصل لكل مصبغة.</span></div>
     <table><thead><tr><th>المصبغة</th><th>عدد الألوان</th><th>إجمالي كمية الصباغة</th><th>إجراء</th></tr></thead><tbody>${names.map((name)=>{
       const rows = scopedDyehouseRowsForPicker(order, name);
-      const quantity = rows.reduce((total, row)=>total + Number(row.plannedQuantity || 0), 0);
+      const dispatchedQuantity = rawDispatchQuantityForDyehouse(order, name);
+      const quantity = dispatchedQuantity || rows.reduce((total, row)=>total + Number(row.plannedQuantity || 0), 0);
       return `<tr><td>${escapeHtml(name)}</td><td>${rows.length}</td><td>${formatNumber(quantity)}</td><td><button class="mini-btn gold" type="button" data-open-dyeing-for="${escapeHtml(name)}">فتح أمر الصباغة</button></td></tr>`;
     }).join('') || emptyRow(4, 'لا توجد مصابغ مرتبطة بهذا الطلب.')}</tbody></table>
   </div>`;

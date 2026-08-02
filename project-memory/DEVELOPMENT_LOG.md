@@ -2093,3 +2093,9 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Fix: include dispatch dyehouses in report scope, filter permits by their saved dyehouse, and calculate each dyehouse's sent/raw balance independently.
 - Added an order `72104` regression case for Biko `1,830.2` and Geima `1,542.1`.
 - Release: `v2026.08.02.13`.
+
+## Dyeing Work Order Picker Uses Permit Dyehouses - 2026-08-02
+
+- Extended `dyehouseNamesForOrder` with dyehouses recorded on raw dispatch batches.
+- Picker rows display actual dispatched quantity by dyehouse, falling back to scoped planned colors for legacy orders.
+- Release: `v2026.08.02.14`.

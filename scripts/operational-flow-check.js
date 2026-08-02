@@ -567,6 +567,13 @@ function checkDetailedReportUsesDispatchDyehouse() {
   assert(html.includes('<td>جيما</td><td>1,542.1</td><td>1,542.1</td>'), 'document: Geima dispatches must not include Biko raw permits');
 }
 
+function checkDyeingOrderPickerUsesDispatchDyehouses() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('const dispatchDyehouses = rawBatches'), 'dyeing picker: permit dyehouses must be included in the available choices');
+  assert(appSource.includes('function rawDispatchQuantityForDyehouse(order, dyehouseName)'), 'dyeing picker: each choice must calculate its permit quantity separately');
+  assert(appSource.includes('const quantity = dispatchedQuantity || rows.reduce'), 'dyeing picker: permit quantity must be shown even before colors are assigned');
+}
+
 function checkDetailedReportRejectsForeignDyehouseTransfers() {
   const builders = createDocumentBuilders();
   const order = {
@@ -1038,6 +1045,7 @@ checkDyeingDocumentSplitsMultiDyehouseOrder();
 checkLegacyPartialTransferUsesActualQuantity();
 checkDetailedReportSplitsRawTransferByDyehouse();
 checkDetailedReportUsesDispatchDyehouse();
+checkDyeingOrderPickerUsesDispatchDyehouses();
 checkDetailedReportRejectsForeignDyehouseTransfers();
 checkOrderLevelRawTransferCanStillSplitSingleAllocationDyehouseBalance();
 checkDyehouseTransferKindsAreSeparated();

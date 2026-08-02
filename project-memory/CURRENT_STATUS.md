@@ -1911,6 +1911,13 @@ For Phase 3.1 local verification before commit:
 - A dyehouse with dispatched raw appears even before colors are assigned to it; its permit notes and balance remain separate.
 - Released `v2026.08.02.13`.
 
+## Dyeing Work Order Picker Uses Permit Dyehouses - 2026-08-02
+
+- Opening `أمر تشغيل صباغة` now offers every dyehouse found on the order's raw dispatch permits, in addition to allocation/transfer dyehouses.
+- Picker quantities use the actual raw dispatched to each dyehouse; a dyehouse remains selectable before colors are assigned to it.
+- Order `72104` therefore offers separate Geima and Biko work orders.
+- Released `v2026.08.02.14`.
+
 ## Desktop Server Indicator Recovery - 2026-08-02
 
 - Fixed the Windows desktop shell showing `السيرفر غير متاح` during normal internal page loading.
