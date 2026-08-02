@@ -1994,3 +1994,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Set the backend default and scheduled PowerShell backup tools to the same 6-day policy.
 - Production version updated to v2026.08.02.01.
 - Cleanup targets only timestamped database backup files older than the cutoff; application code, configuration, and production records are not deleted.
+
+
+## WhatsApp Arabic Question-Mark Repair - 2026-08-02
+
+- Replaced three WhatsApp settings labels that had been stored as literal question marks with clean UTF-8 Arabic text.
+- Rotated the app.js cache key and updated production version to v2026.08.02.02 so browsers and the Windows client load the repaired labels.
+- WhatsApp session data, QR state, outbox entries, sending settings, database records, and calculations were not changed.

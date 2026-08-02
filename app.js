@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.01';
-const APP_BUILD_TIME = '2026-08-02 12:00';
+const APP_VERSION = 'v2026.08.02.02';
+const APP_BUILD_TIME = '2026-08-02 13:00';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -1592,12 +1592,12 @@ function whatsappConnectionPanelHtml() {
   const blockedReason = whatsappStatus?.processing?.blockedReason || '';
   const summary = whatsappStatus?.outboxSummary || {};
   const diagnosticHtml = blockedReason || summary.total
-    ? `<div class="notice ${blockedReason ? 'warning' : 'success'}"><strong>????? ???????:</strong> ${escapeHtml(blockedReason || '???? ??????? ??? ???? ?????? pending.')}<br><span class="muted">Pending: ${formatNumber(summary.pending || 0)} / Failed: ${formatNumber(summary.failed || 0)} / Sent: ${formatNumber(summary.sent || 0)}</span></div>`
+    ? `<div class="notice ${blockedReason ? 'warning' : 'success'}"><strong>حالة الإرسال:</strong> ${escapeHtml(blockedReason || 'قائمة الإرسال لا تحتوي تقارير معلقة.')}<br><span class="muted">Pending: ${formatNumber(summary.pending || 0)} / Failed: ${formatNumber(summary.failed || 0)} / Sent: ${formatNumber(summary.sent || 0)}</span></div>`
     : '';
   const qrHtml = whatsappStatus?.qrDataUrl
-    ? `<div class="notice"><strong>???? ??? ?????? ?? ????????</strong><br><span class="muted">?? ??? ???? ??? ??????? ???? ????? ?????? ??? ??? ????? ????? ????????.</span><br><img data-whatsapp-qr src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>`
+    ? `<div class="notice"><strong>اربط هذا الجهاز مع واتساب</strong><br><span class="muted">من هاتفك افتح واتساب ثم الأجهزة المرتبطة وامسح رمز QR لإكمال الربط.</span><br><img data-whatsapp-qr src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>`
     : '';
-  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>???? ??????:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${diagnosticHtml}${qrHtml}`;
+  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${diagnosticHtml}${qrHtml}`;
 }
 function stopWhatsappSettingsAutoRefresh() {
   if (whatsappSettingsRefreshTimer) clearInterval(whatsappSettingsRefreshTimer);
