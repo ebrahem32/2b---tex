@@ -15,6 +15,7 @@
   const activeTitle = document.getElementById("activeTitle");
   const toast = document.getElementById("toast");
   let toastTimer;
+  let mainLoadFailed = false;
 
   const guestLayoutCss = `
     .app-sidebar,
@@ -48,7 +49,7 @@
     const online = state === "online";
     connectionDot.classList.toggle("online", online);
     connectionDot.classList.toggle("offline", state === "offline");
-    connectionState.textContent = online ? "متصل بالسيرفر" : "السيرفر غير متاح";
+    connectionState.textContent = online ? "متصل بالسيرفر" : (state === "loading" ? "جاري الاتصال" : "السيرفر غير متاح");
     connectionLabel.textContent = message || (online ? "البيانات المركزية متصلة" : "تعذر الاتصال");
   }
 
@@ -139,16 +140,23 @@
     await webview.insertCSS(guestLayoutCss).catch(() => {});
     loadingState.hidden = true;
     offlineState.hidden = true;
+    mainLoadFailed = false;
     setConnection("online", "البيانات المركزية متصلة");
   });
   webview.addEventListener("did-start-loading", () => {
+    mainLoadFailed = false;
     setConnection("loading", "جاري تحميل البيانات");
   });
   webview.addEventListener("did-stop-loading", () => {
     loadingState.hidden = true;
+    if (!mainLoadFailed) {
+      offlineState.hidden = true;
+      setConnection("online", "البيانات المركزية متصلة");
+    }
   });
   webview.addEventListener("did-fail-load", (event) => {
-    if (event.errorCode === -3) return;
+    if (event.errorCode === -3 || event.isMainFrame === false) return;
+    mainLoadFailed = true;
     loadingState.hidden = true;
     offlineState.hidden = false;
     setConnection("offline", "فشل الوصول إلى السيرفر");

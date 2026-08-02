@@ -824,6 +824,13 @@ function checkPersistentOrderBalances() {
   assert(appSource.includes('node === persistentBalances'), 'order details: balance strip must remain outside tab panels');
 }
 
+function checkDesktopConnectionIndicatorRecovery() {
+  const shellSource = fs.readFileSync(path.join(__dirname, '..', 'windows-app', 'src', 'shell.js'), 'utf8');
+  assert(shellSource.includes('state === "loading" ? "جاري الاتصال"'), 'desktop shell: loading must not be reported as server unavailable');
+  assert(shellSource.includes('if (!mainLoadFailed)'), 'desktop shell: successful load completion must restore connected state');
+  assert(shellSource.includes('event.isMainFrame === false'), 'desktop shell: subframe failures must not mark the whole server offline');
+}
+
 function checkPricingGroupedPriceViewExists() {
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
   assert(pricingUiSource.includes('pricing-group-row'), 'pricing ui: pricing list must group prices by fabric/raw item');
@@ -1013,6 +1020,7 @@ checkPricingCurrencyBadgesExist();
 checkWeavingDocumentLayoutUsesPreparedSpecs();
 checkCollarAccessoryMeasurements();
 checkPersistentOrderBalances();
+checkDesktopConnectionIndicatorRecovery();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();

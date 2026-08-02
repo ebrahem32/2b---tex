@@ -1897,3 +1897,10 @@ For Phase 3.1 local verification before commit:
 - The strip remains visible in every tab and shows customer order, sent to dyehouse, received from dyehouse, dyehouse balance, warehouse balance, and delivered to customer.
 - Root cause was the tab organizer moving the old summary entirely into the overview tab.
 - Released `v2026.08.02.11`.
+
+## Desktop Server Indicator Recovery - 2026-08-02
+
+- Fixed the Windows desktop shell showing `السيرفر غير متاح` during normal internal page loading.
+- Successful `did-stop-loading` now restores the connected state, and subframe/resource failures no longer mark the whole server offline.
+- Loading has its own neutral `جاري الاتصال` state instead of being labeled as an outage.
+- Windows desktop package version advanced to `2026.8.2`.
