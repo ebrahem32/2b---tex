@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.09';
-const APP_BUILD_TIME = '2026-08-02 15:25';
+const APP_VERSION = 'v2026.08.02.10';
+const APP_BUILD_TIME = '2026-08-02 15:45';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -392,6 +392,7 @@ let widthLineRowHtml;
 let renderWidthLinesEditor;
 let accessoryLineRowHtml;
 let renderAccessoryLinesEditor;
+let syncAccessoryLineDetails;
 let readAccessoryLinesFromEditor;
 let syncWidthModeUi;
 let groupedOrderRowHtml;
@@ -2909,6 +2910,7 @@ function getSuggestedDyeCost(dyehouse, materialType, colorClass) {
   renderWidthLinesEditor,
   accessoryLineRowHtml,
   renderAccessoryLinesEditor,
+  syncAccessoryLineDetails,
   readAccessoryLinesFromEditor,
   syncWidthModeUi,
   groupedOrderRowHtml,
@@ -7736,6 +7738,9 @@ refs.addWidthLineBtn.onclick = () => refs.widthLinesEditor.insertAdjacentHTML('b
 refs.widthLinesEditor.onclick = (event) => { if (event.target.dataset.removeWidthLine !== undefined) event.target.closest('.width-line-row')?.remove(); };
 refs.addAccessoryLineBtn.onclick = () => refs.accessoryLinesEditor.insertAdjacentHTML('beforeend', accessoryLineRowHtml());
 refs.accessoryLinesEditor.onclick = (event) => { if (event.target.dataset.removeAccessoryLine !== undefined) event.target.closest('.accessory-line-row')?.remove(); };
+refs.accessoryLinesEditor.addEventListener('input', (event) => {
+  if (event.target.matches('[data-accessory-field="type"]')) syncAccessoryLineDetails(event.target.closest('.accessory-line-row'));
+});
 refs.orderForm.onsubmit = (event) => addOrder(event).catch((error)=>{ console.error('order-save-error', error); alert('تعذر حفظ الطلب.'); });
 refs.orderNumber.oninput = syncAutoCodes;
 refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.oninput = refs.dyehouseFilter.oninput = refs.fabricFilter.oninput = renderOrders;

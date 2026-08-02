@@ -119,13 +119,16 @@
           type: clean(resolvedAccessoryName(line, order)),
           percent: Number(line.percent || 0),
           quantity: Number(line.quantityManual || line.quantity || 0),
+          unit: line.unit === 'piece' ? 'piece' : 'kg',
+          length: Number(line.length || 0),
+          width: Number(line.width || 0),
         }))
         .filter((line) => line.type || line.percent || line.quantity);
       if (normalized.length) {
         const byType = new Map();
         normalized.forEach((line) => {
           const key = clean(line.type || resolvedAccessoryName(line, order));
-          const current = byType.get(key) || { type: key, percent: 0, quantity: 0 };
+          const current = byType.get(key) || { type: key, percent: 0, quantity: 0, unit: line.unit, length: line.length, width: line.width };
           current.percent += Number(line.percent || 0);
           current.quantity += Number(line.quantity || 0);
           byType.set(key, current);
@@ -211,7 +214,11 @@
         ? '<tr><th>نوع الإكسسوار</th><th>النسبة</th><th>المطلوب</th><th>المرسل</th><th>المستلم</th><th>المسلم للعميل</th><th>الرصيد</th></tr>'
         : '<tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr>';
       const rows = lines.map((line) => {
-        if (!showMovement) return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity)}</td></tr>`;
+        if (!showMovement) {
+          const unitLabel = line.unit === 'piece' ? 'قطعة' : 'كجم';
+          const size = line.length || line.width ? ` — مقاس ${fmt(line.length || 0)} × ${fmt(line.width || 0)} سم` : '';
+          return `<tr><td>${safeText(`${line.type}${size}`)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity)} ${unitLabel}</td></tr>`;
+        }
         const allocations = orderAllocations(order);
         const required = typeof accessoryPlannedQuantityForLine === 'function'
           ? allocations.reduce((total, allocation) => total + Number(accessoryPlannedQuantityForLine(order, allocation, line) || 0), 0)

@@ -19,13 +19,25 @@ function renderWidthLinesEditor(lines = []) {
   refs.widthLinesEditor.innerHTML = `<div class="width-line-head"><span>البوصة</span><span>العرض</span><span>الكمية</span><span></span></div>${(lines.length ? lines : [{}]).map((line)=>widthLineRowHtml(line)).join('')}`;
 }
 
+function isCollarAccessoryType(type) {
+  return /لياق/.test(String(type || '').trim());
+}
+
 function accessoryLineRowHtml(line = {}) {
-  return `<div class="accessory-line-row" data-accessory-line-id="${line.id || ''}"><input data-accessory-field="type" placeholder=" " list="accessoryTypeList" value="${line.type || ''}"><input data-accessory-field="percent" type="number" step="0.01" placeholder=" %" value="${line.percent || ''}"><input data-accessory-field="quantity" type="number" step="0.01" placeholder=" " value="${line.quantityManual || line.quantity || ''}"><button type="button" class="mini-btn danger" data-remove-accessory-line></button></div>`;
+  const collar = isCollarAccessoryType(line.type);
+  const unit = line.unit === 'piece' ? 'piece' : 'kg';
+  return `<div class="accessory-line-row" data-accessory-line-id="${line.id || ''}"><input data-accessory-field="type" placeholder=" " list="accessoryTypeList" value="${line.type || ''}"><input data-accessory-field="percent" type="number" step="0.01" placeholder=" %" value="${line.percent || ''}"><input data-accessory-field="quantity" type="number" step="0.01" placeholder=" " value="${line.quantityManual || line.quantity || ''}"><select data-accessory-field="unit" data-collar-only ${collar ? '' : 'hidden'}><option value="piece" ${unit === 'piece' ? 'selected' : ''}>قطعة</option><option value="kg" ${unit === 'kg' ? 'selected' : ''}>كجم</option></select><input data-accessory-field="length" data-collar-only ${collar ? '' : 'hidden'} type="number" step="0.01" min="0" placeholder="الطول (سم)" value="${line.length || ''}"><input data-accessory-field="width" data-collar-only ${collar ? '' : 'hidden'} type="number" step="0.01" min="0" placeholder="العرض (سم)" value="${line.width || ''}"><button type="button" class="mini-btn danger" data-remove-accessory-line></button></div>`;
+}
+
+function syncAccessoryLineDetails(row) {
+  const collar = isCollarAccessoryType(row?.querySelector('[data-accessory-field="type"]')?.value);
+  row?.querySelectorAll('[data-collar-only]').forEach((field) => { field.hidden = !collar; });
 }
 
 function renderAccessoryLinesEditor(lines = []) {
   const rows = lines.length ? lines : [{}];
-  refs.accessoryLinesEditor.innerHTML = `<datalist id="accessoryTypeList"><option value="ريب"><option value="لياقات"><option value="أساور"><option value="ديربي"></datalist><div class="accessory-line-head"><span>نوع الإكسسوار</span><span>النسبة %</span><span>الكمية</span><span></span></div>${rows.map((line)=>accessoryLineRowHtml(line)).join('')}`;
+  refs.accessoryLinesEditor.innerHTML = `<datalist id="accessoryTypeList"><option value="ريب"><option value="لياقات"><option value="أساور"><option value="ديربي"></datalist><div class="accessory-line-head"><span>نوع الإكسسوار</span><span>النسبة %</span><span>الكمية</span><span>الوحدة للياقات</span><span>الطول</span><span>العرض</span><span></span></div>${rows.map((line)=>accessoryLineRowHtml(line)).join('')}`;
+  refs.accessoryLinesEditor.querySelectorAll('.accessory-line-row').forEach(syncAccessoryLineDetails);
 }
 
 function readAccessoryLinesFromEditor() {
@@ -34,6 +46,9 @@ function readAccessoryLinesFromEditor() {
     type: row.querySelector('[data-accessory-field="type"]').value.trim(),
     percent: Number(row.querySelector('[data-accessory-field="percent"]').value || 0),
     quantityManual: row.querySelector('[data-accessory-field="quantity"]').value === '' ? '' : Number(row.querySelector('[data-accessory-field="quantity"]').value || 0),
+    unit: isCollarAccessoryType(row.querySelector('[data-accessory-field="type"]').value) ? (row.querySelector('[data-accessory-field="unit"]')?.value || 'piece') : 'kg',
+    length: isCollarAccessoryType(row.querySelector('[data-accessory-field="type"]').value) ? Number(row.querySelector('[data-accessory-field="length"]')?.value || 0) : 0,
+    width: isCollarAccessoryType(row.querySelector('[data-accessory-field="type"]').value) ? Number(row.querySelector('[data-accessory-field="width"]')?.value || 0) : 0,
   })).filter((item)=>item.type || item.percent > 0 || Number(item.quantityManual || 0) > 0);
   if (rows.length) return rows.map((item)=>({ ...item, type:item.type || '' }));
   if (refs.accessoryType.value || Number(refs.accessoryPercent.value || 0)) return [{ id:uid(), type:refs.accessoryType.value || '', percent:Number(refs.accessoryPercent.value || 0), quantityManual:'' }];
@@ -142,6 +157,7 @@ function installGroupedOrderUi() {
       widthLineRowHtml,
       renderWidthLinesEditor,
       accessoryLineRowHtml,
+      syncAccessoryLineDetails,
       renderAccessoryLinesEditor,
       readAccessoryLinesFromEditor,
       syncWidthModeUi,

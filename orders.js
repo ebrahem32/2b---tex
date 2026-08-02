@@ -15,6 +15,9 @@
             type:line.type || 'إكسسوار',
             percent:Number(line.percent || 0),
             quantityManual:line.quantityManual !== undefined ? line.quantityManual : '',
+            unit:line.unit === 'piece' ? 'piece' : 'kg',
+            length:Number(line.length || 0),
+            width:Number(line.width || 0),
           }))
           .filter((line)=>line.type || line.percent || line.quantityManual);
       }
@@ -260,7 +263,7 @@
         const quantity = line.quantityManual !== '' && line.quantityManual !== null && line.quantityManual !== undefined
           ? Number(line.quantityManual || 0)
           : Number(order.totalRawQuantity || 0) * Number(line.percent || 0) / 100;
-        return { id:line.id || uid(), type:line.type || 'إكسسوار', percent:Number(line.percent || 0), quantityManual:line.quantityManual, quantity:roundNumber(quantity) };
+        return { id:line.id || uid(), type:line.type || 'إكسسوار', percent:Number(line.percent || 0), quantityManual:line.quantityManual, quantity:roundNumber(quantity), unit:line.unit === 'piece' ? 'piece' : 'kg', length:Number(line.length || 0), width:Number(line.width || 0) };
       }).filter((line)=>line.type || line.percent || line.quantity);
       const manualAccessoryQuantity = roundNumber(orderAllocations.reduce((total, item)=>total + Number(item.accessoryQuantity || 0), 0));
       const recordedAccessoryQuantity = sum(data.accessoryBatches.filter((batch)=>batch.orderId === order.id && (!batch.movement || batch.movement === 'sent')));

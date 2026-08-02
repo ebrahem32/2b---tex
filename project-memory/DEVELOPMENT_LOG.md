@@ -2060,3 +2060,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Order `72101`: `35,285 + 8% = 38,107.8` kg.
 - Added document breakdown and regression coverage; WhatsApp weaving text uses the same calculation.
 - Release: `v2026.08.02.09`.
+
+## Collar Measurements And Piece Unit - 2026-08-02
+
+- Added collar-only `length`, `width`, and `unit` fields to order accessory lines.
+- Fields appear dynamically for accessory types containing `لياق`; piece and kg units are supported.
+- Preserved the new fields through runtime normalization/calculation and included dimensions/unit in documents.
+- Added regression source checks and released `v2026.08.02.10`.

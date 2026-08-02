@@ -804,6 +804,18 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
   assert(!html.includes('إذن الخام'), 'weaving document: raw permit number must not appear before raw issue exists');
 }
 
+function checkCollarAccessoryMeasurements() {
+  const formsSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'formsUi.js'), 'utf8');
+  const ordersSource = fs.readFileSync(path.join(__dirname, '..', 'orders.js'), 'utf8');
+  const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
+  assert(formsSource.includes('data-collar-only'), 'collar accessory: size and unit fields must be collar-only');
+  assert(formsSource.includes('data-accessory-field="length"'), 'collar accessory: length field must exist');
+  assert(formsSource.includes('data-accessory-field="width"'), 'collar accessory: width field must exist');
+  assert(formsSource.includes('<option value="piece"'), 'collar accessory: piece unit must be selectable');
+  assert(ordersSource.includes("unit:line.unit === 'piece' ? 'piece' : 'kg'"), 'collar accessory: unit and dimensions must survive order calculation');
+  assert(documentsSource.includes('مقاس ${fmt(line.length || 0)} × ${fmt(line.width || 0)} سم'), 'collar accessory: documents must display collar dimensions');
+}
+
 function checkPricingGroupedPriceViewExists() {
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
   assert(pricingUiSource.includes('pricing-group-row'), 'pricing ui: pricing list must group prices by fabric/raw item');
@@ -991,6 +1003,7 @@ checkAccessoryPricingUsesWasteAndProfit();
 checkLegacyPricingItemsInheritCardTerms();
 checkPricingCurrencyBadgesExist();
 checkWeavingDocumentLayoutUsesPreparedSpecs();
+checkCollarAccessoryMeasurements();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();

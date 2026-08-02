@@ -1883,3 +1883,10 @@ For Phase 3.1 local verification before commit:
 - Order `72101` was verified in SQL Server: saved order quantity `34,000`, actual color total `35,285`, waste `8%`, required weaving raw `38,107.8` kg.
 - The document shows customer quantity, pricing waste, and total required raw separately.
 - Released `v2026.08.02.09` and rotated document/application cache keys.
+
+## Collar Measurements And Piece Unit - 2026-08-02
+
+- Accessory rows typed as `لياقة` or `لياقات` now reveal collar-only length, width, and quantity-unit fields.
+- Collar quantity can be recorded as pieces or kilograms; other accessories retain their existing kilogram/percentage behavior.
+- Collar dimensions and the selected unit persist in SQL Server through `accessory_lines_json` and appear in operational documents.
+- Released `v2026.08.02.10` and rotated affected cache keys.
