@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.06';
-const APP_BUILD_TIME = '2026-08-02 13:35';
+const APP_VERSION = 'v2026.08.02.07';
+const APP_BUILD_TIME = '2026-08-02 13:45';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -3127,15 +3127,15 @@ function pricingDyeingNotesForOrder(order, dyehouseName = '') {
     const names = pricingDyeStageNames(item);
     return names.length ? names : Number(item.dyeCost || 0) > 0 ? ['صباغة'] : [];
   }).filter(pricingStageIsDocumentNote));
-  return stages.length ? `بنود التشغيل من كرت التسعير:\n${stages.map((name)=>`- ${name}`).join('\n')}` : '';
+  return stages.length ? `مراحل التشغيل:\n${stages.map((name)=>`- ${name}`).join('\n')}` : '';
 }
 
 function mergePricingDyeingNotes(currentNotes, pricingNotes) {
-  const current = String(currentNotes || '').trim();
+  const current = String(currentNotes || '').trim().replace('بنود التشغيل من كرت التسعير:', 'مراحل التشغيل:');
   const suggested = String(pricingNotes || '').trim();
   if (!suggested) return current;
   if (!current) return suggested;
-  if (current.includes('بنود التشغيل من كرت التسعير:')) return current;
+  if (current.includes('مراحل التشغيل:')) return current;
   return `${suggested}\n\n${current}`;
 }
 

@@ -2036,3 +2036,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Preservation: merge the stage list with existing manual notes without duplicating the generated section on reopen.
 - Verification: read order `72101` and its linked pricing card from SQL Server and confirmed the expected four operational stages after exclusions.
 - Release: `v2026.08.02.06`.
+
+
+## Dyeing Stage Heading Rename - 2026-08-02
+
+- Change: renamed `بنود التشغيل من كرت التسعير` to `مراحل التشغيل` in generated dyeing notes.
+- Compatibility: legacy saved headings are normalized to the new title when the notes dialog opens.
+- Release: `v2026.08.02.07`.

@@ -1859,3 +1859,10 @@ For Phase 3.1 local verification before commit:
 - Existing manually entered document notes are preserved beneath the pricing-stage list, and reopening a saved note does not duplicate the generated heading.
 - SQL Server verification for order/pricing `72101` produced `صباغة`, `تجهيز رام`, `كسترة`, and `دبل انزيم`, while excluding its fixed `تغليف` and `نقل` rows.
 - Released `v2026.08.02.06` and rotated the application cache key.
+
+
+## Dyeing Stage Heading Rename - 2026-08-02
+
+- Renamed the generated pricing-stage heading in dyeing notes to `مراحل التشغيل`.
+- Previously saved generated headings are converted during display so they are not duplicated.
+- Released `v2026.08.02.07`.
