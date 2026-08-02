@@ -1890,3 +1890,10 @@ For Phase 3.1 local verification before commit:
 - Collar quantity can be recorded as pieces or kilograms; other accessories retain their existing kilogram/percentage behavior.
 - Collar dimensions and the selected unit persist in SQL Server through `accessory_lines_json` and appear in operational documents.
 - Released `v2026.08.02.10` and rotated affected cache keys.
+
+## Persistent Order Balance Cards - 2026-08-02
+
+- Restored the operational balance cards above the order-detail tabs.
+- The strip remains visible in every tab and shows customer order, sent to dyehouse, received from dyehouse, dyehouse balance, warehouse balance, and delivered to customer.
+- Root cause was the tab organizer moving the old summary entirely into the overview tab.
+- Released `v2026.08.02.11`.

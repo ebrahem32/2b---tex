@@ -816,6 +816,14 @@ function checkCollarAccessoryMeasurements() {
   assert(documentsSource.includes('مقاس ${fmt(line.length || 0)} × ${fmt(line.width || 0)} سم'), 'collar accessory: documents must display collar dimensions');
 }
 
+function checkPersistentOrderBalances() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const requiredLabels = ['طلب العميل', 'المرسل للمصبغة', 'المستلم من المصبغة', 'رصيد المصبغة', 'رصيد المخزن', 'المسلم للعميل'];
+  assert(appSource.includes('function orderPersistentBalancesHtml(order)'), 'order details: persistent balance strip must exist');
+  requiredLabels.forEach((label) => assert(appSource.includes(`['${label}'`), `order details: persistent balance strip must show ${label}`));
+  assert(appSource.includes('node === persistentBalances'), 'order details: balance strip must remain outside tab panels');
+}
+
 function checkPricingGroupedPriceViewExists() {
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
   assert(pricingUiSource.includes('pricing-group-row'), 'pricing ui: pricing list must group prices by fabric/raw item');
@@ -1004,6 +1012,7 @@ checkLegacyPricingItemsInheritCardTerms();
 checkPricingCurrencyBadgesExist();
 checkWeavingDocumentLayoutUsesPreparedSpecs();
 checkCollarAccessoryMeasurements();
+checkPersistentOrderBalances();
 checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();

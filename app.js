@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.10';
-const APP_BUILD_TIME = '2026-08-02 15:45';
+const APP_VERSION = 'v2026.08.02.11';
+const APP_BUILD_TIME = '2026-08-02 16:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -5728,6 +5728,18 @@ function setOrderDetailTab(tabId = 'overview') {
   });
 }
 
+function orderPersistentBalancesHtml(order) {
+  const balances = [
+    ['طلب العميل', order.totalRawOrdered || 0],
+    ['المرسل للمصبغة', order.totalRawReceived || order.totalSentToDyehouse || 0],
+    ['المستلم من المصبغة', order.totalFinishedReceived || 0],
+    ['رصيد المصبغة', order.rawAtDyehouseAvailable || order.remainingAtDyehouse || 0],
+    ['رصيد المخزن', order.warehouseBalance || 0],
+    ['المسلم للعميل', order.totalDeliveredToCustomer || 0],
+  ];
+  return `<div class="order-persistent-balances" aria-label="ملخص أرصدة الطلب">${balances.map(([label, value])=>`<div class="order-balance-card"><span>${escapeHtml(label)}</span><strong>${formatNumber(value)} كجم</strong></div>`).join('')}</div>`;
+}
+
 function orderDetailSectionForNode(node) {
   if (!node || node.nodeType !== 1) return 'overview';
   if (node.classList.contains('batch-grid')) return 'movements';
@@ -5742,7 +5754,7 @@ function orderDetailSectionForNode(node) {
   return 'overview';
 }
 
-function organizeOrderDetailsTabs() {
+function organizeOrderDetailsTabs(order) {
   const root = refs.orderDetailsPanel;
   if (!root || root.querySelector('.order-detail-tabs')) return;
   const head = root.querySelector('.section-head');
@@ -5761,11 +5773,13 @@ function organizeOrderDetailsTabs() {
   const panels = document.createElement('div');
   panels.className = 'order-detail-tab-panels';
   panels.innerHTML = tabs.map(([id, label], index) => `<section class="order-detail-tab-panel ${index === 0 ? 'active' : ''}" data-order-tab-panel="${id}" aria-label="${label}"></section>`).join('');
-  head.insertAdjacentElement('afterend', nav);
+  head.insertAdjacentHTML('afterend', orderPersistentBalancesHtml(order));
+  const persistentBalances = head.nextElementSibling;
+  persistentBalances.insertAdjacentElement('afterend', nav);
   nav.insertAdjacentElement('afterend', panels);
   const panelMap = Object.fromEntries([...panels.querySelectorAll('[data-order-tab-panel]')].map((panel) => [panel.dataset.orderTabPanel, panel]));
   [...root.children].forEach((node) => {
-    if (node === head || node === nav || node === panels) return;
+    if (node === head || node === persistentBalances || node === nav || node === panels) return;
     const sectionId = orderDetailSectionForNode(node);
     panelMap[sectionId]?.appendChild(node);
   });
@@ -5823,7 +5837,7 @@ function renderDetails() {
   }
   consolidateOrderDetailView(order);
   refs.orderDetailsPanel.insertAdjacentHTML('beforeend', renderReportSendStatus(order));
-  organizeOrderDetailsTabs();
+  organizeOrderDetailsTabs(order);
   refs.orderDetailsPanel.querySelectorAll('form[data-form="raw"]').forEach((form) => {
     ensureRawDispatchSelect(form, order);
     updateRawMovementVisibility(form);

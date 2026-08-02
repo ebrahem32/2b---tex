@@ -2067,3 +2067,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Fields appear dynamically for accessory types containing `لياق`; piece and kg units are supported.
 - Preserved the new fields through runtime normalization/calculation and included dimensions/unit in documents.
 - Added regression source checks and released `v2026.08.02.10`.
+
+## Persistent Order Balance Cards - 2026-08-02
+
+- Root cause: order detail tab organization scoped all summary metrics to `overview`, so users opening `movements` no longer saw balances.
+- Added a persistent six-card balance strip outside all tab panels.
+- Added regression assertions for the six labels and persistent placement.
+- Release: `v2026.08.02.11`.
