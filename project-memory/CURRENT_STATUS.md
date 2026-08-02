@@ -1875,3 +1875,11 @@ For Phase 3.1 local verification before commit:
 - SQL Server verification for order `72101` confirmed zero raw-dispatch rows and zero sent quantity, so its dyehouse raw balance must display `0` while its plan remains `35,285`.
 - Added a regression test for a planned-only 35,285 kg dyeing order with no physical raw movement.
 - Released `v2026.08.02.08` and rotated both document and application cache keys.
+
+## Weaving Required Raw From Customer Color Total - 2026-08-02
+
+- The weaving order now derives the customer quantity from the sum of planned color allocations when colors exist, instead of the stale pricing/order quantity.
+- Required raw equals the customer color total plus the pricing waste percentage.
+- Order `72101` was verified in SQL Server: saved order quantity `34,000`, actual color total `35,285`, waste `8%`, required weaving raw `38,107.8` kg.
+- The document shows customer quantity, pricing waste, and total required raw separately.
+- Released `v2026.08.02.09` and rotated document/application cache keys.

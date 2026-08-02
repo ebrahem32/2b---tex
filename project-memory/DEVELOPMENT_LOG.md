@@ -2052,3 +2052,11 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Data verification: order `72101` has zero rows and zero quantity in `raw_receiving_batches`.
 - Test: a 35,285 kg planned-only document now retains the plan but renders zero physical raw balance.
 - Release: `v2026.08.02.08`.
+
+## Weaving Required Raw From Customer Color Total - 2026-08-02
+
+- Root cause: the weaving document used `orders.total_raw_quantity` (`34,000`) even after the customer color allocations totaled `35,285` kg.
+- Fix: sum planned color allocations as the current customer quantity, then add `expected_waste_percent` to calculate weaving raw requirement.
+- Order `72101`: `35,285 + 8% = 38,107.8` kg.
+- Added document breakdown and regression coverage; WhatsApp weaving text uses the same calculation.
+- Release: `v2026.08.02.09`.

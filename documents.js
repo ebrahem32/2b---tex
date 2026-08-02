@@ -261,11 +261,25 @@
       return order?.finishedWeight || firstAllocationValue(order, ['targetFinishedWeight']) || '-';
     }
 
+    function weavingCustomerQuantity(order) {
+      const allocatedQuantity = orderAllocations(order)
+        .reduce((total, line) => total + Number(line?.plannedQuantity || line?.planned_quantity || 0), 0);
+      return roundNumber(allocatedQuantity > 0
+        ? allocatedQuantity
+        : Number(order?.totalRawQuantity || order?.totalRawOrdered || 0));
+    }
+
+    function weavingRequiredRawQuantity(order) {
+      const customerQuantity = weavingCustomerQuantity(order);
+      const wastePercent = Math.max(Number(order?.expectedWastePercent || order?.expected_waste_percent || 0), 0);
+      return roundNumber(customerQuantity * (1 + (wastePercent / 100)));
+    }
+
     function weavingItemDescription(order) {
       return [
         `البوصة ${safeText(widthSummary(order))}`,
         `الصنف ${safeText(order?.fabricType)}`,
-        `الكمية ${fmt(order?.totalRawOrdered || order?.totalRawQuantity)} كجم`,
+        `الخام المطلوب ${fmt(weavingRequiredRawQuantity(order))} كجم`,
         `وزن مجهز ${safeText(finishedWeightSummary(order))}`,
         `العرض مجهز ${safeText(finishedWidthSummary(order))}`,
       ].join(' - ');
@@ -276,7 +290,10 @@
     }
 
     function buildWeavingOrderDocument(order) {
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr><tr><th>سعر الخام</th><td colspan="3">${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
+      const customerQuantity = weavingCustomerQuantity(order);
+      const wastePercent = Math.max(Number(order?.expectedWastePercent || order?.expected_waste_percent || 0), 0);
+      const requiredRawQuantity = weavingRequiredRawQuantity(order);
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr><tr><th>كمية طلب العميل</th><td>${fmt(customerQuantity)}</td><th>هالك التسعير</th><td>${fmt(wastePercent)}%</td></tr><tr><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
       return reportShell('أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 

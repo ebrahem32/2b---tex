@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.08';
-const APP_BUILD_TIME = '2026-08-02 15:00';
+const APP_VERSION = 'v2026.08.02.09';
+const APP_BUILD_TIME = '2026-08-02 15:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -1385,11 +1385,23 @@ function colorWithPantoneLabel(line) {
   if (color && pantone && color.toLocaleLowerCase('ar') !== pantone.toLocaleLowerCase('ar')) return `${color} — بانتون ${pantone}`;
   return color || pantone || '-';
 }
+function weavingCustomerQuantity(order) {
+  const allocatedQuantity = (Array.isArray(order?.allocations) ? order.allocations : [])
+    .reduce((total, line) => total + Number(line?.plannedQuantity || line?.planned_quantity || 0), 0);
+  return roundNumber(allocatedQuantity > 0
+    ? allocatedQuantity
+    : Number(order?.totalRawQuantity || order?.totalRawOrdered || 0));
+}
+function weavingRequiredRawQuantity(order) {
+  const customerQuantity = weavingCustomerQuantity(order);
+  const wastePercent = Math.max(Number(order?.expectedWastePercent || order?.expected_waste_percent || 0), 0);
+  return roundNumber(customerQuantity * (1 + (wastePercent / 100)));
+}
 // LEGACY DOCUMENT FUNCTION - pending cleanup: overridden by the active Arabic reportMessage implementation.
 function reportMessage(reportType, order) {
   const rawNote = getFirstRawNoteNumber(order) || '-';
   if (reportType === 'weaving_production_order') {
-    return `أمر تشغيل نسيج\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nالكمية: ${formatNumber(order.totalRawOrdered || 0)}\nسعر الخام: ${formatNumber(orderRawCost(order) || 0)}\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
+    return `أمر تشغيل نسيج\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nكمية طلب العميل: ${formatNumber(weavingCustomerQuantity(order))}\nهالك التسعير: ${formatNumber(order.expectedWastePercent || 0)}%\nإجمالي الخام المطلوب: ${formatNumber(weavingRequiredRawQuantity(order))}\nسعر الخام: ${formatNumber(orderRawCost(order) || 0)}\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
   }
   if (reportType === 'dyeing_production_order') {
     const dyehouseName = String(order.whatsappDyehouseName || order.dyehouse || '').trim();

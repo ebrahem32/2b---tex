@@ -789,6 +789,7 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
     weavingSource: 'دلتا تكستايل',
     totalRawOrdered: 2000,
     totalRawQuantity: 2000,
+    expectedWastePercent: 8,
     inchWidth: 30,
     allocations: [
       { id:'a1', color:'أسود', plannedQuantity:2000, targetFinishedWeight:240, targetFinishedWidth:125 },
@@ -798,6 +799,8 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
   assert(html.includes('العرض المجهز'), 'weaving document: prepared width must be visible');
   assert(html.includes('البوصة 30'), 'weaving document: item descriptor must include inch width');
   assert(html.includes('الصنف بيكا مخلوط 50-50'), 'weaving document: item descriptor must include fabric');
+  assert(html.includes('الخام المطلوب 2,160 كجم'), 'weaving document: required raw must equal allocated customer quantity plus pricing waste');
+  assert(html.includes('كمية طلب العميل</th><td>2,000'), 'weaving document: customer quantity must come from the color allocation total');
   assert(!html.includes('إذن الخام'), 'weaving document: raw permit number must not appear before raw issue exists');
 }
 
