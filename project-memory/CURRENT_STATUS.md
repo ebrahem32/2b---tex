@@ -1904,6 +1904,13 @@ For Phase 3.1 local verification before commit:
 - Six balances now render as a responsive three-column grid (two columns on narrow screens), with wrapped text and no fixed card width.
 - Released `v2026.08.02.12` and rotated application/style cache keys.
 
+## Detailed Report Dispatch Dyehouse Split - 2026-08-02
+
+- Detailed reports now use each raw dispatch permit's saved dyehouse as the source of truth for dyehouse balances.
+- Order `72104` SQL verification: Biko `1,830.2` kg and Geima `1,542.1` kg, totaling `3,372.3` kg.
+- A dyehouse with dispatched raw appears even before colors are assigned to it; its permit notes and balance remain separate.
+- Released `v2026.08.02.13`.
+
 ## Desktop Server Indicator Recovery - 2026-08-02
 
 - Fixed the Windows desktop shell showing `السيرفر غير متاح` during normal internal page loading.

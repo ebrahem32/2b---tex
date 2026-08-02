@@ -2086,3 +2086,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Root cause: six balance cards used a fixed 135px minimum width plus horizontal overflow.
 - Replaced the single fixed row with a responsive 3x2 grid and removed horizontal overflow.
 - Release: `v2026.08.02.12`.
+
+## Detailed Report Dispatch Dyehouse Split - 2026-08-02
+
+- Root cause: report distribution used allocation dyehouses and the order default, ignoring `dyehouse_delivery_batches.dyehouse` for order-level permits.
+- Fix: include dispatch dyehouses in report scope, filter permits by their saved dyehouse, and calculate each dyehouse's sent/raw balance independently.
+- Added an order `72104` regression case for Biko `1,830.2` and Geima `1,542.1`.
+- Release: `v2026.08.02.13`.

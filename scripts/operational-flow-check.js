@@ -539,6 +539,34 @@ function checkDetailedReportSplitsRawTransferByDyehouse() {
   assert(fullHtml.includes('<td>New Geima</td><td>300</td><td>300</td>'), 'document: detailed report target dyehouse must show 300 after receiving transfer');
 }
 
+function checkDetailedReportUsesDispatchDyehouse() {
+  const builders = createDocumentBuilders();
+  const order = {
+    id: 'order-72104-regression',
+    orderNumber: '72104',
+    customer: 'ارمان',
+    fabricType: 'سنجل ليكرا فسكوز',
+    dyehouse: 'جيما',
+    totalRawOrdered: 4215,
+    totalRawReceived: 3372.3,
+    allocations: [
+      { id:'a1', orderId:'order-72104-regression', color:'اسود', plannedQuantity:4215, dyehouse:'جيما', sentToDyehouse:3372.3, remainingAtDyehouse:3372.3 },
+    ],
+    rawBatches: [
+      { orderId:'order-72104-regression', quantity:607.3, dyehouse:'بيكو', noteNumber:'54393' },
+      { orderId:'order-72104-regression', quantity:612.3, dyehouse:'بيكو', noteNumber:'54392' },
+      { orderId:'order-72104-regression', quantity:610.6, dyehouse:'بيكو', noteNumber:'54394' },
+      { orderId:'order-72104-regression', quantity:500, dyehouse:'جيما', noteNumber:'54353' },
+      { orderId:'order-72104-regression', quantity:517.9, dyehouse:'جيما', noteNumber:'54344' },
+      { orderId:'order-72104-regression', quantity:524.2, dyehouse:'جيما', noteNumber:'54345' },
+    ],
+    productionBatches: [], rawReturns: [], dyehouseTransfers: [],
+  };
+  const html = builders.buildCompactFullReportDocument(order);
+  assert(html.includes('<td>بيكو</td><td>1,830.2</td><td>1,830.2</td><td>0</td>'), 'document: Biko dispatches must remain separate even without Biko color allocations');
+  assert(html.includes('<td>جيما</td><td>1,542.1</td><td>1,542.1</td>'), 'document: Geima dispatches must not include Biko raw permits');
+}
+
 function checkDetailedReportRejectsForeignDyehouseTransfers() {
   const builders = createDocumentBuilders();
   const order = {
@@ -623,7 +651,7 @@ function checkDyehouseTransferKindsAreSeparated() {
   assert(documentsSource.includes('function dyehouseLedgerSegmentsForAllocation(order, allocation)'), 'documents: dyehouse documents must use one ledger for source and target raw balances');
   assert(documentsSource.includes('function dyehouseScopedAllocations(order, dyehouseName)'), 'documents: dyeing documents must scope color rows by dyehouse transfer quantities');
   assert(documentsSource.includes('totalRawOrdered:plannedTotal'), 'documents: dyeing document header raw total must be scoped to the selected dyehouse');
-  assert(documentsSource.includes('return roundNumber(operationalBalance || movementBalance)'), 'documents: dyeing document raw balance must prefer the selected rows operational balance');
+  assert(documentsSource.includes('hasExplicitDyehouseDispatch ? movementBalance : (operationalBalance || movementBalance)'), 'documents: explicit permit dyehouse must override the order-level operational balance');
   assert(appSource.includes('function scopedOrderDetailAllocationRows(order)'), 'ui: order detail color plan must split balances by scoped dyehouse rows');
   assert(appSource.includes('function scopedDyehouseSegmentsForAllocation(order, allocation)'), 'ui: order detail must build a dyehouse balance ledger for each color');
   assert(appSource.includes('return dyehouseLedgerSegmentsForAllocation(order, allocation);'), 'ui: legacy scoped dyehouse helper must delegate to the explicit ledger');
@@ -1009,6 +1037,7 @@ checkDyeingDocumentShowsPhysicalRawBalance();
 checkDyeingDocumentSplitsMultiDyehouseOrder();
 checkLegacyPartialTransferUsesActualQuantity();
 checkDetailedReportSplitsRawTransferByDyehouse();
+checkDetailedReportUsesDispatchDyehouse();
 checkDetailedReportRejectsForeignDyehouseTransfers();
 checkOrderLevelRawTransferCanStillSplitSingleAllocationDyehouseBalance();
 checkDyehouseTransferKindsAreSeparated();
