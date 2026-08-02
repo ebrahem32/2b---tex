@@ -1986,3 +1986,11 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - `DELTA\2B-SERVER$` has inherited Modify permission on the backup directory only.
 - The machine variable `TWOBTEX_OFFSITE_BACKUP_DIR` on 2B-Server points to that UNC path.
 - A SYSTEM-context scheduled backup test succeeded and copied `2btex-sqlserver-20260801-173051.bak`; local and off-machine sets both contained 21 files after the test.
+
+
+## Six-Day Backup Retention - 2026-08-02
+
+- Changed SQL Server backup retention from 30 days to 6 days for both local 2B-Server backups and off-machine backups on the DELTA F drive.
+- Set the backend default and scheduled PowerShell backup tools to the same 6-day policy.
+- Production version updated to v2026.08.02.01.
+- Cleanup targets only timestamped database backup files older than the cutoff; application code, configuration, and production records are not deleted.

@@ -290,7 +290,7 @@ async function ensureDefaultAdminUser() {
 const LEGACY_TEST_ORDER_NUMBERS = new Set(['2554']);
 const LEGACY_TEST_CUSTOMERS = new Set(['ام احمد','أم أحمد','ام أحمد','أم احمد']);
 const LOCAL_IMPORT_ENABLED = process.env.ALLOW_LOCAL_IMPORT === '1';
-const BACKUP_RETENTION_DAYS = Number(process.env.BACKUP_RETENTION_DAYS || 30);
+const BACKUP_RETENTION_DAYS = Number(process.env.BACKUP_RETENTION_DAYS || 6);
 let lastBackupCleanup = { deleted: 0, deletedFiles: [], retentionDays: BACKUP_RETENTION_DAYS, ranAt: null };
 const OPERATION_STAGE_DEFINITIONS = [
   { key: 'weaving', label: 'واقف في النسيج', description: 'طلب لم يكتمل خروج الخام من النسيج إلى المصبغة.' },
