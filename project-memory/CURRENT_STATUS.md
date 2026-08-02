@@ -1898,6 +1898,12 @@ For Phase 3.1 local verification before commit:
 - Root cause was the tab organizer moving the old summary entirely into the overview tab.
 - Released `v2026.08.02.11`.
 
+## Order Balance Strip Responsive Layout - 2026-08-02
+
+- Removed horizontal scrolling from the persistent order-balance cards.
+- Six balances now render as a responsive three-column grid (two columns on narrow screens), with wrapped text and no fixed card width.
+- Released `v2026.08.02.12` and rotated application/style cache keys.
+
 ## Desktop Server Indicator Recovery - 2026-08-02
 
 - Fixed the Windows desktop shell showing `السيرفر غير متاح` during normal internal page loading.

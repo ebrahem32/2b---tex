@@ -818,10 +818,13 @@ function checkCollarAccessoryMeasurements() {
 
 function checkPersistentOrderBalances() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const stylesSource = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
   const requiredLabels = ['طلب العميل', 'المرسل للمصبغة', 'المستلم من المصبغة', 'رصيد المصبغة', 'رصيد المخزن', 'المسلم للعميل'];
   assert(appSource.includes('function orderPersistentBalancesHtml(order)'), 'order details: persistent balance strip must exist');
   requiredLabels.forEach((label) => assert(appSource.includes(`['${label}'`), `order details: persistent balance strip must show ${label}`));
   assert(appSource.includes('node === persistentBalances'), 'order details: balance strip must remain outside tab panels');
+  assert(stylesSource.includes('.order-persistent-balances{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))'), 'order details: balance cards must wrap without horizontal scrolling');
+  assert(!stylesSource.includes('.order-persistent-balances{display:grid;grid-template-columns:repeat(6,minmax(135px,1fr))'), 'order details: fixed-width six-card row must not return');
 }
 
 function checkDesktopConnectionIndicatorRecovery() {

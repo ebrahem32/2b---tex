@@ -2080,3 +2080,9 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Root cause: `did-start-loading` changed the shell badge away from online, while `did-stop-loading` never restored it; only the first `dom-ready` did.
 - Fix: distinguish loading from offline, restore online after successful completion, and ignore non-main-frame failures.
 - Desktop package: `2026.8.2`.
+
+## Order Balance Strip Responsive Layout - 2026-08-02
+
+- Root cause: six balance cards used a fixed 135px minimum width plus horizontal overflow.
+- Replaced the single fixed row with a responsive 3x2 grid and removed horizontal overflow.
+- Release: `v2026.08.02.12`.
