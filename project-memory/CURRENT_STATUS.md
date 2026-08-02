@@ -1866,3 +1866,12 @@ For Phase 3.1 local verification before commit:
 - Renamed the generated pricing-stage heading in dyeing notes to `مراحل التشغيل`.
 - Previously saved generated headings are converted during display so they are not duplicated.
 - Released `v2026.08.02.07`.
+
+
+## Dyeing Document Physical Raw Balance Fix - 2026-08-02
+
+- Fixed the dyeing document incorrectly copying planned color quantities into the actual raw-sent balance.
+- `إجمالي كمية المصبغة` remains the planned color total, while `رصيد الخام في المصبغة` now depends only on physical raw dispatches, dyehouse transfers, receipts, returns, and waste.
+- SQL Server verification for order `72101` confirmed zero raw-dispatch rows and zero sent quantity, so its dyehouse raw balance must display `0` while its plan remains `35,285`.
+- Added a regression test for a planned-only 35,285 kg dyeing order with no physical raw movement.
+- Released `v2026.08.02.08` and rotated both document and application cache keys.

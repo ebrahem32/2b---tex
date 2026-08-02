@@ -409,6 +409,22 @@ function checkDyeingDocumentShowsPhysicalRawBalance() {
   assert(!html.includes('Dyeing'), 'document: dyeing order must not show pricing dyeing stages');
   assert(!html.includes('Packaging'), 'document: dyeing order must not show pricing packaging stages');
   assert(!html.includes('Ram'), 'document: dyeing order must not show pricing ram stages');
+
+  const plannedOnlyHtml = builders.buildDyeingOrderDocument({
+    id: 'order-document-planned-only',
+    orderNumber: 'DOC-PLANNED-ONLY',
+    orderDate: '2026-08-02',
+    customer: 'Test',
+    fabricType: 'Fabric',
+    dyehouse: 'D',
+    allocations: [{ id: 'alloc-planned-only', orderId: 'order-document-planned-only', color: 'blue', plannedQuantity: 35285, dyehouse: 'D', sentToDyehouse: 0, remainingAtDyehouse: 0 }],
+    rawBatches: [],
+    productionBatches: [],
+    rawReturns: [],
+    dyehouseTransfers: [],
+  }, 'D');
+  assert(plannedOnlyHtml.includes('35,285'), 'document: planned dyeing quantity must remain visible');
+  assert(plannedOnlyHtml.includes('>0</td>'), 'document: raw balance must stay zero until a physical raw dispatch exists');
 }
 
 function checkDyeingDocumentSplitsMultiDyehouseOrder() {

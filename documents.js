@@ -397,7 +397,7 @@
           const scopedQuantity = scopedAllocationQuantity(order, allocation, dyehouseName);
           const hasRawTransfers = rawTransfersForAllocation(order, allocation).length > 0;
           return scopedQuantity > 0
-            ? { ...allocation, plannedQuantity: scopedQuantity, sentToDyehouse: scopedQuantity, ...(hasRawTransfers ? { remainingAtDyehouse: scopedQuantity } : {}) }
+            ? { ...allocation, plannedQuantity: scopedQuantity, ...(hasRawTransfers ? { remainingAtDyehouse: scopedQuantity } : {}) }
             : null;
         })
         .filter(Boolean);

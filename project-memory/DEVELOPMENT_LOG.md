@@ -2043,3 +2043,12 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Change: renamed `بنود التشغيل من كرت التسعير` to `مراحل التشغيل` in generated dyeing notes.
 - Compatibility: legacy saved headings are normalized to the new title when the notes dialog opens.
 - Release: `v2026.08.02.07`.
+
+
+## Dyeing Document Physical Raw Balance Fix - 2026-08-02
+
+- Root cause: `dyehouseScopedAllocations` overwrote `sentToDyehouse` with each allocation's planned quantity while building the document.
+- Fix: preserve calculated physical sent and remaining quantities; scope only the planned quantity for the selected dyehouse.
+- Data verification: order `72101` has zero rows and zero quantity in `raw_receiving_batches`.
+- Test: a 35,285 kg planned-only document now retains the plan but renders zero physical raw balance.
+- Release: `v2026.08.02.08`.
