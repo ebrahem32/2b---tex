@@ -1850,3 +1850,12 @@ For Phase 3.1 local verification before commit:
 - Both single-width and multi-width allocations persist the Pantone number through the existing SQL Server allocation API.
 - Allocation selection labels now show the Pantone number beside the color when present.
 - Released `v2026.08.02.05` and rotated the application cache key.
+
+
+## Pricing Dye Stages In Dyeing Document Notes - 2026-08-02
+
+- The dyeing work-order notes dialog now preloads operational dye-stage names from the linked pricing card.
+- `نقل` and `تغليف` are explicitly excluded; other recorded stages such as `صباغة`, `صباغة مخلوط`, `تجهيز رام`, `كسترة`, and `دبل إنزيم` remain included.
+- Existing manually entered document notes are preserved beneath the pricing-stage list, and reopening a saved note does not duplicate the generated heading.
+- SQL Server verification for order/pricing `72101` produced `صباغة`, `تجهيز رام`, `كسترة`, and `دبل انزيم`, while excluding its fixed `تغليف` and `نقل` rows.
+- Released `v2026.08.02.06` and rotated the application cache key.

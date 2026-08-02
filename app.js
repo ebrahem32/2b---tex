@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.05';
-const APP_BUILD_TIME = '2026-08-02 13:20';
+const APP_VERSION = 'v2026.08.02.06';
+const APP_BUILD_TIME = '2026-08-02 13:35';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -3106,6 +3106,37 @@ function pricingDyeStageNames(item = {}) {
   return uniqueNonEmpty((Array.isArray(item.dyeStages) ? item.dyeStages : [])
     .map((stage)=>String(stage?.name || '').trim())
     .filter(Boolean));
+}
+
+function pricingStageIsDocumentNote(stageName) {
+  const key = pricingStageKey(stageName);
+  return Boolean(key) && key !== pricingStageKey('نقل') && key !== pricingStageKey('تغليف');
+}
+
+function pricingDyeingNotesForOrder(order, dyehouseName = '') {
+  const linkedPricing = pricings.find((pricing)=>pricing.id === order?.pricingId)
+    || pricings.find((pricing)=>pricingMatchesOrder(pricing, order));
+  if (!linkedPricing) return '';
+  const wantedDyehouse = String(dyehouseName || '').trim();
+  const allItems = pricingItemsFor(linkedPricing);
+  const scopedItems = wantedDyehouse
+    ? allItems.filter((item)=>!String(item.dyehouse || '').trim() || String(item.dyehouse || '').trim() === wantedDyehouse)
+    : allItems;
+  const sourceItems = scopedItems.length ? scopedItems : allItems;
+  const stages = uniqueNonEmpty(sourceItems.flatMap((item)=>{
+    const names = pricingDyeStageNames(item);
+    return names.length ? names : Number(item.dyeCost || 0) > 0 ? ['صباغة'] : [];
+  }).filter(pricingStageIsDocumentNote));
+  return stages.length ? `بنود التشغيل من كرت التسعير:\n${stages.map((name)=>`- ${name}`).join('\n')}` : '';
+}
+
+function mergePricingDyeingNotes(currentNotes, pricingNotes) {
+  const current = String(currentNotes || '').trim();
+  const suggested = String(pricingNotes || '').trim();
+  if (!suggested) return current;
+  if (!current) return suggested;
+  if (current.includes('بنود التشغيل من كرت التسعير:')) return current;
+  return `${suggested}\n\n${current}`;
 }
 
 function pricingOperationNotesForItem(item = {}) {
@@ -7459,7 +7490,10 @@ async function promptOperationNotes(sourceOrder, type, dyehouseName = '') {
   if (!sourceOrder) return null;
   const key = operationNotesKey(type, dyehouseName);
   const savedNotes = sourceOrder.operationNotes && typeof sourceOrder.operationNotes === 'object' && !Array.isArray(sourceOrder.operationNotes) ? sourceOrder.operationNotes : {};
-  const current = Object.prototype.hasOwnProperty.call(savedNotes, key) ? savedNotes[key] : '';
+  const savedCurrent = Object.prototype.hasOwnProperty.call(savedNotes, key) ? savedNotes[key] : '';
+  const current = type === 'dyeing'
+    ? mergePricingDyeingNotes(savedCurrent, pricingDyeingNotesForOrder(sourceOrder, dyehouseName))
+    : savedCurrent;
   const title = type === 'dyeing'
     ? `ملاحظات أمر تشغيل الصباغة${dyehouseName ? ` - ${dyehouseName}` : ''}`
     : 'ملاحظات أمر تشغيل النسيج';

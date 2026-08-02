@@ -2027,3 +2027,12 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Fix: color editing now preserves independent `color` and `pantoneCode` values.
 - Persistence: both values continue through `allocationToApi` into SQL Server columns `color` and `pantone_code`.
 - Release: `v2026.08.02.05`.
+
+
+## Pricing Dye Stages In Dyeing Document Notes - 2026-08-02
+
+- Change: derive dyeing-document note suggestions from the linked pricing card's `dyeStages` for the relevant dyehouse.
+- Filter: exclude fixed transport and packaging stages by normalized Arabic stage name.
+- Preservation: merge the stage list with existing manual notes without duplicating the generated section on reopen.
+- Verification: read order `72101` and its linked pricing card from SQL Server and confirmed the expected four operational stages after exclusions.
+- Release: `v2026.08.02.06`.
