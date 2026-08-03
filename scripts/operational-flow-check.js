@@ -582,6 +582,8 @@ function checkDyeingOrderPickerUsesDispatchDyehouses() {
   assert(appSource.includes('function customerOrderLabel(order)'), 'customers: orders must display the fixed customer code beside the customer name');
   assert(appSource.includes('function openPantoneColorExperiment()'), 'pantone experiment: color search and screen picker dialog must be available');
   assert(appSource.includes('new window.EyeDropper().open()'), 'pantone experiment: screen eyedropper must capture the preview color');
+  assert(documentsSource.includes('class="lab-color-info"'), 'lab samples: each color must display its name and Pantone number');
+  assert(documentsSource.includes('class="lab-color-swatch'), 'lab samples: each color must include a circular color image');
   assert(appSource.includes('customerCode: customerLookupCode(customers, row.customer_id)'), 'customers: every loaded order must inherit its customer code');
   assert(documentsSource.includes('order?.customerCode || order?.customer_code'), 'customers: operational documents must display the customer code');
 }

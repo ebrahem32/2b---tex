@@ -545,11 +545,24 @@
 
     function buildLabSamplesDocument(order) {
       const rows = orderAllocations(order);
+      const labColorContent = (line = {}) => {
+        const color = clean(line.color || '');
+        const pantone = clean(line.pantoneCode || line.pantone_code || '');
+        return `<div class="lab-color-info"><strong>${safeText(color || pantone || '-')}</strong>${pantone ? `<span>بانتون ${safeText(pantone)}</span>` : '<span>رقم البانتون غير مسجل</span>'}</div>`;
+      };
+      const labSampleContent = (line = {}) => {
+        const imageValue = clean(line.colorImage || line.color_image || line.colorImageUrl || line.color_image_url || '');
+        const image = /^(?:data:image\/(?:png|jpeg|webp);base64,|https?:\/\/)/i.test(imageValue) ? imageValue : '';
+        const colorValue = clean(line.colorHex || line.color_hex || '');
+        const colorHex = /^#[0-9a-f]{6}$/i.test(colorValue) ? colorValue : '';
+        const style = image ? `background-image:url('${safeText(image)}')` : (colorHex ? `background-color:${colorHex}` : '');
+        return `<div class="lab-color-swatch ${style ? 'has-color' : ''}"${style ? ` style="${style}"` : ''}><span>${style ? '' : 'صورة اللون'}</span></div>`;
+      };
       const sampleRows = [];
       for (let index = 0; index < Math.max(rows.length, 1); index += 2) {
         const right = rows[index] || {};
         const left = rows[index + 1] || {};
-        sampleRows.push(`<tr><td class="sample-cell"></td><td class="color-cell">${safeText(right.color || right.pantoneCode || '')}</td><td class="color-cell">${safeText(left.color || left.pantoneCode || '')}</td><td class="sample-cell"></td></tr>`);
+        sampleRows.push(`<tr><td class="sample-cell">${labSampleContent(right)}</td><td class="color-cell">${labColorContent(right)}</td><td class="color-cell">${labColorContent(left)}</td><td class="sample-cell">${labSampleContent(left)}</td></tr>`);
       }
       const accessoryLines = orderAccessoryLines(order);
       const accessoryTotal = roundNumber(accessoryLines.reduce((total, line) => total + Number(line.quantity || 0), 0));

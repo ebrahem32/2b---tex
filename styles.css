@@ -489,6 +489,8 @@
 @media print{.lab-document{width:100%!important;max-width:none!important;padding:0!important}.lab-logo-wrap{height:170px}.lab-samples-table .sample-cell,.lab-samples-table .color-cell{height:210px!important}}
 
 .lab-sample-col{width:5cm}.lab-color-col{width:auto}.lab-samples-table .sample-cell{width:5cm!important;height:3cm!important}.lab-samples-table .color-cell{height:3cm!important;font-size:22px}.lab-logo-wrap{height:150px}.lab-title{height:90px;font-size:25px}.lab-item-row td{height:70px}
+.lab-color-info{display:grid;place-items:center;gap:8px}.lab-color-info strong{font-size:22px}.lab-color-info span{font-size:15px;color:#374151;font-weight:800;direction:ltr}
+.lab-color-swatch{width:82px;height:82px;margin:auto;border-radius:50%;border:2px dashed #64748b;display:grid;place-items:center;background:#fff center/cover no-repeat;overflow:hidden}.lab-color-swatch span{font-size:12px;color:#64748b;font-weight:700}.lab-color-swatch.has-color{border-style:solid;border-color:#111;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 @media print{.lab-samples-table .sample-cell{width:5cm!important;height:3cm!important}.lab-samples-table .color-cell{height:3cm!important}}
 
 @media print{
