@@ -570,6 +570,9 @@ function checkDetailedReportUsesDispatchDyehouse() {
 function checkDyeingOrderPickerUsesDispatchDyehouses() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('const dispatchDyehouses = rawBatches'), 'dyeing picker: permit dyehouses must be included in the available choices');
+  assert(appSource.includes('data-bulk-row-note-number'), 'bulk dyehouse issue: permit number must be entered beside its dyehouse row');
+  assert(appSource.includes('noteNumber:rowNoteNumber'), 'bulk dyehouse issue: each saved dispatch must use its own dyehouse permit number');
+  assert(appSource.includes("اكتب رقم الإذن بجوار المصبغة"), 'bulk dyehouse issue: dispatch quantity must require its linked permit number');
   assert(appSource.includes('function rawDispatchQuantityForDyehouse(order, dyehouseName)'), 'dyeing picker: each choice must calculate its permit quantity separately');
   assert(appSource.includes('const quantity = dispatchedQuantity || rows.reduce'), 'dyeing picker: permit quantity must be shown even before colors are assigned');
 }

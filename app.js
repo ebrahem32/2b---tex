@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.02.14';
+const APP_VERSION = 'v2026.08.03.01';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -6218,7 +6218,7 @@ function combinedMovementClothRows(order, movement) {
     return [...groups.values()].map((group) => {
       const available = Math.max(group.planned - group.sent, 0);
       const colorLabel = group.colors.length > 1 ? 'كل الألوان' : (group.colors[0] || 'كل الألوان');
-      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td>كل العروض</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
+      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td><input data-bulk-row-note-number placeholder="رقم إذن ${escapeHtml(group.dyehouse || 'المصبغة')}"></td><td>كل العروض</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
     }).join('');
   }
   return order.allocations.map((allocation)=>{
@@ -6244,6 +6244,7 @@ function bulkExtraRawRowHtml(dyehouse = '') {
   return `<tr data-bulk-extra-raw-row>
     <td><input data-bulk-extra-raw-label value="خام إضافي" placeholder="البيان"></td>
     <td><input data-bulk-extra-raw-dyehouse value="${escapeHtml(dyehouse || '')}" placeholder="المصبغة"></td>
+    <td><input data-bulk-row-note-number placeholder="رقم إذن المصبغة"></td>
     <td>كل العروض</td>
     <td>-</td>
     <td><div class="inline-control-row"><input type="number" step="0.01" data-bulk-extra-raw-quantity placeholder="0"><button type="button" class="mini-btn danger" data-remove-bulk-extra-raw>حذف</button></div></td>
@@ -6273,14 +6274,14 @@ function openBulkBatchDialog(source) {
     <div class="subsection-head"><div><h2>${title}</h2><p class="muted">${config.description}</p></div></div>
     <div class="summary-grid">
       <label><span>التاريخ</span><input type="date" data-bulk-date value="${escapeHtml(date)}"></label>
-      <div class="full-row" data-bulk-note-list>
+      <div class="full-row ${movement === 'rawOut' ? 'field-hidden' : ''}" data-bulk-note-list>
         <div class="subsection-head compact-head"><h3>أرقام الأذون</h3><button type="button" class="mini-btn" data-add-bulk-note-number>+ إذن</button></div>
         ${bulkNoteNumberFieldHtml(noteNumber)}
       </div>
       <label class="full-row"><span>ملاحظات</span><input data-bulk-notes value="${escapeHtml(notes)}"></label>
     </div>
     <div class="subsection-head"><h3>القماش</h3>${movement === 'rawOut' ? '<button type="button" class="mini-btn" data-add-bulk-extra-raw>+ إضافة خام</button>' : ''}</div>
-    <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th><th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
+    <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th>${movement === 'rawOut' ? '<th>رقم الإذن المرتبط</th>' : ''}<th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
       ${combinedMovementClothRows(order, movement)}
       ${movement === 'rawOut' ? `<tr data-bulk-extra-raw-anchor></tr>${bulkExtraRawRowHtml(defaultDyehouse)}` : ''}
     </tbody></table>
@@ -6310,7 +6311,10 @@ function bulkBatchItemsFromDialog() {
     if (!quantity) return null;
     const allocationId = row.dataset.bulkAllocation;
     const allocation = allocations.find((item)=>item.id === allocationId) || {};
-    if (movement === 'rawOut') return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber, notes, dyehouse:row.dataset.bulkDyehouse || allocation.dyehouse || '' }) };
+    if (movement === 'rawOut') {
+      const rowNoteNumber = row.querySelector('[data-bulk-row-note-number]')?.value.trim() || noteNumber;
+      return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber:rowNoteNumber, notes, dyehouse:row.dataset.bulkDyehouse || allocation.dyehouse || '' }) };
+    }
     if (movement === 'finished') return { type:'finished', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     if (movement === 'customer') return { type:'customer', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes }) };
     return null;
@@ -6320,7 +6324,8 @@ function bulkBatchItemsFromDialog() {
     if (!quantity || movement !== 'rawOut') return null;
     const dyehouse = row.querySelector('[data-bulk-extra-raw-dyehouse]')?.value.trim() || '';
     const label = row.querySelector('[data-bulk-extra-raw-label]')?.value.trim() || 'خام إضافي';
-    return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber, notes:[notes, label].filter(Boolean).join(' - '), dyehouse }) };
+    const rowNoteNumber = row.querySelector('[data-bulk-row-note-number]')?.value.trim() || noteNumber;
+    return { type:'dyehouse', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId:'', date, quantity, noteNumber:rowNoteNumber, notes:[notes, label].filter(Boolean).join(' - '), dyehouse }) };
   }).filter(Boolean);
   const accessoryItems = accessoryRows.map((row) => {
     const quantity = Number(row.querySelector('[data-bulk-accessory-quantity]')?.value || 0);
@@ -6336,6 +6341,16 @@ function bulkBatchItemsFromDialog() {
 }
 
 async function saveBulkBatchesFromDialog() {
+  const sheet = refs.documentBody.querySelector('.bulk-entry-sheet');
+  if (sheet?.dataset.bulkMovement === 'rawOut') {
+    const quantityRows = [...refs.documentBody.querySelectorAll('[data-bulk-cloth-quantity], [data-bulk-extra-raw-quantity]')]
+      .map((input)=>input.closest('tr'))
+      .filter((row)=>row && Number(row.querySelector('[data-bulk-cloth-quantity], [data-bulk-extra-raw-quantity]')?.value || 0) > 0);
+    const missingDyehouse = quantityRows.find((row)=>!(row.dataset.bulkDyehouse || row.querySelector('[data-bulk-extra-raw-dyehouse]')?.value || '').trim());
+    if (missingDyehouse) { alert('حدد المصبغة للكمية المصروفة.'); missingDyehouse.querySelector('[data-bulk-extra-raw-dyehouse]')?.focus(); return; }
+    const missingPermit = quantityRows.find((row)=>!row.querySelector('[data-bulk-row-note-number]')?.value.trim());
+    if (missingPermit) { alert('اكتب رقم الإذن بجوار المصبغة حتى يتم ربط الكمية بها بدقة.'); missingPermit.querySelector('[data-bulk-row-note-number]')?.focus(); return; }
+  }
   const items = bulkBatchItemsFromDialog();
   if (!items.length) { alert('اكتب كمية على لون واحد على الأقل.'); return; }
   if (!(await ensureBackendForWrite('تعذر الاتصال بقاعدة البيانات. لم يتم حفظ الإدخال الجماعي.'))) return;
