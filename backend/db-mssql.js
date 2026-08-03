@@ -24,6 +24,7 @@ const DB_PATH = process.env.MSSQL_DATABASE || process.env.SQLSERVER_DATABASE || 
 const SCHEMA_PATH = path.join(__dirname, 'schema.mssql.sql');
 
 const REQUIRED_COLUMNS = {
+  customers: ['customer_code'],
   orders: [
     'product_code',
     'width_mode',
@@ -166,6 +167,7 @@ async function assertSchemaReady() {
 }
 
 async function runMigrations() {
+  await addColumnIfMissing('customers', 'customer_code TEXT');
   await addColumnIfMissing('pricings', 'pricing_items_json TEXT');
   for (const definition of [
     'product_code TEXT',

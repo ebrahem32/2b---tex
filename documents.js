@@ -58,7 +58,11 @@
       return 'allocation';
     };
     const isRawTransfer = (transfer, order = null) => transferKind(transfer, order) === 'raw';
-    const customerName = (order) => clean(order?.customer || order?.customerName || order?.clientName || '');
+    const customerName = (order) => {
+      const name = clean(order?.customer || order?.customerName || order?.clientName || '');
+      const code = clean(order?.customerCode || order?.customer_code || '');
+      return code ? `${name} (${code})` : name;
+    };
     const fallbackAccessoryName = (line, order) => clean(line?.type || order?.accessoryType || 'إكسسوار');
     const resolvedAccessoryName = (line, order) => (
       typeof accessoryLineName === 'function' ? accessoryLineName(line, order) : fallbackAccessoryName(line, order)

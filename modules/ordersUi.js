@@ -79,7 +79,7 @@ function orderRowHtml(order) {
   const waitingText = stage.startDate ? `${stage.startDate} / ${stage.days} يوم` : '-';
   return `<tr class="order-result-row" data-order-row="${order.id}">
       <td data-label="رقم الطلب"><strong class="order-number-cell">${escapeHtml(order.orderNumber || '-')}</strong></td>
-      <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
+      <td data-label="العميل">${escapeHtml(order.customerCode ? `${order.customer || '-'} (${order.customerCode})` : (order.customer || '-'))}</td>
       <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
       <td data-label="الأرصدة">
         <div class="order-balance-stack" aria-label="أرصدة الطلب">

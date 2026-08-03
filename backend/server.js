@@ -29,7 +29,7 @@ app.use((req, _res, next) => {
 });
 
 const TABLE_FIELDS = {
-  customers: ['id','name','phone','a5_customer_id','notes','created_at','updated_at'],
+  customers: ['id','customer_code','name','phone','a5_customer_id','notes','created_at','updated_at'],
   pricings: ['id','pricing_number','customer_id','pricing_date','fabric_type','material_type','dyehouse','color_class','quantity','inch_width','finished_weight','raw_cost','dye_cost','waste_percent','extra_cost','profit_per_kg','unit_price','total_price','pricing_items_json','payment_terms','notes','status','created_at','updated_at'],
   orders: ['id','order_number','pricing_id','customer_id','order_date','product_code','fabric_type','total_raw_quantity','expected_waste_percent','width_mode','width_lines_json','inch_width','kilo_price','raw_cost','payment_terms','accessory_type','accessory_percent','accessory_lines_json','dyehouse','weaving_source','notes','operation_notes_json','status','is_closed','created_at','updated_at'],
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','width_line_id','raw_inch','raw_width','finished_width','finished_weight','accessory_quantity_manual','notes','created_at','updated_at'],
@@ -91,6 +91,22 @@ function readableCustomerNameFromId(customerId) {
   return body.replace(/-+/g, ' ').trim();
 }
 
+async function nextCustomerCode() {
+  const rows = await all('SELECT customer_code FROM customers');
+  const highest = rows.reduce((max, row) => {
+    const match = String(row.customer_code || '').trim().match(/^CUST-(\d+)$/i);
+    return match ? Math.max(max, Number(match[1] || 0)) : max;
+  }, 0);
+  return `CUST-${String(highest + 1).padStart(4, '0')}`;
+}
+
+async function ensureCustomerCodes() {
+  const rows = await all("SELECT id FROM customers WHERE customer_code IS NULL OR TRIM(customer_code) = '' ORDER BY created_at, name, id");
+  for (const row of rows) {
+    await run('UPDATE customers SET customer_code = ?, updated_at = ? WHERE id = ?', [await nextCustomerCode(), now(), row.id]);
+  }
+}
+
 async function repairMissingCustomersFromReferences() {
   const refs = await all(`
     SELECT DISTINCT ref.customer_id
@@ -118,7 +134,10 @@ async function ensureCustomerReference(customerId, name, notes = 'مضاف من 
   const cleanName = String(name || '').trim() || readableCustomerNameFromId(cleanId);
   if (!cleanId || !cleanName) return null;
   const byName = await get('SELECT * FROM customers WHERE name = ?', [cleanName]);
-  if (byName && byName.id !== cleanId) return byName;
+  if (byName && byName.id !== cleanId) {
+    if (!byName.customer_code) { await run('UPDATE customers SET customer_code = ?, updated_at = ? WHERE id = ?', [await nextCustomerCode(), now(), byName.id]); return get('SELECT * FROM customers WHERE id = ?', [byName.id]); }
+    return byName;
+  }
   const byId = await get('SELECT * FROM customers WHERE id = ?', [cleanId]);
   if (byId) {
     if (byId.name !== cleanName) {
@@ -128,11 +147,12 @@ async function ensureCustomerReference(customerId, name, notes = 'مضاف من 
       await auditMutation('update', 'customers', cleanId, before, after, 'customer reference repair');
       return after;
     }
+    if (!byId.customer_code) { await run('UPDATE customers SET customer_code = ?, updated_at = ? WHERE id = ?', [await nextCustomerCode(), now(), cleanId]); return get('SELECT * FROM customers WHERE id = ?', [cleanId]); }
     return byId;
   }
   if (byName) return byName;
   const stamp = now();
-  await run('INSERT INTO customers (id, name, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [cleanId, cleanName, notes, stamp, stamp]);
+  await run('INSERT INTO customers (id, customer_code, name, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [cleanId, await nextCustomerCode(), cleanName, notes, stamp, stamp]);
   return get('SELECT * FROM customers WHERE id = ?', [cleanId]);
 }
 
@@ -490,7 +510,8 @@ function crudRoutes(base, table) {
   app.post(`/api/${base}`, requireRole('manager'), asyncHandler(async (req, res) => {
     if (table === 'customers' && req.body?.id) {
       const customer = await ensureCustomerReference(req.body.id, req.body.name, req.body.notes || 'مضاف من الواجهة');
-      return res.status(200).json(customer);
+      if (customer && req.body.phone !== undefined) await run('UPDATE customers SET phone = ?, updated_at = ? WHERE id = ?', [String(req.body.phone || '').trim(), now(), customer.id]);
+      return res.status(200).json(await get('SELECT * FROM customers WHERE id = ?', [customer.id]));
     }
     const existing = await existingUniqueBusinessRow(table, req.body || {});
     if (existing) {
@@ -1151,6 +1172,7 @@ app.post('/api/batches/:type', requireRole('manager'), asyncHandler(async (req, 
 
 app.get('/api/bootstrap', asyncHandler(async (_req, res) => {
   await repairMissingCustomersFromReferences();
+  await ensureCustomerCodes();
   const systemSettingsRows = await all('SELECT key, value_json FROM system_settings ORDER BY key');
   const systemSettings = {};
   for (const row of systemSettingsRows) {
@@ -1713,6 +1735,8 @@ app.use((error, _req, res, _next) => {
 
 initDb().then(async () => {
   await ensureDefaultAdminUser();
+  await repairMissingCustomersFromReferences();
+  await ensureCustomerCodes();
   await ensureDailyBackup();
   app.listen(PORT, HOST, () => {
     console.log(`2B Tex Backend: http://localhost:${PORT}/api/health`);

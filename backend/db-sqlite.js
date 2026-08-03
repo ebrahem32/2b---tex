@@ -88,6 +88,7 @@ function assertSchemaReady() {
 }
 
 function runMigrations() {
+  addColumnIfMissing('customers', 'customer_code TEXT');
   addColumnIfMissing('pricings', 'pricing_items_json TEXT');
   [
     'product_code TEXT',

@@ -569,6 +569,7 @@ function checkDetailedReportUsesDispatchDyehouse() {
 
 function checkDyeingOrderPickerUsesDispatchDyehouses() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
   assert(appSource.includes('const dispatchDyehouses = rawBatches'), 'dyeing picker: permit dyehouses must be included in the available choices');
   assert(appSource.includes('data-bulk-row-note-number'), 'bulk dyehouse issue: permit number must be entered beside its dyehouse row');
   assert(appSource.includes('noteNumber:rowNoteNumber'), 'bulk dyehouse issue: each saved dispatch must use its own dyehouse permit number');
@@ -578,6 +579,9 @@ function checkDyeingOrderPickerUsesDispatchDyehouses() {
   assert(appSource.includes('function openAllocationTableDialog(order)'), 'color allocation: add-color action must open the table dialog');
   assert(appSource.includes('Array.from({ length:6 }'), 'color allocation: table must start with six entry rows');
   assert(appSource.includes('data-add-allocation-entry'), 'color allocation: table must allow adding another color row');
+  assert(appSource.includes('function customerOrderLabel(order)'), 'customers: orders must display the fixed customer code beside the customer name');
+  assert(appSource.includes('customerCode: customerLookupCode(customers, row.customer_id)'), 'customers: every loaded order must inherit its customer code');
+  assert(documentsSource.includes('order?.customerCode || order?.customer_code'), 'customers: operational documents must display the customer code');
 }
 
 function checkDetailedReportRejectsForeignDyehouseTransfers() {

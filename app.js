@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.03.02';
+const APP_VERSION = 'v2026.08.03.03';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -503,6 +503,7 @@ async function logoutCurrentUser() {
 
 const dbDate = (row) => row.batch_date || row.transfer_date || row.order_date || row.pricing_date || row.created_at || '';
 const customerLookupName = (customers, id) => customers.find((item)=>item.id===id)?.name || '';
+const customerLookupCode = (customers, id) => customers.find((item)=>item.id===id)?.customer_code || '';
 function customerNameFromId(id) {
   const raw = String(id || '').trim();
   if (!raw.startsWith('customer-')) return '';
@@ -546,6 +547,7 @@ function mapDbOrder(row, customers) {
     orderNumber: row.order_number || '',
     pricingId: row.pricing_id || '',
     customer: customerLookupName(customers, row.customer_id) || row.customer || customerNameFromId(row.customer_id),
+    customerCode: customerLookupCode(customers, row.customer_id),
     orderDate: row.order_date || '',
     productCode: row.product_code || buildItemCode(row.order_number),
     fabricType: row.fabric_type || '',
@@ -644,6 +646,7 @@ function mapDbPricing(row, customers) {
     id: row.id,
     pricingNumber: row.pricing_number || '',
     customer: customerLookupName(customers, row.customer_id) || row.customer || customerNameFromId(row.customer_id),
+    customerCode: customerLookupCode(customers, row.customer_id),
     pricingDate: row.pricing_date || '',
     fabricType: row.fabric_type || '',
     materialType: row.material_type || '',
@@ -740,6 +743,7 @@ async function loadBackendData(options = {}) {
     const customers = data.customers || [];
     backendCustomers = customers.map((customer)=>({
       id: customer.id || backendCustomerId(customer.name),
+      customerCode: customer.customer_code || customer.customerCode || '',
       name: cleanCustomerDisplayName(customer.name || customer.customerName || ''),
       phone: customer.phone || '',
       a5CustomerId: customer.a5_customer_id || customer.a5CustomerId || '',
@@ -958,7 +962,7 @@ async function ensureBackendCustomer(name) {
   if (saved?.id) {
     backendCustomers = [
       ...customerMasterRows().filter((customer)=>customer.id !== saved.id),
-      { id:saved.id, name:saved.name || cleanName, phone:saved.phone || '', a5CustomerId:saved.a5_customer_id || '', notes:saved.notes || '' },
+      { id:saved.id, customerCode:saved.customer_code || '', name:saved.name || cleanName, phone:saved.phone || '', a5CustomerId:saved.a5_customer_id || '', notes:saved.notes || '' },
     ];
   }
   return saved?.id || id;
@@ -1242,6 +1246,14 @@ function findCustomerMasterByName(name) {
   const wanted = normalizeCustomerMasterName(name);
   if (!wanted) return null;
   return customerMasterRows().find((customer)=>normalizeCustomerMasterName(customer.name) === wanted) || null;
+}
+function customerCodeForName(name) {
+  return findCustomerMasterByName(name)?.customerCode || '';
+}
+function customerOrderLabel(order) {
+  const name = cleanCustomerDisplayName(order?.customer || order?.customerName || '') || '-';
+  const code = String(order?.customerCode || customerCodeForName(name) || '').trim();
+  return code ? `${name} (${code})` : name;
 }
 function canonicalCustomerName(name) {
   const cleanName = cleanCustomerDisplayName(name);
@@ -1995,18 +2007,20 @@ function customerMasterTableRows() {
   return rows.map((customer)=>{
     const deleteAction = canDeleteRecords?.() ? `<button class="mini-btn danger" type="button" data-delete-customer-master="${escapeHtml(customer.id)}">حذف</button>` : '';
     return `<tr>
+    <td>${escapeHtml(customer.customerCode || '-')}</td>
     <td>${escapeHtml(customer.name)}</td>
     <td>${escapeHtml(customer.phone || '-')}</td>
     <td>${escapeHtml(customer.notes || '-')}</td>
     <td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-edit-customer-master="${escapeHtml(customer.id)}">تعديل</button><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(customer.name)}">كشف الحساب</button>${deleteAction}</div></td>
   </tr>`;
-  }).join('') || '<tr><td colspan="4">لا توجد بيانات عملاء مسجلة.</td></tr>';
+  }).join('') || '<tr><td colspan="5">لا توجد بيانات عملاء مسجلة.</td></tr>';
 }
 function customerMasterSectionHtml() {
   return `<section class="report-section no-print">
     <h3>بيانات العملاء</h3>
     <div class="summary-grid">
       <input type="hidden" data-customer-master-id>
+      <input data-customer-master-code placeholder="كود العميل (تلقائي)" readonly>
       <input data-customer-master-name placeholder="اسم العميل الرسمي">
       <input data-customer-master-phone placeholder="رقم الهاتف">
       <input data-customer-master-notes placeholder="ملاحظات">
@@ -2014,12 +2028,13 @@ function customerMasterSectionHtml() {
       <button class="mini-btn" type="button" data-clear-customer-master>عميل جديد</button>
     </div>
     <p class="muted">النظام يطابق أسماء العملاء بعد توحيد الهمزات والمسافات، لذلك أمل/امل/إمل تعتبر نفس العميل.</p>
-    <table class="customer-ledger-table"><thead><tr><th>العميل</th><th>الهاتف</th><th>ملاحظات</th><th class="no-print">إجراء</th></tr></thead><tbody>${customerMasterTableRows()}</tbody></table>
+    <table class="customer-ledger-table"><thead><tr><th>كود العميل</th><th>العميل</th><th>الهاتف</th><th>ملاحظات</th><th class="no-print">إجراء</th></tr></thead><tbody>${customerMasterTableRows()}</tbody></table>
   </section>`;
 }
 function customerMasterFormRefs() {
   return {
     id: refs.documentBody.querySelector('[data-customer-master-id]'),
+    code: refs.documentBody.querySelector('[data-customer-master-code]'),
     name: refs.documentBody.querySelector('[data-customer-master-name]'),
     phone: refs.documentBody.querySelector('[data-customer-master-phone]'),
     notes: refs.documentBody.querySelector('[data-customer-master-notes]'),
@@ -2028,6 +2043,7 @@ function customerMasterFormRefs() {
 function clearCustomerMasterForm() {
   const formRefs = customerMasterFormRefs();
   if (formRefs.id) formRefs.id.value = '';
+  if (formRefs.code) formRefs.code.value = 'يُنشأ تلقائيًا عند الحفظ';
   if (formRefs.name) formRefs.name.value = '';
   if (formRefs.phone) formRefs.phone.value = '';
   if (formRefs.notes) formRefs.notes.value = '';
@@ -2038,6 +2054,7 @@ function fillCustomerMasterForm(customerId) {
   if (!customer) return;
   const formRefs = customerMasterFormRefs();
   if (formRefs.id) formRefs.id.value = customer.id || '';
+  if (formRefs.code) formRefs.code.value = customer.customerCode || '';
   if (formRefs.name) formRefs.name.value = customer.name || '';
   if (formRefs.phone) formRefs.phone.value = customer.phone || '';
   if (formRefs.notes) formRefs.notes.value = customer.notes || '';
@@ -4689,7 +4706,7 @@ function orderSearchText(order) {
     `رقم اذن ${note}`,
     `رقم إذن ${note}`,
   ]);
-  return normalizeDigits([order.orderNumber, order.customer, order.dyehouse, order.weavingSource, order.fabricType, order.productCode, ...noteAliases].filter(Boolean).join(' ').toLowerCase());
+  return normalizeDigits([order.orderNumber, order.customer, order.customerCode, order.dyehouse, order.weavingSource, order.fabricType, order.productCode, ...noteAliases].filter(Boolean).join(' ').toLowerCase());
 }
 function orderMatchesStageFilter(order, stageKey, stage = orderStageInfo(order)) {
   const warehouseBalance = Number(order.warehouseBalance || 0);
@@ -5148,7 +5165,7 @@ function renderOperationFollowPanel() {
   body.innerHTML = rows.length ? rows.map(({ order, stage }) => `
     <tr>
       <td data-label="رقم الطلب">${escapeHtml(order.orderNumber || '-')}</td>
-      <td data-label="العميل">${escapeHtml(order.customer || '-')}</td>
+      <td data-label="العميل">${escapeHtml(customerOrderLabel(order))}</td>
       <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
       <td data-label="المرحلة"><span class="status in-progress">${escapeHtml(operationStagePlace(order, stage))}</span></td>
       <td data-label="واقف من">${escapeHtml(stage.startDate || '-')}</td>
@@ -5647,7 +5664,7 @@ function order360Html(order) {
   const deliveredPercent = progressBase ? Math.min(Number(order.totalDeliveredToCustomer || 0) / progressBase * 100, 100) : 0;
   return `<section class="order-360">
     <div class="order-360-head">
-      <div><p class="eyebrow">Order 360</p><h2>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(order.customer || '-')}</h2><p>${escapeHtml(order.fabricType || '-')} / ${escapeHtml(order.dyehouse || '-')} / ${escapeHtml(order.weavingSource || '-')}</p></div>
+      <div><p class="eyebrow">Order 360</p><h2>${escapeHtml(order.orderNumber || '-')} - ${escapeHtml(customerOrderLabel(order))}</h2><p>${escapeHtml(order.fabricType || '-')} / ${escapeHtml(order.dyehouse || '-')} / ${escapeHtml(order.weavingSource || '-')}</p></div>
       <div class="order-360-stage"><span>${escapeHtml(stage.label)}</span><strong>${Number(stage.days || 0).toLocaleString('en-US')} يوم</strong></div>
     </div>
     <div class="order-360-flow">${steps.map((step)=>`<article class="${order360StageClass(step.done, step.active)}"><span>${escapeHtml(step.label)}</span><strong>${escapeHtml(step.value)}</strong><small>${escapeHtml(step.sub)}</small></article>`).join('')}</div>

@@ -1,6 +1,7 @@
 IF OBJECT_ID('dbo.customers', 'U') IS NULL
 CREATE TABLE dbo.customers (
   id NVARCHAR(120) NOT NULL PRIMARY KEY,
+  customer_code NVARCHAR(40) NULL,
   name NVARCHAR(255) NOT NULL UNIQUE,
   phone NVARCHAR(100) NULL,
   a5_customer_id NVARCHAR(120) NULL,

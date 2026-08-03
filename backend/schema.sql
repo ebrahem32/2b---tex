@@ -2,6 +2,7 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS customers (
   id TEXT PRIMARY KEY,
+  customer_code TEXT,
   name TEXT NOT NULL UNIQUE,
   phone TEXT,
   a5_customer_id TEXT,
