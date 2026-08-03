@@ -467,6 +467,9 @@
 .pricing-accessory-summary{display:grid;gap:6px;color:var(--muted);font-size:12px}
 .pricing-accessory-summary-line{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.025)}
 .pricing-accessory-summary-line strong,.pricing-accessory-summary-line b{color:var(--accent2)}
+.pricing-accessory-sale-field{grid-column:1/-1;display:grid;grid-template-columns:minmax(130px,.35fr) 1fr;gap:8px;align-items:center;padding:7px 9px;border:1px solid rgba(200,165,106,.4);border-radius:10px;background:rgba(200,165,106,.08)}
+.pricing-accessory-sale-field>span{color:var(--accent2);font-weight:700}
+.pricing-accessory-sale-field input[readonly]{font-weight:800;color:var(--accent2);background:rgba(7,21,39,.72)}
 .pricing-formula-preview{margin-top:10px;padding:10px 12px;border:1px solid rgba(200,165,106,.22);border-radius:12px;background:rgba(200,165,106,.06);color:var(--muted);font-size:13px;line-height:1.7}
 .pricing-formula-preview strong{color:var(--accent2)}
 .grouped-order-head{color:var(--muted);font-size:12px;margin-bottom:8px}
