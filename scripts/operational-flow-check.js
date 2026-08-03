@@ -575,6 +575,9 @@ function checkDyeingOrderPickerUsesDispatchDyehouses() {
   assert(appSource.includes("اكتب رقم الإذن بجوار المصبغة"), 'bulk dyehouse issue: dispatch quantity must require its linked permit number');
   assert(appSource.includes('function rawDispatchQuantityForDyehouse(order, dyehouseName)'), 'dyeing picker: each choice must calculate its permit quantity separately');
   assert(appSource.includes('const quantity = dispatchedQuantity || rows.reduce'), 'dyeing picker: permit quantity must be shown even before colors are assigned');
+  assert(appSource.includes('function openAllocationTableDialog(order)'), 'color allocation: add-color action must open the table dialog');
+  assert(appSource.includes('Array.from({ length:6 }'), 'color allocation: table must start with six entry rows');
+  assert(appSource.includes('data-add-allocation-entry'), 'color allocation: table must allow adding another color row');
 }
 
 function checkDetailedReportRejectsForeignDyehouseTransfers() {

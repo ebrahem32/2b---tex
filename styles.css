@@ -733,6 +733,14 @@
 .transfer-choice-card{position:relative;min-width:min(92vw,520px);padding:22px;display:grid;gap:14px}
 .transfer-choice-card h3{margin:0;color:var(--accent2);font-size:24px}
 .transfer-choice-card p{margin:0;color:var(--muted);line-height:1.8}
+.allocation-entry-dialog{width:min(1180px,calc(100vw - 32px));max-width:none}
+.allocation-entry-card{width:100%;min-width:0}
+.allocation-entry-table-wrap{max-height:min(62vh,650px);overflow:auto;border:1px solid var(--line);border-radius:14px}
+.allocation-entry-table{min-width:900px;background:rgba(255,255,255,.015)}
+.allocation-entry-table th{position:sticky;top:0;background:var(--panel);z-index:1}
+.allocation-entry-table th,.allocation-entry-table td{padding:8px}
+.allocation-entry-table input{min-width:120px;padding:10px}
+.allocation-entry-actions{justify-content:space-between}
 .transfer-choice-close{position:absolute;top:12px;left:12px}
 .transfer-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .operation-notes-label{color:var(--muted);font-weight:700}

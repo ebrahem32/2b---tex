@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.03.01';
+const APP_VERSION = 'v2026.08.03.02';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -6370,25 +6370,82 @@ async function saveBulkBatchesFromDialog() {
   refs.documentDialog.close();
   await loadBackendData();
 }
+function allocationEntryRowHtml(order, defaults = {}) {
+  const multipleWidths = order.widthMode === 'multiple';
+  return `<tr data-allocation-entry-row>
+    <td><input data-allocation-color placeholder="اسم اللون"></td>
+    <td><input data-allocation-pantone placeholder="رقم البانتون (اختياري)"></td>
+    ${multipleWidths ? '' : '<td><input type="number" step="0.01" min="0" data-allocation-quantity placeholder="الكمية"></td>'}
+    <td><input data-allocation-dyehouse value="${escapeHtml(defaults.dyehouse || '')}" placeholder="المصبغة"></td>
+    ${multipleWidths ? '' : `<td><input type="number" step="0.01" min="0" data-allocation-width value="${escapeHtml(defaults.targetFinishedWidth || '')}" placeholder="العرض"></td>`}
+    <td><input type="number" step="0.01" min="0" data-allocation-weight value="${escapeHtml(defaults.targetFinishedWeight || '')}" placeholder="الوزن المجهز"></td>
+    <td><button type="button" class="mini-btn danger" data-remove-allocation-entry>حذف</button></td>
+  </tr>`;
+}
+
+function openAllocationTableDialog(order) {
+  const existing = order.allocations?.[0] || {};
+  const defaults = {
+    dyehouse: order.dyehouse || existing.dyehouse || '',
+    targetFinishedWidth: existing.targetFinishedWidth || '',
+    targetFinishedWeight: existing.targetFinishedWeight || '',
+  };
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'transfer-choice-dialog allocation-entry-dialog';
+    const multipleWidths = order.widthMode === 'multiple';
+    dialog.innerHTML = `<form method="dialog" class="transfer-choice-card allocation-entry-card" dir="rtl">
+      <div class="subsection-head"><div><h3>إضافة الألوان</h3><p>اكتب الألوان المطلوبة واترك الصفوف غير المستخدمة فارغة.</p></div><button type="button" class="mini-btn" data-close-allocation-table>إغلاق</button></div>
+      ${multipleWidths ? '<div class="warning">سيتم تطبيق كل لون على توزيع العروض المسجل في الطلب.</div>' : ''}
+      <div class="allocation-entry-table-wrap"><table class="allocation-entry-table"><thead><tr><th>اللون</th><th>رقم البانتون</th>${multipleWidths ? '' : '<th>الكمية</th>'}<th>المصبغة</th>${multipleWidths ? '' : '<th>العرض</th>'}<th>الوزن المجهز</th><th></th></tr></thead><tbody data-allocation-entry-list>${Array.from({ length:6 }, ()=>allocationEntryRowHtml(order, defaults)).join('')}</tbody></table></div>
+      <div class="dialog-actions allocation-entry-actions"><button type="button" class="mini-btn" data-add-allocation-entry>+ إضافة لون</button><button type="button" class="primary-btn" data-save-allocation-table>حفظ الألوان</button></div>
+    </form>`;
+    const finish = (value) => { if (dialog.open) dialog.close(); dialog.remove(); resolve(value); };
+    dialog.addEventListener('click', (event) => {
+      if (event.target.closest('[data-close-allocation-table]')) { finish(null); return; }
+      if (event.target.closest('[data-add-allocation-entry]')) {
+        dialog.querySelector('[data-allocation-entry-list]')?.insertAdjacentHTML('beforeend', allocationEntryRowHtml(order, defaults));
+        dialog.querySelector('[data-allocation-entry-list] tr:last-child [data-allocation-color]')?.focus();
+        return;
+      }
+      const removeButton = event.target.closest('[data-remove-allocation-entry]');
+      if (removeButton) { removeButton.closest('tr')?.remove(); return; }
+      if (!event.target.closest('[data-save-allocation-table]')) return;
+      const rows = [...dialog.querySelectorAll('[data-allocation-entry-row]')].map((row) => ({
+        color: row.querySelector('[data-allocation-color]')?.value.trim() || '',
+        pantoneCode: row.querySelector('[data-allocation-pantone]')?.value.trim() || '',
+        plannedQuantity: Number(row.querySelector('[data-allocation-quantity]')?.value || 0),
+        dyehouse: row.querySelector('[data-allocation-dyehouse]')?.value.trim() || '',
+        targetFinishedWidth: Number(row.querySelector('[data-allocation-width]')?.value || 0),
+        targetFinishedWeight: Number(row.querySelector('[data-allocation-weight]')?.value || 0),
+      })).filter((row)=>row.color);
+      if (!rows.length) { alert('اكتب لونًا واحدًا على الأقل.'); return; }
+      const incomplete = rows.find((row)=>!row.dyehouse || !row.targetFinishedWeight || (!multipleWidths && (!row.plannedQuantity || !row.targetFinishedWidth)));
+      if (incomplete) { alert(multipleWidths ? 'أكمل المصبغة والوزن المجهز لكل لون.' : 'أكمل الكمية والمصبغة والعرض والوزن المجهز لكل لون.'); return; }
+      finish(rows);
+    });
+    dialog.addEventListener('cancel', (event) => { event.preventDefault(); finish(null); });
+    document.body.appendChild(dialog);
+    dialog.showModal();
+    dialog.querySelector('[data-allocation-color]')?.focus();
+  });
+}
+
 async function addAllocation() {
   const order = calculateOrder(orders.find((item)=>item.id===selectedOrderId));
-  const color = await window.TwoBTexInput.prompt('اكتب اللون المطلوب'); if (!color) return;
-  const pantoneValue = await window.TwoBTexInput.prompt('اكتب رقم البانتون (اختياري)', ''); if (pantoneValue === null) return;
-  const pantoneCode = String(pantoneValue || '').trim();
+  if (!order) return;
+  const rows = await openAllocationTableDialog(order);
+  if (!rows?.length) return;
   const createdAllocations = [];
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
-  if (order.widthMode === 'multiple') {
-    const targetFinishedWeight = Number(await window.TwoBTexInput.prompt('اكتب الوزن المجهز المطلوب')); if (!targetFinishedWeight) return;
-    order.widthLines.forEach((widthLine) => { const allocation = { id:uid(), orderId:order.id, color, pantoneCode, plannedQuantity:widthLine.quantity, dyehouse:order.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }; createdAllocations.push(allocation); });
-  } else {
-    const plannedQuantity = Number(await window.TwoBTexInput.prompt('اكتب كمية اللون')); if (!plannedQuantity) return;
-    const existing = order.allocations[0];
-    const targetFinishedWidth = existing?.targetFinishedWidth || Number(await window.TwoBTexInput.prompt('اكتب العرض')); if (!targetFinishedWidth) return;
-    const targetFinishedWeight = existing?.targetFinishedWeight || Number(await window.TwoBTexInput.prompt('اكتب الوزن المجهز')); if (!targetFinishedWeight) return;
-    const allocation = { id:uid(), orderId:order.id, color, pantoneCode, plannedQuantity, dyehouse:order.dyehouse, targetFinishedWidth, targetFinishedWeight };
-    createdAllocations.push(allocation);
-  }
+  rows.forEach((row) => {
+    if (order.widthMode === 'multiple') {
+      order.widthLines.forEach((widthLine) => { createdAllocations.push({ id:uid(), orderId:order.id, color:row.color, pantoneCode:row.pantoneCode, plannedQuantity:widthLine.quantity, dyehouse:row.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight:row.targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }); });
+      return;
+    }
+    createdAllocations.push({ id:uid(), orderId:order.id, color:row.color, pantoneCode:row.pantoneCode, plannedQuantity:row.plannedQuantity, dyehouse:row.dyehouse, targetFinishedWidth:row.targetFinishedWidth, targetFinishedWeight:row.targetFinishedWeight });
+  });
   const savedAllocations = [];
   for (const allocation of createdAllocations) savedAllocations.push(await postBackend(`/orders/${order.id}/allocations`, allocationToApi(allocation)));
   if (backendSaveRequired && savedAllocations.some((item)=>!item)) {
