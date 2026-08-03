@@ -582,8 +582,6 @@ function checkDyeingOrderPickerUsesDispatchDyehouses() {
   assert(appSource.includes('function customerOrderLabel(order)'), 'customers: orders must display the fixed customer code beside the customer name');
   assert(appSource.includes('customerCode: customerLookupCode(customers, row.customer_id)'), 'customers: every loaded order must inherit its customer code');
   assert(documentsSource.includes('order?.customerCode || order?.customer_code'), 'customers: operational documents must display the customer code');
-  assert(appSource.includes('data-pricing-accessory-sell-price'), 'pricing ui: accessory sale price must be displayed as a dedicated field');
-  assert(appSource.includes("sellPriceInput.value = accessoryLines[index] ? roundNumber"), 'pricing ui: accessory sale price field must refresh from the calculated accessory result');
 }
 
 function checkDetailedReportRejectsForeignDyehouseTransfers() {

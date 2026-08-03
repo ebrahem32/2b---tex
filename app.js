@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.03.04';
+const APP_VERSION = 'v2026.08.03.05';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -3363,7 +3363,6 @@ function pricingAccessoryRowHtml(line = {}, stages = []) {
     <input data-pricing-accessory-quantity type="number" step="0.01" placeholder="الكمية" value="${quantity || ''}">
     <div class="pricing-money-field"><input data-pricing-accessory-price type="number" step="0.01" placeholder="سعر الخام" value="${line.price || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
     <button class="mini-btn danger" type="button" data-remove-pricing-accessory>حذف</button>
-    <label class="pricing-accessory-sale-field"><span>سعر بيع الإكسسوار</span><div class="pricing-money-field"><input data-pricing-accessory-sell-price type="number" step="0.01" value="${line.sellPrice || line.unitPrice || ''}" readonly><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel(line.currency || pricingCurrencyValue())}</span></div></label>
     <input data-pricing-accessory-waste-percent type="number" step="0.01" placeholder="هالك %" value="${wastePercent}">
     <select data-pricing-accessory-waste-basis>
       <option value="">نفس هالك القماش</option>
@@ -3487,10 +3486,6 @@ function updatePricingStageTotals() {
     if (totalEl) totalEl.textContent = formatNumber(total);
     refreshPricingAccessoryStageOptions(row);
     const accessoryLines = pricingCalculatedAccessoriesFromRow(row);
-    row.querySelectorAll('[data-pricing-accessory-row]').forEach((accessoryRow, index)=>{
-      const sellPriceInput = accessoryRow.querySelector('[data-pricing-accessory-sell-price]');
-      if (sellPriceInput) sellPriceInput.value = accessoryLines[index] ? roundNumber(accessoryLines[index].sellPrice || accessoryLines[index].unitPrice || 0) : '';
-    });
     const accessorySummaryEl = row.querySelector('[data-pricing-accessory-summary]');
     if (accessorySummaryEl) accessorySummaryEl.innerHTML = pricingAccessorySummaryHtml(accessoryLines);
   });
