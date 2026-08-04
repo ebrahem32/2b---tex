@@ -734,12 +734,14 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
     ...baseOrder,
     totalRawOrdered: 5200,
     totalRawQuantity: 5200,
-    allocations: [{ ...baseOrder.allocations[0], plannedQuantity: 5200, color:'أسود' }],
+    allocations: [{ ...baseOrder.allocations[0], plannedQuantity: 5200, color:'أسود', pantoneCode:'18.0316' }],
     accessoryLines: [{ type: 'ديربي', percent: 195, quantityManual: 195, quantity: 195 }],
   }, 'D');
   assert(calculatedPercentHtml.includes('195'), 'document: accessory quantity must remain visible inside the color row');
   assert(!calculatedPercentHtml.includes('<h3>الإكسسوارات</h3>'), 'document: dyeing order must not duplicate accessories in a separate section');
   assert(calculatedPercentHtml.includes('document-color-swatch'), 'document: known color names must render a small color swatch');
+  assert(calculatedPercentHtml.includes('<bdi dir="ltr">'), 'document: Pantone codes must keep their entered left-to-right order inside Arabic text');
+  assert(calculatedPercentHtml.includes('18.0316'), 'document: Pantone punctuation and digits must remain exactly as entered');
 }
 
 function checkWarehouseTabKeepsInventorySection() {

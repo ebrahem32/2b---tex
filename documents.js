@@ -46,7 +46,11 @@
       return colors.find(([pattern]) => pattern.test(name))?.[1] || '';
     };
     const colorLabelWithSwatch = (line) => {
-      const label = safeText(colorWithPantone(line));
+      const color = clean(line?.color);
+      const pantone = clean(line?.pantoneCode || line?.pantone_code);
+      const label = color && pantone && color.toLocaleLowerCase('ar') !== pantone.toLocaleLowerCase('ar')
+        ? `${safeText(color)} <span class="pantone-label">— بانتون <bdi dir="ltr">${safeText(pantone)}</bdi></span>`
+        : (pantone ? `<bdi class="pantone-label" dir="ltr">${safeText(pantone)}</bdi>` : safeText(color || '-'));
       const hex = approximateColorHex(line);
       return `<span class="document-color-label">${hex ? `<i class="document-color-swatch" style="background:${hex}" title="معاينة تقريبية للون"></i>` : ''}<span>${label}</span></span>`;
     };
@@ -573,7 +577,7 @@
       const labColorContent = (line = {}) => {
         const color = clean(line.color || '');
         const pantone = clean(line.pantoneCode || line.pantone_code || '');
-        return `<div class="lab-color-info"><strong>${safeText(color || pantone || '-')}</strong>${pantone ? `<span>بانتون ${safeText(pantone)}</span>` : '<span>رقم البانتون غير مسجل</span>'}</div>`;
+        return `<div class="lab-color-info"><strong>${safeText(color || pantone || '-')}</strong>${pantone ? `<span class="pantone-label">بانتون <bdi dir="ltr">${safeText(pantone)}</bdi></span>` : '<span>رقم البانتون غير مسجل</span>'}</div>`;
       };
       const labSampleContent = (line = {}) => {
         const imageValue = clean(line.colorImage || line.color_image || line.colorImageUrl || line.color_image_url || '');
