@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.04.04';
+const APP_VERSION = 'v2026.08.04.05';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -4969,6 +4969,12 @@ function accessoryTypeMatches(batch, line, order) {
     || normalizeForCompare(batchType) === normalizeForCompare(lineName);
 }
 function accessoryPlannedQuantityForLine(order, allocation, line) {
+  const hasAllocationManual = allocation?.accessoryQuantityManual !== '' && allocation?.accessoryQuantityManual !== null && allocation?.accessoryQuantityManual !== undefined;
+  if (hasAllocationManual) {
+    const sourcePlanned = Number(allocation?.sourcePlannedQuantity || allocation?.plannedQuantity || 0);
+    const scopedRatio = sourcePlanned ? Number(allocation?.plannedQuantity || 0) / sourcePlanned : 1;
+    return roundNumber(Number(allocation.accessoryQuantityManual || 0) * scopedRatio);
+  }
   const allocations = Array.isArray(order?.allocations) ? order.allocations : [];
   const totalPlanned = allocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0) || Number(order?.totalRawQuantity || order?.totalRawOrdered || 0);
   const hasManual = line?.quantityManual !== '' && line?.quantityManual !== null && line?.quantityManual !== undefined;
