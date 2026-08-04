@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.04.02';
+const APP_VERSION = 'v2026.08.04.03';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -6511,12 +6511,13 @@ function openAllocationTableDialog(order) {
         targetFinishedWidth: Number(row.querySelector('[data-allocation-width]')?.value || 0),
         targetFinishedWeight: Number(row.querySelector('[data-allocation-weight]')?.value || 0),
         accessoryInputUnit: row.querySelector('[data-allocation-derby-value]')?.disabled ? '' : (row.querySelector('[data-allocation-derby-unit]')?.value || 'percent'),
+        accessoryInputProvided: row.querySelector('[data-allocation-derby-value]')?.disabled || row.querySelector('[data-allocation-derby-value]')?.value !== '',
         accessoryInputValue: row.querySelector('[data-allocation-derby-value]')?.disabled ? null : Number(row.querySelector('[data-allocation-derby-value]')?.value || 0),
       })).filter((row)=>row.color);
       if (!rows.length) { alert('اكتب لونًا واحدًا على الأقل.'); return; }
       const incomplete = rows.find((row)=>!row.dyehouse || !row.targetFinishedWeight || (!multipleWidths && (!row.plannedQuantity || !row.targetFinishedWidth)));
       if (incomplete) { alert(multipleWidths ? 'أكمل المصبغة والوزن المجهز لكل لون.' : 'أكمل الكمية والمصبغة والعرض والوزن المجهز لكل لون.'); return; }
-      if (hasDerby && dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color' && rows.some((row)=>!(row.accessoryInputValue > 0))) { alert('اكتب نسبة أو كمية الديربي لكل لون.'); return; }
+      if (hasDerby && dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color' && rows.some((row)=>!row.accessoryInputProvided)) { alert('اكتب نسبة أو كمية الديربي لكل لون، ويمكن كتابة 0 للون الذي لا يحتاج ديربي.'); return; }
       finish(rows);
     });
     dialog.addEventListener('cancel', (event) => { event.preventDefault(); finish(null); });

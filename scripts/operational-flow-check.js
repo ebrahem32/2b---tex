@@ -1035,6 +1035,7 @@ function checkPerColorAccessoryDistribution() {
   assertClose(frontend.accessoryLines[0].percent, 8, 'accessory: per-color derby kilos calculate the correct order percentage');
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('data-allocation-derby-unit'), 'accessory ui: per-color derby entry must accept percent or kilograms');
+  assert(appSource.includes("value !== ''"), 'accessory ui: zero derby must be accepted while a truly blank value is rejected');
   assert(appSource.includes('existingRows.map((row)=>allocationEntryRowHtml(order, row))'), 'accessory ui: color manager must preload existing colors');
 }
 
