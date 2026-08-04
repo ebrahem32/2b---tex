@@ -32,6 +32,24 @@
       if (color && pantone && color.toLocaleLowerCase('ar') !== pantone.toLocaleLowerCase('ar')) return `${color} — بانتون ${pantone}`;
       return color || pantone || '-';
     };
+    const approximateColorHex = (line) => {
+      const saved = clean(line?.colorHex || line?.color_hex);
+      if (/^#[0-9a-f]{6}$/i.test(saved)) return saved;
+      const name = clean(line?.color).toLocaleLowerCase('ar');
+      const colors = [
+        [/اسود|أسود|فاحم/, '#151515'], [/ابيض|أبيض|اوف وايت|أوف وايت/, '#f3efe2'],
+        [/رمادي/, '#777b80'], [/بيج|كشمير/, '#c6ad86'], [/بني|شوكولات/, '#5b3526'],
+        [/زيتي/, '#596334'], [/اخضر|أخضر/, '#285943'], [/بترول/, '#17666a'], [/كحلي/, '#172d46'],
+        [/ازرق|أزرق/, '#315f8b'], [/سماوي/, '#9dcbd0'], [/نبيتي/, '#661f30'], [/احمر|أحمر/, '#a8282f'],
+        [/موف/, '#76527d'], [/بينك|وردي|روز/, '#d78fa7'], [/اصفر|أصفر|مسطردة/, '#d4aa3b'],
+      ];
+      return colors.find(([pattern]) => pattern.test(name))?.[1] || '';
+    };
+    const colorLabelWithSwatch = (line) => {
+      const label = safeText(colorWithPantone(line));
+      const hex = approximateColorHex(line);
+      return `<span class="document-color-label">${hex ? `<i class="document-color-swatch" style="background:${hex}" title="معاينة تقريبية للون"></i>` : ''}<span>${label}</span></span>`;
+    };
     const transferTextLooksRaw = (value) => {
       const text = String(value || '');
       if (text.includes('[allocation-transfer]')) return false;
@@ -152,6 +170,13 @@
       return [{ type: type || resolvedAccessoryName({}, order), percent, quantity }];
     }
 
+    function accessoryPercentForOrder(line, order) {
+      const quantity = Number(line?.quantity || 0);
+      const orderTotal = Number(order?.totalRawOrdered || order?.totalRawQuantity || 0);
+      if (quantity > 0 && orderTotal > 0) return roundNumber((quantity / orderTotal) * 100);
+      return roundNumber(Number(line?.percent || 0));
+    }
+
     function reportShell(title, order, body, options = {}) {
       const subtitle = options.subtitle ? `<span>${safeText(options.subtitle)}</span>` : '';
       const info = options.skipBasicInfo ? '' : basicInfoSection(order, options);
@@ -194,7 +219,7 @@
       ].filter(Boolean);
       const body = rows.map((line) => {
         const cells = [
-          safeText(colorWithPantone(line)),
+          colorLabelWithSwatch(line),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
           flowCell(line.plannedQuantity, plannedAccessoryParts(order, line)),
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
@@ -221,7 +246,7 @@
         if (!showMovement) {
           const unitLabel = line.unit === 'piece' ? 'قطعة' : 'كجم';
           const size = line.length || line.width ? ` — مقاس ${fmt(line.length || 0)} × ${fmt(line.width || 0)} سم` : '';
-          return `<tr><td>${safeText(`${line.type}${size}`)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(line.quantity)} ${unitLabel}</td></tr>`;
+          return `<tr><td>${safeText(`${line.type}${size}`)}</td><td>${formatNumber(accessoryPercentForOrder(line, order))}%</td><td>${fmt(line.quantity)} ${unitLabel}</td></tr>`;
         }
         const allocations = orderAllocations(order);
         const required = typeof accessoryPlannedQuantityForLine === 'function'
@@ -236,7 +261,7 @@
         const delivered = typeof accessoryFlowQuantityForLine === 'function'
           ? allocations.reduce((total, allocation) => total + Number(accessoryFlowQuantityForLine(order, allocation, 'customer', line) || 0), 0)
           : Number(order?.accessoryDelivered || 0);
-        return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(line.percent || 0)}%</td><td>${fmt(required)}</td><td>${fmt(sent)}</td><td>${fmt(received)}</td><td>${fmt(delivered)}</td><td>${fmt(received - delivered)}</td></tr>`;
+        return `<tr><td>${safeText(line.type)}</td><td>${formatNumber(accessoryPercentForOrder({ ...line, quantity:required }, order))}%</td><td>${fmt(required)}</td><td>${fmt(sent)}</td><td>${fmt(received)}</td><td>${fmt(delivered)}</td><td>${fmt(received - delivered)}</td></tr>`;
       }).join('');
       return `<section class="report-section"><h3>الإكسسوارات</h3><table class="summary-table"><thead>${header}</thead><tbody>${rows}</tbody></table></section>`;
     }
@@ -566,7 +591,7 @@
       }
       const accessoryLines = orderAccessoryLines(order);
       const accessoryTotal = roundNumber(accessoryLines.reduce((total, line) => total + Number(line.quantity || 0), 0));
-      const accessoryRows = accessoryLines.map((line) => `<tr class="lab-accessory-row"><th>${safeText(line.type)}</th><td>${formatNumber(line.percent || 0)}%</td><th>الإجمالي</th><td>${fmt(line.quantity)} كجم</td></tr>`).join('');
+      const accessoryRows = accessoryLines.map((line) => `<tr class="lab-accessory-row"><th>${safeText(line.type)}</th><td>${formatNumber(accessoryPercentForOrder(line, order))}%</td><th>الإجمالي</th><td>${fmt(line.quantity)} كجم</td></tr>`).join('');
       const accessorySection = accessoryLines.length
         ? `<tr class="lab-section-title"><th colspan="4">إجماليات الإكسسوارات</th></tr><tr class="lab-sample-head"><th>نوع الإكسسوار</th><th>النسبة</th><th>البند</th><th>الكمية</th></tr>${accessoryRows}<tr class="lab-total-row"><th colspan="3">إجمالي الإكسسوارات</th><td>${fmt(accessoryTotal)} كجم</td></tr>`
         : '';

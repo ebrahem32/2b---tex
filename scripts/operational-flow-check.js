@@ -718,6 +718,15 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
   }, 'D');
   assert(withAccessoryHtml.includes('جسم'), 'document: body label must appear when order has accessories');
   assert(withAccessoryHtml.includes('ريب'), 'document: accessory type must appear when order has accessories');
+  const calculatedPercentHtml = builders.buildDyeingOrderDocument({
+    ...baseOrder,
+    totalRawOrdered: 5200,
+    totalRawQuantity: 5200,
+    allocations: [{ ...baseOrder.allocations[0], plannedQuantity: 5200, color:'أسود' }],
+    accessoryLines: [{ type: 'ديربي', percent: 195, quantityManual: 195, quantity: 195 }],
+  }, 'D');
+  assert(calculatedPercentHtml.includes('3.75%'), 'document: accessory percentage must be quantity divided by total order quantity');
+  assert(calculatedPercentHtml.includes('document-color-swatch'), 'document: known color names must render a small color swatch');
 }
 
 function checkWarehouseTabKeepsInventorySection() {

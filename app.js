@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.03.07';
+const APP_VERSION = 'v2026.08.04.01';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -5034,8 +5034,13 @@ function accessoryDocumentSection(order, fmt, safe) {
   const lines = Array.isArray(order?.accessoryLines) ? order.accessoryLines : [];
   const hasAccessory = lines.length || Number(order?.accessoryRequired || 0) || Number(order?.accessorySent || 0) || Number(order?.accessoryReceived || 0) || Number(order?.accessoryDelivered || 0);
   if (!hasAccessory) return '';
+  const orderTotal = Number(order?.totalRawOrdered || order?.totalRawQuantity || 0);
   const rows = (lines.length ? lines : [{ type:'إكسسوار', percent:order?.accessoryPercent || 0, quantity:order?.accessoryRequired || 0 }])
-    .map((line) => `<tr><td>${safe(line.type || 'إكسسوار')}</td><td>${formatNumber(Number(line.percent || 0))}%</td><td>${fmt(line.quantity || line.quantityManual || 0)}</td></tr>`).join('');
+    .map((line) => {
+      const quantity = Number(line.quantity || line.quantityManual || 0);
+      const percent = quantity > 0 && orderTotal > 0 ? roundNumber(quantity / orderTotal * 100) : Number(line.percent || 0);
+      return `<tr><td>${safe(line.type || 'إكسسوار')}</td><td>${formatNumber(percent)}%</td><td>${fmt(quantity)}</td></tr>`;
+    }).join('');
   const wasteText = order?.operationClosed ? `${fmt(order.accessoryWaste || 0)} (${formatNumber(order.accessoryWastePercent || 0, 1)}%)` : 'يظهر بعد إغلاق الدورة';
   return `<section class="report-section"><h3>متابعة الإكسسوار</h3><table class="summary-table"><tbody><tr><th>إكسسوار مطلوب</th><td>${fmt(order.accessoryRequired || 0)}</td><th>إكسسوار مرسل</th><td>${fmt(order.accessorySent || 0)}</td></tr><tr><th>إكسسوار مستلم</th><td>${fmt(order.accessoryReceived || 0)}</td><th>إكسسوار مسلم للعميل</th><td>${fmt(order.accessoryDelivered || 0)}</td></tr><tr><th>رصيد الإكسسوار</th><td>${fmt(order.accessoryBalance || 0)}</td><th>هالك الإكسسوار</th><td>${wasteText}</td></tr></tbody></table><table class="summary-table"><thead><tr><th>نوع الإكسسوار</th><th>النسبة</th><th>الكمية المطلوبة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
@@ -6441,6 +6446,7 @@ async function saveBulkBatchesFromDialog() {
 }
 function allocationEntryRowHtml(order, defaults = {}) {
   const multipleWidths = order.widthMode === 'multiple';
+  const hasDerby = (order.accessoryLines || []).some((line)=>/ديربي/i.test(String(line.type || '')));
   return `<tr data-allocation-entry-row>
     <td><input data-allocation-color placeholder="اسم اللون"></td>
     <td><input data-allocation-pantone placeholder="رقم البانتون (اختياري)"></td>
@@ -6448,6 +6454,7 @@ function allocationEntryRowHtml(order, defaults = {}) {
     <td><input data-allocation-dyehouse value="${escapeHtml(defaults.dyehouse || '')}" placeholder="المصبغة"></td>
     ${multipleWidths ? '' : `<td><input type="number" step="0.01" min="0" data-allocation-width value="${escapeHtml(defaults.targetFinishedWidth || '')}" placeholder="العرض"></td>`}
     <td><input type="number" step="0.01" min="0" data-allocation-weight value="${escapeHtml(defaults.targetFinishedWeight || '')}" placeholder="الوزن المجهز"></td>
+    ${hasDerby ? '<td data-derby-percent-cell><input type="number" step="0.01" min="0" data-allocation-derby-percent placeholder="%"></td>' : ''}
     <td><button type="button" class="mini-btn danger" data-remove-allocation-entry>حذف</button></td>
   </tr>`;
 }
@@ -6459,6 +6466,8 @@ function openAllocationTableDialog(order) {
     targetFinishedWidth: existing.targetFinishedWidth || '',
     targetFinishedWeight: existing.targetFinishedWeight || '',
   };
+  const derbyLine = (order.accessoryLines || []).find((line)=>/ديربي/i.test(String(line.type || '')));
+  const hasDerby = Boolean(derbyLine);
   return new Promise((resolve) => {
     const dialog = document.createElement('dialog');
     dialog.className = 'transfer-choice-dialog allocation-entry-dialog';
@@ -6466,10 +6475,18 @@ function openAllocationTableDialog(order) {
     dialog.innerHTML = `<form method="dialog" class="transfer-choice-card allocation-entry-card" dir="rtl">
       <div class="subsection-head"><div><h3>إضافة الألوان</h3><p>اكتب الألوان المطلوبة واترك الصفوف غير المستخدمة فارغة.</p></div><button type="button" class="mini-btn" data-close-allocation-table>إغلاق</button></div>
       ${multipleWidths ? '<div class="warning">سيتم تطبيق كل لون على توزيع العروض المسجل في الطلب.</div>' : ''}
-      <div class="allocation-entry-table-wrap"><table class="allocation-entry-table"><thead><tr><th>اللون</th><th>رقم البانتون</th>${multipleWidths ? '' : '<th>الكمية</th>'}<th>المصبغة</th>${multipleWidths ? '' : '<th>العرض</th>'}<th>الوزن المجهز</th><th></th></tr></thead><tbody data-allocation-entry-list>${Array.from({ length:6 }, ()=>allocationEntryRowHtml(order, defaults)).join('')}</tbody></table></div>
+      ${hasDerby ? `<label class="allocation-accessory-mode"><span>توزيع نسبة الديربي</span><select data-derby-percent-mode><option value="uniform">نسبة موحدة لكل الألوان (${formatNumber(Number(derbyLine?.percent || 0))}%)</option><option value="per-color">نسب مختلفة لكل لون</option></select></label>` : ''}
+      <div class="allocation-entry-table-wrap"><table class="allocation-entry-table"><thead><tr><th>اللون</th><th>رقم البانتون</th>${multipleWidths ? '' : '<th>الكمية</th>'}<th>المصبغة</th>${multipleWidths ? '' : '<th>العرض</th>'}<th>الوزن المجهز</th>${hasDerby ? '<th data-derby-percent-cell>نسبة الديربي %</th>' : ''}<th></th></tr></thead><tbody data-allocation-entry-list>${Array.from({ length:6 }, ()=>allocationEntryRowHtml(order, defaults)).join('')}</tbody></table></div>
       <div class="dialog-actions allocation-entry-actions"><button type="button" class="mini-btn" data-add-allocation-entry>+ إضافة لون</button><button type="button" class="primary-btn" data-save-allocation-table>حفظ الألوان</button></div>
     </form>`;
     const finish = (value) => { if (dialog.open) dialog.close(); dialog.remove(); resolve(value); };
+    const syncDerbyMode = () => {
+      const perColor = dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color';
+      dialog.querySelectorAll('[data-derby-percent-cell]').forEach((cell)=>{ cell.hidden = !perColor; });
+      dialog.querySelectorAll('[data-allocation-derby-percent]').forEach((input)=>{ input.disabled = !perColor; });
+    };
+    dialog.querySelector('[data-derby-percent-mode]')?.addEventListener('change', syncDerbyMode);
+    syncDerbyMode();
     dialog.addEventListener('click', (event) => {
       if (event.target.closest('[data-close-allocation-table]')) { finish(null); return; }
       if (event.target.closest('[data-add-allocation-entry]')) {
@@ -6487,10 +6504,12 @@ function openAllocationTableDialog(order) {
         dyehouse: row.querySelector('[data-allocation-dyehouse]')?.value.trim() || '',
         targetFinishedWidth: Number(row.querySelector('[data-allocation-width]')?.value || 0),
         targetFinishedWeight: Number(row.querySelector('[data-allocation-weight]')?.value || 0),
+        accessoryPercentOverride: row.querySelector('[data-allocation-derby-percent]')?.disabled ? null : Number(row.querySelector('[data-allocation-derby-percent]')?.value || 0),
       })).filter((row)=>row.color);
       if (!rows.length) { alert('اكتب لونًا واحدًا على الأقل.'); return; }
       const incomplete = rows.find((row)=>!row.dyehouse || !row.targetFinishedWeight || (!multipleWidths && (!row.plannedQuantity || !row.targetFinishedWidth)));
       if (incomplete) { alert(multipleWidths ? 'أكمل المصبغة والوزن المجهز لكل لون.' : 'أكمل الكمية والمصبغة والعرض والوزن المجهز لكل لون.'); return; }
+      if (hasDerby && dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color' && rows.some((row)=>!(row.accessoryPercentOverride > 0))) { alert('اكتب نسبة الديربي لكل لون.'); return; }
       finish(rows);
     });
     dialog.addEventListener('cancel', (event) => { event.preventDefault(); finish(null); });
@@ -6510,10 +6529,10 @@ async function addAllocation() {
   const backendSaveRequired = true;
   rows.forEach((row) => {
     if (order.widthMode === 'multiple') {
-      order.widthLines.forEach((widthLine) => { createdAllocations.push({ id:uid(), orderId:order.id, color:row.color, pantoneCode:row.pantoneCode, plannedQuantity:widthLine.quantity, dyehouse:row.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight:row.targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width }); });
+      order.widthLines.forEach((widthLine) => { createdAllocations.push({ id:uid(), orderId:order.id, color:row.color, pantoneCode:row.pantoneCode, plannedQuantity:widthLine.quantity, dyehouse:row.dyehouse, targetFinishedWidth:widthLine.width, targetFinishedWeight:row.targetFinishedWeight, widthLineId:widthLine.id, rawInch:widthLine.inch, rawWidth:widthLine.width, accessoryQuantityManual:row.accessoryPercentOverride === null ? null : roundNumber(Number(widthLine.quantity || 0) * Number(row.accessoryPercentOverride || 0) / 100) }); });
       return;
     }
-    createdAllocations.push({ id:uid(), orderId:order.id, color:row.color, pantoneCode:row.pantoneCode, plannedQuantity:row.plannedQuantity, dyehouse:row.dyehouse, targetFinishedWidth:row.targetFinishedWidth, targetFinishedWeight:row.targetFinishedWeight });
+    createdAllocations.push({ id:uid(), orderId:order.id, color:row.color, pantoneCode:row.pantoneCode, plannedQuantity:row.plannedQuantity, dyehouse:row.dyehouse, targetFinishedWidth:row.targetFinishedWidth, targetFinishedWeight:row.targetFinishedWeight, accessoryQuantityManual:row.accessoryPercentOverride === null ? null : roundNumber(Number(row.plannedQuantity || 0) * Number(row.accessoryPercentOverride || 0) / 100) });
   });
   const savedAllocations = [];
   for (const allocation of createdAllocations) savedAllocations.push(await postBackend(`/orders/${order.id}/allocations`, allocationToApi(allocation)));
@@ -6538,11 +6557,22 @@ async function editAllocation(id) {
   if (!targetFinishedWidth) return;
   const targetFinishedWeight = Number(await window.TwoBTexInput.prompt('اكتب الوزن المجهز', allocation.targetFinishedWeight));
   if (!targetFinishedWeight) return;
+  const hasDerby = (order?.accessoryLines || []).some((line)=>/ديربي/i.test(String(line.type || '')));
+  let accessoryQuantityManual = allocation.accessoryQuantityManual;
+  if (hasDerby) {
+    const currentRate = Number(allocation.plannedQuantity || 0) > 0 && allocation.accessoryQuantityManual !== null && allocation.accessoryQuantityManual !== undefined
+      ? roundNumber(Number(allocation.accessoryQuantityManual || 0) / Number(allocation.plannedQuantity || 0) * 100)
+      : '';
+    const derbyPercentValue = await window.TwoBTexInput.prompt('نسبة الديربي لهذا اللون % (اتركها فارغة لاستخدام النسبة الموحدة)', currentRate);
+    if (derbyPercentValue === null) return;
+    const cleanedRate = String(derbyPercentValue).trim();
+    accessoryQuantityManual = cleanedRate === '' ? null : roundNumber(Number(allocation.plannedQuantity || 0) * Number(cleanedRate || 0) / 100);
+  }
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   const changedAllocations = new Set();
 
-  const primaryUpdate = { ...allocation, color:cleanedColor, pantoneCode:cleanedPantone };
+  const primaryUpdate = { ...allocation, color:cleanedColor, pantoneCode:cleanedPantone, accessoryQuantityManual };
   changedAllocations.add(primaryUpdate);
 
   if (order?.widthMode !== 'multiple') {
@@ -6551,6 +6581,7 @@ async function editAllocation(id) {
         ...item,
         color: item.id === allocation.id ? cleanedColor : item.color,
         pantoneCode: item.id === allocation.id ? cleanedPantone : item.pantoneCode,
+        accessoryQuantityManual: item.id === allocation.id ? accessoryQuantityManual : item.accessoryQuantityManual,
         targetFinishedWidth,
         targetFinishedWeight,
       });
