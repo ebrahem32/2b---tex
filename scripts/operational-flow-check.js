@@ -737,7 +737,8 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
     allocations: [{ ...baseOrder.allocations[0], plannedQuantity: 5200, color:'أسود' }],
     accessoryLines: [{ type: 'ديربي', percent: 195, quantityManual: 195, quantity: 195 }],
   }, 'D');
-  assert(calculatedPercentHtml.includes('3.75%'), 'document: accessory percentage must be quantity divided by total order quantity');
+  assert(calculatedPercentHtml.includes('195'), 'document: accessory quantity must remain visible inside the color row');
+  assert(!calculatedPercentHtml.includes('<h3>الإكسسوارات</h3>'), 'document: dyeing order must not duplicate accessories in a separate section');
   assert(calculatedPercentHtml.includes('document-color-swatch'), 'document: known color names must render a small color swatch');
 }
 
