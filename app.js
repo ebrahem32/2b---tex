@@ -19,7 +19,7 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.04.05';
+const APP_VERSION = 'v2026.08.04.06';
 const APP_BUILD_TIME = '2026-08-02 20:20';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
@@ -6455,7 +6455,7 @@ function allocationEntryRowHtml(order, defaults = {}) {
   const hasDerby = (order.accessoryLines || []).length === 1 && /ديربي/i.test(String(order.accessoryLines[0]?.type || ''));
   const manualAccessory = defaults.accessoryQuantityManual !== null && defaults.accessoryQuantityManual !== undefined && defaults.accessoryQuantityManual !== '';
   const derbyValue = manualAccessory ? Number(defaults.accessoryQuantityManual || 0) : '';
-  return `<tr data-allocation-entry-row data-allocation-id="${escapeHtml(defaults.id || '')}">
+  return `<tr data-allocation-entry-row data-allocation-id="${escapeHtml(defaults.id || '')}" data-planned-quantity="${escapeHtml(defaults.plannedQuantity || '')}">
     <td><input data-allocation-color placeholder="اسم اللون" value="${escapeHtml(defaults.color || '')}"></td>
     <td><input data-allocation-pantone placeholder="رقم البانتون (اختياري)" value="${escapeHtml(defaults.pantoneCode || '')}"></td>
     ${multipleWidths ? '' : `<td><input type="number" step="0.01" min="0" data-allocation-quantity placeholder="الكمية" value="${escapeHtml(defaults.plannedQuantity || '')}"></td>`}
@@ -6479,6 +6479,9 @@ function openAllocationTableDialog(order) {
   const existingRows = Array.isArray(order.allocations) ? order.allocations : [];
   const rowCount = Math.max(6 - existingRows.length, 1);
   const hasPerColorDerby = existingRows.some((row)=>row.accessoryQuantityManual !== null && row.accessoryQuantityManual !== undefined && row.accessoryQuantityManual !== '');
+  const orderQuantity = Number(order.totalRawOrdered || order.totalRawQuantity || 0);
+  const configuredDerbyQuantity = Number(derbyLine?.quantityManual ?? derbyLine?.quantity ?? 0);
+  const uniformDerbyPercent = orderQuantity > 0 && configuredDerbyQuantity > 0 ? roundNumber(configuredDerbyQuantity / orderQuantity * 100) : Number(derbyLine?.percent || 0);
   return new Promise((resolve) => {
     const dialog = document.createElement('dialog');
     dialog.className = 'transfer-choice-dialog allocation-entry-dialog';
@@ -6486,7 +6489,7 @@ function openAllocationTableDialog(order) {
     dialog.innerHTML = `<form method="dialog" class="transfer-choice-card allocation-entry-card" dir="rtl">
       <div class="subsection-head"><div><h3>إدارة الألوان</h3><p>عدّل الألوان المسجلة أو أضف ألوانًا جديدة.</p></div><button type="button" class="mini-btn" data-close-allocation-table>إغلاق</button></div>
       ${multipleWidths ? '<div class="warning">سيتم تطبيق كل لون على توزيع العروض المسجل في الطلب.</div>' : ''}
-      ${hasDerby ? `<label class="allocation-accessory-mode"><span>توزيع الديربي</span><select data-derby-percent-mode><option value="uniform">قيمة موحدة لكل الألوان</option><option value="per-color" ${hasPerColorDerby ? 'selected' : ''}>قيمة مختلفة لكل لون</option></select></label>` : ''}
+      ${hasDerby ? `<div class="allocation-accessory-mode"><span>توزيع الديربي</span><select data-derby-percent-mode><option value="uniform">قيمة موحدة لكل الألوان</option><option value="per-color" ${hasPerColorDerby ? 'selected' : ''}>قيمة مختلفة لكل لون</option></select><div class="derby-entry" data-derby-uniform-controls><select data-derby-uniform-unit><option value="percent">% من كمية كل لون</option><option value="kg">كجم لكل لون</option></select><input type="number" step="0.01" min="0" data-derby-uniform-value value="${escapeHtml(uniformDerbyPercent)}" placeholder="القيمة"></div></div>` : ''}
       <div class="allocation-entry-table-wrap"><table class="allocation-entry-table"><thead><tr><th>اللون</th><th>رقم البانتون</th>${multipleWidths ? '' : '<th>الكمية</th>'}<th>المصبغة</th>${multipleWidths ? '' : '<th>العرض</th>'}<th>الوزن المجهز</th>${hasDerby ? '<th data-derby-percent-cell>الديربي (% / كجم)</th>' : ''}<th></th></tr></thead><tbody data-allocation-entry-list>${existingRows.map((row)=>allocationEntryRowHtml(order, row)).join('')}${Array.from({ length:rowCount }, ()=>allocationEntryRowHtml(order, defaults)).join('')}</tbody></table></div>
       <div class="dialog-actions allocation-entry-actions"><button type="button" class="mini-btn" data-add-allocation-entry>+ إضافة لون</button><button type="button" class="primary-btn" data-save-allocation-table>حفظ الألوان</button></div>
     </form>`;
@@ -6495,6 +6498,8 @@ function openAllocationTableDialog(order) {
       const perColor = dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color';
       dialog.querySelectorAll('[data-derby-percent-cell]').forEach((cell)=>{ cell.hidden = !perColor; });
       dialog.querySelectorAll('[data-allocation-derby-value], [data-allocation-derby-unit]').forEach((input)=>{ input.disabled = !perColor; });
+      const uniformControls = dialog.querySelector('[data-derby-uniform-controls]');
+      if (uniformControls) uniformControls.hidden = perColor;
     };
     dialog.querySelector('[data-derby-percent-mode]')?.addEventListener('change', syncDerbyMode);
     syncDerbyMode();
@@ -6508,21 +6513,27 @@ function openAllocationTableDialog(order) {
       const removeButton = event.target.closest('[data-remove-allocation-entry]');
       if (removeButton) { removeButton.closest('tr')?.remove(); return; }
       if (!event.target.closest('[data-save-allocation-table]')) return;
+      const perColorDerby = dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color';
+      const uniformValueElement = dialog.querySelector('[data-derby-uniform-value]');
+      const uniformProvided = !hasDerby || perColorDerby || uniformValueElement?.value !== '';
+      const uniformUnit = dialog.querySelector('[data-derby-uniform-unit]')?.value || 'percent';
+      const uniformValue = Number(uniformValueElement?.value || 0);
       const rows = [...dialog.querySelectorAll('[data-allocation-entry-row]')].map((row) => ({
         id: row.dataset.allocationId || '',
         color: row.querySelector('[data-allocation-color]')?.value.trim() || '',
         pantoneCode: row.querySelector('[data-allocation-pantone]')?.value.trim() || '',
-        plannedQuantity: Number(row.querySelector('[data-allocation-quantity]')?.value || 0),
+        plannedQuantity: Number(row.querySelector('[data-allocation-quantity]')?.value || row.dataset.plannedQuantity || 0),
         dyehouse: row.querySelector('[data-allocation-dyehouse]')?.value.trim() || '',
         targetFinishedWidth: Number(row.querySelector('[data-allocation-width]')?.value || 0),
         targetFinishedWeight: Number(row.querySelector('[data-allocation-weight]')?.value || 0),
         accessoryInputUnit: row.querySelector('[data-allocation-derby-value]')?.disabled ? '' : (row.querySelector('[data-allocation-derby-unit]')?.value || 'percent'),
         accessoryInputProvided: row.querySelector('[data-allocation-derby-value]')?.disabled || row.querySelector('[data-allocation-derby-value]')?.value !== '',
         accessoryInputValue: row.querySelector('[data-allocation-derby-value]')?.disabled ? null : Number(row.querySelector('[data-allocation-derby-value]')?.value || 0),
-      })).filter((row)=>row.color);
+      })).filter((row)=>row.color).map((row)=>hasDerby && !perColorDerby ? { ...row, accessoryInputUnit:uniformUnit, accessoryInputProvided:uniformProvided, accessoryInputValue:uniformValue } : row);
       if (!rows.length) { alert('اكتب لونًا واحدًا على الأقل.'); return; }
       const incomplete = rows.find((row)=>!row.dyehouse || !row.targetFinishedWeight || (!multipleWidths && (!row.plannedQuantity || !row.targetFinishedWidth)));
       if (incomplete) { alert(multipleWidths ? 'أكمل المصبغة والوزن المجهز لكل لون.' : 'أكمل الكمية والمصبغة والعرض والوزن المجهز لكل لون.'); return; }
+      if (!uniformProvided) { alert('اكتب النسبة أو الكمية الموحدة للديربي، ويمكن كتابة 0.'); return; }
       if (hasDerby && dialog.querySelector('[data-derby-percent-mode]')?.value === 'per-color' && rows.some((row)=>!row.accessoryInputProvided)) { alert('اكتب نسبة أو كمية الديربي لكل لون، ويمكن كتابة 0 للون الذي لا يحتاج ديربي.'); return; }
       finish(rows);
     });
