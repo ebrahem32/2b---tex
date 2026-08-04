@@ -269,7 +269,12 @@
       const recordedAccessoryQuantity = sum(data.accessoryBatches.filter((batch)=>batch.orderId === order.id && (!batch.movement || batch.movement === 'sent')));
       const hasAccessory = configuredAccessoryLines.length > 0 || !!order.accessoryType || manualAccessoryQuantity > 0 || recordedAccessoryQuantity > 0;
       const accessoryQuantity = manualAccessoryQuantity || roundNumber(Number(order.totalRawQuantity || 0) * Number(order.accessoryPercent || 0) / 100) || recordedAccessoryQuantity;
-      const accessoryLines = configuredAccessoryLines.length ? configuredAccessoryLines : (hasAccessory ? [{ type:order.accessoryType || 'إكسسوار', percent:Number(order.accessoryPercent || 0), quantity:roundNumber(accessoryQuantity) }] : []);
+      const hasPerColorAccessory = orderAllocations.some((item)=>item.accessoryQuantityManual !== null && item.accessoryQuantityManual !== undefined && item.accessoryQuantityManual !== '');
+      const accessoryLines = configuredAccessoryLines.length
+        ? configuredAccessoryLines.map((line, index)=>configuredAccessoryLines.length === 1 && index === 0 && hasPerColorAccessory
+          ? { ...line, quantity:manualAccessoryQuantity, percent:totalRawOrdered ? roundNumber(manualAccessoryQuantity / totalRawOrdered * 100) : Number(line.percent || 0) }
+          : line)
+        : (hasAccessory ? [{ type:order.accessoryType || 'إكسسوار', percent:Number(order.accessoryPercent || 0), quantity:roundNumber(accessoryQuantity) }] : []);
       const accessoryRequired = roundNumber(accessoryLines.reduce((total, item)=>total + Number(item.quantity || 0), 0));
       const accessorySent = sum(data.accessoryBatches.filter((batch)=>batch.orderId===order.id && (!batch.movement || batch.movement === 'sent')));
       const accessoryReceived = sum(data.accessoryBatches.filter((batch)=>batch.orderId===order.id && batch.movement === 'received'));

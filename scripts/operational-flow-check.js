@@ -284,6 +284,18 @@ function frontendManualAccessorySummary() {
   return domain.calculateOrder(state.orders[0]);
 }
 
+function frontendPerColorAccessorySummary() {
+  const state = {
+    orders: [{ id:'order-derby-colors', orderNumber:'CHECK-DERBY', totalRawQuantity:1000, widthMode:'single', accessoryLines:[{ id:'derby', type:'ديربي', percent:0, quantityManual:'' }] }],
+    allocations: [
+      { id:'derby-a', orderId:'order-derby-colors', color:'A', plannedQuantity:400, accessoryQuantityManual:20 },
+      { id:'derby-b', orderId:'order-derby-colors', color:'B', plannedQuantity:600, accessoryQuantityManual:60 },
+    ],
+    rawBatches: [], productionBatches: [], customerBatches: [], rawReturns: [], gluingBatches: [], dyehouseTransfers: [], accessoryBatches: [],
+  };
+  return createFrontendDomain(state).calculateOrder(state.orders[0]);
+}
+
 function checkBackendFlow() {
   const atDyehouse = backendSummary({ rawReceived: 100, sent: 100, finished: 92, delivered: 0 });
   assertClose(atDyehouse.remainingAtDyehouse, 8, 'backend: dyehouse balance after partial finished receipt');
@@ -577,7 +589,7 @@ function checkDyeingOrderPickerUsesDispatchDyehouses() {
   assert(appSource.includes('function rawDispatchQuantityForDyehouse(order, dyehouseName)'), 'dyeing picker: each choice must calculate its permit quantity separately');
   assert(appSource.includes('const quantity = dispatchedQuantity || rows.reduce'), 'dyeing picker: permit quantity must be shown even before colors are assigned');
   assert(appSource.includes('function openAllocationTableDialog(order)'), 'color allocation: add-color action must open the table dialog');
-  assert(appSource.includes('Array.from({ length:6 }'), 'color allocation: table must start with six entry rows');
+  assert(appSource.includes('const rowCount = Math.max(6 - existingRows.length, 1)'), 'color allocation: manager must preload existing colors and keep at least one new row');
   assert(appSource.includes('data-add-allocation-entry'), 'color allocation: table must allow adding another color row');
   assert(appSource.includes('function customerOrderLabel(order)'), 'customers: orders must display the fixed customer code beside the customer name');
   assert(appSource.includes('function openPantoneColorExperiment()'), 'pantone experiment: color search and screen picker dialog must be available');
@@ -1015,6 +1027,17 @@ function checkManualAccessoryDistribution() {
   assertClose(frontend.allocations[1].accessoryQuantity, 35, 'accessory: second color receives proportional accessory quantity');
 }
 
+function checkPerColorAccessoryDistribution() {
+  const frontend = frontendPerColorAccessorySummary();
+  assertClose(frontend.allocations[0].accessoryQuantity, 20, 'accessory: first color keeps its manual derby kilos');
+  assertClose(frontend.allocations[1].accessoryQuantity, 60, 'accessory: second color keeps its manual derby kilos');
+  assertClose(frontend.accessoryRequired, 80, 'accessory: per-color derby kilos become the order accessory total');
+  assertClose(frontend.accessoryLines[0].percent, 8, 'accessory: per-color derby kilos calculate the correct order percentage');
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('data-allocation-derby-unit'), 'accessory ui: per-color derby entry must accept percent or kilograms');
+  assert(appSource.includes('existingRows.map((row)=>allocationEntryRowHtml(order, row))'), 'accessory ui: color manager must preload existing colors');
+}
+
 function checkMultiWidthOrderRowsKeepWidthLabels() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('function allocationWidthLabel(order, allocation)'), 'multi-width orders: shared width label helper must exist');
@@ -1094,6 +1117,7 @@ checkPricingSaveBypassesLegacyHiddenRequiredFields();
 checkOrderQuotationUsesLinkedPricingCard();
 checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();
+checkPerColorAccessoryDistribution();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 
