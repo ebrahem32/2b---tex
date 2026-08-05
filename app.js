@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.04.07';
-const APP_BUILD_TIME = '2026-08-02 20:20';
+const APP_VERSION = 'v2026.08.05.01';
+const APP_BUILD_TIME = '2026-08-05 10:43';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -4046,11 +4046,49 @@ async function markPricingConverted(pricingNumber, orderId, pricingId = null) {
   }
   return ok;
 }
+function linkedOperationalOrderForPricing(pricing) {
+  if (!pricing) return null;
+  const pricingId = String(pricing.id || '').trim();
+  const linkedOrders = orders.filter((order)=>pricingId && String(order.pricingId || '').trim() === pricingId);
+  const selectedLinkedOrder = linkedOrders.find((order)=>order.id === selectedOrderId);
+  if (selectedLinkedOrder) return calculateOrder(selectedLinkedOrder);
+  const convertedOrderId = String(pricing.convertedOrderId || '').trim();
+  const convertedOrder = linkedOrders.find((order)=>String(order.id) === convertedOrderId)
+    || orders.find((order)=>String(order.id) === convertedOrderId);
+  if (convertedOrder) return calculateOrder(convertedOrder);
+  if (linkedOrders.length === 1) return calculateOrder(linkedOrders[0]);
+  const matchingOrders = orders.filter((order)=>pricingMatchesOrder(pricing, order));
+  const selectedMatch = matchingOrders.find((order)=>order.id === selectedOrderId);
+  if (selectedMatch) return calculateOrder(selectedMatch);
+  return matchingOrders.length === 1 ? calculateOrder(matchingOrders[0]) : null;
+}
+function pricingContractSourceForOrder(pricing, operationalOrder = null) {
+  const order = operationalOrder || linkedOperationalOrderForPricing(pricing);
+  if (!pricing || !order) return pricing;
+  const quantity = Number(order.totalRawOrdered || order.totalRawQuantity || 0);
+  const orderAccessories = Array.isArray(order.accessoryLines) ? order.accessoryLines : [];
+  const syncAccessories = (lines = []) => lines.map((line)=>{
+    const matching = orderAccessories.find((current)=>normalizeForCompare(current.type) === normalizeForCompare(line.type));
+    return matching ? { ...line, quantity:Number(matching.quantity || 0), percent:Number(matching.percent || 0) } : line;
+  });
+  const sourceItems = pricingItemsFor(pricing);
+  if (!sourceItems.length) return { ...pricing, quantity, accessoryLines:syncAccessories(pricing.accessoryLines || []) };
+  let quantityApplied = false;
+  const priceItems = sourceItems.map((item)=>{
+    const matches = sourceItems.length === 1 || compatibleFabricForMatch(order.fabricType, item.fabricType || item.materialType);
+    if (!matches || quantityApplied) return item;
+    quantityApplied = true;
+    return { ...item, quantity, accessoryLines:syncAccessories(item.accessoryLines || []) };
+  });
+  return { ...pricing, quantity, priceItems };
+}
 function openCustomerPricingQuotation(id) {
   const sourcePricing = pricings.find((item)=>item.id===id);
-  const pricing = calculatePricing(sourcePricing);
+  const operationalOrder = linkedOperationalOrderForPricing(sourcePricing);
+  const contractSource = pricingContractSourceForOrder(sourcePricing, operationalOrder);
+  const pricing = calculatePricing(contractSource);
   if (!pricing) return;
-  const items = pricingItemsFor(sourcePricing || pricing)
+  const items = pricingItemsFor(contractSource || pricing)
     .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
     .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
   const money = (value) => Number(value || 0).toLocaleString('en-US');
@@ -4105,6 +4143,12 @@ function openCustomerPricingQuotation(id) {
       <td>${money(clothTotal)} ${currency}</td>
     </tr>${publicAccessoryRows(item)}`;
   }).join('');
+  const operationalColorRows = operationalOrder?.allocations?.map((allocation)=>`<tr>
+    <td>${escapeHtml(allocation.color || '-')}</td>
+    <td><bdi dir="ltr">${escapeHtml(allocation.pantoneCode || '-')}</bdi></td>
+    <td>${money(allocation.plannedQuantity)} كجم</td>
+    <td>${escapeHtml(allocation.dyehouse || '-')}</td>
+  </tr>`).join('') || '';
   refs.documentTitle.textContent = '\u0639\u0631\u0636 \u0633\u0639\u0631';
   refs.documentBody.dataset.documentType = 'pricing-quotation';
   refs.documentBody.dataset.documentNumber = pricing.pricingNumber || pricing.id || '';
@@ -4130,6 +4174,7 @@ function openCustomerPricingQuotation(id) {
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
       <table class="quotation-items-table"><thead><tr><th>\u0627\u0644\u0628\u0646\u062f</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${publicItemRows}</tbody></table>
     </section>
+    ${operationalColorRows ? `<section class="report-section quotation-order-colors"><h3>ألوان الطلب المعتمدة</h3><table class="quotation-items-table"><thead><tr><th>اللون</th><th>رقم البانتون</th><th>الكمية</th><th>المصبغة</th></tr></thead><tbody>${operationalColorRows}</tbody></table></section>` : ''}
     <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
     ${documentFooter()}
   </div>`;
@@ -4137,9 +4182,11 @@ function openCustomerPricingQuotation(id) {
 }
 function openPricingCostSheet(id) {
   const sourcePricing = pricings.find((item)=>item.id===id);
-  const pricing = calculatePricing(sourcePricing);
+  const operationalOrder = linkedOperationalOrderForPricing(sourcePricing);
+  const contractSource = pricingContractSourceForOrder(sourcePricing, operationalOrder);
+  const pricing = calculatePricing(contractSource);
   if (!pricing) return;
-  const items = pricingItemsFor(sourcePricing || pricing)
+  const items = pricingItemsFor(contractSource || pricing)
     .map((item)=>calculatePricing({ ...pricing, ...item, priceItems:null }))
     .filter((item)=>item.fabricType || Number(item.quantity || 0) > 0);
   const money = (value) => Number(value || 0).toLocaleString('en-US');

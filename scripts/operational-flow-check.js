@@ -988,6 +988,10 @@ function checkOrderQuotationUsesLinkedPricingCard() {
   assert(documentsUiSource.includes('deps.openPricingQuotation(orderPricing.id)'), 'documents ui: order quotation must use linked pricing card when available');
   assert(documentsUiSource.includes('عرض السعر المرتبط'), 'documents ui: linked quotation action must be clear to the user');
   assert(appSource.includes('alreadyConverted') && appSource.includes('pricingConvertedByOrder(sourcePricing || pricing)'), 'quotation document: converted pricing cards must not offer duplicate order conversion');
+  assert(appSource.includes('function linkedOperationalOrderForPricing'), 'quotation document: accepted pricing must locate its linked operational order');
+  assert(appSource.includes('function pricingContractSourceForOrder'), 'quotation document: accepted card rates must merge with current operational quantities');
+  assert(appSource.includes('const contractSource = pricingContractSourceForOrder(sourcePricing, operationalOrder);'), 'quotation document: quotation and costing must calculate from the linked operational contract source');
+  assert(appSource.includes('operationalOrder?.allocations?.map'), 'quotation document: color rows must come from the operational color distribution table');
   assert(pricingUiSource.includes('تحويل لطلب تشغيل'), 'pricing ui: conversion action must be explicitly labelled as an order conversion');
 }
 
