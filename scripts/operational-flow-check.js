@@ -1047,6 +1047,9 @@ function checkPerColorAccessoryDistribution() {
   assert(appSource.includes("value !== ''"), 'accessory ui: zero derby must be accepted while a truly blank value is rejected');
   assert(appSource.includes('if (hasAllocationManual)'), 'accessory documents: saved per-color kilos, including zero, must take precedence over proportional distribution');
   assert(appSource.includes('existingRows.map((row)=>allocationEntryRowHtml(order, row))'), 'accessory ui: color manager must preload existing colors');
+  assert(appSource.includes('const allocationTotal = roundNumber(createdAllocations.reduce'), 'order quantity: saved single-width color distribution must calculate its authoritative total');
+  assert(appSource.includes('totalRawQuantity:allocationTotal'), 'order quantity: order header must synchronize with the color distribution total');
+  assert(appSource.includes("order.widthMode !== 'multiple'"), 'order quantity: multi-width orders must keep their dedicated width-distribution total');
 }
 
 function checkMultiWidthOrderRowsKeepWidthLabels() {

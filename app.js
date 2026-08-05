@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.05.01';
-const APP_BUILD_TIME = '2026-08-05 10:43';
+const APP_VERSION = 'v2026.08.05.02';
+const APP_BUILD_TIME = '2026-08-05 11:02';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -6617,6 +6617,18 @@ async function addAllocation() {
   if (backendSaveRequired && savedAllocations.some((item)=>!item)) {
     await rollbackAfterBackendWriteFailure('تعذر حفظ اللون في قاعدة البيانات. لم يتم اعتماد الإضافة.');
     return;
+  }
+  if (order.widthMode !== 'multiple') {
+    const allocationTotal = roundNumber(createdAllocations.reduce((total, item)=>total + Number(item.plannedQuantity || 0), 0));
+    if (allocationTotal > 0 && Math.abs(allocationTotal - Number(order.totalRawQuantity || 0)) > 0.01) {
+      const synchronizedOrder = { ...orders.find((item)=>item.id === order.id), totalRawQuantity:allocationTotal };
+      const backendCustomer = await ensureBackendCustomer(synchronizedOrder.customer);
+      const savedOrder = await putBackend(`/orders/${order.id}`, orderToApi(synchronizedOrder, backendCustomer));
+      if (!savedOrder) {
+        await rollbackAfterBackendWriteFailure('تم حفظ الألوان لكن تعذر مزامنة إجمالي الطلب معها. أُعيد تحميل البيانات للمراجعة.');
+        return;
+      }
+    }
   }
   await loadBackendData();
 }
