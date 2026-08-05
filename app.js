@@ -3412,7 +3412,7 @@ function pricingItemRowHtml(item = {}) {
 }
 
 function pricingAccessoryTypeOptions(current = '') {
-  const options = uniqueNonEmpty(['ريب', 'ديربي', 'لياقات', 'أساور', 'أساور ولياقات', current]).filter(Boolean);
+  const options = uniqueNonEmpty(['ريب', 'ريبس', 'ديربي', 'لياقات', 'أساور', 'أساور ولياقات', current]).filter(Boolean);
   return `<option value="">اختر الإكسسوار</option>${options.map((name)=>`<option value="${escapeHtml(name)}" ${name === current ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}`;
 }
 
@@ -6971,7 +6971,7 @@ function openBatchEditorDialog(type, batch) {
   const allocationOptions = (order.allocations || []).map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id === batch.allocationId ? 'selected' : ''}>${escapeHtml(allocationMovementLabel(order, item))}</option>`).join('');
   const field = (label, name, value = '', attrs = '') => `<label><span>${label}</span><input name="${name}" value="${escapeHtml(value ?? '')}" ${attrs}></label>`;
   const extraFields = type === 'raw'
-    ? field('الجهة / مصدر النسيج', 'supplier', batch.supplier || order.weavingSource || '')
+    ? `${field('المصبغة', 'dyehouse', batch.dyehouse || order.dyehouse || '', 'required')}${field('الجهة / مصدر النسيج', 'supplier', batch.supplier || order.weavingSource || '')}`
     : type === 'transfer'
       ? `${field('من مصبغة', 'fromDyehouse', batch.fromDyehouse || '')}${field('إلى مصبغة', 'toDyehouse', batch.toDyehouse || '')}${field('سبب النقل', 'reason', batch.reason || '')}`
       : type === 'accessory'
@@ -7493,7 +7493,7 @@ function renderAmalSuggestion(suggestion = {}) {
       <td><input data-amal="pantoneCode" value="${escapeHtml(row.pantoneCode || row.color || '')}"></td>
       <td><input data-amal="width" type="number" step="0.01" value="${row.width || ''}"></td>
       <td><input data-amal="weight" type="number" step="0.01" value="${row.weight || ''}"></td>
-      <td><select data-amal="accessoryType"><option value="">-</option><option value="ريب" ${row.accessoryType==='ريب'?'selected':''}>ريب</option><option value="لياقة" ${row.accessoryType==='لياقة'?'selected':''}>لياقة</option><option value="إكسسوار آخر" ${row.accessoryType==='إكسسوار آخر'?'selected':''}>إكسسوار آخر</option></select></td>
+      <td><select data-amal="accessoryType"><option value="">-</option><option value="ريب" ${row.accessoryType==='ريب'?'selected':''}>ريب</option><option value="ريبس" ${row.accessoryType==='ريبس'?'selected':''}>ريبس</option><option value="لياقة" ${row.accessoryType==='لياقة'?'selected':''}>لياقة</option><option value="إكسسوار آخر" ${row.accessoryType==='إكسسوار آخر'?'selected':''}>إكسسوار آخر</option></select></td>
     </tr>`).join('');
 }
 function applyAmalSuggestionFromFile(file) {

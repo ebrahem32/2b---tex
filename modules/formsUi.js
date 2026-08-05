@@ -36,7 +36,7 @@ function syncAccessoryLineDetails(row) {
 
 function renderAccessoryLinesEditor(lines = []) {
   const rows = lines.length ? lines : [{}];
-  refs.accessoryLinesEditor.innerHTML = `<datalist id="accessoryTypeList"><option value="ريب"><option value="لياقات"><option value="أساور"><option value="ديربي"></datalist><div class="accessory-line-head"><span>نوع الإكسسوار</span><span>النسبة %</span><span>الكمية</span><span>الوحدة للياقات</span><span>الطول</span><span>العرض</span><span></span></div>${rows.map((line)=>accessoryLineRowHtml(line)).join('')}`;
+  refs.accessoryLinesEditor.innerHTML = `<datalist id="accessoryTypeList"><option value="ريب"><option value="ريبس"><option value="لياقات"><option value="أساور"><option value="ديربي"></datalist><div class="accessory-line-head"><span>نوع الإكسسوار</span><span>النسبة %</span><span>الكمية</span><span>الوحدة للياقات</span><span>الطول</span><span>العرض</span><span></span></div>${rows.map((line)=>accessoryLineRowHtml(line)).join('')}`;
   refs.accessoryLinesEditor.querySelectorAll('.accessory-line-row').forEach(syncAccessoryLineDetails);
 }
 
