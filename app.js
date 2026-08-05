@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.05.04';
-const APP_BUILD_TIME = '2026-08-05 12:05';
+const APP_VERSION = 'v2026.08.05.05';
+const APP_BUILD_TIME = '2026-08-05 15:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -482,8 +482,7 @@ if (!window.__twoBTexMovementDetailsToggleInstalled) {
   document.addEventListener('click', (event) => {
     const row = event.target.closest?.('[data-batch-row]');
     if (!row || event.target.closest?.('[data-batch-action], button, a, input, select, textarea')) return;
-    const meta = row.querySelector('[data-batch-meta]');
-    if (meta) meta.hidden = !meta.hidden;
+    editBatch(row.dataset.batchType, row.dataset.batchId).catch((error)=>{ console.error('batch-open-error', error); alert('تعذر فتح بيانات الإذن.'); });
   });
 }
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -5650,7 +5649,7 @@ function batchItemHtml(type, batch, label) {
       .replace('تسليم إكسسوار للعميل', 'مرتجع إكسسوار من العميل')
       .replace(String(batch.quantity), formatNumber(Math.abs(quantity)))
     : label;
-  return `<div class="batch-item" data-batch-row title="اضغط لعرض وقت الإدخال والمدخل"><div class="batch-main"><span>${displayLabel}</span>${batchMovementMetaHtml(batch)}</div><div class="batch-actions"><button class="mini-btn" data-batch-action="edit" data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}">تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-batch-action="delete" data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}">حذف</button>` : ''}</div></div>`;
+  return `<div class="batch-item" data-batch-row data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}" title="اضغط لفتح الإذن كاملًا"><div class="batch-main"><span>${displayLabel}</span>${batchMovementMetaHtml(batch)}</div><div class="batch-actions"><button class="mini-btn" data-batch-action="edit" data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}">فتح / تعديل</button>${canDeleteRecords() ? `<button class="mini-btn danger" data-batch-action="delete" data-batch-type="${escapeHtml(type)}" data-batch-id="${escapeHtml(batch.id)}">حذف</button>` : ''}</div></div>`;
 }
 function movementTimestampLabel(value) {
   if (!value) return 'غير مسجل';
@@ -6908,8 +6907,8 @@ async function deleteOrder(id) {
   if (selectedOrderId === id) selectedOrderId = null;
   await loadBackendData();
 }
-async function deleteBatch(type, id) {
-  if (!confirm('هل تريد حذف هذه الحركة؟ سيتم حذفها من قاعدة البيانات أيضًا.')) return;
+async function deleteBatch(type, id, options = {}) {
+  if (!options.confirmed && !confirm('هل تريد حذف هذه الحركة؟ سيتم حذفها من قاعدة البيانات أيضًا.')) return;
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
   let transfer = null;
@@ -6964,12 +6963,80 @@ async function deleteBatch(type, id) {
   }
   await loadBackendData();
 }
+function batchEditorTypeLabel(type) {
+  return { raw:'خروج خام للمصبغة', rawReturn:'مرتجع خام للنسيج', accessory:'حركة إكسسوار', transfer:'تحويل مصبغة', gluing:'حركة دمج', production:'استلام مجهز', customer:'تسليم عميل', finished:'استلام مجهز' }[type] || 'إذن حركة';
+}
+function openBatchEditorDialog(type, batch) {
+  const order = calculateOrder(orders.find((item)=>item.id === batch.orderId)) || {};
+  const allocationOptions = (order.allocations || []).map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id === batch.allocationId ? 'selected' : ''}>${escapeHtml(allocationMovementLabel(order, item))}</option>`).join('');
+  const field = (label, name, value = '', attrs = '') => `<label><span>${label}</span><input name="${name}" value="${escapeHtml(value ?? '')}" ${attrs}></label>`;
+  const extraFields = type === 'raw'
+    ? field('الجهة / مصدر النسيج', 'supplier', batch.supplier || order.weavingSource || '')
+    : type === 'transfer'
+      ? `${field('من مصبغة', 'fromDyehouse', batch.fromDyehouse || '')}${field('إلى مصبغة', 'toDyehouse', batch.toDyehouse || '')}${field('سبب النقل', 'reason', batch.reason || '')}`
+      : type === 'accessory'
+        ? `${field('نوع الإكسسوار', 'accessoryType', batch.accessoryType || '')}<label><span>نوع الحركة</span><select name="movement"><option value="sent" ${batch.movement === 'sent' ? 'selected' : ''}>خروج</option><option value="received" ${batch.movement === 'received' ? 'selected' : ''}>استلام</option><option value="customer" ${batch.movement === 'customer' ? 'selected' : ''}>تسليم عميل</option></select></label>`
+        : type === 'gluing'
+          ? `${field('رقم / مصدر عملية الدمج', 'partnerFabric', batch.partnerFabric || '')}${field('اسم المنتج الناتج', 'outputName', batch.outputName || '')}${field('العميل', 'customerName', batch.customerName || '')}`
+          : type === 'customer'
+            ? `${field('اسم العميل', 'customerName', batch.customerName || order.customer || '')}${field('سعر الوحدة', 'unitPrice', batch.unitPrice || '', 'type="number" step="0.01"')}${field('طريقة السداد', 'paymentTerms', batch.paymentTerms || '')}`
+            : type === 'finished'
+              ? `${field('العرض المجهز', 'finishedWidth', batch.finishedWidth || '', 'type="number" step="0.01"')}${field('الوزن المجهز', 'finishedWeight', batch.finishedWeight || '', 'type="number" step="0.01"')}`
+              : '';
+  const allocationField = ['rawReturn','accessory','production','customer','finished'].includes(type) && allocationOptions
+    ? `<label><span>اللون / المصبغة</span><select name="allocationId"><option value="">بدون تحديد</option>${allocationOptions}</select></label>` : '';
+  const existingImage = batch.sourceDocument?.image || '';
+  const imageSection = type === 'raw' ? `<label class="full-row batch-file-label"><span>صورة الإذن${existingImage ? ' الحالية أو استبدالها' : ''}</span><input name="sourceDocumentFile" type="file" accept="image/*"></label>${existingImage ? `<div class="full-row"><img src="${escapeHtml(existingImage)}" alt="صورة الإذن" style="max-width:100%;max-height:360px;border-radius:10px"></div>` : ''}` : '';
+  return new Promise((resolve)=>{
+    const dialog = document.createElement('dialog');
+    dialog.className = 'transfer-choice-dialog batch-editor-dialog';
+    dialog.innerHTML = `<form method="dialog" class="transfer-choice-card" dir="rtl"><div class="subsection-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber || '-')}</p><h3>${escapeHtml(batchEditorTypeLabel(type))}</h3></div><button type="button" class="mini-btn" data-batch-editor-close>إغلاق</button></div><div class="form-grid master-grid">${field('التاريخ', 'date', batch.date || '', 'type="date" required')}${field('الكمية', 'quantity', Math.abs(Number(batch.quantity || 0)), 'type="number" step="0.01" required')}${field('رقم الإذن', 'noteNumber', batch.noteNumber || '')}${allocationField}${extraFields}<label class="full-row"><span>ملاحظات</span><textarea name="notes" rows="4">${escapeHtml(batch.notes || '')}</textarea></label>${imageSection}</div><div class="dialog-actions"><button type="button" class="primary-btn" data-batch-editor-save>حفظ التعديل</button>${canDeleteRecords() ? '<button type="button" class="mini-btn danger" data-batch-editor-delete>حذف الإذن</button>' : ''}<button type="button" class="mini-btn" data-batch-editor-close>إلغاء</button></div></form>`;
+    const finish = (value)=>{ if (dialog.open) dialog.close(); dialog.remove(); resolve(value); };
+    dialog.addEventListener('click', (event)=>{
+      if (event.target.closest('[data-batch-editor-close]')) { finish(null); return; }
+      if (event.target.closest('[data-batch-editor-delete]')) { finish({ action:'delete' }); return; }
+      if (!event.target.closest('[data-batch-editor-save]')) return;
+      const form = dialog.querySelector('form');
+      if (!form.reportValidity()) return;
+      const values = Object.fromEntries(new FormData(form).entries());
+      values.sourceDocumentFile = form.elements.sourceDocumentFile?.files?.[0] || null;
+      finish({ action:'save', values });
+    });
+    dialog.addEventListener('cancel', (event)=>{ event.preventDefault(); finish(null); });
+    document.body.appendChild(dialog);
+    dialog.showModal();
+  });
+}
 async function editBatch(type, id) {
   const collection = type === 'raw' ? rawBatches : type === 'accessory' ? accessoryBatches : type === 'transfer' ? dyehouseTransfers : type === 'gluing' ? gluingBatches : type === 'rawReturn' ? rawReturns : type === 'production' ? productionBatches : type === 'customer' ? customerBatches : finishedBatches;
   const batch = collection.find((item)=>item.id===id); if (!batch) return;
+  const editorResult = await openBatchEditorDialog(type, batch);
+  if (!editorResult) return;
+  if (editorResult.action === 'delete') {
+    if (confirm('هل تريد حذف هذا الإذن نهائيًا من قاعدة البيانات؟')) await deleteBatch(type, id, { confirmed:true });
+    return;
+  }
   if (!(await ensureBackendForWrite())) return;
   const backendSaveRequired = true;
-  const updatedBatch = { ...batch };
+  const values = editorResult.values || {};
+  const signedQuantity = Number(batch.quantity || 0) < 0 ? -Math.abs(Number(values.quantity || 0)) : Number(values.quantity || 0);
+  if (!signedQuantity) { alert('اكتب كمية صحيحة.'); return; }
+  const updatedBatch = { ...batch, ...values, quantity:signedQuantity };
+  delete updatedBatch.sourceDocumentFile;
+  if (values.sourceDocumentFile) updatedBatch.sourceDocument = { type:'raw-batch-image', image:await resizeSlipImage(values.sourceDocumentFile) };
+  if (type === 'rawReturn') updatedBatch.reason = updatedBatch.notes || updatedBatch.reason || '';
+  if (backendSaveRequired) {
+    const saved = type === 'transfer'
+      ? await putBackend(`/transfers/${id}`, transferToApi(updatedBatch))
+      : await putBackend(`/batches/${backendBatchType(type)}/${id}`, type === 'rawReturn' ? { ...batchToApi(updatedBatch), reason:updatedBatch.reason || updatedBatch.notes || '' } : batchToApi(updatedBatch));
+    if (!saved) {
+      await rollbackAfterBackendWriteFailure('تعذر حفظ تعديل الحركة في قاعدة البيانات. لم يتم اعتماد التعديل.');
+      return;
+    }
+  }
+  await loadBackendData();
+  return;
+  /* Legacy prompt editor retained below as an unreachable rollback reference. */
   const quantity = Number(await window.TwoBTexInput.prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;
   updatedBatch.date = await window.TwoBTexInput.prompt('التاريخ', updatedBatch.date) || updatedBatch.date;
   if (type === 'raw') { updatedBatch.supplier = await window.TwoBTexInput.prompt('الجهة / المصدر', updatedBatch.supplier) || updatedBatch.supplier; updatedBatch.noteNumber = await window.TwoBTexInput.prompt('رقم الإذن', updatedBatch.noteNumber || '') || ''; updatedBatch.notes = await window.TwoBTexInput.prompt('ملاحظات', updatedBatch.notes || '') || ''; }

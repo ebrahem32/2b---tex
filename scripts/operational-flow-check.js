@@ -1079,6 +1079,17 @@ function checkOrderBusinessModes() {
   assert(mssqlSchema.includes('order_type NVARCHAR(40)'), 'order type: SQL Server schema must persist the business mode');
 }
 
+function checkFullBatchPermitEditor() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('function openBatchEditorDialog(type, batch)'), 'movement permit: clicking a saved movement must open a complete editor');
+  assert(appSource.includes('data-batch-editor-save'), 'movement permit: editor must provide an explicit save action');
+  assert(appSource.includes('data-batch-editor-delete'), 'movement permit: authorized users must be able to delete the permit from the editor');
+  assert(appSource.includes('name="noteNumber"'), 'movement permit: permit number must remain directly editable');
+  assert(appSource.includes('name="sourceDocumentFile"'), 'movement permit: raw permit image must be visible and replaceable');
+  assert(appSource.includes('title="اضغط لفتح الإذن كاملًا"'), 'movement permit: the whole saved row must be clickable');
+  assert(appSource.includes("await deleteBatch(type, id, { confirmed:true })"), 'movement permit: confirmed editor deletion must use the protected backend delete path');
+}
+
 function checkMultiWidthOrderRowsKeepWidthLabels() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('function allocationWidthLabel(order, allocation)'), 'multi-width orders: shared width label helper must exist');
@@ -1161,6 +1172,7 @@ checkManualAccessoryDistribution();
 checkPerColorAccessoryDistribution();
 checkWhatsappAccountReplacement();
 checkOrderBusinessModes();
+checkFullBatchPermitEditor();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 
