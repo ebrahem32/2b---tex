@@ -49,6 +49,7 @@ CREATE TABLE dbo.orders (
   order_date NVARCHAR(40) NULL,
   product_code NVARCHAR(255) NULL,
   fabric_type NVARCHAR(500) NULL,
+  order_type NVARCHAR(40) NOT NULL DEFAULT 'trade',
   total_raw_quantity FLOAT DEFAULT 0,
   expected_waste_percent FLOAT DEFAULT 0,
   width_mode NVARCHAR(80) DEFAULT 'single',

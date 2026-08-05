@@ -92,6 +92,7 @@ function runMigrations() {
   addColumnIfMissing('pricings', 'pricing_items_json TEXT');
   [
     'product_code TEXT',
+    "order_type TEXT DEFAULT 'trade'",
     "width_mode TEXT DEFAULT 'single'",
     'width_lines_json TEXT',
     'raw_cost REAL DEFAULT 0',

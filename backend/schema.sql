@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS orders (
   order_date TEXT,
   product_code TEXT,
   fabric_type TEXT,
+  order_type TEXT NOT NULL DEFAULT 'trade',
   total_raw_quantity REAL DEFAULT 0,
   expected_waste_percent REAL DEFAULT 0,
   width_mode TEXT DEFAULT 'single',

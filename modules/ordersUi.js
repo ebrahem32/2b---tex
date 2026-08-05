@@ -77,8 +77,9 @@ function updateOrdersListHeading(list = []) {
 function orderRowHtml(order) {
   const stage = orderStageInfo(order);
   const waitingText = stage.startDate ? `${stage.startDate} / ${stage.days} يوم` : '-';
+  const orderTypeLabel = order.orderType === 'manufacturing' ? 'مصنعية فقط' : 'بيع وشراء';
   return `<tr class="order-result-row" data-order-row="${order.id}">
-      <td data-label="رقم الطلب"><strong class="order-number-cell">${escapeHtml(order.orderNumber || '-')}</strong></td>
+      <td data-label="رقم الطلب"><strong class="order-number-cell">${escapeHtml(order.orderNumber || '-')}</strong><small class="order-stage-age">${escapeHtml(orderTypeLabel)}</small></td>
       <td data-label="العميل">${escapeHtml(order.customerCode ? `${order.customer || '-'} (${order.customerCode})` : (order.customer || '-'))}</td>
       <td data-label="الصنف">${escapeHtml(order.fabricType || '-')}</td>
       <td data-label="الأرصدة">
@@ -141,6 +142,7 @@ function hasActiveOrderFilter() {
   return Boolean(
     String(refs.searchInput?.value || '').trim()
     || (refs.orderStatusFilter?.value && refs.orderStatusFilter.value !== 'all')
+    || (refs.orderTypeFilter?.value && refs.orderTypeFilter.value !== 'all')
     || (refs.customerFilter?.value && refs.customerFilter.value !== 'all')
     || (refs.dyehouseFilter?.value && refs.dyehouseFilter.value !== 'all')
     || (refs.fabricFilter?.value && refs.fabricFilter.value !== 'all')

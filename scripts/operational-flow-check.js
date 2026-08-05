@@ -1063,6 +1063,22 @@ function checkWhatsappAccountReplacement() {
   assert(serviceSource.includes('await initializeWhatsappClient()'), 'WhatsApp account: service must immediately create a fresh QR session');
 }
 
+function checkOrderBusinessModes() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const ordersUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'ordersUi.js'), 'utf8');
+  const backendSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
+  const mssqlSchema = fs.readFileSync(path.join(__dirname, '..', 'backend', 'schema.mssql.sql'), 'utf8');
+  assert(appSource.includes('id="orderType"'), 'order type: request form must offer trade or manufacturing-only');
+  assert(appSource.includes('id = \'orderTypeFilter\''), 'order type: operations list must have an independent type filter');
+  assert(appSource.includes("orderType: row.order_type === 'manufacturing'"), 'order type: SQL value must map into runtime orders');
+  assert(appSource.includes("order_type: order.orderType === 'manufacturing'"), 'order type: selected value must persist to SQL Server');
+  assert(appSource.includes("if (order?.orderType === 'manufacturing') return 0"), 'order type: manufacturing-only orders must exclude purchased fabric cost');
+  assert(appSource.includes("order.orderType === 'manufacturing' ? { ...item, rawCost:0 }"), 'order type: linked contract costing must exclude raw fabric for manufacturing-only');
+  assert(ordersUiSource.includes("order.orderType === 'manufacturing' ? 'مصنعية فقط' : 'بيع وشراء'"), 'order type: operating rows must visibly identify each business mode');
+  assert(backendSource.includes("'order_type'"), 'order type: backend CRUD allowlist must include order_type');
+  assert(mssqlSchema.includes('order_type NVARCHAR(40)'), 'order type: SQL Server schema must persist the business mode');
+}
+
 function checkMultiWidthOrderRowsKeepWidthLabels() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('function allocationWidthLabel(order, allocation)'), 'multi-width orders: shared width label helper must exist');
@@ -1144,6 +1160,7 @@ checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();
 checkPerColorAccessoryDistribution();
 checkWhatsappAccountReplacement();
+checkOrderBusinessModes();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 

@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.05.03';
-const APP_BUILD_TIME = '2026-08-05 11:18';
+const APP_VERSION = 'v2026.08.05.04';
+const APP_BUILD_TIME = '2026-08-05 12:05';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -415,8 +415,16 @@ let pricingDraftFromOrder;
 let openPricingForOrder;
 let pricingRowsForReport;
 
+const orderTypeLabel = document.createElement('label');
+orderTypeLabel.innerHTML = '<span>نوع الطلب</span><select id="orderType" required><option value="trade">بيع وشراء شامل القماش</option><option value="manufacturing">مصنعية فقط - خام العميل</option></select>';
+document.getElementById('fabricType')?.closest('label')?.insertAdjacentElement('afterend', orderTypeLabel);
+const orderTypeFilterElement = document.createElement('select');
+orderTypeFilterElement.id = 'orderTypeFilter';
+orderTypeFilterElement.innerHTML = '<option value="all">كل أنواع التشغيل</option><option value="trade">بيع وشراء شامل القماش</option><option value="manufacturing">مصنعية فقط</option>';
+document.getElementById('orderStatusFilter')?.insertAdjacentElement('beforebegin', orderTypeFilterElement);
+
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','weavingOrdersTableBody','dyehouseOrdersTableBody','warehouseOrdersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','savePricingBtn','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','weavingOrdersTableBody','dyehouseOrdersTableBody','warehouseOrdersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderTypeFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','savePricingBtn','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','orderType','totalRawQuantity','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
@@ -551,6 +559,7 @@ function mapDbOrder(row, customers) {
     orderDate: row.order_date || '',
     productCode: row.product_code || buildItemCode(row.order_number),
     fabricType: row.fabric_type || '',
+    orderType: row.order_type === 'manufacturing' ? 'manufacturing' : 'trade',
     totalRawQuantity: Number(row.total_raw_quantity || 0),
     expectedWastePercent: Number(row.expected_waste_percent || 0),
     widthMode,
@@ -836,6 +845,7 @@ const orderToApi = (order, customerId = null) => ({
   order_date: order.orderDate,
   product_code: order.productCode || buildItemCode(order.orderNumber),
   fabric_type: order.fabricType,
+  order_type: order.orderType === 'manufacturing' ? 'manufacturing' : 'trade',
   total_raw_quantity: Number(order.totalRawQuantity || 0),
   expected_waste_percent: Number(order.expectedWastePercent || 0),
   width_mode: order.widthMode || 'single',
@@ -1220,6 +1230,7 @@ function pricingForOrder(order) {
   return readableFallback.length === 1 ? readableFallback[0] : null;
 }
 function orderRawCost(order) {
+  if (order?.orderType === 'manufacturing') return 0;
   const direct = Number(order?.rawCost || order?.rawPrice || 0);
   if (direct) return direct;
   return Number(pricingForOrder(order)?.rawCost || 0);
@@ -4098,14 +4109,15 @@ function pricingContractSourceForOrder(pricing, operationalOrder = null) {
     const matching = orderAccessories.find((current)=>normalizeForCompare(current.type) === normalizeForCompare(line.type));
     return matching ? { ...line, quantity:Number(matching.quantity || 0), percent:Number(matching.percent || 0) } : line;
   });
+  const applyOrderType = (item) => order.orderType === 'manufacturing' ? { ...item, rawCost:0 } : item;
   const sourceItems = pricingItemsFor(pricing);
-  if (!sourceItems.length) return { ...pricing, quantity, accessoryLines:syncAccessories(pricing.accessoryLines || []) };
+  if (!sourceItems.length) return applyOrderType({ ...pricing, quantity, accessoryLines:syncAccessories(pricing.accessoryLines || []) });
   let quantityApplied = false;
   const priceItems = sourceItems.map((item)=>{
     const matches = sourceItems.length === 1 || compatibleFabricForMatch(order.fabricType, item.fabricType || item.materialType);
     if (!matches || quantityApplied) return item;
     quantityApplied = true;
-    return { ...item, quantity, accessoryLines:syncAccessories(item.accessoryLines || []) };
+    return applyOrderType({ ...item, quantity, accessoryLines:syncAccessories(item.accessoryLines || []) });
   });
   return { ...pricing, quantity, priceItems };
 }
@@ -4847,6 +4859,7 @@ function filteredOrders() {
   const customer = refs.customerFilter.value;
   const dyehouse = refs.dyehouseFilter.value;
   const fabric = refs.fabricFilter.value;
+  const orderType = refs.orderTypeFilter?.value || 'all';
   const includeMainWarehouseStock = status === 'stage:warehouse' || !!query;
   return allOrders().filter((order) => {
     if (isMainWarehouseStockOrder(order) && !includeMainWarehouseStock) return false;
@@ -4854,7 +4867,7 @@ function filteredOrders() {
     const statusMatch = status.startsWith('stage:')
       ? orderMatchesStageFilter(order, status.slice('stage:'.length), stage)
       : (status === 'closed' ? order.status === 'closed' : (status === 'all' ? true : order.status === status));
-    return orderSearchText(order).includes(query) && statusMatch && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
+    return orderSearchText(order).includes(query) && statusMatch && (orderType === 'all' || order.orderType === orderType) && (customer === 'all' || order.customer === customer) && (dyehouse === 'all' || order.dyehouse === dyehouse) && (fabric === 'all' || order.fabricType === fabric);
   });
 }
 function fillSelectOptions(select, values, allLabel) {
@@ -6034,6 +6047,7 @@ function fillOrderForm(order) {
   refs.customer.value = order.customer || '';
   refs.orderDate.value = order.orderDate || '';
   refs.fabricType.value = order.fabricType || '';
+  refs.orderType.value = order.orderType === 'manufacturing' ? 'manufacturing' : 'trade';
   refs.totalRawQuantity.value = order.totalRawQuantity || '';
   if (refs.expectedWastePercent) refs.expectedWastePercent.value = order.expectedWastePercent || '';
   refs.widthMode.value = order.widthMode || 'single';
@@ -6063,7 +6077,7 @@ async function addOrder(event) {
   const payloadOperationNotes = currentOrder?.operationNotes && typeof currentOrder.operationNotes === 'object' && !Array.isArray(currentOrder.operationNotes)
     ? { ...currentOrder.operationNotes, dyeingStages: undefined }
     : {};
-  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
+  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), orderType:refs.orderType.value === 'manufacturing' ? 'manufacturing' : 'trade', totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:+refs.expectedWastePercent.value || 0, widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:+refs.kiloPrice.value, rawCost:orderRawCost({ ...currentOrder, orderType:refs.orderType.value, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
   const convertedDraftItems = !editingOrderId && refs.widthMode.value !== 'multiple' && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
   const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple'
     ? (convertedDraftItems.length ? convertedDraftItems : readGroupedOrderItems()).map((item)=>({ ...item, fabricType:canonicalFabricName(item.fabricType) }))
@@ -8055,7 +8069,7 @@ refs.accessoryLinesEditor.addEventListener('input', (event) => {
 });
 refs.orderForm.onsubmit = (event) => addOrder(event).catch((error)=>{ console.error('order-save-error', error); alert('تعذر حفظ الطلب.'); });
 refs.orderNumber.oninput = syncAutoCodes;
-refs.searchInput.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.oninput = refs.dyehouseFilter.oninput = refs.fabricFilter.oninput = renderOrders;
+refs.searchInput.oninput = refs.orderTypeFilter.oninput = refs.orderStatusFilter.oninput = refs.customerFilter.oninput = refs.dyehouseFilter.oninput = refs.fabricFilter.oninput = renderOrders;
 [refs.pricingSearchInput, refs.pricingCustomerFilter, refs.pricingStatusFilter].filter(Boolean).forEach((input)=>{
   input.oninput = renderPricings;
   input.onchange = renderPricings;
