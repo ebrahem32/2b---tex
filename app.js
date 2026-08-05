@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.05.02';
-const APP_BUILD_TIME = '2026-08-05 11:02';
+const APP_VERSION = 'v2026.08.05.03';
+const APP_BUILD_TIME = '2026-08-05 11:18';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -1689,7 +1689,34 @@ function whatsappConnectionPanelHtml() {
   const qrHtml = whatsappStatus?.qrDataUrl
     ? `<div class="notice"><strong>اربط هذا الجهاز مع واتساب</strong><br><span class="muted">من هاتفك افتح واتساب ثم الأجهزة المرتبطة وامسح رمز QR لإكمال الربط.</span><br><img data-whatsapp-qr src="${escapeHtml(whatsappStatus.qrDataUrl)}" alt="WhatsApp QR" style="width:220px;max-width:100%;margin-top:10px;border:1px solid #d8dee9;border-radius:8px;background:#fff;padding:8px"></div>`
     : '';
-  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${diagnosticHtml}${qrHtml}`;
+  const accountActionHtml = whatsappStatus?.status === 'connected'
+    ? '<div class="document-inline-actions no-print"><button class="mini-btn danger" type="button" data-change-whatsapp-account>تغيير حساب واتساب</button></div>'
+    : '';
+  return `<div class="notice ${whatsappStatus?.status === 'connected' ? 'success' : 'warning'}"><strong>حالة واتساب:</strong> ${escapeHtml(statusText)}${whatsappStatus?.errorMessage ? ` - ${escapeHtml(whatsappStatus.errorMessage)}` : ''}</div>${accountActionHtml}${diagnosticHtml}${qrHtml}`;
+}
+async function changeWhatsappAccount() {
+  const accepted = confirm('سيتم فصل حساب واتساب الحالي وإنشاء رمز QR لحساب جديد. هل تريد المتابعة؟');
+  if (!accepted) return;
+  const button = refs.documentBody?.querySelector('[data-change-whatsapp-account]');
+  if (button) { button.disabled = true; button.textContent = 'جاري فصل الحساب...'; }
+  try {
+    const response = await fetch(`${WHATSAPP_SERVICE_URL}/api/session/reset`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ confirm:'CHANGE_ACCOUNT' }),
+    });
+    const data = await response.json().catch(()=>({}));
+    if (!response.ok || !data.ok) throw new Error(data.error || 'تعذر تغيير الحساب');
+    whatsappStatus = { ...(data.whatsapp || defaults.whatsappStatus), processing:null, outboxSummary:whatsappStatus?.outboxSummary || null };
+    save();
+    updateWhatsappStatusBadge();
+    updateWhatsappSettingsConnectionPanel();
+    alert('تم فصل الحساب الحالي. امسح رمز QR الذي سيظهر لربط الحساب الجديد.');
+    setTimeout(()=>pollWhatsappService(), 1500);
+  } catch (error) {
+    alert(`تعذر تغيير حساب واتساب: ${error.message || error}`);
+    updateWhatsappSettingsConnectionPanel();
+  }
 }
 function stopWhatsappSettingsAutoRefresh() {
   if (whatsappSettingsRefreshTimer) clearInterval(whatsappSettingsRefreshTimer);
@@ -7949,6 +7976,7 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
     alert(row ? 'تمت إضافة تقرير تجربة إلى قائمة الإرسال.' : 'حدد جروب التقرير الدوري أولًا.');
     return;
   }
+  if (event.target.closest('[data-change-whatsapp-account]')) changeWhatsappAccount();
   if (event.target.closest('[data-save-whatsapp-settings]')) saveWhatsappSettingsFromDialog().catch((error)=>{ console.error('whatsapp-settings-save-error', error); alert('تعذر حفظ إعدادات واتساب.'); });
   if (event.target.closest('[data-add-price-row]')) {
     refs.documentBody.querySelector('[data-dyehouse-price-rows]')?.insertAdjacentHTML('beforeend', dyehousePriceRowHtml());

@@ -65,6 +65,7 @@ let clientReady = false;
 let isProcessing = false;
 let client = null;
 let reconnectTimer = null;
+let sessionResetInProgress = false;
 
 cleanupChromiumLocks(path.join(DATA_DIR, 'sessions'));
 
@@ -177,6 +178,17 @@ app.get('/api/status', (req, res) => {
     outbox,
     attempts: attempts.slice(-50)
   });
+});
+app.post('/api/session/reset', async (req, res) => {
+  if (req.body?.confirm !== 'CHANGE_ACCOUNT') return res.status(400).json({ ok:false, error:'confirmation_required' });
+  try {
+    const state = await resetWhatsappSession();
+    res.json({ ok:true, whatsapp:state });
+  } catch (error) {
+    sessionResetInProgress = false;
+    whatsapp = { status:'disconnected', updatedAt:nowIso(), errorMessage:error.message || String(error), qr:'', qrDataUrl:'' };
+    res.status(500).json({ ok:false, error:whatsapp.errorMessage, whatsapp:publicWhatsappState() });
+  }
 });
 app.get('/api/groups', async (req, res) => {
   try {
@@ -322,6 +334,7 @@ async function processNextReport() {
 }
 
 function scheduleReconnect(reason = '') {
+  if (sessionResetInProgress) return;
   clientReady = false;
   whatsapp = { status: 'reconnecting', updatedAt: nowIso(), errorMessage: reason || 'إعادة محاولة الاتصال بواتساب', qr: '', qrDataUrl: '' };
   if (reconnectTimer) return;
@@ -377,6 +390,29 @@ async function initializeWhatsappClient() {
     whatsapp = { status: 'reconnecting', updatedAt: nowIso(), errorMessage: error.message || String(error), qr: '', qrDataUrl: '' };
     throw error;
   }
+}
+
+async function resetWhatsappSession() {
+  sessionResetInProgress = true;
+  clientReady = false;
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+  const previousClient = client;
+  client = null;
+  if (previousClient) {
+    previousClient.removeAllListeners();
+    try { await previousClient.logout(); } catch {}
+    try { await previousClient.destroy(); } catch {}
+  }
+  const sessionsDir = path.resolve(DATA_DIR, 'sessions');
+  const dataRoot = path.resolve(DATA_DIR);
+  if (sessionsDir.startsWith(`${dataRoot}${path.sep}`)) {
+    fs.rmSync(sessionsDir, { recursive:true, force:true, maxRetries:5, retryDelay:300 });
+  }
+  whatsapp = { status:'starting', updatedAt:nowIso(), errorMessage:'جاري إنشاء رمز ربط للحساب الجديد', qr:'', qrDataUrl:'' };
+  sessionResetInProgress = false;
+  await initializeWhatsappClient();
+  return publicWhatsappState();
 }
 
 process.on('unhandledRejection', (error) => {

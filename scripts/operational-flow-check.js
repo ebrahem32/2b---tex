@@ -1052,6 +1052,17 @@ function checkPerColorAccessoryDistribution() {
   assert(appSource.includes("order.widthMode !== 'multiple'"), 'order quantity: multi-width orders must keep their dedicated width-distribution total');
 }
 
+function checkWhatsappAccountReplacement() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const serviceSource = fs.readFileSync(path.join(__dirname, '..', 'whatsapp-service', 'server.js'), 'utf8');
+  assert(appSource.includes('data-change-whatsapp-account'), 'WhatsApp account: settings must expose an explicit change-account action');
+  assert(appSource.includes("confirm:'CHANGE_ACCOUNT'"), 'WhatsApp account: reset request must require explicit confirmation');
+  assert(serviceSource.includes("app.post('/api/session/reset'"), 'WhatsApp account: service must provide a session reset endpoint');
+  assert(serviceSource.includes('previousClient.removeAllListeners()'), 'WhatsApp account: old client reconnect events must be disabled before logout');
+  assert(serviceSource.includes('fs.rmSync(sessionsDir, { recursive:true, force:true'), 'WhatsApp account: old local authentication session must be removed');
+  assert(serviceSource.includes('await initializeWhatsappClient()'), 'WhatsApp account: service must immediately create a fresh QR session');
+}
+
 function checkMultiWidthOrderRowsKeepWidthLabels() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes('function allocationWidthLabel(order, allocation)'), 'multi-width orders: shared width label helper must exist');
@@ -1132,6 +1143,7 @@ checkOrderQuotationUsesLinkedPricingCard();
 checkSeparateWorkspaceModules();
 checkManualAccessoryDistribution();
 checkPerColorAccessoryDistribution();
+checkWhatsappAccountReplacement();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 
