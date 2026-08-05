@@ -153,8 +153,9 @@
       if (normalized.length) {
         const byType = new Map();
         normalized.forEach((line) => {
-          const key = clean(line.type || resolvedAccessoryName(line, order));
-          const current = byType.get(key) || { type: key, percent: 0, quantity: 0, unit: line.unit, length: line.length, width: line.width };
+          const type = clean(line.type || resolvedAccessoryName(line, order));
+          const key = [type, line.unit, Number(line.length || 0), Number(line.width || 0)].join('|');
+          const current = byType.get(key) || { type, percent: 0, quantity: 0, unit: line.unit, length: line.length, width: line.width };
           current.percent += Number(line.percent || 0);
           current.quantity += Number(line.quantity || 0);
           byType.set(key, current);
@@ -175,6 +176,7 @@
     }
 
     function accessoryPercentForOrder(line, order) {
+      if (line?.unit === 'piece') return roundNumber(Number(line?.percent || 0));
       const quantity = Number(line?.quantity || 0);
       const orderTotal = Number(order?.totalRawOrdered || order?.totalRawQuantity || 0);
       if (quantity > 0 && orderTotal > 0) return roundNumber((quantity / orderTotal) * 100);
