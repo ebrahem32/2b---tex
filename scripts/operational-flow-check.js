@@ -993,6 +993,7 @@ function checkPricingListFiltersAndOrderNumber() {
 function checkOrderPreparedSpecsPersistence() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes("'orderPreparedWeight','orderPreparedWidth'"), 'order form: prepared weight and width fields must be wired');
+  assert(appSource.includes("document.getElementById('totalRawQuantity')?.closest('label')?.insertAdjacentElement('afterend', preparedWeightLabel)"), 'order form: prepared specs must appear directly after total required raw');
   assert(appSource.includes('payloadOperationNotes.preparedWeight'), 'order save: prepared weight must be persisted in operation notes');
   assert(appSource.includes('payloadOperationNotes.preparedWidth'), 'order save: prepared width must be persisted in operation notes');
   assert(appSource.includes("order?.operationNotes?.preparedWeight || ''"), 'order edit: prepared weight must be restored');

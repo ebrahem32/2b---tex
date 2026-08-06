@@ -1,5 +1,11 @@
 # Development Log
 
+### 2026-08-06 - Surface Prepared Specs In Main Order Entry
+
+- Moved prepared weight and prepared width to the upper order-entry section directly after total required raw.
+- Kept the existing SQL Server persistence, edit restoration, and weaving-document output unchanged.
+- Updated version to `v2026.08.06.13`.
+
 ### 2026-08-06 - Prevent Weaving Fabric Text Overlap
 
 - Widened value columns relative to label columns in the weaving operation table.

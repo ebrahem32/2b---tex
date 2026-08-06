@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.06.12';
-const APP_BUILD_TIME = '2026-08-06 16:15';
+const APP_VERSION = 'v2026.08.06.13';
+const APP_BUILD_TIME = '2026-08-06 16:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -425,7 +425,7 @@ rawComponentsBox.innerHTML = '<div class="subsection-head"><div><span>مكونا
 document.getElementById('totalRawQuantity')?.closest('label')?.insertAdjacentElement('afterend', rawComponentsBox);
 const preparedWeightLabel = document.createElement('label');
 preparedWeightLabel.innerHTML = '<span>الوزن المجهز</span><input id="orderPreparedWeight" type="number" step="0.01" placeholder="مثال: 200">';
-document.getElementById('inchWidth')?.closest('label')?.insertAdjacentElement('afterend', preparedWeightLabel);
+document.getElementById('totalRawQuantity')?.closest('label')?.insertAdjacentElement('afterend', preparedWeightLabel);
 const preparedWidthLabel = document.createElement('label');
 preparedWidthLabel.innerHTML = '<span>العرض المجهز</span><input id="orderPreparedWidth" type="number" step="0.01" placeholder="مثال: 160">';
 preparedWeightLabel.insertAdjacentElement('afterend', preparedWidthLabel);
