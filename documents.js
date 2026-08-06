@@ -348,11 +348,20 @@
       const rows = weavingRawComponents(order);
       if (!rows.length) return '';
       const wastePercent = order?.orderType === 'manufacturing' ? 0 : Math.max(Number(order?.expectedWastePercent || 0), 0);
+      const componentTotal = rows.reduce((total, line)=>total + Number(line.quantity || 0), 0);
+      const accessories = orderAccessoryLines(order);
+      const accessoryParts = (component) => accessories.map((line)=>{
+        const percent = Number(accessoryPercentForOrder(line, order) || 0);
+        const proportionalQuantity = componentTotal > 0 ? Number(line.quantity || 0) * Number(component.quantity || 0) / componentTotal : 0;
+        const quantity = roundNumber(percent > 0 ? Number(component.quantity || 0) * percent / 100 : proportionalQuantity);
+        const unitLabel = line.unit === 'piece' ? 'قطعة' : 'كجم';
+        return quantity > 0 ? `<small>${safeText(line.type)}: ${fmt(quantity)} ${unitLabel}</small>` : '';
+      }).filter(Boolean).join('');
       const body = rows.map((line)=>{
         const wasteQuantity = roundNumber(line.quantity * wastePercent / 100);
         const operatingQuantity = roundNumber(line.quantity + wasteQuantity);
         const label = [line.name, line.specification].filter(Boolean).join(' - ');
-        return `<tr><td>${safeText(label)}</td><td>${fmt(line.quantity)}</td><td>${wastePercent ? `${fmt(wasteQuantity)} (${fmt(wastePercent)}%)` : 'غير مطبق'}</td><td>${fmt(operatingQuantity)}</td></tr>`;
+        return `<tr><td><span class="weaving-component-name">${safeText(label)}</span>${accessoryParts(line)}</td><td>${fmt(line.quantity)}</td><td>${wastePercent ? `${fmt(wasteQuantity)} (${fmt(wastePercent)}%)` : 'غير مطبق'}</td><td>${fmt(operatingQuantity)}</td></tr>`;
       }).join('');
       return `<section class="report-section weaving-components-section"><h3>مكونات تشغيل الخام</h3><table><thead><tr><th>المكون / المواصفة</th><th>كمية العميل</th><th>الهالك المضاف</th><th>كمية التشغيل</th></tr></thead><tbody>${body}</tbody></table></section>`;
     }
@@ -366,7 +375,7 @@
         ? `<tr><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td><th>نوع التشغيل</th><td>مصنعية / صباغة فقط</td><th>ملكية الخام</th><td>خام العميل</td><th>سعر الخام والهالك</th><td>غير محسوب</td></tr>`
         : `<tr><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td><th>هالك التسعير</th><td>${fmt(wastePercent)}%</td><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr>`;
       const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table weaving-operation-table"><tbody><tr><th>البوصة</th><td>${safeText(widthSummary(order))}</td><th>الصنف</th><td>${safeText(order?.fabricType)}</td><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>كمية طلب العميل</th><td>${fmt(customerQuantity)}</td></tr>${secondRow}</tbody></table></section>`;
-      return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${weavingRawComponentsSection(order)}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
+      return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${weavingRawComponentsSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 
     function orderRawPermitNoteList(order) {

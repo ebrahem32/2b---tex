@@ -760,6 +760,7 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
     totalRawOrdered: 5000,
     totalRawQuantity: 5000,
     expectedWastePercent: 10,
+    accessoryLines: [{ type:'ريب', percent:3, quantity:150, unit:'kg' }],
     operationNotes: { rawComponents: [
       { name:'ممشط', specification:'', quantity:4000 },
       { name:'شانيه فاتح', specification:'2%', quantity:500 },
@@ -769,6 +770,9 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
   assert(componentHtml.includes('ممشط'), 'weaving document: main raw component must appear');
   assert(componentHtml.includes('شانيه فاتح') && componentHtml.includes('2%') && componentHtml.includes('8%'), 'weaving document: same-name shania specifications must remain separate');
   assert(componentHtml.includes('4,400') && componentHtml.includes('550'), 'weaving document: waste must be loaded independently on every raw component');
+  assert(componentHtml.includes('ريب: 120 كجم') && componentHtml.includes('ريب: 15 كجم'), 'weaving document: rib quantity must appear under its proportional raw component');
+  assert(!componentHtml.includes('<h3>جدول الألوان</h3>'), 'weaving document: color table must not appear');
+  assert(!componentHtml.includes('<h3>الإكسسوارات</h3>'), 'weaving document: accessories must not be duplicated in a separate table');
 }
 
 function checkWarehouseTabKeepsInventorySection() {
