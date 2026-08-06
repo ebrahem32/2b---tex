@@ -225,9 +225,7 @@
         'العرض',
       ].filter(Boolean);
       const body = rows.map((line) => {
-        const plannedQuantityCell = includePlannedWasteBreakdown
-          ? `${flowCell(line.plannedQuantity, plannedAccessoryParts(order, line))}<span class="report-flow-line report-flow-accessory">طلب العميل ${fmt(line.customerPlannedQuantity ?? line.plannedQuantity)} + هالك ${fmt(line.documentExpectedWasteQuantity || 0)} (${formatNumber(line.documentExpectedWastePercent || 0, 2)}%)</span>`
-          : flowCell(line.plannedQuantity, plannedAccessoryParts(order, line));
+        const plannedQuantityCell = flowCell(line.plannedQuantity, plannedAccessoryParts(order, line));
         const cells = [
           colorLabelWithSwatch(line),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
@@ -619,7 +617,7 @@
       const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const documentOrder = { ...order, totalRawOrdered:plannedTotal, totalRawQuantity:plannedTotal };
-      const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>طلب العميل</th><td>${fmt(customerPlannedTotal)}</td><th>هالك التشغيل المضاف</th><td>${manufacturing ? 'غير مطبق' : fmt(expectedWasteTotal)}</td></tr><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
+      const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
       const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
       return reportShell('أمر تشغيل صباغة', documentOrder, `${summary}${colorRows(documentOrder, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false, includePlannedWasteBreakdown:true })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
     }

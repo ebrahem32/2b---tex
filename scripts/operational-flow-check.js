@@ -754,7 +754,8 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
   }, 'D');
   assert(wasteLoadedHtml.includes('1,100'), 'dyeing document: total must include expected waste above customer quantity');
   assert(wasteLoadedHtml.includes('550'), 'dyeing document: every color quantity must include its expected waste');
-  assert(wasteLoadedHtml.includes('طلب العميل 500 + هالك 50'), 'dyeing document: each color must explain customer quantity and added waste');
+  assert(!wasteLoadedHtml.includes('طلب العميل 500 + هالك 50'), 'dyeing document: print must hide customer-plus-waste calculation details');
+  assert(!wasteLoadedHtml.includes('هالك التشغيل المضاف'), 'dyeing document: print summary must hide planned-waste details');
   const componentHtml = builders.buildWeavingOrderDocument({
     ...baseOrder,
     totalRawOrdered: 5000,

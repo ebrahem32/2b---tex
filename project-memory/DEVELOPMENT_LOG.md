@@ -2133,6 +2133,14 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - A future modification requires an explicit request containing `تغيير صيغة أمر تشغيل النسيج`.
 - This is a project-memory guard only; no code, calculations, database, or production data changed.
 
+## Dyeing Print Shows Final Loaded Quantity Only - 2026-08-06
+
+- Preserved planned-waste loading per color and the final dyehouse total.
+- Removed the visible customer-quantity plus waste calculation line from every printed color.
+- Removed planned-waste detail fields from the printed dyeing summary.
+- Printing now shows only each final operating quantity after waste.
+- Release: `v2026.08.06.07`.
+
 ## Independent 2B Control Center Architecture - 2026-08-05
 
 - Approved direction: keep WhatsApp/A5 review in a standalone companion application rather than embedding it into the 2B runtime.

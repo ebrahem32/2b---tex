@@ -177,6 +177,8 @@ Estimated pricing waste is a planning addition, separate from confirmed actual o
 - Dyeing work-order total is the sum of all waste-loaded colors.
 - Example: ten colors of 500 kg at 10% become ten operating lines of 550 kg and a dyeing total of 5,500 kg.
 - Manufacturing-only/customer-owned-raw orders do not receive this estimated raw-waste addition.
+- The printed dyeing work order shows only the final waste-loaded quantity per color and the final dyehouse total.
+- Do not print the internal breakdown (`customer quantity + planned waste`) or a planned-waste summary on the dyeing work order.
 
 ## Weaving Raw Components And Shania
 
