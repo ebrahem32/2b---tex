@@ -211,6 +211,8 @@ The order-entry form includes `الوزن المجهز` and `العرض المج
 
 The weaving operation-data print table is fixed at three label/value pairs per row: inch, fabric, and prepared weight on the first row; prepared width, final required raw, and raw price on the second row. This balanced six-column layout must be preserved to prevent fabric names and numbers from overlapping.
 
+Within that table, value columns are wider than label columns. The fabric value may wrap inside its own cell, while numeric values remain on one line; fabric text must never overflow into the adjacent prepared-weight cell.
+
 ## Dyehouse Balance Rule
 
 ```text

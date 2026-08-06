@@ -1,5 +1,11 @@
 # Development Log
 
+### 2026-08-06 - Prevent Weaving Fabric Text Overlap
+
+- Widened value columns relative to label columns in the weaving operation table.
+- Allowed only the fabric-name cell to wrap safely inside its boundaries while keeping numeric values unbroken.
+- Updated version to `v2026.08.06.12`.
+
 ### 2026-08-06 - Weaving Supplier Label
 
 - Changed the weaving work-order header label from `مصنع / مورد النسيج` to `مورد النسيج`.

@@ -263,9 +263,11 @@
 .two-b-report .weaving-component-name{display:block;font-weight:900}
 .two-b-report .weaving-components-section td small{display:block;margin-top:4px;color:#8a6312;font-size:.88em;font-weight:900}
 .two-b-report .weaving-operation-table{table-layout:fixed;width:100%}
-.two-b-report .weaving-operation-table col{width:16.666%}
+.two-b-report .weaving-operation-table col:nth-child(odd){width:11%}
+.two-b-report .weaving-operation-table col:nth-child(even){width:22.333%}
 .two-b-report .weaving-operation-table th{padding:7px 4px!important;font-size:10px!important;white-space:normal;line-height:1.25}
 .two-b-report .weaving-operation-table td{padding:7px 4px!important;font-size:10.5px!important;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-variant-numeric:tabular-nums}
+.two-b-report .weaving-operation-table td.weaving-fabric-value{white-space:normal;overflow-wrap:anywhere;line-height:1.35;min-height:34px}
 .raw-components-box{padding:14px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02)}
 .raw-components-head,.raw-component-row{display:grid;grid-template-columns:1.4fr 1fr .8fr auto;gap:10px;align-items:center}
 .raw-components-head{padding:0 8px 8px;color:var(--muted);font-size:12px}
