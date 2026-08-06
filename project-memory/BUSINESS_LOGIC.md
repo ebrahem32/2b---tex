@@ -199,7 +199,7 @@ Its approved structure is:
 
 1. Company header and `أمر تشغيل نسيج` title with order number.
 2. One compact header row: date, customer, and weaving factory/supplier.
-3. `بيانات التشغيل` with inch, fabric, prepared weight, customer quantity, prepared width, pricing waste, required raw total, and raw price.
+3. `بيانات التشغيل` with inch, fabric, prepared weight, prepared width, final required raw total, and raw price. Customer quantity and pricing-waste breakdown must not appear in this printed block.
 4. `مكونات تشغيل الخام` with separate component/specification, customer quantity, added waste, operating quantity, and the related rib quantity directly below its component.
 5. Notes and document footer.
 

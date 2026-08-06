@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.06.08';
-const APP_BUILD_TIME = '2026-08-06 15:25';
+const APP_VERSION = 'v2026.08.06.09';
+const APP_BUILD_TIME = '2026-08-06 15:40';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -1521,7 +1521,7 @@ function reportMessage(reportType, order) {
     if (order?.orderType === 'manufacturing') {
       return `أمر تشغيل مصنعية / صباغة\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nخام العميل: ${formatNumber(weavingCustomerQuantity(order))}\nسعر الخام: غير محسوب (خام العميل)\nهالك التسعير: غير مطبق\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
     }
-    return `أمر تشغيل نسيج\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nكمية طلب العميل: ${formatNumber(weavingCustomerQuantity(order))}\nهالك التسعير: ${formatNumber(order.expectedWastePercent || 0)}%\nإجمالي الخام المطلوب: ${formatNumber(weavingRequiredRawQuantity(order))}\nسعر الخام: ${formatNumber(orderRawCost(order) || 0)}\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
+    return `أمر تشغيل نسيج\nرقم الطلب: ${order.orderNumber || '-'}\nالعميل: ${order.customer || '-'}\nالصنف: ${order.fabricType || '-'}\nإجمالي الخام المطلوب: ${formatNumber(weavingRequiredRawQuantity(order))}\nسعر الخام: ${formatNumber(orderRawCost(order) || 0)}\nالتاريخ: ${order.orderDate || '-'}\nملاحظات التشغيل: ${reportOperationNotes(order)}`;
   }
   if (reportType === 'dyeing_production_order') {
     const dyehouseName = String(order.whatsappDyehouseName || order.dyehouse || '').trim();

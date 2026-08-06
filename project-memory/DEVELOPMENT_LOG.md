@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-06 - Simplify Weaving Operation Quantities
+
+- Removed customer quantity and pricing-waste breakdown from the printed weaving work order.
+- Kept only the final `إجمالي الخام المطلوب` quantity after waste, alongside the prepared specifications and raw price.
+- Updated version to `v2026.08.06.09`.
+- Full verification completed with `npm run check`.
+
 ### 2026-08-06 - Prepared Weight And Width In Weaving Orders
 
 - Added prepared-weight and prepared-width inputs to the main order form.
