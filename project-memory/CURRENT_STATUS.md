@@ -1,5 +1,26 @@
 # Current Status
 
+## Current Production Release - 2026-08-06
+
+- Visible application version: `v2026.08.06.06`.
+- Production branch: `main`; latest operational commit: `3fe6463`.
+- Order business mode is explicit: `بيع وشراء` or `تصنيع / مصنعية - خام العميل`.
+- Manufacturing-only orders exclude raw-fabric price and estimated raw waste from pricing, saved order values, linked contract calculations, messages, and weaving documents.
+- Dyeing work orders load estimated waste onto every color independently and show customer quantity, added waste, and operating quantity.
+- Weaving orders support separate raw components such as combed fabric and multiple shania specifications without merging same-name rows.
+- Raw-component quantities must total the customer quantity; estimated waste is loaded independently on every component.
+- Rib/accessory quantities appear below their related raw component in the weaving order; weaving orders no longer show color or separate accessory tables.
+- Weaving document header contains date, customer, and weaving factory/supplier. The first operating row contains inch, fabric, prepared weight, and customer quantity.
+- Verification: `npm run check`, SQL Server normalization, JavaScript syntax checks, and `Operational flow check passed`.
+- Production database schema and `backend/calculations.js` were not changed.
+- The legacy tracked SQLite file is not an operational data source and was not included in these commits.
+
+## Independent 2B Control Center Direction
+
+- Approved architecture: a separate companion program, not an embedded 2B module.
+- Intended scope: WhatsApp group/document intake, document review and deduplication, A5 reconciliation, and approved API exchange with 2B.
+- A local scaffold exists under the development workspace, but it is not installed on the production server yet.
+
 ## Pricing Cards Visibility Recovery
 
 - Date: 2026-07-28.

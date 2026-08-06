@@ -2099,3 +2099,36 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Extended `dyehouseNamesForOrder` with dyehouses recorded on raw dispatch batches.
 - Picker rows display actual dispatched quantity by dyehouse, falling back to scoped planned colors for legacy orders.
 - Release: `v2026.08.02.14`.
+
+## Order Business Modes And Waste-Loaded Production Documents - 2026-08-06
+
+- Added explicit trade versus manufacturing-only behavior throughout order entry, persistence, linked quotation calculations, and operational documents.
+- Manufacturing-only orders hide and zero raw-fabric price and estimated raw waste; they calculate dyeing/services only.
+- Dyeing work orders now add estimated waste independently to every color and explain customer quantity plus added waste.
+- Added regression example: two 500 kg colors at 10% produce two 550 kg lines and a 1,100 kg total.
+- Release: `v2026.08.06.01`; commit `15a18ce`.
+
+## Separate Weaving Raw Components - 2026-08-06
+
+- Added persisted raw-component rows under `operation_notes_json.rawComponents` without changing the SQL Server schema.
+- Components preserve separate shania percentages/specifications even when their names match.
+- Save validation requires component quantities to equal the customer order quantity.
+- Weaving documents calculate waste per component and show customer, waste, and operating quantities.
+- Compact weaving header/specification layout was introduced and refined through releases `v2026.08.06.02` to `v2026.08.06.05`.
+- Related commits: `70d4e9c`, `a9dafb9`, `1ae3dff`, `2f979c0`.
+
+## Rib Distribution Inside Weaving Components - 2026-08-06
+
+- Removed color and standalone accessory tables from weaving work orders.
+- Rib/accessory quantity now appears below each raw component and is calculated from the component quantity and accessory percentage, with proportional fallback for manual totals.
+- Regression example: 3% rib on 4,000 + 500 + 500 displays 120 + 15 + 15 kg.
+- Release: `v2026.08.06.06`; commit `3fe6463`.
+- Verification: full `npm run check` and `Operational flow check passed` after every production release.
+- Not touched: SQL Server schema, production records, stock formulas, confirmed actual-waste formula, or `backend/calculations.js`.
+
+## Independent 2B Control Center Architecture - 2026-08-05
+
+- Approved direction: keep WhatsApp/A5 review in a standalone companion application rather than embedding it into the 2B runtime.
+- Planned responsibilities: WhatsApp group roles, incoming document inbox and deduplication, review/approval, A5 matching, and approved API exchange with 2B.
+- A local scaffold was created and smoke-tested on port 3040.
+- It has not been installed or activated on the production server.

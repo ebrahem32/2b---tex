@@ -158,6 +158,37 @@ Validation:
 - Pricing cards that use operational waste should use this finished-weight percentage, while the pricing cost basis (`صافي` or `قائم`) still controls which costs receive that percentage.
 - Waste is recorded when it is proven or when the operational cycle is closed.
 
+## Order Business Mode
+
+Every customer order must explicitly use one of these modes:
+
+- `trade`: 2B buys/owns the raw fabric and sells the completed product. Raw-fabric price and estimated raw waste participate in commercial calculations.
+- `manufacturing`: customer-owned raw fabric; 2B performs dyeing/manufacturing services only. Raw-fabric price and estimated raw waste must be zero and must not enter the contract calculation.
+
+Historical manufacturing rows that contain old raw-price or estimated-waste values are normalized to zero in runtime reads. Editing and saving the order persists the corrected zero values.
+
+## Planned Waste Loading For Production Documents
+
+Estimated pricing waste is a planning addition, separate from confirmed actual operational waste.
+
+- Customer color allocation remains the customer's ordered quantity.
+- Dyeing work-order quantity per color is:
+  `customer color quantity + (customer color quantity × expected waste percent)`.
+- Dyeing work-order total is the sum of all waste-loaded colors.
+- Example: ten colors of 500 kg at 10% become ten operating lines of 550 kg and a dyeing total of 5,500 kg.
+- Manufacturing-only/customer-owned-raw orders do not receive this estimated raw-waste addition.
+
+## Weaving Raw Components And Shania
+
+- A weaving order may contain separate raw-production components inside the same customer order.
+- Same-name components must not be merged when specification or operating percentage differs.
+- Example: `ممشط 4000`, `شانيه فاتح 2% 500`, and `شانيه فاتح 8% 500` are three independent rows.
+- Component customer quantities must sum exactly to the customer order quantity.
+- Estimated waste is calculated independently for every component.
+- Rib/accessory quantity is distributed onto and displayed below each component, based on its saved percentage or proportional manual total.
+- Weaving work orders intentionally omit the color table and the separate accessory table.
+- Weaving header shows date, customer, and weaving factory/supplier once. Inch, fabric, prepared weight, and customer quantity appear together in the first operating-data row.
+
 ## Dyehouse Balance Rule
 
 ```text
