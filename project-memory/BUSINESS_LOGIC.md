@@ -207,6 +207,8 @@ The weaving document must not restore color or standalone accessory tables. It m
 
 Do not change this template's fields, order, grouping, calculations, headings, or visual structure unless Ibrahim explicitly requests: `تغيير صيغة أمر تشغيل النسيج`.
 
+The order-entry form includes `الوزن المجهز` and `العرض المجهز`. Both values are stored with the order inside `operation_notes_json` as `preparedWeight` and `preparedWidth`, restored during editing, and printed in the weaving work order. Numeric values in the compact operation-data table must remain on one line without digit wrapping.
+
 ## Dyehouse Balance Rule
 
 ```text

@@ -294,12 +294,14 @@
     }
 
     function finishedWidthSummary(order) {
+      if (order?.operationNotes?.preparedWidth) return order.operationNotes.preparedWidth;
       const values = uniqueNonEmpty(orderAllocations(order).map((line) => line.targetFinishedWidth || line.rawWidth));
       if (values.length) return values.join('، ');
       return firstAllocationValue(order, ['targetFinishedWidth', 'rawWidth']) || order?.finishedWidth || '-';
     }
 
     function finishedWeightSummary(order) {
+      if (order?.operationNotes?.preparedWeight) return order.operationNotes.preparedWeight;
       const values = uniqueNonEmpty(orderAllocations(order).map((line) => line.targetFinishedWeight));
       if (values.length) return values.join('، ');
       return order?.finishedWeight || firstAllocationValue(order, ['targetFinishedWeight']) || '-';

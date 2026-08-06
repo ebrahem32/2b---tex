@@ -896,8 +896,9 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
     totalRawQuantity: 2000,
     expectedWastePercent: 8,
     inchWidth: 30,
+    operationNotes: { preparedWeight: 240, preparedWidth: 125 },
     allocations: [
-      { id:'a1', color:'أسود', plannedQuantity:2000, targetFinishedWeight:240, targetFinishedWidth:125 },
+      { id:'a1', color:'أسود', plannedQuantity:2000, targetFinishedWeight:999, targetFinishedWidth:999 },
     ],
   });
   assert(html.includes('الوزن المجهز'), 'weaving document: prepared weight must be visible');
@@ -905,6 +906,8 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
   assert(html.includes('البوصة') && html.includes('30'), 'weaving document: separate inch box must remain visible');
   assert(html.includes('الصنف') && html.includes('بيكا مخلوط 50-50'), 'weaving document: separate fabric box must remain visible');
   assert(html.includes('2,160'), 'weaving document: required raw must equal allocated customer quantity plus pricing waste');
+  assert(html.includes('240') && html.includes('125'), 'weaving document: prepared weight and width entered on the order must be printed');
+  assert(!html.includes('999'), 'weaving document: order-level prepared specs must override stale allocation specs');
   assert(html.includes('كمية طلب العميل</th><td>2,000'), 'weaving document: customer quantity must come from the color allocation total');
   assert(!html.includes('إذن الخام'), 'weaving document: raw permit number must not appear before raw issue exists');
 }
@@ -979,6 +982,15 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(!appSource.includes('<th>رقم الكرت</th><th>رقم الطلب</th>'), 'pricing print: card and order numbers must not appear as separate columns');
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
+}
+
+function checkOrderPreparedSpecsPersistence() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes("'orderPreparedWeight','orderPreparedWidth'"), 'order form: prepared weight and width fields must be wired');
+  assert(appSource.includes('payloadOperationNotes.preparedWeight'), 'order save: prepared weight must be persisted in operation notes');
+  assert(appSource.includes('payloadOperationNotes.preparedWidth'), 'order save: prepared width must be persisted in operation notes');
+  assert(appSource.includes("order?.operationNotes?.preparedWeight || ''"), 'order edit: prepared weight must be restored');
+  assert(appSource.includes("order?.operationNotes?.preparedWidth || ''"), 'order edit: prepared width must be restored');
 }
 
 function checkPricingToOrderCarriesGroupedOperationalFields() {
@@ -1188,6 +1200,7 @@ checkAccessoryPricingUsesWasteAndProfit();
 checkLegacyPricingItemsInheritCardTerms();
 checkPricingCurrencyBadgesExist();
 checkWeavingDocumentLayoutUsesPreparedSpecs();
+checkOrderPreparedSpecsPersistence();
 checkCollarAccessoryMeasurements();
 checkPersistentOrderBalances();
 checkDesktopConnectionIndicatorRecovery();

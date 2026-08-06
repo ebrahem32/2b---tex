@@ -1,5 +1,13 @@
 # Development Log
 
+### 2026-08-06 - Prepared Weight And Width In Weaving Orders
+
+- Added prepared-weight and prepared-width inputs to the main order form.
+- Persisted both values in SQL Server order operation notes without a database schema change, and restored them when editing an order.
+- Used the entered values in the weaving work order and tightened the operation table spacing so quantities such as `20,000` and `21,600` do not wrap across lines.
+- Updated version to `v2026.08.06.08`.
+- `npm run check` and Operational flow check passed.
+
 ### 2026-07-28 - Restore Persisted Pricing Cards
 
 - Removed the implicit pre-filter that hid valid persisted pricing cards from the pricing list.

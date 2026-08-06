@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.06.07';
-const APP_BUILD_TIME = '2026-08-06 14:45';
+const APP_VERSION = 'v2026.08.06.08';
+const APP_BUILD_TIME = '2026-08-06 15:25';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -423,13 +423,19 @@ rawComponentsBox.id = 'rawComponentsBox';
 rawComponentsBox.className = 'full-row raw-components-box';
 rawComponentsBox.innerHTML = '<div class="subsection-head"><div><span>مكونات تشغيل الخام</span><p class="eyebrow">كل خام أو شانيه يدخل كسطر تشغيل مستقل حتى لو كانت المواصفات متشابهة.</p></div><button type="button" class="mini-btn" id="addRawComponentBtn">+ إضافة مكون</button></div><div class="raw-components-head"><span>المكون</span><span>المواصفة / النسبة</span><span>كمية العميل</span><span></span></div><div id="rawComponentsEditor"></div>';
 document.getElementById('totalRawQuantity')?.closest('label')?.insertAdjacentElement('afterend', rawComponentsBox);
+const preparedWeightLabel = document.createElement('label');
+preparedWeightLabel.innerHTML = '<span>الوزن المجهز</span><input id="orderPreparedWeight" type="number" step="0.01" placeholder="مثال: 200">';
+document.getElementById('inchWidth')?.closest('label')?.insertAdjacentElement('afterend', preparedWeightLabel);
+const preparedWidthLabel = document.createElement('label');
+preparedWidthLabel.innerHTML = '<span>العرض المجهز</span><input id="orderPreparedWidth" type="number" step="0.01" placeholder="مثال: 160">';
+preparedWeightLabel.insertAdjacentElement('afterend', preparedWidthLabel);
 const orderTypeFilterElement = document.createElement('select');
 orderTypeFilterElement.id = 'orderTypeFilter';
 orderTypeFilterElement.innerHTML = '<option value="all">كل أنواع التشغيل</option><option value="trade">بيع وشراء شامل القماش</option><option value="manufacturing">مصنعية فقط</option>';
 document.getElementById('orderStatusFilter')?.insertAdjacentElement('beforebegin', orderTypeFilterElement);
 
 const refs = Object.fromEntries([
-  'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','weavingOrdersTableBody','dyehouseOrdersTableBody','warehouseOrdersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderTypeFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','savePricingBtn','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','orderType','totalRawQuantity','rawComponentsBox','rawComponentsEditor','addRawComponentBtn','expectedWastePercent','widthMode','inchWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
+  'statsGrid','pricingTableBody','pricingSearchInput','pricingCustomerFilter','pricingStatusFilter','printFilteredPricingsBtn','ordersTableBody','weavingOrdersTableBody','dyehouseOrdersTableBody','warehouseOrdersTableBody','searchInput','customerFilter','dyehouseFilter','fabricFilter','orderTypeFilter','orderStatusFilter','printFilteredOrdersBtn','orderDetailsPanel','documentsPanel','todayOrdersPanel','analyzeReportBtn','operationalAiDashboard','aiQuestionInput','askAiBtn','aiStatusText','aiAnalysisDialog','aiAnalysisBody','closeAiAnalysisBtn','copyAiWhatsappBtn','openPricingFormBtn','openDocumentReviewBtn','openOrderFormBtn','openOrdersReportBtn','openDyehouseBalancesReportBtn','openManagementReportsBtn','closePricingFormBtn','pricingDialog','pricingForm','savePricingBtn','pricingNumber','pricingProductCode','pricingCustomer','pricingDate','pricingFabricType','pricingMaterialType','pricingDyehouse','pricingColorClass','pricingQuantity','pricingInchWidth','pricingFinishedWeight','pricingRawCost','pricingDyeCost','pricingSuggestedDyeCost','pricingWastePercent','pricingExtraCost','pricingProfitPerKg','pricingPaymentMode','pricingPaymentDetails','pricingPaymentTerms','pricingNotes','pricingWasteCostPreview','pricingCostPreview','pricingSellPreview','pricingTotalPreview','closeOrderFormBtn','orderDialog','orderForm','orderNumber','productCode','customer','orderDate','fabricType','orderType','totalRawQuantity','rawComponentsBox','rawComponentsEditor','addRawComponentBtn','expectedWastePercent','widthMode','inchWidth','orderPreparedWeight','orderPreparedWidth','widthLinesBox','widthLinesEditor','addWidthLineBtn','kiloPrice','paymentMode','paymentDetails','paymentTerms','accessoryType','accessoryPercent','accessoryLinesEditor','addAccessoryLineBtn','dyehouse','weavingSource','orderNotes','weavingSlipDialog','weavingSlipForm','weavingSlipFile','weavingSlipPreview','weavingSlipType','weavingSlipOrderNumber','weavingSlipDate','weavingSlipAllocation','weavingSlipWidthLine','weavingSlipQuantity','weavingSlipSupplier','weavingSlipNoteNumber','reviewMatchNoteBtn','reviewMatchStatus','weavingSlipNotes','closeWeavingSlipBtn','documentDialog','documentTitle','documentBody','closeDocumentBtn','printDocumentBtn','shareWhatsAppBtn','deletePricingBtn'
 ].map((id) => [id, document.getElementById(id)]));
 refs.orderNotes?.closest('label')?.querySelector('span') && (refs.orderNotes.closest('label').querySelector('span').textContent = 'ملاحظات تشغيل');
 
@@ -6106,6 +6112,8 @@ function fillOrderForm(order) {
   if (refs.expectedWastePercent) refs.expectedWastePercent.value = order.expectedWastePercent || '';
   refs.widthMode.value = order.widthMode || 'single';
   refs.inchWidth.value = order.inchWidth || '';
+  refs.orderPreparedWeight.value = order?.operationNotes?.preparedWeight || '';
+  refs.orderPreparedWidth.value = order?.operationNotes?.preparedWidth || '';
   renderWidthLinesEditor(order.widthLines || []);
   syncWidthModeUi();
   resetGroupedOrderRows();
@@ -6140,6 +6148,8 @@ async function addOrder(event) {
     return;
   }
   payloadOperationNotes.rawComponents = rawComponents;
+  payloadOperationNotes.preparedWeight = Number(refs.orderPreparedWeight.value || 0) || '';
+  payloadOperationNotes.preparedWidth = Number(refs.orderPreparedWidth.value || 0) || '';
   const isManufacturing = refs.orderType.value === 'manufacturing';
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), orderType:isManufacturing ? 'manufacturing' : 'trade', totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:isManufacturing ? 0 : (+refs.expectedWastePercent.value || 0), widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:isManufacturing ? 0 : (+refs.kiloPrice.value || 0), rawCost:isManufacturing ? 0 : orderRawCost({ ...currentOrder, orderType:refs.orderType.value, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
   const convertedDraftItems = !editingOrderId && refs.widthMode.value !== 'multiple' && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
