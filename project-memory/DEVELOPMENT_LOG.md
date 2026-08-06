@@ -2126,6 +2126,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Verification: full `npm run check` and `Operational flow check passed` after every production release.
 - Not touched: SQL Server schema, production records, stock formulas, confirmed actual-waste formula, or `backend/calculations.js`.
 
+## Weaving Work-Order Template Locked - 2026-08-06
+
+- Ibrahim approved the visible weaving work-order format as the final production template.
+- Future sessions must preserve its fields, ordering, component separation, rib placement, and compact layout.
+- A future modification requires an explicit request containing `تغيير صيغة أمر تشغيل النسيج`.
+- This is a project-memory guard only; no code, calculations, database, or production data changed.
+
 ## Independent 2B Control Center Architecture - 2026-08-05
 
 - Approved direction: keep WhatsApp/A5 review in a standalone companion application rather than embedding it into the 2B runtime.

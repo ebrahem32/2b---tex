@@ -189,6 +189,22 @@ Estimated pricing waste is a planning addition, separate from confirmed actual o
 - Weaving work orders intentionally omit the color table and the separate accessory table.
 - Weaving header shows date, customer, and weaving factory/supplier once. Inch, fabric, prepared weight, and customer quantity appear together in the first operating-data row.
 
+## Locked Weaving Work-Order Template
+
+The weaving work-order layout approved on `2026-08-06` in release `v2026.08.06.06` is a locked production template.
+
+Its approved structure is:
+
+1. Company header and `أمر تشغيل نسيج` title with order number.
+2. One compact header row: date, customer, and weaving factory/supplier.
+3. `بيانات التشغيل` with inch, fabric, prepared weight, customer quantity, prepared width, pricing waste, required raw total, and raw price.
+4. `مكونات تشغيل الخام` with separate component/specification, customer quantity, added waste, operating quantity, and the related rib quantity directly below its component.
+5. Notes and document footer.
+
+The weaving document must not restore color or standalone accessory tables. It must not merge shania rows with different specifications.
+
+Do not change this template's fields, order, grouping, calculations, headings, or visual structure unless Ibrahim explicitly requests: `تغيير صيغة أمر تشغيل النسيج`.
+
 ## Dyehouse Balance Rule
 
 ```text
