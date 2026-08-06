@@ -211,6 +211,7 @@
       const includeCustomerDelivered = !!options.includeCustomerDelivered;
       const includeWarehouseBalance = !!options.includeWarehouseBalance;
       const includeWaste = !!options.includeWaste;
+      const includePlannedWasteBreakdown = !!options.includePlannedWasteBreakdown;
       const headers = [
         'اللون',
         includeInch ? 'البوصة' : '',
@@ -224,10 +225,13 @@
         'العرض',
       ].filter(Boolean);
       const body = rows.map((line) => {
+        const plannedQuantityCell = includePlannedWasteBreakdown
+          ? `${flowCell(line.plannedQuantity, plannedAccessoryParts(order, line))}<span class="report-flow-line report-flow-accessory">طلب العميل ${fmt(line.customerPlannedQuantity ?? line.plannedQuantity)} + هالك ${fmt(line.documentExpectedWasteQuantity || 0)} (${formatNumber(line.documentExpectedWastePercent || 0, 2)}%)</span>`
+          : flowCell(line.plannedQuantity, plannedAccessoryParts(order, line));
         const cells = [
           colorLabelWithSwatch(line),
           includeInch ? safeText(line.rawInch || order?.inchWidth) : '',
-          flowCell(line.plannedQuantity, plannedAccessoryParts(order, line)),
+          plannedQuantityCell,
           includeDyehouse ? safeText(line.dyehouse || order?.dyehouse) : '',
           includeReceived ? flowCell(line.finishedReceived, movementAccessoryParts(order, line, 'received')) : '',
           includeCustomerDelivered ? flowCell(line.deliveredToCustomer || line.customerDelivered, movementAccessoryParts(order, line, 'customer')) : '',
@@ -335,8 +339,12 @@
       const customerQuantity = weavingCustomerQuantity(order);
       const wastePercent = Math.max(Number(order?.expectedWastePercent || order?.expected_waste_percent || 0), 0);
       const requiredRawQuantity = weavingRequiredRawQuantity(order);
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr><tr><th>كمية طلب العميل</th><td>${fmt(customerQuantity)}</td><th>هالك التسعير</th><td>${fmt(wastePercent)}%</td></tr><tr><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr></tbody></table></section>`;
-      return reportShell('أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
+      const manufacturing = order?.orderType === 'manufacturing';
+      const commercialRows = manufacturing
+        ? `<tr><th>نوع التشغيل</th><td>مصنعية / صباغة فقط</td><th>ملكية الخام</th><td>خام العميل</td></tr><tr><th>كمية خام العميل</th><td>${fmt(customerQuantity)}</td><th>سعر الخام والهالك</th><td>غير محسوب</td></tr>`
+        : `<tr><th>كمية طلب العميل</th><td>${fmt(customerQuantity)}</td><th>هالك التسعير</th><td>${fmt(wastePercent)}%</td></tr><tr><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr>`;
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr>${commercialRows}</tbody></table></section>`;
+      return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 
     function orderRawPermitNoteList(order) {
@@ -556,18 +564,33 @@
       const originalDyehouse = clean(order?.dyehouse);
       const isOriginalDyehouse = !name || name === originalDyehouse;
       const transfersToDyehouse = dyehouseTransfersFor(order, name);
-      const rows = dyehouseScopedAllocations(order, name);
-      const plannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.plannedQuantity || 0), 0));
-      const rawTotal = dyehouseDocumentBalance(order, rows, name, isOriginalDyehouse, transfersToDyehouse);
+      const scopedRows = dyehouseScopedAllocations(order, name);
+      const manufacturing = order?.orderType === 'manufacturing';
+      const rows = scopedRows.map((allocation) => {
+        const customerPlannedQuantity = Number(allocation.plannedQuantity || 0);
+        const wastePercent = manufacturing ? 0 : Math.max(Number(allocation.expectedWastePercent ?? order?.expectedWastePercent ?? 0), 0);
+        const expectedWasteQuantity = roundNumber(customerPlannedQuantity * wastePercent / 100);
+        return {
+          ...allocation,
+          customerPlannedQuantity,
+          documentExpectedWastePercent:wastePercent,
+          documentExpectedWasteQuantity:expectedWasteQuantity,
+          plannedQuantity:roundNumber(customerPlannedQuantity + expectedWasteQuantity),
+        };
+      });
+      const customerPlannedTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.customerPlannedQuantity || 0), 0));
+      const expectedWasteTotal = roundNumber(rows.reduce((total, allocation) => total + Number(allocation.documentExpectedWasteQuantity || 0), 0));
+      const plannedTotal = roundNumber(customerPlannedTotal + expectedWasteTotal);
+      const rawTotal = dyehouseDocumentBalance(order, scopedRows, name, isOriginalDyehouse, transfersToDyehouse);
       const directDates = rawBatchesForDyehouse(order, name).map((batch) => batch.date || batch.batchDate || batch.batch_date);
       const dates = directDates.length ? directDates : transfersToDyehouse.map((transfer) => transfer.transferDate || transfer.date);
       const reportDate = firstDyehouseOperationDate(dates);
       const rawNoteList = uniqueNonEmpty(dyehouseRawNoteList(order, name, isOriginalDyehouse));
       const rawNotes = dyehouseRawNotes(order, name, isOriginalDyehouse);
       const documentOrder = { ...order, totalRawOrdered:plannedTotal, totalRawQuantity:plannedTotal };
-      const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
+      const summary = `<section class="report-section"><h3>بيانات الصباغة</h3><table class="summary-table"><tbody><tr><th>طلب العميل</th><td>${fmt(customerPlannedTotal)}</td><th>هالك التشغيل المضاف</th><td>${manufacturing ? 'غير مطبق' : fmt(expectedWasteTotal)}</td></tr><tr><th>إجمالي كمية المصبغة</th><td>${fmt(plannedTotal)}</td><th>رصيد الخام في المصبغة</th><td>${fmt(rawTotal)}</td></tr><tr><th>عدد الألوان</th><td>${rows.length}</td><th>إذن الخام</th><td>${safeText(rawNotes)}</td></tr></tbody></table></section>`;
       const rawImages = typeof rawPermitImagesSection === 'function' ? rawPermitImagesSection(order, rawNoteList) : '';
-      return reportShell('أمر تشغيل صباغة', documentOrder, `${summary}${colorRows(documentOrder, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
+      return reportShell('أمر تشغيل صباغة', documentOrder, `${summary}${colorRows(documentOrder, rows, { includeDyehouse:false, includeReceived:false, includeWaste:false, includePlannedWasteBreakdown:true })}${notesSection(order)}${rawImages}`, { dyehouse:name, date:reportDate, rawNotes, omitBasicFields:['إذن الخام', 'العميل'] });
     }
 
     function buildDyeingSummaryDocument(order) {

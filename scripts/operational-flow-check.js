@@ -742,6 +742,19 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
   assert(calculatedPercentHtml.includes('document-color-swatch'), 'document: known color names must render a small color swatch');
   assert(calculatedPercentHtml.includes('<bdi dir="ltr">'), 'document: Pantone codes must keep their entered left-to-right order inside Arabic text');
   assert(calculatedPercentHtml.includes('18.0316'), 'document: Pantone punctuation and digits must remain exactly as entered');
+  const wasteLoadedHtml = builders.buildDyeingOrderDocument({
+    ...baseOrder,
+    expectedWastePercent: 10,
+    totalRawOrdered: 1000,
+    totalRawQuantity: 1000,
+    allocations: [
+      { ...baseOrder.allocations[0], plannedQuantity: 500, expectedWastePercent: 10 },
+      { ...baseOrder.allocations[1], plannedQuantity: 500, expectedWastePercent: 10 },
+    ],
+  }, 'D');
+  assert(wasteLoadedHtml.includes('1,100'), 'dyeing document: total must include expected waste above customer quantity');
+  assert(wasteLoadedHtml.includes('550'), 'dyeing document: every color quantity must include its expected waste');
+  assert(wasteLoadedHtml.includes('طلب العميل 500 + هالك 50'), 'dyeing document: each color must explain customer quantity and added waste');
 }
 
 function checkWarehouseTabKeepsInventorySection() {
