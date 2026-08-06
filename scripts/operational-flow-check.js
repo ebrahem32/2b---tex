@@ -904,6 +904,7 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
   assert(html.includes('الوزن المجهز'), 'weaving document: prepared weight must be visible');
   assert(html.includes('العرض المجهز'), 'weaving document: prepared width must be visible');
   assert(html.includes('البوصة') && html.includes('30'), 'weaving document: separate inch box must remain visible');
+  assert(html.includes('مورد النسيج') && !html.includes('مصنع / مورد النسيج'), 'weaving document: weaving party label must be supplier only');
   assert(html.includes('الصنف') && html.includes('بيكا مخلوط 50-50'), 'weaving document: separate fabric box must remain visible');
   assert(html.includes('2,160'), 'weaving document: required raw must equal allocated customer quantity plus pricing waste');
   assert(html.includes('240') && html.includes('125'), 'weaving document: prepared weight and width entered on the order must be printed');

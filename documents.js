@@ -332,7 +332,7 @@
     }
 
     function weavingInfoSection(order) {
-      return `<div class="document-meta weaving-document-meta"><div><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>مصنع / مورد النسيج</span>${safeText(order?.weavingSource)}</div></div>`;
+      return `<div class="document-meta weaving-document-meta"><div><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>مورد النسيج</span>${safeText(order?.weavingSource)}</div></div>`;
     }
 
     function weavingRawComponents(order) {

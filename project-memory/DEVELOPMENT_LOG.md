@@ -1,5 +1,10 @@
 # Development Log
 
+### 2026-08-06 - Weaving Supplier Label
+
+- Changed the weaving work-order header label from `مصنع / مورد النسيج` to `مورد النسيج`.
+- Updated version to `v2026.08.06.11`.
+
 ### 2026-08-06 - Balance Weaving Operation Table
 
 - Rebuilt the weaving operation-data block as a balanced six-column table with three label/value pairs per row.
