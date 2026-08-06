@@ -332,7 +332,29 @@
     }
 
     function weavingInfoSection(order) {
-      return `<div class="document-meta weaving-document-meta"><div class="document-meta-wide"><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>المصبغة</span>${safeText(order?.dyehouse)}</div><div class="document-meta-wide"><span>الصنف</span>${weavingItemDescription(order)}</div></div>`;
+      return `<div class="document-meta weaving-document-meta"><div><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>المصبغة</span>${safeText(order?.dyehouse)}</div><div><span>الصنف</span>${safeText(order?.fabricType)}</div><div><span>البوصة</span>${safeText(widthSummary(order))}</div><div><span>الوزن المجهز</span>${safeText(finishedWeightSummary(order))}</div><div><span>العرض المجهز</span>${safeText(finishedWidthSummary(order))}</div><div><span>مصدر النسيج</span>${safeText(order?.weavingSource)}</div></div>`;
+    }
+
+    function weavingRawComponents(order) {
+      const configured = Array.isArray(order?.operationNotes?.rawComponents) ? order.operationNotes.rawComponents : [];
+      return configured.map((line)=>({
+        name:clean(line?.name),
+        specification:clean(line?.specification),
+        quantity:Number(line?.quantity || 0),
+      })).filter((line)=>line.name || line.specification || line.quantity > 0);
+    }
+
+    function weavingRawComponentsSection(order) {
+      const rows = weavingRawComponents(order);
+      if (!rows.length) return '';
+      const wastePercent = order?.orderType === 'manufacturing' ? 0 : Math.max(Number(order?.expectedWastePercent || 0), 0);
+      const body = rows.map((line)=>{
+        const wasteQuantity = roundNumber(line.quantity * wastePercent / 100);
+        const operatingQuantity = roundNumber(line.quantity + wasteQuantity);
+        const label = [line.name, line.specification].filter(Boolean).join(' - ');
+        return `<tr><td>${safeText(label)}</td><td>${fmt(line.quantity)}</td><td>${wastePercent ? `${fmt(wasteQuantity)} (${fmt(wastePercent)}%)` : 'غير مطبق'}</td><td>${fmt(operatingQuantity)}</td></tr>`;
+      }).join('');
+      return `<section class="report-section weaving-components-section"><h3>مكونات تشغيل الخام</h3><table><thead><tr><th>المكون / المواصفة</th><th>كمية العميل</th><th>الهالك المضاف</th><th>كمية التشغيل</th></tr></thead><tbody>${body}</tbody></table></section>`;
     }
 
     function buildWeavingOrderDocument(order) {
@@ -344,7 +366,7 @@
         ? `<tr><th>نوع التشغيل</th><td>مصنعية / صباغة فقط</td><th>ملكية الخام</th><td>خام العميل</td></tr><tr><th>كمية خام العميل</th><td>${fmt(customerQuantity)}</td><th>سعر الخام والهالك</th><td>غير محسوب</td></tr>`
         : `<tr><th>كمية طلب العميل</th><td>${fmt(customerQuantity)}</td><th>هالك التسعير</th><td>${fmt(wastePercent)}%</td></tr><tr><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr>`;
       const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr>${commercialRows}</tbody></table></section>`;
-      return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
+      return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${weavingRawComponentsSection(order)}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 
     function orderRawPermitNoteList(order) {

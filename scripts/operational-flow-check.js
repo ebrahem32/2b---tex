@@ -755,6 +755,20 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
   assert(wasteLoadedHtml.includes('1,100'), 'dyeing document: total must include expected waste above customer quantity');
   assert(wasteLoadedHtml.includes('550'), 'dyeing document: every color quantity must include its expected waste');
   assert(wasteLoadedHtml.includes('طلب العميل 500 + هالك 50'), 'dyeing document: each color must explain customer quantity and added waste');
+  const componentHtml = builders.buildWeavingOrderDocument({
+    ...baseOrder,
+    totalRawOrdered: 5000,
+    totalRawQuantity: 5000,
+    expectedWastePercent: 10,
+    operationNotes: { rawComponents: [
+      { name:'ممشط', specification:'', quantity:4000 },
+      { name:'شانيه فاتح', specification:'2%', quantity:500 },
+      { name:'شانيه فاتح', specification:'8%', quantity:500 },
+    ] },
+  });
+  assert(componentHtml.includes('ممشط'), 'weaving document: main raw component must appear');
+  assert(componentHtml.includes('شانيه فاتح') && componentHtml.includes('2%') && componentHtml.includes('8%'), 'weaving document: same-name shania specifications must remain separate');
+  assert(componentHtml.includes('4,400') && componentHtml.includes('550'), 'weaving document: waste must be loaded independently on every raw component');
 }
 
 function checkWarehouseTabKeepsInventorySection() {
@@ -883,9 +897,9 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
   });
   assert(html.includes('الوزن المجهز'), 'weaving document: prepared weight must be visible');
   assert(html.includes('العرض المجهز'), 'weaving document: prepared width must be visible');
-  assert(html.includes('البوصة 30'), 'weaving document: item descriptor must include inch width');
-  assert(html.includes('الصنف بيكا مخلوط 50-50'), 'weaving document: item descriptor must include fabric');
-  assert(html.includes('الخام المطلوب 2,160 كجم'), 'weaving document: required raw must equal allocated customer quantity plus pricing waste');
+  assert(html.includes('البوصة') && html.includes('30'), 'weaving document: separate inch box must remain visible');
+  assert(html.includes('الصنف') && html.includes('بيكا مخلوط 50-50'), 'weaving document: separate fabric box must remain visible');
+  assert(html.includes('2,160'), 'weaving document: required raw must equal allocated customer quantity plus pricing waste');
   assert(html.includes('كمية طلب العميل</th><td>2,000'), 'weaving document: customer quantity must come from the color allocation total');
   assert(!html.includes('إذن الخام'), 'weaving document: raw permit number must not appear before raw issue exists');
 }
