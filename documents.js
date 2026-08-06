@@ -332,7 +332,7 @@
     }
 
     function weavingInfoSection(order) {
-      return `<div class="document-meta weaving-document-meta"><div><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>المصبغة</span>${safeText(order?.dyehouse)}</div><div><span>الصنف</span>${safeText(order?.fabricType)}</div><div><span>البوصة</span>${safeText(widthSummary(order))}</div><div><span>الوزن المجهز</span>${safeText(finishedWeightSummary(order))}</div><div><span>العرض المجهز</span>${safeText(finishedWidthSummary(order))}</div><div><span>مصدر النسيج</span>${safeText(order?.weavingSource)}</div></div>`;
+      return `<div class="document-meta weaving-document-meta"><div><span>التاريخ</span>${safeText(order?.orderDate)}</div><div><span>العميل</span>${safeText(customerName(order))}</div><div><span>الصنف</span>${safeText(order?.fabricType)}</div><div><span>المصبغة</span>${safeText(order?.dyehouse)}</div></div>`;
     }
 
     function weavingRawComponents(order) {
@@ -363,9 +363,9 @@
       const requiredRawQuantity = weavingRequiredRawQuantity(order);
       const manufacturing = order?.orderType === 'manufacturing';
       const commercialRows = manufacturing
-        ? `<tr><th>نوع التشغيل</th><td>مصنعية / صباغة فقط</td><th>ملكية الخام</th><td>خام العميل</td></tr><tr><th>كمية خام العميل</th><td>${fmt(customerQuantity)}</td><th>سعر الخام والهالك</th><td>غير محسوب</td></tr>`
+        ? `<tr><th>كمية خام العميل</th><td>${fmt(customerQuantity)}</td><th>سعر الخام والهالك</th><td>غير محسوب</td></tr>`
         : `<tr><th>كمية طلب العميل</th><td>${fmt(customerQuantity)}</td><th>هالك التسعير</th><td>${fmt(wastePercent)}%</td></tr><tr><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr>`;
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>مصدر النسيج</th><td>${safeText(order?.weavingSource)}</td><th>البوصة</th><td>${safeText(widthSummary(order))}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr>${commercialRows}</tbody></table></section>`;
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table"><tbody><tr><th>البوصة</th><td>${safeText(widthSummary(order))}</td><th>نوع التشغيل</th><td>${manufacturing ? 'مصنعية / صباغة فقط' : 'بيع وشراء'}</td></tr><tr><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr>${commercialRows}</tbody></table></section>`;
       return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${weavingRawComponentsSection(order)}${colorRows(order, orderAllocations(order), { includeDyehouse:false, includeReceived:false, includeWaste:false })}${accessoriesSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 
