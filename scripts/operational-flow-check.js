@@ -908,6 +908,8 @@ function checkWeavingDocumentLayoutUsesPreparedSpecs() {
   assert(html.includes('2,160'), 'weaving document: required raw must equal allocated customer quantity plus pricing waste');
   assert(html.includes('240') && html.includes('125'), 'weaving document: prepared weight and width entered on the order must be printed');
   assert(!html.includes('999'), 'weaving document: order-level prepared specs must override stale allocation specs');
+  assert(html.includes('<th>الوزن المجهز</th><td>240</td></tr>'), 'weaving document: prepared weight must finish the first balanced row');
+  assert(html.includes('<tr><th>العرض المجهز</th><td>125</td><th>إجمالي الخام المطلوب</th>'), 'weaving document: prepared width must start the second balanced row');
   assert(!html.includes('كمية طلب العميل'), 'weaving document: customer quantity must not appear in operation data');
   assert(!html.includes('هالك التسعير'), 'weaving document: pricing waste breakdown must not appear in operation data');
   assert(html.includes('إجمالي الخام المطلوب</th><td>2,160'), 'weaving document: only final required raw quantity must appear');

@@ -370,9 +370,9 @@
       const requiredRawQuantity = weavingRequiredRawQuantity(order);
       const manufacturing = order?.orderType === 'manufacturing';
       const secondRow = manufacturing
-        ? `<tr><th>نوع التشغيل</th><td>مصنعية / صباغة فقط</td><th>ملكية الخام</th><td>خام العميل</td><td colspan="4"></td></tr>`
-        : `<tr><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td><td colspan="4"></td></tr>`;
-      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table weaving-operation-table"><tbody><tr><th>البوصة</th><td>${safeText(widthSummary(order))}</td><th>الصنف</th><td>${safeText(order?.fabricType)}</td><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td></tr>${secondRow}</tbody></table></section>`;
+        ? `<tr><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td><th>نوع التشغيل</th><td>مصنعية / صباغة فقط</td><th>ملكية الخام</th><td>خام العميل</td></tr>`
+        : `<tr><th>العرض المجهز</th><td>${safeText(finishedWidthSummary(order))}</td><th>إجمالي الخام المطلوب</th><td>${fmt(requiredRawQuantity)}</td><th>سعر الخام</th><td>${fmt(orderRawCost(order))}</td></tr>`;
+      const rawRows = `<section class="report-section"><h3>بيانات التشغيل</h3><table class="summary-table weaving-operation-table"><colgroup><col><col><col><col><col><col></colgroup><tbody><tr><th>البوصة</th><td>${safeText(widthSummary(order))}</td><th>الصنف</th><td>${safeText(order?.fabricType)}</td><th>الوزن المجهز</th><td>${safeText(finishedWeightSummary(order))}</td></tr>${secondRow}</tbody></table></section>`;
       return reportShell(manufacturing ? 'أمر تشغيل مصنعية / صباغة' : 'أمر تشغيل نسيج', order, `${weavingInfoSection(order)}${rawRows}${weavingRawComponentsSection(order)}${notesSection(order)}`, { skipBasicInfo:true });
     }
 

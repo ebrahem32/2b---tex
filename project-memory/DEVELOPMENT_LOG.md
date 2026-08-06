@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-06 - Balance Weaving Operation Table
+
+- Rebuilt the weaving operation-data block as a balanced six-column table with three label/value pairs per row.
+- Kept prepared weight on the first row and moved prepared width to the second row beside final required raw and raw price.
+- Added fixed equal column widths to prevent long fabric names from overlapping adjacent values.
+- Updated version to `v2026.08.06.10`.
+
 ### 2026-08-06 - Simplify Weaving Operation Quantities
 
 - Removed customer quantity and pricing-waste breakdown from the printed weaving work order.

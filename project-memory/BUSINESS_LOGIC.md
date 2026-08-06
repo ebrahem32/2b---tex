@@ -209,6 +209,8 @@ Do not change this template's fields, order, grouping, calculations, headings, o
 
 The order-entry form includes `الوزن المجهز` and `العرض المجهز`. Both values are stored with the order inside `operation_notes_json` as `preparedWeight` and `preparedWidth`, restored during editing, and printed in the weaving work order. Numeric values in the compact operation-data table must remain on one line without digit wrapping.
 
+The weaving operation-data print table is fixed at three label/value pairs per row: inch, fabric, and prepared weight on the first row; prepared width, final required raw, and raw price on the second row. This balanced six-column layout must be preserved to prevent fabric names and numbers from overlapping.
+
 ## Dyehouse Balance Rule
 
 ```text

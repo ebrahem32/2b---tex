@@ -262,7 +262,8 @@
 .two-b-report .weaving-components-section th,.two-b-report .weaving-components-section td{padding:8px 7px!important}
 .two-b-report .weaving-component-name{display:block;font-weight:900}
 .two-b-report .weaving-components-section td small{display:block;margin-top:4px;color:#8a6312;font-size:.88em;font-weight:900}
-.two-b-report .weaving-operation-table{table-layout:fixed}
+.two-b-report .weaving-operation-table{table-layout:fixed;width:100%}
+.two-b-report .weaving-operation-table col{width:16.666%}
 .two-b-report .weaving-operation-table th{padding:7px 4px!important;font-size:10px!important;white-space:normal;line-height:1.25}
 .two-b-report .weaving-operation-table td{padding:7px 4px!important;font-size:10.5px!important;white-space:nowrap;word-break:normal;overflow-wrap:normal;font-variant-numeric:tabular-nums}
 .raw-components-box{padding:14px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02)}
