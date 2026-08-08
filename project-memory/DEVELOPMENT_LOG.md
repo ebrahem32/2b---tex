@@ -2229,3 +2229,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Removed the dialog toolbar, dark preview frame, and application shell from generated PDFs.
 - The Electron print bridge now explicitly switches to print media before `printToPDF`.
 - Release: `v2026.08.08.06`.
+## Safe Live Synchronization - 2026-08-08
+
+- Operational SQL Server data now refreshes automatically every eight seconds while the workspace is idle.
+- Unchanged data does not rerender the active screen.
+- Open dialogs, dirty forms, and active inputs postpone synchronization.
+- New interface releases reload automatically with cache busting after pending work is saved.
+- Release: `v2026.08.08.07`.

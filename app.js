@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.08.06';
-const APP_BUILD_TIME = '2026-08-08 12:20';
+const APP_VERSION = 'v2026.08.08.07';
+const APP_BUILD_TIME = '2026-08-08 12:45';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
@@ -528,6 +528,7 @@ const A5_SERVICE_URL = 'http://127.0.0.1:3041';
 const backendClient = window.createBackendClient({ baseUrl: '/api' });
 let backendAvailable = false;
 let backendDataLoading = false;
+let lastBackendSyncSignature = '';
 let currentUser = null;
 
 if (!window.__twoBTexMovementDetailsToggleInstalled) {
@@ -802,6 +803,13 @@ async function loadBackendData(options = {}) {
       }
     }
     if (!data) throw lastError || new Error('تعذر تحميل بيانات قاعدة البيانات');
+    const syncSignature = JSON.stringify(data);
+    if (options.refreshIfChanged && lastBackendSyncSignature && syncSignature === lastBackendSyncSignature) {
+      backendAvailable = true;
+      updateBackendStatusBadge('قاعدة البيانات متصلة - المزامنة اللحظية تعمل');
+      return;
+    }
+    lastBackendSyncSignature = syncSignature;
     const customers = data.customers || [];
     backendCustomers = customers.map((customer)=>({
       id: customer.id || backendCustomerId(customer.name),
@@ -5339,6 +5347,20 @@ function orderDetailsHasActiveDraft() {
   return !!refs.orderDetailsPanel?.querySelector('.batch-form[data-dirty="true"]');
 }
 
+function userHasActiveUnsavedWork() {
+  if (document.querySelector('dialog[open]')) return true;
+  if (document.querySelector('[data-dirty="true"]')) return true;
+  const active = document.activeElement;
+  return !!active?.matches?.('input:not([readonly]):not([disabled]), textarea:not([readonly]):not([disabled]), select:not([disabled]), [contenteditable="true"]');
+}
+
+window.twoBTexCanAutoRefresh = () => !userHasActiveUnsavedWork();
+
+async function refreshBackendDataAutomatically() {
+  if (document.visibilityState !== 'visible' || !backendAvailable || userHasActiveUnsavedWork()) return;
+  await loadBackendData({ retries:0, silentFailure:true, refreshIfChanged:true });
+}
+
 function operationFollowRows() {
   return allOrders()
     .map((order) => ({ order, stage:orderStageInfo(order) }))
@@ -8486,6 +8508,10 @@ loadCurrentUser().finally(() => {
 loadBackendData().finally(startWhatsappScheduleTimer);
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
+setInterval(()=>refreshBackendDataAutomatically().catch((error)=>console.warn('automatic-backend-sync-error', error)), 8000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshBackendDataAutomatically().catch(()=>{});
+});
 
 
 /* 2BTEX_INTERNAL_PROMPT_V1 */

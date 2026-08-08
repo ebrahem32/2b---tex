@@ -229,6 +229,8 @@ In the combined supplier-to-dyehouse raw delivery permit, cloth raw and accessor
 
 Desktop PDF export must contain only the white `.document-sheet`. The surrounding document dialog toolbar, dark frame, application shell, and interactive controls are preview UI and must never be rendered into the saved PDF.
 
+Operational data must synchronize automatically from SQL Server while the workspace is idle. An unchanged server payload must not rerender the page. Open dialogs, dirty batch forms, and active editable fields block both data refresh and application-version reload until the user finishes, so automatic synchronization never discards unsaved input.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

@@ -4,6 +4,7 @@
   const EXPECTED_PORT = '3000';
   const CHECK_INTERVAL_MS = 15000;
   const REQUEST_TIMEOUT_MS = 5000;
+  let pendingReloadVersion = '';
 
   const TEXT = {
     connected: '\u0645\u062a\u0635\u0644 \u0628\u0633\u064a\u0631\u0641\u0631 2B \u0627\u0644\u0631\u0626\u064a\u0633\u064a',
@@ -131,6 +132,26 @@
       ? `النسخة ${serverVersion}${loadedBuildTime ? ` | ${loadedBuildTime}` : ''}`
       : `السيرفر ${serverVersion} | الواجهة ${loadedVersion} - اضغط R`;
     versionBadge.classList.toggle('is-version-mismatch', !synchronized);
+    if (synchronized) {
+      pendingReloadVersion = '';
+    } else {
+      const canReload = typeof window.twoBTexCanAutoRefresh === 'function' && window.twoBTexCanAutoRefresh();
+      if (!canReload) {
+        versionBadge.textContent = `السيرفر ${serverVersion} | سيتم التحديث تلقائيًا بعد الحفظ`;
+      } else if (pendingReloadVersion !== serverVersion) {
+        pendingReloadVersion = serverVersion;
+        versionBadge.textContent = `جارٍ تحديث النظام تلقائيًا إلى ${serverVersion}`;
+        window.setTimeout(() => {
+          if (typeof window.twoBTexCanAutoRefresh === 'function' && !window.twoBTexCanAutoRefresh()) {
+            pendingReloadVersion = '';
+            return;
+          }
+          const url = new URL(window.location.href);
+          url.searchParams.set('auto_sync', `${Date.now()}`);
+          window.location.replace(url.toString());
+        }, 1200);
+      }
+    }
     versionBadge.title = synchronized
       ? 'نسخة الواجهة متزامنة مع سيرفر 2B'
       : 'الواجهة المحملة أقدم من السيرفر. اضغط R لإعادة التحميل.';
