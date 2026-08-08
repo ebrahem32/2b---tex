@@ -217,6 +217,8 @@ Within that table, value columns are wider than label columns. The fabric value 
 
 ## Dyehouse Balance Rule
 
+Raw dispatch to a dyehouse is documented as `إذن تسليم خام من مورد النسيج للمصبغة`, not as an internal `أمر صرف للمصبغة`. The permit number belongs to the weaving supplier, while the dyehouse is the receiving party. This wording changes document responsibility only; the stock movement remains raw sent to the selected dyehouse and must continue updating its balance.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

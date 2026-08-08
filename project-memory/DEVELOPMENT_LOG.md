@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-08 - Correct Raw Delivery Permit Responsibility
+
+- Renamed the raw-to-dyehouse movement document to `إذن تسليم خام من مورد النسيج للمصبغة`.
+- Clarified that the permit number is issued by the weaving supplier and that the dyehouse is the receiving party.
+- Preserved the existing raw-transfer and dyehouse-balance accounting behavior.
+- Updated version to `v2026.08.08.01`.
+
 ### 2026-08-06 - Surface Prepared Specs In Main Order Entry
 
 - Moved prepared weight and prepared width to the upper order-entry section directly after total required raw.

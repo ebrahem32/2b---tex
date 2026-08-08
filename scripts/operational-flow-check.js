@@ -1011,6 +1011,14 @@ function checkPricingToOrderCarriesGroupedOperationalFields() {
   assert(appSource.includes('weavingSource:item.weavingSource || pricingDraft.weavingSource'), 'order save: grouped order item weaving source must be preserved before pricing fallback');
 }
 
+function checkWeavingSupplierDeliveryPermitLabels() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes('إذن تسليم خام من مورد النسيج للمصبغة'), 'raw dispatch: document title must identify the weaving supplier as permit issuer');
+  assert(appSource.includes('رقم إذن مورد النسيج'), 'raw dispatch: permit number must be labeled as the weaving supplier permit');
+  assert(appSource.includes('المصبغة المستلمة'), 'raw dispatch: dyehouse must be identified as the receiving party');
+  assert(!appSource.includes("dyehouse: 'أمر صرف للمصبغة'"), 'raw dispatch: legacy misleading title must not return');
+}
+
 function checkGroupedPricingVerifyUsesItemsJson() {
   const guardsSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'persistenceGuards.js'), 'utf8');
   assert(guardsSource.includes('function pricingPersistenceMatches'), 'pricing save: grouped pricing verification must use a dedicated matcher');
@@ -1208,6 +1216,7 @@ checkLegacyPricingItemsInheritCardTerms();
 checkPricingCurrencyBadgesExist();
 checkWeavingDocumentLayoutUsesPreparedSpecs();
 checkOrderPreparedSpecsPersistence();
+checkWeavingSupplierDeliveryPermitLabels();
 checkCollarAccessoryMeasurements();
 checkPersistentOrderBalances();
 checkDesktopConnectionIndicatorRecovery();

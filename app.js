@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.06.13';
-const APP_BUILD_TIME = '2026-08-06 16:25';
+const APP_VERSION = 'v2026.08.08.01';
+const APP_BUILD_TIME = '2026-08-08 10:00';
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
 const TRANSFER_ALLOCATION_MARKER = '[allocation-transfer]';
 const TRANSFER_ACCESSORY_MARKER = '[accessory-transfer]';
@@ -5233,7 +5233,7 @@ function installBulkEntryButtons() {
       <p class="eyebrow">النماذج الفردية أسفلها متاحة للمرتجعات أو الحركة السريعة.</p>
     </div>
     <div class="combined-movement-actions">
-      <button class="mini-btn gold" type="button" data-open-combined-movement="dyehouse">أمر صرف للمصبغة</button>
+      <button class="mini-btn gold" type="button" data-open-combined-movement="dyehouse">إذن تسليم من مورد النسيج</button>
       <button class="mini-btn" type="button" data-open-combined-movement="finished">أمر استلام من المصبغة</button>
       <button class="mini-btn" type="button" data-open-combined-movement="customer">أمر تسليم للعميل</button>
     </div>
@@ -6415,12 +6415,12 @@ function combinedMovementConfig(source) {
   return {
     key: movementKey,
     title: {
-      dyehouse: 'أمر صرف للمصبغة',
+      dyehouse: 'إذن تسليم خام من مورد النسيج للمصبغة',
       finished: 'أمر استلام من المصبغة',
       customer: 'أمر تسليم للعميل',
     }[movementKey] || 'إدخال جماعي',
     description: {
-      dyehouse: 'أدخل القماش الخارج للمصبغة والإكسسوار المصروف في نفس الإذن.',
+      dyehouse: 'سجّل إذن مورد النسيج الذي سلّم الخام إلى المصبغة، مع ربط الكمية بالمصبغة المستلمة.',
       finished: 'أدخل القماش المجهز المستلم والإكسسوار المستلم في نفس الإذن.',
       customer: 'أدخل القماش والإكسسوار المسلم للعميل في نفس الإذن.',
     }[movementKey] || 'اكتب الكميات المطلوبة واترك الصفوف الفارغة بدون حفظ.',
@@ -6460,7 +6460,7 @@ function combinedMovementClothRows(order, movement) {
     return [...groups.values()].map((group) => {
       const available = Math.max(group.planned - group.sent, 0);
       const colorLabel = group.colors.length > 1 ? 'كل الألوان' : (group.colors[0] || 'كل الألوان');
-      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td><input data-bulk-row-note-number placeholder="رقم إذن ${escapeHtml(group.dyehouse || 'المصبغة')}"></td><td>كل العروض</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
+      return `<tr data-bulk-dyehouse="${escapeHtml(group.dyehouse || '')}"><td>${escapeHtml(colorLabel)}</td><td>${escapeHtml(group.dyehouse || '-')}</td><td><input data-bulk-row-note-number placeholder="رقم إذن مورد النسيج"></td><td>كل العروض</td><td>${formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-cloth-quantity placeholder="0"></td></tr>`;
     }).join('');
   }
   return order.allocations.map((allocation)=>{
@@ -6486,7 +6486,7 @@ function bulkExtraRawRowHtml(dyehouse = '') {
   return `<tr data-bulk-extra-raw-row>
     <td><input data-bulk-extra-raw-label value="خام إضافي" placeholder="البيان"></td>
     <td><input data-bulk-extra-raw-dyehouse value="${escapeHtml(dyehouse || '')}" placeholder="المصبغة"></td>
-    <td><input data-bulk-row-note-number placeholder="رقم إذن المصبغة"></td>
+    <td><input data-bulk-row-note-number placeholder="رقم إذن مورد النسيج"></td>
     <td>كل العروض</td>
     <td>-</td>
     <td><div class="inline-control-row"><input type="number" step="0.01" data-bulk-extra-raw-quantity placeholder="0"><button type="button" class="mini-btn danger" data-remove-bulk-extra-raw>حذف</button></div></td>
@@ -6523,7 +6523,7 @@ function openBulkBatchDialog(source) {
       <label class="full-row"><span>ملاحظات</span><input data-bulk-notes value="${escapeHtml(notes)}"></label>
     </div>
     <div class="subsection-head"><h3>القماش</h3>${movement === 'rawOut' ? '<button type="button" class="mini-btn" data-add-bulk-extra-raw>+ إضافة خام</button>' : ''}</div>
-    <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة</th>${movement === 'rawOut' ? '<th>رقم الإذن المرتبط</th>' : ''}<th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
+    <table class="bulk-entry-table"><thead><tr><th>اللون</th><th>المصبغة المستلمة</th>${movement === 'rawOut' ? '<th>رقم إذن مورد النسيج</th>' : ''}<th>العرض</th><th>المتاح</th><th>الكمية</th></tr></thead><tbody>
       ${combinedMovementClothRows(order, movement)}
       ${movement === 'rawOut' ? `<tr data-bulk-extra-raw-anchor></tr>${bulkExtraRawRowHtml(defaultDyehouse)}` : ''}
     </tbody></table>
