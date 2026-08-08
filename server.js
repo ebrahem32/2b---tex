@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 const childProcess = require('child_process');
 const crypto = require('crypto');
+const { WebSocketServer, WebSocket } = require('ws');
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -33,6 +34,18 @@ const noStoreHeaders = {
   Pragma: 'no-cache',
   Expires: '0',
 };
+const realtimeClients = new Set();
+
+function broadcastRealtimeChange(req, statusCode) {
+  if (!req || !Number.isFinite(Number(statusCode)) || Number(statusCode) < 200 || Number(statusCode) >= 300) return;
+  const method = String(req.method || 'GET').toUpperCase();
+  const url = String(req.url || '');
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method) || url.startsWith('/api/auth/')) return;
+  const message = JSON.stringify({ type:'data-change', method, path:url, changedAt:new Date().toISOString() });
+  for (const client of realtimeClients) {
+    if (client.readyState === WebSocket.OPEN) client.send(message);
+  }
+}
 
 function latestBackupInfo() {
   const sqlBackupDir = path.resolve(
@@ -235,6 +248,7 @@ function proxyApi(req, res) {
   const proxyReq = http.request(options, (proxyRes) => {
     res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
     proxyRes.pipe(res);
+    proxyRes.once('end', () => broadcastRealtimeChange(req, proxyRes.statusCode || 502));
   });
   proxyReq.on('error', () => {
     res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -311,6 +325,37 @@ const server = http.createServer((req, res) => {
     res.end(data);
   });
 });
+
+const realtimeServer = new WebSocketServer({ noServer:true });
+realtimeServer.on('connection', (socket) => {
+  socket.isAlive = true;
+  realtimeClients.add(socket);
+  socket.on('pong', () => { socket.isAlive = true; });
+  socket.on('close', () => realtimeClients.delete(socket));
+  socket.send(JSON.stringify({ type:'connected', connectedAt:new Date().toISOString() }));
+});
+
+server.on('upgrade', (req, socket, head) => {
+  const pathname = new URL(req.url || '/', 'http://2b-server').pathname;
+  if (pathname !== '/realtime' || !isAuthorized(req)) {
+    socket.destroy();
+    return;
+  }
+  realtimeServer.handleUpgrade(req, socket, head, (client) => realtimeServer.emit('connection', client, req));
+});
+
+const realtimeHeartbeat = setInterval(() => {
+  for (const client of realtimeClients) {
+    if (!client.isAlive) {
+      realtimeClients.delete(client);
+      client.terminate();
+      continue;
+    }
+    client.isAlive = false;
+    client.ping();
+  }
+}, 30000);
+realtimeHeartbeat.unref();
 
 server.listen(port, '0.0.0.0', () => {
   const addresses = [];

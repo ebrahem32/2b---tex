@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.08.07';
-const APP_BUILD_TIME = '2026-08-08 12:45';
+const APP_VERSION = 'v2026.08.08.08';
+const APP_BUILD_TIME = '2026-08-08 13:15';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
@@ -529,6 +529,9 @@ const backendClient = window.createBackendClient({ baseUrl: '/api' });
 let backendAvailable = false;
 let backendDataLoading = false;
 let lastBackendSyncSignature = '';
+let realtimeSocket = null;
+let realtimeReconnectTimer = null;
+let realtimeRefreshPending = false;
 let currentUser = null;
 
 if (!window.__twoBTexMovementDetailsToggleInstalled) {
@@ -5361,6 +5364,40 @@ async function refreshBackendDataAutomatically() {
   await loadBackendData({ retries:0, silentFailure:true, refreshIfChanged:true });
 }
 
+async function flushRealtimeRefresh() {
+  if (!realtimeRefreshPending || document.visibilityState !== 'visible' || userHasActiveUnsavedWork()) return;
+  realtimeRefreshPending = false;
+  await loadBackendData({ retries:1, silentFailure:true, refreshIfChanged:true });
+}
+
+function queueRealtimeRefresh() {
+  realtimeRefreshPending = true;
+  flushRealtimeRefresh().catch((error)=>console.warn('realtime-refresh-error', error));
+}
+
+function connectRealtimeSync() {
+  if (realtimeSocket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(realtimeSocket.readyState)) return;
+  clearTimeout(realtimeReconnectTimer);
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(`${protocol}//${location.host}/realtime`);
+  realtimeSocket = socket;
+  socket.addEventListener('open', () => {
+    updateBackendStatusBadge('قاعدة البيانات متصلة - المزامنة الفورية تعمل');
+    queueRealtimeRefresh();
+  });
+  socket.addEventListener('message', (event) => {
+    try {
+      const message = JSON.parse(event.data || '{}');
+      if (message.type === 'data-change') queueRealtimeRefresh();
+    } catch {}
+  });
+  socket.addEventListener('close', () => {
+    if (realtimeSocket === socket) realtimeSocket = null;
+    realtimeReconnectTimer = setTimeout(connectRealtimeSync, 3000);
+  });
+  socket.addEventListener('error', () => socket.close());
+}
+
 function operationFollowRows() {
   return allOrders()
     .map((order) => ({ order, stage:orderStageInfo(order) }))
@@ -8504,13 +8541,19 @@ loadCurrentUser().finally(() => {
   installAutomationUi();
   pollBackendStatus();
   pollWhatsappService();
+  connectRealtimeSync();
 });
 loadBackendData().finally(startWhatsappScheduleTimer);
 setInterval(pollBackendStatus, 15000);
 setInterval(pollWhatsappService, 15000);
-setInterval(()=>refreshBackendDataAutomatically().catch((error)=>console.warn('automatic-backend-sync-error', error)), 8000);
+setInterval(()=>refreshBackendDataAutomatically().catch((error)=>console.warn('automatic-backend-sync-error', error)), 60000);
+setInterval(()=>flushRealtimeRefresh().catch(()=>{}), 1000);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') refreshBackendDataAutomatically().catch(()=>{});
+  if (document.visibilityState === 'visible') {
+    connectRealtimeSync();
+    realtimeRefreshPending = true;
+    flushRealtimeRefresh().catch(()=>{});
+  }
 });
 
 

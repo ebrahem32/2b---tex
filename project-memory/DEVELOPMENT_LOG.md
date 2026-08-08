@@ -2236,3 +2236,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Open dialogs, dirty forms, and active inputs postpone synchronization.
 - New interface releases reload automatically with cache busting after pending work is saved.
 - Release: `v2026.08.08.07`.
+## Real-time WebSocket Synchronization - 2026-08-08
+
+- Added an authenticated `/realtime` WebSocket channel to the production frontend server.
+- Successful API additions, edits, and deletions broadcast immediately to all connected devices.
+- Clients reconnect automatically and defer refresh while a form has unsaved input.
+- Replaced the eight-second polling loop with a 60-second recovery fallback.
+- Release: `v2026.08.08.08`.

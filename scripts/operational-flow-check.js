@@ -989,7 +989,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260808-07'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260808-08'), 'pricing navigation: main app asset must use the current cache-busting key');
 }
 
 function checkAccessoryRawDeliveryPermit() {
@@ -1028,6 +1028,20 @@ function checkVisibleVersionSynchronization() {
   assert(appSource.includes('function userHasActiveUnsavedWork()'), 'live sync: active forms and drafts must block automatic refresh');
   assert(identityUiSource.includes('اضغط R'), 'version ui: mismatch must give an explicit refresh instruction');
   assert(indexSource.includes('./modules/serverIdentityUi.js?v=20260808-07'), 'version ui: identity synchronizer must use the current cache key');
+}
+
+function checkRealtimeOperationalSynchronization() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const frontendServerSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  assert(packageJson.dependencies?.ws, 'realtime sync: ws must be a direct production dependency');
+  assert(frontendServerSource.includes('new WebSocketServer({ noServer:true })'), 'realtime sync: frontend server must host the WebSocket channel');
+  assert(frontendServerSource.includes("pathname !== '/realtime' || !isAuthorized(req)"), 'realtime sync: socket upgrades must require an authenticated session');
+  assert(frontendServerSource.includes("type:'data-change'"), 'realtime sync: successful mutations must be broadcast to connected clients');
+  assert(appSource.includes('function connectRealtimeSync()'), 'realtime sync: clients must connect and reconnect automatically');
+  assert(appSource.includes("message.type === 'data-change'"), 'realtime sync: clients must refresh when another device changes data');
+  assert(appSource.includes('setInterval(()=>flushRealtimeRefresh()'), 'realtime sync: deferred events must resume after the active form is safe');
+  assert(appSource.includes('60000'), 'realtime sync: polling must remain only as a distant fallback');
 }
 
 function checkOrderPreparedSpecsPersistence() {
@@ -1277,6 +1291,7 @@ checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkVisibleVersionSynchronization();
+checkRealtimeOperationalSynchronization();
 checkAccessoryRawDeliveryPermit();
 checkDesktopPdfExportsOnlyDocumentSheet();
 checkPricingToOrderCarriesGroupedOperationalFields();

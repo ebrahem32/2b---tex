@@ -231,6 +231,8 @@ Desktop PDF export must contain only the white `.document-sheet`. The surroundin
 
 Operational data must synchronize automatically from SQL Server while the workspace is idle. An unchanged server payload must not rerender the page. Open dialogs, dirty batch forms, and active editable fields block both data refresh and application-version reload until the user finishes, so automatic synchronization never discards unsaved input.
 
+The primary synchronization channel is an authenticated WebSocket at `/realtime`. Every successful mutating API request broadcasts a `data-change` event to connected clients. Clients refresh immediately when safe, queue the event while a form is active, reconnect after interruption, and retain a 60-second poll only as recovery for missed events.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse
