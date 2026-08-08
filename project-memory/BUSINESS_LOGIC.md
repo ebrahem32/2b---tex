@@ -221,6 +221,8 @@ Raw dispatch to a dyehouse is documented as `إذن تسليم خام من مو�
 
 Every finished-receiving batch stores its actual source dyehouse independently from the color allocation's default dyehouse. A color may be processed by more than one dyehouse; receiving, editing, movement labels, and reports must prefer the batch-level dyehouse and use the allocation dyehouse only as a legacy fallback.
 
+The Windows client must load the current `app.js` and `modules/navigation.js` through release-specific cache keys. A release that changes navigation must bump both query keys so the desktop WebView cannot keep an older handler while showing newer server content.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

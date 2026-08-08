@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-08 - Restore Pricing List Navigation In Windows Client
+
+- Diagnosed a split-version desktop session: server identity was current while the WebView still executed `v2026.08.06.13` application code.
+- Bumped the cache keys for `app.js` and `modules/navigation.js` so the Windows client downloads the current pricing-list handler.
+- Preserved the existing `pricingList` module switch, pricing rendering, and scroll behavior.
+- Updated version to `v2026.08.08.03`.
+
 ### 2026-08-08 - Track Actual Dyehouse Per Finished Batch
 
 - Added a required actual-source dyehouse field to new and edited finished-receiving batches.
