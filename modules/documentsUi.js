@@ -245,6 +245,7 @@
       const cleanup = () => {
         document.body.classList.remove('printing-stickers');
         document.body.classList.remove('printing-orders-follow');
+        document.body.classList.remove('desktop-pdf-export');
         if (stickerPrintStyle) stickerPrintStyle.remove();
         if (reportPrintStyle) reportPrintStyle.remove();
       };
@@ -268,6 +269,8 @@
       if (window.twoBTexDesktop?.print) {
         setTimeout(async () => {
           try {
+            document.body.classList.add('desktop-pdf-export');
+            await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
             const result = await window.twoBTexDesktop.print();
             if (!result?.ok) throw new Error(result?.error || 'تعذر إنشاء معاينة PDF.');
           } catch (error) {

@@ -227,6 +227,8 @@ The visible top version badge must synchronize against `server-identity.json`. W
 
 In the combined supplier-to-dyehouse raw delivery permit, cloth raw and accessory raw are independent receiving lines. Every accessory raw line must store its type, actual receiving dyehouse, accessory supplier permit number, and delivered quantity. Extra accessory raw can be added even when it was not planned on the order.
 
+Desktop PDF export must contain only the white `.document-sheet`. The surrounding document dialog toolbar, dark frame, application shell, and interactive controls are preview UI and must never be rendered into the saved PDF.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

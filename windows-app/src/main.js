@@ -261,6 +261,7 @@ function installDesktopBridge() {
   ipcMain.handle("2btex:print", async (event) => {
     if (!event.sender || event.sender.isDestroyed()) return { ok: false, error: "Window is not ready." };
     try {
+      event.sender.setEmulatedMedia({ media: "print" });
       const previewRoot = path.join(app.getPath("temp"), "2BTex", "PrintPreview");
       fs.mkdirSync(previewRoot, { recursive: true });
       const previewPath = path.join(previewRoot, `2B-Tex-${Date.now()}.pdf`);
@@ -275,6 +276,8 @@ function installDesktopBridge() {
       return { ok: true, filePath: previewPath, preview: true };
     } catch (error) {
       return { ok: false, error: error.message };
+    } finally {
+      if (event.sender && !event.sender.isDestroyed()) event.sender.setEmulatedMedia({ media: "screen" });
     }
   });
 }

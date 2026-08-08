@@ -67,6 +67,17 @@
   .document-sheet td { color: #111827 !important; border-color: #d1d5db !important; }
 }
 
+/* Electron PDF safeguard: isolate the rendered paper even if print media is
+   applied one frame late by the desktop shell. */
+body.desktop-pdf-export{background:#fff!important;overflow:visible!important}
+body.desktop-pdf-export .app-shell{display:none!important}
+body.desktop-pdf-export #documentDialog{display:block!important;position:static!important;inset:auto!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;overflow:visible!important;background:#fff!important}
+body.desktop-pdf-export #documentDialog::backdrop{display:none!important}
+body.desktop-pdf-export #documentDialog .dialog-head{display:none!important}
+body.desktop-pdf-export #documentDialog .printable-card{display:block!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:visible!important;background:#fff!important}
+body.desktop-pdf-export #documentBody{display:block!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
+body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;box-shadow:none!important;border-radius:0!important;margin:0 auto!important}
+
 
 .document-brand{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #d1d5db}
 .document-brand img{width:140px;height:auto;display:block}.document-brand-logo{text-align:center}.document-brand-logo span{margin-top:6px}.document-brand-info{line-height:1.6}

@@ -2223,3 +2223,9 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Added an explicit button for extra accessory raw rows.
 - Added SQL Server and SQLite schema support for the accessory batch dyehouse.
 - Release: `v2026.08.08.05`.
+## Clean Desktop PDF Export - 2026-08-08
+
+- Added a dedicated desktop export state that isolates the white report sheet.
+- Removed the dialog toolbar, dark preview frame, and application shell from generated PDFs.
+- The Electron print bridge now explicitly switches to print media before `printToPDF`.
+- Release: `v2026.08.08.06`.

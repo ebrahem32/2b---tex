@@ -989,7 +989,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260808-05'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260808-06'), 'pricing navigation: main app asset must use the current cache-busting key');
 }
 
 function checkAccessoryRawDeliveryPermit() {
@@ -1002,6 +1002,17 @@ function checkAccessoryRawDeliveryPermit() {
   assert(appSource.includes("dyehouse:accessoryDyehouse"), 'accessory raw: receiving dyehouse must be persisted with the batch');
   assert(serverSource.includes("accessory_type','quantity','dyehouse','note_number"), 'accessory raw: backend whitelist must persist dyehouse');
   assert(mssqlSource.includes("['batch_date TEXT', 'dyehouse TEXT', 'note_number TEXT', 'movement TEXT']"), 'accessory raw: SQL Server migration must add the dyehouse column');
+}
+
+function checkDesktopPdfExportsOnlyDocumentSheet() {
+  const documentsUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'documentsUi.js'), 'utf8');
+  const stylesSource = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const desktopMainSource = fs.readFileSync(path.join(__dirname, '..', 'windows-app', 'src', 'main.js'), 'utf8');
+  assert(documentsUiSource.includes("classList.add('desktop-pdf-export')"), 'pdf export: desktop flow must isolate the printable document before capture');
+  assert(documentsUiSource.includes("classList.remove('desktop-pdf-export')"), 'pdf export: isolated export mode must always be cleaned up');
+  assert(stylesSource.includes('body.desktop-pdf-export #documentDialog .dialog-head{display:none!important}'), 'pdf export: dialog toolbar must never appear inside the PDF');
+  assert(stylesSource.includes('body.desktop-pdf-export #documentBody>.document-sheet'), 'pdf export: the white document sheet must be the export target');
+  assert(desktopMainSource.includes('setEmulatedMedia({ media: "print" })'), 'pdf export: desktop shell must explicitly apply print media before printToPDF');
 }
 
 function checkVisibleVersionSynchronization() {
@@ -1262,6 +1273,7 @@ checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkVisibleVersionSynchronization();
 checkAccessoryRawDeliveryPermit();
+checkDesktopPdfExportsOnlyDocumentSheet();
 checkPricingToOrderCarriesGroupedOperationalFields();
 checkGroupedPricingVerifyUsesItemsJson();
 checkPricingSaveBypassesLegacyHiddenRequiredFields();
