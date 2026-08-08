@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-08 - Synchronize Visible Client And Server Versions
+
+- Exposed the loaded application version and build time to the server-identity checker.
+- Made the top version badge use the canonical server release and explicitly show a refresh warning on mismatch.
+- Bumped the server-identity UI cache key so the Windows client loads the synchronization logic.
+- Updated version to `v2026.08.08.04`.
+
 ### 2026-08-08 - Restore Pricing List Navigation In Windows Client
 
 - Diagnosed a split-version desktop session: server identity was current while the WebView still executed `v2026.08.06.13` application code.

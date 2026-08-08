@@ -992,6 +992,16 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(indexSource.includes('./app.js?v=20260808-03'), 'pricing navigation: main app asset must use the current cache-busting key');
 }
 
+function checkVisibleVersionSynchronization() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const identityUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'serverIdentityUi.js'), 'utf8');
+  assert(appSource.includes('window.TWO_B_APP_VERSION = APP_VERSION'), 'version ui: loaded application version must be exposed for synchronization');
+  assert(identityUiSource.includes('function syncVisibleVersion(identity)'), 'version ui: top badge must synchronize with server identity');
+  assert(identityUiSource.includes('اضغط R'), 'version ui: mismatch must give an explicit refresh instruction');
+  assert(indexSource.includes('./modules/serverIdentityUi.js?v=20260808-04'), 'version ui: identity synchronizer must use the current cache key');
+}
+
 function checkOrderPreparedSpecsPersistence() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
   assert(appSource.includes("'orderPreparedWeight','orderPreparedWidth'"), 'order form: prepared weight and width fields must be wired');
@@ -1238,6 +1248,7 @@ checkPricingGroupedPriceViewExists();
 checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
+checkVisibleVersionSynchronization();
 checkPricingToOrderCarriesGroupedOperationalFields();
 checkGroupedPricingVerifyUsesItemsJson();
 checkPricingSaveBypassesLegacyHiddenRequiredFields();

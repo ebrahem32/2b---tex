@@ -120,6 +120,22 @@
     badge.title = state === 'online' ? titleText : `${titleText} - ${TEXT.retry}`;
   }
 
+  function syncVisibleVersion(identity) {
+    const serverVersion = String(identity?.version || '').trim();
+    const loadedVersion = String(window.TWO_B_APP_VERSION || '').trim();
+    const loadedBuildTime = String(window.TWO_B_APP_BUILD_TIME || '').trim();
+    const versionBadge = document.getElementById('appVersionBadge');
+    if (!versionBadge || !serverVersion) return;
+    const synchronized = !loadedVersion || loadedVersion === serverVersion;
+    versionBadge.textContent = synchronized
+      ? `النسخة ${serverVersion}${loadedBuildTime ? ` | ${loadedBuildTime}` : ''}`
+      : `السيرفر ${serverVersion} | الواجهة ${loadedVersion} - اضغط R`;
+    versionBadge.classList.toggle('is-version-mismatch', !synchronized);
+    versionBadge.title = synchronized
+      ? 'نسخة الواجهة متزامنة مع سيرفر 2B'
+      : 'الواجهة المحملة أقدم من السيرفر. اضغط R لإعادة التحميل.';
+  }
+
   function isCanonicalLocation() {
     const host = String(location.hostname || '').toLowerCase();
     const port = location.port || (location.protocol === 'https:' ? '443' : '80');
@@ -158,6 +174,7 @@
         return;
       }
       setState('online', TEXT.connected, `${identity.address} | ${identity.version || ''}`);
+      syncVisibleVersion(identity);
     } catch {
       setState('offline', TEXT.disconnected, '192.168.11.191:3000');
     }

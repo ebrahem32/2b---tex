@@ -223,6 +223,8 @@ Every finished-receiving batch stores its actual source dyehouse independently f
 
 The Windows client must load the current `app.js` and `modules/navigation.js` through release-specific cache keys. A release that changes navigation must bump both query keys so the desktop WebView cannot keep an older handler while showing newer server content.
 
+The visible top version badge must synchronize against `server-identity.json`. When the loaded application version differs from the server version, it must show both values and instruct the user to press `R`; when synchronized, the top and bottom badges must show the same release number.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse
