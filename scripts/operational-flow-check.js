@@ -1019,6 +1019,17 @@ function checkWeavingSupplierDeliveryPermitLabels() {
   assert(!appSource.includes("dyehouse: 'أمر صرف للمصبغة'"), 'raw dispatch: legacy misleading title must not return');
 }
 
+function checkFinishedReceivingTracksActualDyehouse() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const backendSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
+  const mssqlSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'db-mssql.js'), 'utf8');
+  assert(appSource.includes("dyehouseSelect.name = 'dyehouse'"), 'finished receiving: new entry must select the actual source dyehouse');
+  assert(appSource.includes("field('المصبغة المستلم منها', 'dyehouse'"), 'finished receiving: editor must expose the actual source dyehouse');
+  assert(appSource.includes('batch?.dyehouse || allocation.dyehouse'), 'finished receiving: movement label must prefer batch dyehouse over allocation default');
+  assert(backendSource.includes("finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse'"), 'finished receiving: backend must persist batch dyehouse');
+  assert(mssqlSource.includes("addColumnIfMissing('finished_receiving_batches', 'dyehouse TEXT')"), 'finished receiving: SQL Server migration must add batch dyehouse');
+}
+
 function checkGroupedPricingVerifyUsesItemsJson() {
   const guardsSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'persistenceGuards.js'), 'utf8');
   assert(guardsSource.includes('function pricingPersistenceMatches'), 'pricing save: grouped pricing verification must use a dedicated matcher');
@@ -1217,6 +1228,7 @@ checkPricingCurrencyBadgesExist();
 checkWeavingDocumentLayoutUsesPreparedSpecs();
 checkOrderPreparedSpecsPersistence();
 checkWeavingSupplierDeliveryPermitLabels();
+checkFinishedReceivingTracksActualDyehouse();
 checkCollarAccessoryMeasurements();
 checkPersistentOrderBalances();
 checkDesktopConnectionIndicatorRecovery();

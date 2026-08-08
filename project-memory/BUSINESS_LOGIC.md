@@ -219,6 +219,8 @@ Within that table, value columns are wider than label columns. The fabric value 
 
 Raw dispatch to a dyehouse is documented as `إذن تسليم خام من مورد النسيج للمصبغة`, not as an internal `أمر صرف للمصبغة`. The permit number belongs to the weaving supplier, while the dyehouse is the receiving party. This wording changes document responsibility only; the stock movement remains raw sent to the selected dyehouse and must continue updating its balance.
 
+Every finished-receiving batch stores its actual source dyehouse independently from the color allocation's default dyehouse. A color may be processed by more than one dyehouse; receiving, editing, movement labels, and reports must prefer the batch-level dyehouse and use the allocation dyehouse only as a legacy fallback.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

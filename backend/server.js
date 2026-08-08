@@ -35,7 +35,7 @@ const TABLE_FIELDS = {
   order_allocations: ['id','order_id','color','pantone_code','planned_quantity','dyehouse','width_line_id','raw_inch','raw_width','finished_width','finished_weight','accessory_quantity_manual','notes','created_at','updated_at'],
   raw_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','supplier','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
   dyehouse_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','width_line_id','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
-  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','finished_width','finished_weight','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
+  finished_receiving_batches: ['id','order_id','allocation_id','batch_date','quantity','dyehouse','finished_width','finished_weight','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
   customer_delivery_batches: ['id','order_id','allocation_id','batch_date','quantity','customer_name','unit_price','total_price','payment_terms','note_number','movement','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
   accessory_batches: ['id','order_id','allocation_id','batch_date','accessory_type','quantity','note_number','movement','notes','source_document_json','created_by','updated_by','created_at','updated_at'],
   raw_returns: ['id','order_id','allocation_id','batch_date','quantity','reason','note_number','notes','source_document_json','created_by','updated_by','created_at','updated_at'],

@@ -132,6 +132,7 @@ CREATE TABLE dbo.finished_receiving_batches (
   allocation_id NVARCHAR(120) NULL,
   batch_date NVARCHAR(40) NULL,
   quantity FLOAT DEFAULT 0,
+  dyehouse NVARCHAR(255) NULL,
   finished_width FLOAT DEFAULT 0,
   finished_weight FLOAT DEFAULT 0,
   note_number NVARCHAR(255) NULL,

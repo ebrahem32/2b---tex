@@ -44,7 +44,7 @@ const REQUIRED_COLUMNS = {
   ],
   raw_receiving_batches: ['source_document_json', 'created_by', 'updated_by'],
   dyehouse_delivery_batches: ['width_line_id', 'source_document_json', 'created_by', 'updated_by'],
-  finished_receiving_batches: ['note_number', 'source_document_json', 'created_by', 'updated_by'],
+  finished_receiving_batches: ['dyehouse', 'note_number', 'source_document_json', 'created_by', 'updated_by'],
   customer_delivery_batches: ['customer_name', 'unit_price', 'total_price', 'payment_terms', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
   accessory_batches: ['batch_date', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
   raw_returns: ['note_number', 'source_document_json', 'created_by', 'updated_by'],
@@ -209,6 +209,7 @@ async function runMigrations() {
     "movement TEXT DEFAULT 'delivery'",
   ]) await addColumnIfMissing('customer_delivery_batches', definition);
   await addColumnIfMissing('finished_receiving_batches', 'note_number TEXT');
+  await addColumnIfMissing('finished_receiving_batches', 'dyehouse TEXT');
   for (const definition of ['batch_date TEXT', 'note_number TEXT', 'movement TEXT']) {
     await addColumnIfMissing('accessory_batches', definition);
   }

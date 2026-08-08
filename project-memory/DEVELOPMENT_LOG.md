@@ -1,5 +1,14 @@
 # Development Log
 
+### 2026-08-08 - Track Actual Dyehouse Per Finished Batch
+
+- Added a required actual-source dyehouse field to new and edited finished-receiving batches.
+- Added `dyehouse` to `finished_receiving_batches` in SQL Server and SQLite compatibility schemas.
+- Separated color selection from dyehouse selection so one color can be received from multiple dyehouses accurately.
+- Movement labels now prefer the dyehouse saved on the receiving batch.
+- Corrected order 72101's 412 kg receiving batch to `جيما` after deployment.
+- Updated version to `v2026.08.08.02`.
+
 ### 2026-08-08 - Correct Raw Delivery Permit Responsibility
 
 - Renamed the raw-to-dyehouse movement document to `إذن تسليم خام من مورد النسيج للمصبغة`.

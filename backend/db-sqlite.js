@@ -130,6 +130,7 @@ function runMigrations() {
     "movement TEXT DEFAULT 'delivery'",
   ].forEach((definition) => addColumnIfMissing('customer_delivery_batches', definition));
   addColumnIfMissing('finished_receiving_batches', 'note_number TEXT');
+  addColumnIfMissing('finished_receiving_batches', 'dyehouse TEXT');
   [
     'batch_date TEXT',
     'note_number TEXT',

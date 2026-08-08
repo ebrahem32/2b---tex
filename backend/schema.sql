@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS finished_receiving_batches (
   allocation_id TEXT,
   batch_date TEXT,
   quantity REAL DEFAULT 0,
+  dyehouse TEXT,
   finished_width REAL DEFAULT 0,
   finished_weight REAL DEFAULT 0,
   note_number TEXT,
