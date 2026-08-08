@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS accessory_batches (
   batch_date TEXT,
   accessory_type TEXT,
   quantity REAL DEFAULT 0,
+  dyehouse TEXT,
   note_number TEXT,
   movement TEXT,
   notes TEXT,

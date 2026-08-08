@@ -2216,3 +2216,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Planned responsibilities: WhatsApp group roles, incoming document inbox and deduplication, review/approval, A5 matching, and approved API exchange with 2B.
 - A local scaffold was created and smoke-tested on port 3040.
 - It has not been installed or activated on the production server.
+## Accessory Raw in Combined Supplier Permit - 2026-08-08
+
+- The supplier-to-dyehouse permit now records accessory raw separately from cloth raw.
+- Each accessory row captures type, receiving dyehouse, supplier permit number, and actual quantity.
+- Added an explicit button for extra accessory raw rows.
+- Added SQL Server and SQLite schema support for the accessory batch dyehouse.
+- Release: `v2026.08.08.05`.

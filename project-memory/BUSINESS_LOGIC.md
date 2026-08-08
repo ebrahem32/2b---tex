@@ -225,6 +225,8 @@ The Windows client must load the current `app.js` and `modules/navigation.js` th
 
 The visible top version badge must synchronize against `server-identity.json`. When the loaded application version differs from the server version, it must show both values and instruct the user to press `R`; when synchronized, the top and bottom badges must show the same release number.
 
+In the combined supplier-to-dyehouse raw delivery permit, cloth raw and accessory raw are independent receiving lines. Every accessory raw line must store its type, actual receiving dyehouse, accessory supplier permit number, and delivered quantity. Extra accessory raw can be added even when it was not planned on the order.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

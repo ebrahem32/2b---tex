@@ -19,8 +19,8 @@
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.08.04';
-const APP_BUILD_TIME = '2026-08-08 11:05';
+const APP_VERSION = 'v2026.08.08.05';
+const APP_BUILD_TIME = '2026-08-08 11:30';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
 const TRANSFER_RAW_MARKER = '[raw-transfer]';
@@ -6497,7 +6497,8 @@ function combinedMovementClothRows(order, movement) {
 function accessoryRowsForCombinedMovement(order, config) {
   if (!order.accessoryLines?.length) return '';
   if (config.accessoryMovement === 'accessorySent') {
-    return order.accessoryLines.map((line)=>`<tr data-bulk-accessory-type="${escapeHtml(line.type)}"><td>${escapeHtml(line.type)}</td><td>-</td><td>-</td><td>${formatNumber(Number(line.quantity || 0))}</td><td><input type="number" step="0.01" data-bulk-accessory-quantity placeholder="0"></td></tr>`).join('');
+    const defaultDyehouse = order.dyehouse || order.allocations?.[0]?.dyehouse || '';
+    return order.accessoryLines.map((line)=>`<tr data-bulk-accessory-type="${escapeHtml(line.type)}"><td>${escapeHtml(line.type)}</td><td>-</td><td><input data-bulk-accessory-dyehouse value="${escapeHtml(defaultDyehouse)}" placeholder="المصبغة"></td><td><input data-bulk-accessory-note-number placeholder="رقم إذن مورد الإكسسوار"></td><td>${formatNumber(Number(line.quantity || 0))}</td><td><input type="number" step="0.01" data-bulk-accessory-quantity placeholder="0"></td></tr>`).join('');
   }
   return order.allocations.map((allocation)=>order.accessoryLines.map((line)=>{
     const received = sum(accessoryBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'received' && (batch.accessoryType || line.type) === line.type));
@@ -6505,6 +6506,17 @@ function accessoryRowsForCombinedMovement(order, config) {
     const available = config.accessoryMovement === 'accessoryCustomer' ? Math.max(received - delivered, 0) : '';
     return `<tr data-bulk-allocation="${escapeHtml(allocation.id)}" data-bulk-accessory-type="${escapeHtml(line.type)}"><td>${escapeHtml(line.type)}</td><td>${escapeHtml(allocation.color || '-')}</td><td>${escapeHtml(allocationWidthSuffix(order, allocation).replace(/^\s*\/\s*/, '') || '-')}</td><td>${available === '' ? '-' : formatNumber(available)}</td><td><input type="number" step="0.01" data-bulk-accessory-quantity placeholder="0"></td></tr>`;
   }).join('')).join('');
+}
+
+function bulkExtraAccessoryRowHtml(defaultDyehouse = '') {
+  return `<tr data-bulk-extra-accessory-row>
+    <td><input data-bulk-extra-accessory-type placeholder="نوع خام الإكسسوار"></td>
+    <td>-</td>
+    <td><input data-bulk-accessory-dyehouse value="${escapeHtml(defaultDyehouse)}" placeholder="المصبغة"></td>
+    <td><input data-bulk-accessory-note-number placeholder="رقم إذن مورد الإكسسوار"></td>
+    <td>-</td>
+    <td><div class="inline-control-row"><input type="number" step="0.01" data-bulk-accessory-quantity placeholder="0"><button type="button" class="mini-btn danger" data-remove-bulk-extra-accessory>حذف</button></div></td>
+  </tr>`;
 }
 
 function bulkExtraRawRowHtml(dyehouse = '') {
@@ -6552,7 +6564,7 @@ function openBulkBatchDialog(source) {
       ${combinedMovementClothRows(order, movement)}
       ${movement === 'rawOut' ? `<tr data-bulk-extra-raw-anchor></tr>${bulkExtraRawRowHtml(defaultDyehouse)}` : ''}
     </tbody></table>
-    ${accessoryRows ? `<div class="subsection-head"><h3>الإكسسوار</h3></div><table class="bulk-entry-table"><thead><tr><th>نوع الإكسسوار</th><th>اللون</th><th>العرض</th><th>المتاح/المطلوب</th><th>الكمية</th></tr></thead><tbody>${accessoryRows}</tbody></table>` : ''}
+    ${accessoryRows ? `<div class="subsection-head"><h3>خام الإكسسوار</h3>${config.accessoryMovement === 'accessorySent' ? '<button type="button" class="mini-btn" data-add-bulk-extra-accessory>+ إضافة خام إكسسوار</button>' : ''}</div><table class="bulk-entry-table"><thead>${config.accessoryMovement === 'accessorySent' ? '<tr><th>نوع خام الإكسسوار</th><th>اللون</th><th>المصبغة المستلمة</th><th>رقم إذن مورد الإكسسوار</th><th>المتاح/المطلوب</th><th>الكمية</th></tr>' : '<tr><th>نوع الإكسسوار</th><th>اللون</th><th>العرض</th><th>المتاح/المطلوب</th><th>الكمية</th></tr>'}</thead><tbody>${accessoryRows}${config.accessoryMovement === 'accessorySent' ? '<tr data-bulk-extra-accessory-anchor></tr>' : ''}</tbody></table>` : ''}
     <div class="dialog-actions"><button class="primary-btn" type="button" data-save-bulk-batches>حفظ الأمر المجمع</button></div>
   </div>`;
   if (refs.documentDialog.open) refs.documentDialog.close();
@@ -6598,9 +6610,13 @@ function bulkBatchItemsFromDialog() {
     const quantity = Number(row.querySelector('[data-bulk-accessory-quantity]')?.value || 0);
     if (!quantity) return null;
     const allocationId = row.dataset.bulkAllocation || '';
-    const accessoryType = row.dataset.bulkAccessoryType || 'إكسسوار';
+    const accessoryType = row.querySelector('[data-bulk-extra-accessory-type]')?.value.trim() || row.dataset.bulkAccessoryType || 'إكسسوار';
     if (accessoryMovement === 'accessoryReceived') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'received' }) };
-    if (accessoryMovement === 'accessorySent') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'sent' }) };
+    if (accessoryMovement === 'accessorySent') {
+      const accessoryDyehouse = row.querySelector('[data-bulk-accessory-dyehouse]')?.value.trim() || '';
+      const accessoryNoteNumber = row.querySelector('[data-bulk-accessory-note-number]')?.value.trim() || noteNumber;
+      return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber:accessoryNoteNumber, notes, accessoryType, dyehouse:accessoryDyehouse, movement:'sent' }) };
+    }
     if (accessoryMovement === 'accessoryCustomer') return { type:'accessory', data: batchToApi({ id:uid(), orderId:selectedOrderId, allocationId, date, quantity, noteNumber, notes, accessoryType, movement:'customer' }) };
     return null;
   }).filter(Boolean);
@@ -6617,6 +6633,13 @@ async function saveBulkBatchesFromDialog() {
     if (missingDyehouse) { alert('حدد المصبغة للكمية المصروفة.'); missingDyehouse.querySelector('[data-bulk-extra-raw-dyehouse]')?.focus(); return; }
     const missingPermit = quantityRows.find((row)=>!row.querySelector('[data-bulk-row-note-number]')?.value.trim());
     if (missingPermit) { alert('اكتب رقم الإذن بجوار المصبغة حتى يتم ربط الكمية بها بدقة.'); missingPermit.querySelector('[data-bulk-row-note-number]')?.focus(); return; }
+    const accessoryQuantityRows = [...refs.documentBody.querySelectorAll('[data-bulk-accessory-quantity]')]
+      .map((input)=>input.closest('tr'))
+      .filter((row)=>row && Number(row.querySelector('[data-bulk-accessory-quantity]')?.value || 0) > 0);
+    const missingAccessoryDyehouse = accessoryQuantityRows.find((row)=>!row.querySelector('[data-bulk-accessory-dyehouse]')?.value.trim());
+    if (missingAccessoryDyehouse) { alert('حدد المصبغة المستلمة لخام الإكسسوار.'); missingAccessoryDyehouse.querySelector('[data-bulk-accessory-dyehouse]')?.focus(); return; }
+    const missingAccessoryPermit = accessoryQuantityRows.find((row)=>!row.querySelector('[data-bulk-accessory-note-number]')?.value.trim());
+    if (missingAccessoryPermit) { alert('اكتب رقم إذن مورد الإكسسوار.'); missingAccessoryPermit.querySelector('[data-bulk-accessory-note-number]')?.focus(); return; }
   }
   const items = bulkBatchItemsFromDialog();
   if (!items.length) { alert('اكتب كمية على لون واحد على الأقل.'); return; }
@@ -8221,6 +8244,12 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   }
   const removeBulkExtraRawButton = event.target.closest('[data-remove-bulk-extra-raw]');
   if (removeBulkExtraRawButton) removeBulkExtraRawButton.closest('[data-bulk-extra-raw-row]')?.remove();
+  if (event.target.closest('[data-add-bulk-extra-accessory]')) {
+    const defaultDyehouse = calculateOrder(orders.find((item)=>item.id===selectedOrderId))?.dyehouse || '';
+    refs.documentBody.querySelector('[data-bulk-extra-accessory-anchor]')?.insertAdjacentHTML('afterend', bulkExtraAccessoryRowHtml(defaultDyehouse));
+  }
+  const removeBulkExtraAccessoryButton = event.target.closest('[data-remove-bulk-extra-accessory]');
+  if (removeBulkExtraAccessoryButton) removeBulkExtraAccessoryButton.closest('[data-bulk-extra-accessory-row]')?.remove();
   if (event.target.closest('[data-save-bulk-batches]')) saveBulkBatchesFromDialog().catch((error)=>{ console.error('bulk-batches-save-error', error); alert(error.message || 'تعذر حفظ الإدخال الجماعي.'); });
 });
 

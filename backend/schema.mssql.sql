@@ -171,6 +171,7 @@ CREATE TABLE dbo.accessory_batches (
   batch_date NVARCHAR(40) NULL,
   accessory_type NVARCHAR(255) NULL,
   quantity FLOAT DEFAULT 0,
+  dyehouse NVARCHAR(255) NULL,
   note_number NVARCHAR(255) NULL,
   movement NVARCHAR(80) NULL,
   notes NVARCHAR(MAX) NULL,

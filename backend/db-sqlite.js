@@ -32,7 +32,7 @@ const REQUIRED_COLUMNS = {
   dyehouse_delivery_batches: ['width_line_id', 'source_document_json', 'created_by', 'updated_by'],
   finished_receiving_batches: ['note_number', 'source_document_json', 'created_by', 'updated_by'],
   customer_delivery_batches: ['customer_name', 'unit_price', 'total_price', 'payment_terms', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
-  accessory_batches: ['batch_date', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
+  accessory_batches: ['batch_date', 'dyehouse', 'note_number', 'movement', 'source_document_json', 'created_by', 'updated_by'],
   raw_returns: ['note_number', 'source_document_json', 'created_by', 'updated_by'],
   gluing_batches: ['movement', 'partner_fabric', 'output_name', 'customer_name', 'note_number', 'source_document_json', 'created_by', 'updated_by'],
   dyehouse_transfers: ['note_number', 'created_by', 'updated_by'],
@@ -133,6 +133,7 @@ function runMigrations() {
   addColumnIfMissing('finished_receiving_batches', 'dyehouse TEXT');
   [
     'batch_date TEXT',
+    'dyehouse TEXT',
     'note_number TEXT',
     'movement TEXT',
   ].forEach((definition) => addColumnIfMissing('accessory_batches', definition));

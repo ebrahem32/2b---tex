@@ -989,7 +989,19 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260808-03'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260808-05'), 'pricing navigation: main app asset must use the current cache-busting key');
+}
+
+function checkAccessoryRawDeliveryPermit() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
+  const mssqlSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'db-mssql.js'), 'utf8');
+  assert(appSource.includes('data-add-bulk-extra-accessory'), 'accessory raw: combined permit must allow extra accessory raw rows');
+  assert(appSource.includes('data-bulk-accessory-dyehouse'), 'accessory raw: each row must capture its receiving dyehouse');
+  assert(appSource.includes('data-bulk-accessory-note-number'), 'accessory raw: each row must capture its supplier permit number');
+  assert(appSource.includes("dyehouse:accessoryDyehouse"), 'accessory raw: receiving dyehouse must be persisted with the batch');
+  assert(serverSource.includes("accessory_type','quantity','dyehouse','note_number"), 'accessory raw: backend whitelist must persist dyehouse');
+  assert(mssqlSource.includes("['batch_date TEXT', 'dyehouse TEXT', 'note_number TEXT', 'movement TEXT']"), 'accessory raw: SQL Server migration must add the dyehouse column');
 }
 
 function checkVisibleVersionSynchronization() {
@@ -1249,6 +1261,7 @@ checkPricingActiveAndLinkedSectionsExist();
 checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkVisibleVersionSynchronization();
+checkAccessoryRawDeliveryPermit();
 checkPricingToOrderCarriesGroupedOperationalFields();
 checkGroupedPricingVerifyUsesItemsJson();
 checkPricingSaveBypassesLegacyHiddenRequiredFields();
