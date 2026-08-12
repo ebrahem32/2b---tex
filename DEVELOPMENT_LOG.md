@@ -2270,3 +2270,9 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Stored the linked pricing ID on the document and redraws that quotation after changed backend data arrives.
 - Editing dialogs continue to pause automatic refresh to protect unsaved user input.
 - Release: `v2026.08.12.04`.
+
+# Preserve Pricing Accessory Quantity - 2026-08-12
+
+- Prevented old or incomplete operational accessory rows with zero quantity from erasing the positive quantity saved in the pricing card.
+- Added a single-accessory fallback for legacy records whose accessory spelling differs between pricing and operations.
+- Release: `v2026.08.12.05`.

@@ -257,3 +257,4 @@ Waste percentage: 4%
 - The dyehouse is internal operational routing and must never appear in the customer-facing quotation. It remains available in internal production orders and operational reports.
 - Accessory rows in an accepted quotation use the latest accessory quantity from the linked operational order; manual quantity takes priority, then saved quantity, then percentage-derived quantity.
 - An open customer quotation is a read-only live document: it must not pause realtime synchronization and must redraw automatically when its linked pricing or operational order changes.
+- A zero or missing accessory quantity in an old operational order must not overwrite a positive accessory quantity saved in the pricing card.
