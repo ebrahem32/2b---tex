@@ -989,7 +989,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260808-08'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260812-01'), 'pricing navigation: main app asset must use the current cache-busting key');
 }
 
 function checkAccessoryRawDeliveryPermit() {
@@ -1042,6 +1042,18 @@ function checkRealtimeOperationalSynchronization() {
   assert(appSource.includes("message.type === 'data-change'"), 'realtime sync: clients must refresh when another device changes data');
   assert(appSource.includes('setInterval(()=>flushRealtimeRefresh()'), 'realtime sync: deferred events must resume after the active form is safe');
   assert(appSource.includes('60000'), 'realtime sync: polling must remain only as a distant fallback');
+}
+
+function checkNamedColorApproximation() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
+  const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert(appSource.includes('function approximateNamedColorHex(value)'), 'named colors: UI must derive an approximate swatch directly from the Arabic color name');
+  assert(appSource.includes("[/(بترولي)/, '#17666a']"), 'named colors: petrol color must have a deterministic approximate swatch');
+  assert(appSource.includes('namedColorLabelHtml(allocation.color)'), 'named colors: allocation table must display the approximate color circle');
+  assert(documentsSource.includes('window.approximateNamedColorHex'), 'named colors: printed documents must reuse the name-based color approximation');
+  assert(!documentsSource.includes("const saved = clean(line?.colorHex"), 'named colors: documents must not depend on a saved Pantone-derived hex value');
+  assert(indexSource.includes('./documents.js?v=20260812-01'), 'named colors: document builder must use the current cache key');
 }
 
 function checkOrderPreparedSpecsPersistence() {
@@ -1292,6 +1304,7 @@ checkFixedPackagingPricingStageExists();
 checkPricingListFiltersAndOrderNumber();
 checkVisibleVersionSynchronization();
 checkRealtimeOperationalSynchronization();
+checkNamedColorApproximation();
 checkAccessoryRawDeliveryPermit();
 checkDesktopPdfExportsOnlyDocumentSheet();
 checkPricingToOrderCarriesGroupedOperationalFields();

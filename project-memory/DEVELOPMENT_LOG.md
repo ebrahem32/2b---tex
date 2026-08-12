@@ -2243,3 +2243,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Clients reconnect automatically and defer refresh while a form has unsaved input.
 - Replaced the eight-second polling loop with a 60-second recovery fallback.
 - Release: `v2026.08.08.08`.
+## Name-based Approximate Color Swatches - 2026-08-12
+
+- Color circles now derive directly from Arabic color names instead of Pantone data.
+- Added stable mappings for common 2B colors and light/dark variants.
+- Added the circles to the allocation workspace and reused them in operational documents.
+- Unknown names use a neutral fallback color.
+- Release: `v2026.08.12.01`.

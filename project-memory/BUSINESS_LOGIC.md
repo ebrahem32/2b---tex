@@ -233,6 +233,8 @@ Operational data must synchronize automatically from SQL Server while the worksp
 
 The primary synchronization channel is an authenticated WebSocket at `/realtime`. Every successful mutating API request broadcasts a `data-change` event to connected clients. Clients refresh immediately when safe, queue the event while a form is active, reconnect after interruption, and retain a 60-second poll only as recovery for missed events.
 
+Color swatches are approximate visual aids derived from the Arabic color name, independently of Pantone. Common modifiers such as light, dark, off-white, petrol, charcoal, navy, and royal blue map to stable display colors. Unknown names use a neutral fallback; the swatch is never treated as a dyeing standard or exact production reference.
+
 ```text
 Remaining inside dyehouse
 = Total sent to dyehouse

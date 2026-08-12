@@ -33,8 +33,7 @@
       return color || pantone || '-';
     };
     const approximateColorHex = (line) => {
-      const saved = clean(line?.colorHex || line?.color_hex);
-      if (/^#[0-9a-f]{6}$/i.test(saved)) return saved;
+      if (typeof window.approximateNamedColorHex === 'function') return window.approximateNamedColorHex(line?.color || '');
       const name = clean(line?.color).toLocaleLowerCase('ar');
       const colors = [
         [/اسود|أسود|فاحم/, '#151515'], [/ابيض|أبيض|اوف وايت|أوف وايت/, '#f3efe2'],
