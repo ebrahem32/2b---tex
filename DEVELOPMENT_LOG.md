@@ -2256,3 +2256,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Kept dyehouse allocation data unchanged for internal production orders and operational reports.
 - Added a regression check preventing the dyehouse column from returning to customer quotations.
 - Release: `v2026.08.12.02`.
+
+# Customer Quotation Accessory Quantity Sync - 2026-08-12
+
+- Fixed linked quotations showing a zero accessory quantity when the operational order stored the quantity in `quantityManual`.
+- Quotation accessories now resolve quantity in this order: manual quantity, saved quantity, then percentage of the current order quantity.
+- Preserved the accessory pricing and included the synchronized quantity in the quotation total.
+- Release: `v2026.08.12.03`.

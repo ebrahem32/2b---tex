@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.12.02';
+const APP_VERSION = 'v2026.08.12.03';
 const APP_BUILD_TIME = '2026-08-12 10:30';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -4190,9 +4190,20 @@ function pricingContractSourceForOrder(pricing, operationalOrder = null) {
   if (!pricing || !order) return pricing;
   const quantity = Number(order.totalRawOrdered || order.totalRawQuantity || 0);
   const orderAccessories = Array.isArray(order.accessoryLines) ? order.accessoryLines : [];
+  const orderAccessoryQuantity = (line = {}) => {
+    if (line.quantityManual !== undefined && line.quantityManual !== null && line.quantityManual !== '') {
+      return Number(line.quantityManual || 0);
+    }
+    if (line.quantity !== undefined && line.quantity !== null && line.quantity !== '') {
+      return Number(line.quantity || 0);
+    }
+    return roundNumber(quantity * Number(line.percent || 0) / 100);
+  };
   const syncAccessories = (lines = []) => lines.map((line)=>{
     const matching = orderAccessories.find((current)=>normalizeForCompare(current.type) === normalizeForCompare(line.type));
-    return matching ? { ...line, quantity:Number(matching.quantity || 0), percent:Number(matching.percent || 0) } : line;
+    if (!matching) return line;
+    const syncedQuantity = orderAccessoryQuantity(matching);
+    return { ...line, quantity:syncedQuantity, quantityManual:syncedQuantity, percent:Number(matching.percent || 0) };
   });
   const applyOrderType = (item) => {
     const withoutRawCost = order.orderType === 'manufacturing' ? { ...item, rawCost:0 } : item;

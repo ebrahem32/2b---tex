@@ -989,7 +989,8 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260812-02'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260812-03'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(appSource.includes('quantityManual:syncedQuantity'), 'customer quotation: accessory quantity must sync from the operational order without becoming zero');
   assert(appSource.includes('<th>اللون</th><th>رقم البانتون</th><th>الكمية</th></tr>'), 'customer quotation: approved colors must show color, Pantone, and quantity');
   assert(!appSource.includes('<th>اللون</th><th>رقم البانتون</th><th>الكمية</th><th>المصبغة</th>'), 'customer quotation: internal dyehouse must not be exposed to the customer');
 }

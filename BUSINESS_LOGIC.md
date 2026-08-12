@@ -255,3 +255,4 @@ Waste percentage: 4%
 
 - The customer-facing price quotation may show the approved color, Pantone code, and quantity.
 - The dyehouse is internal operational routing and must never appear in the customer-facing quotation. It remains available in internal production orders and operational reports.
+- Accessory rows in an accepted quotation use the latest accessory quantity from the linked operational order; manual quantity takes priority, then saved quantity, then percentage-derived quantity.
