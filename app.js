@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.12.03';
+const APP_VERSION = 'v2026.08.12.04';
 const APP_BUILD_TIME = '2026-08-12 10:30';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -886,6 +886,7 @@ async function loadBackendData(options = {}) {
     }
     save();
     renderAll();
+    refreshOpenLiveDocument();
   } catch (error) {
     backendAvailable = false;
     updateBackendStatusBadge('قاعدة البيانات غير متاحة');
@@ -4290,6 +4291,7 @@ function openCustomerPricingQuotation(id) {
   </tr>`).join('') || '';
   refs.documentTitle.textContent = '\u0639\u0631\u0636 \u0633\u0639\u0631';
   refs.documentBody.dataset.documentType = 'pricing-quotation';
+  refs.documentBody.dataset.pricingId = pricing.id || sourcePricing?.id || id || '';
   refs.documentBody.dataset.documentNumber = pricing.pricingNumber || pricing.id || '';
   refs.documentBody.dataset.reportTitle = 'عرض سعر';
   refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
@@ -4317,7 +4319,7 @@ function openCustomerPricingQuotation(id) {
     <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
     ${documentFooter()}
   </div>`;
-  refs.documentDialog.showModal();
+  if (!refs.documentDialog.open) refs.documentDialog.showModal();
 }
 function openPricingCostSheet(id) {
   const sourcePricing = pricings.find((item)=>item.id===id);
@@ -5379,10 +5381,20 @@ function orderDetailsHasActiveDraft() {
 }
 
 function userHasActiveUnsavedWork() {
-  if (document.querySelector('dialog[open]')) return true;
+  const openDialogs = [...document.querySelectorAll('dialog[open]')];
+  const onlyLiveQuotationOpen = openDialogs.length === 1
+    && openDialogs[0] === refs.documentDialog
+    && refs.documentBody?.dataset.documentType === 'pricing-quotation';
+  if (openDialogs.length && !onlyLiveQuotationOpen) return true;
   if (document.querySelector('[data-dirty="true"]')) return true;
   const active = document.activeElement;
   return !!active?.matches?.('input:not([readonly]):not([disabled]), textarea:not([readonly]):not([disabled]), select:not([disabled]), [contenteditable="true"]');
+}
+
+function refreshOpenLiveDocument() {
+  if (!refs.documentDialog?.open || refs.documentBody?.dataset.documentType !== 'pricing-quotation') return;
+  const pricingId = refs.documentBody.dataset.pricingId;
+  if (pricingId && pricings.some((item)=>String(item.id) === String(pricingId))) openCustomerPricingQuotation(pricingId);
 }
 
 window.twoBTexCanAutoRefresh = () => !userHasActiveUnsavedWork();

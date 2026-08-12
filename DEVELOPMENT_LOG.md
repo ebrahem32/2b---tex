@@ -2263,3 +2263,10 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Quotation accessories now resolve quantity in this order: manual quantity, saved quantity, then percentage of the current order quantity.
 - Preserved the accessory pricing and included the synchronized quantity in the quotation total.
 - Release: `v2026.08.12.03`.
+
+# Live Open Quotation Refresh - 2026-08-12
+
+- Allowed realtime backend refresh while the read-only customer quotation is open.
+- Stored the linked pricing ID on the document and redraws that quotation after changed backend data arrives.
+- Editing dialogs continue to pause automatic refresh to protect unsaved user input.
+- Release: `v2026.08.12.04`.
