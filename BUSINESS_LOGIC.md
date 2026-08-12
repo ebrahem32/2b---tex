@@ -1,0 +1,257 @@
+# Business Logic
+
+## Operational Cycle
+
+```text
+Quotation
+↓
+Customer Order
+↓
+Weaving Order
+↓
+Raw Receiving
+↓
+Dyeing Order
+↓
+Send Raw to Dyehouse
+↓
+Receive Finished Fabric
+↓
+Warehouse
+↓
+Customer Delivery
+↓
+Order Closure
+```
+
+## Factory Rules
+
+- The same order number can intentionally exist with different fabric items.
+- A quotation is customer-level and may contain multiple fabric/material items.
+- When a multi-item quotation is converted to an order, each fabric item must become its own operational order line with the same customer/order number so weaving, dyehouse, warehouse, delivery, and waste remain traceable per item.
+- One order can be split into multiple colors.
+- Each color is an independent allocation inside the order.
+- Receiving is done in batches.
+- Sending to dyehouse is done in batches.
+- Receiving from dyehouse is done in batches.
+- Customer delivery is done in batches.
+- Every movement must keep its date and reference.
+- Balances are calculated from movements, not edited manually.
+
+## Customer Master Rule
+
+Customer names are master data.
+
+The customers screen is the official source for customer names used by:
+
+- Customer orders.
+- Customer quotations.
+- Finished-stock sales.
+- Customer accounts and ledgers.
+
+To prevent duplicate names, the system normalizes customer-name matching before creating a new customer. This matching ignores:
+
+- Extra spaces.
+- Arabic hamza variants such as `ا`, `أ`, `إ`, `آ`.
+- Tatweel and Arabic diacritics.
+
+Example:
+
+```text
+امل فاشون
+أمل فاشون
+إمل فاشون
+```
+
+These should resolve to the same customer record, using the official name saved in the customers screen.
+
+## Fabric Master Rule
+
+Fabric/item names are master data.
+
+The official fabric list is used by:
+
+- Customer orders.
+- Grouped order items.
+- Customer quotations.
+- Quotation item rows.
+- Fabric filters and selection helpers.
+
+To prevent duplicate fabric names, the system normalizes matching before saving a new order or quotation item. This matching ignores:
+
+- Extra spaces.
+- Arabic hamza variants such as `ا`, `أ`, `إ`, `آ`.
+- Tatweel and Arabic diacritics.
+
+Example:
+
+```text
+بيكا قطن استرتر
+بيكا  قطن إسترتر
+بيكا قطن أسترتر
+```
+
+Supported spelling variants should resolve to the official fabric name saved in the fabric master list. Historical records are not rewritten automatically; cleanup must be a separate controlled migration.
+
+## Finished Stock Sale
+
+Arabic operating name:
+
+`بيع مجهز`
+
+Meaning:
+
+`بيع مجهز` is a sale/delivery from existing finished warehouse stock to a customer.
+
+It is not a new weaving order and not a new dyeing order.
+
+Important factory case:
+
+- Some stock may be produced under the internal/customer name `2B`.
+- In this case, `2B` represents factory-owned stock or warehouse stock.
+- Other customers may buy from this finished stock later.
+- The movement must reduce the original warehouse balance.
+- The receiving/buying customer must have their own commercial record for the sale.
+
+Operational behavior:
+
+1. Open `بيع مجهز`.
+2. Show only items that currently exist in finished warehouse stock.
+3. Select the required fabric/item.
+4. Show available colors and quantities for that item.
+5. Select one or more colors.
+6. Enter sold quantities per color.
+7. Enter customer, price, date, payment data, notes, and reference number if available.
+8. Save the sale movement.
+
+Effects:
+
+- Reduces finished warehouse stock from the selected source order/allocation.
+- Creates a commercial sale/delivery record for the receiving customer.
+- Appears in the receiving customer's account/ledger.
+- Appears in warehouse movement reports.
+- Appears in sales/finished-stock sale reports.
+
+Must not:
+
+- Create a weaving order.
+- Create a dyeing order.
+- Send anything to dyehouse.
+- Receive new finished fabric.
+- Calculate operational waste for the receiving customer.
+- Change dyehouse or weaving balances.
+
+Validation:
+
+- Negative or insufficient finished-stock balance must not be hidden.
+- If the requested sale quantity is greater than the available quantity, the system may save the sale movement but must attach a clear warning note to the movement.
+- The warning keeps the stock issue visible for later operational review instead of silently blocking or hiding the problem.
+
+## Waste Logic
+
+- Waste is not calculated when raw fabric is sent to the dyehouse.
+- Remaining dyehouse balance stays active until it is received, returned, or confirmed as waste.
+- Actual waste quantity is the confirmed operational difference:
+  `raw sent to dyehouse - finished received - raw returned`.
+- Actual waste percentage is calculated on finished received weight:
+  `actual waste quantity / finished received`.
+- Pricing cards that use operational waste should use this finished-weight percentage, while the pricing cost basis (`صافي` or `قائم`) still controls which costs receive that percentage.
+- Waste is recorded when it is proven or when the operational cycle is closed.
+
+## Order Business Mode
+
+Every customer order must explicitly use one of these modes:
+
+- `trade`: 2B buys/owns the raw fabric and sells the completed product. Raw-fabric price and estimated raw waste participate in commercial calculations.
+- `manufacturing`: customer-owned raw fabric; 2B performs dyeing/manufacturing services only. Raw-fabric price and estimated raw waste must be zero and must not enter the contract calculation.
+
+Historical manufacturing rows that contain old raw-price or estimated-waste values are normalized to zero in runtime reads. Editing and saving the order persists the corrected zero values.
+
+## Planned Waste Loading For Production Documents
+
+Estimated pricing waste is a planning addition, separate from confirmed actual operational waste.
+
+- Customer color allocation remains the customer's ordered quantity.
+- Dyeing work-order quantity per color is:
+  `customer color quantity + (customer color quantity × expected waste percent)`.
+- Dyeing work-order total is the sum of all waste-loaded colors.
+- Example: ten colors of 500 kg at 10% become ten operating lines of 550 kg and a dyeing total of 5,500 kg.
+- Manufacturing-only/customer-owned-raw orders do not receive this estimated raw-waste addition.
+- The printed dyeing work order shows only the final waste-loaded quantity per color and the final dyehouse total.
+- Do not print the internal breakdown (`customer quantity + planned waste`) or a planned-waste summary on the dyeing work order.
+
+## Weaving Raw Components And Shania
+
+- A weaving order may contain separate raw-production components inside the same customer order.
+- Same-name components must not be merged when specification or operating percentage differs.
+- Example: `ممشط 4000`, `شانيه فاتح 2% 500`, and `شانيه فاتح 8% 500` are three independent rows.
+- Component customer quantities must sum exactly to the customer order quantity.
+- Estimated waste is calculated independently for every component.
+- Rib/accessory quantity is distributed onto and displayed below each component, based on its saved percentage or proportional manual total.
+- Weaving work orders intentionally omit the color table and the separate accessory table.
+- Weaving header shows date, customer, and weaving factory/supplier once. Inch, fabric, prepared weight, and customer quantity appear together in the first operating-data row.
+
+## Locked Weaving Work-Order Template
+
+The weaving work-order layout approved on `2026-08-06` in release `v2026.08.06.06` is a locked production template.
+
+Its approved structure is:
+
+1. Company header and `أمر تشغيل نسيج` title with order number.
+2. One compact header row: date, customer, and weaving supplier (`مورد النسيج`).
+3. `بيانات التشغيل` with inch, fabric, prepared weight, prepared width, final required raw total, and raw price. Customer quantity and pricing-waste breakdown must not appear in this printed block.
+4. `مكونات تشغيل الخام` with separate component/specification, customer quantity, added waste, operating quantity, and the related rib quantity directly below its component.
+5. Notes and document footer.
+
+The weaving document must not restore color or standalone accessory tables. It must not merge shania rows with different specifications.
+
+Do not change this template's fields, order, grouping, calculations, headings, or visual structure unless Ibrahim explicitly requests: `تغيير صيغة أمر تشغيل النسيج`.
+
+The order-entry form includes `الوزن المجهز` and `العرض المجهز`. Both values are stored with the order inside `operation_notes_json` as `preparedWeight` and `preparedWidth`, restored during editing, and printed in the weaving work order. Numeric values in the compact operation-data table must remain on one line without digit wrapping.
+
+Both prepared-spec fields must appear in the upper main-order section immediately after `إجمالي الخام المطلوب`, so they are visible during initial order registration rather than hidden lower in the form.
+
+The weaving operation-data print table is fixed at three label/value pairs per row: inch, fabric, and prepared weight on the first row; prepared width, final required raw, and raw price on the second row. This balanced six-column layout must be preserved to prevent fabric names and numbers from overlapping.
+
+Within that table, value columns are wider than label columns. The fabric value may wrap inside its own cell, while numeric values remain on one line; fabric text must never overflow into the adjacent prepared-weight cell.
+
+## Dyehouse Balance Rule
+
+Raw dispatch to a dyehouse is documented as `إذن تسليم خام من مورد النسيج للمصبغة`, not as an internal `أمر صرف للمصبغة`. The permit number belongs to the weaving supplier, while the dyehouse is the receiving party. This wording changes document responsibility only; the stock movement remains raw sent to the selected dyehouse and must continue updating its balance.
+
+Every finished-receiving batch stores its actual source dyehouse independently from the color allocation's default dyehouse. A color may be processed by more than one dyehouse; receiving, editing, movement labels, and reports must prefer the batch-level dyehouse and use the allocation dyehouse only as a legacy fallback.
+
+The Windows client must load the current `app.js` and `modules/navigation.js` through release-specific cache keys. A release that changes navigation must bump both query keys so the desktop WebView cannot keep an older handler while showing newer server content.
+
+The visible top version badge must synchronize against `server-identity.json`. When the loaded application version differs from the server version, it must show both values and instruct the user to press `R`; when synchronized, the top and bottom badges must show the same release number.
+
+In the combined supplier-to-dyehouse raw delivery permit, cloth raw and accessory raw are independent receiving lines. Every accessory raw line must store its type, actual receiving dyehouse, accessory supplier permit number, and delivered quantity. Extra accessory raw can be added even when it was not planned on the order.
+
+Desktop PDF export must contain only the white `.document-sheet`. The surrounding document dialog toolbar, dark frame, application shell, and interactive controls are preview UI and must never be rendered into the saved PDF.
+
+Operational data must synchronize automatically from SQL Server while the workspace is idle. An unchanged server payload must not rerender the page. Open dialogs, dirty batch forms, and active editable fields block both data refresh and application-version reload until the user finishes, so automatic synchronization never discards unsaved input.
+
+The primary synchronization channel is an authenticated WebSocket at `/realtime`. Every successful mutating API request broadcasts a `data-change` event to connected clients. Clients refresh immediately when safe, queue the event while a form is active, reconnect after interruption, and retain a 60-second poll only as recovery for missed events.
+
+Color swatches are approximate visual aids derived from the Arabic color name, independently of Pantone. Common modifiers such as light, dark, off-white, petrol, charcoal, navy, and royal blue map to stable display colors. Unknown names use a neutral fallback; the swatch is never treated as a dyeing standard or exact production reference.
+
+```text
+Remaining inside dyehouse
+= Total sent to dyehouse
+- Total received finished
+- Closed waste if any
+- Raw returns if any
+```
+
+## Example
+
+```text
+Sent to dyehouse: 1250 kg
+Received finished: 1200 kg
+Waste: 50 kg
+Waste percentage: 4%
+```
+# Customer quotation privacy
+
+- The customer-facing price quotation may show the approved color, Pantone code, and quantity.
+- The dyehouse is internal operational routing and must never appear in the customer-facing quotation. It remains available in internal production orders and operational reports.
