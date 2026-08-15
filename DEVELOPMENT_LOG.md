@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-15 - Protect Input During Server Disconnections
+
+- Removed the unconditional backend reload that erased active fields after a failed write.
+- Added durable local drafts for interrupted permit edits and automatic restoration when the permit is reopened.
+- Kept SQL Server as the only approved operational source; drafts remain unapproved until a successful retry.
+- Updated version to `v2026.08.15.03`.
+
 ### 2026-08-15 - Show Audit Details Inside Every Permit
 
 - Added a read-only audit panel to the full permit editor for all movement types.

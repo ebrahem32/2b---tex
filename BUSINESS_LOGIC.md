@@ -269,3 +269,10 @@ Waste percentage: 4%
 - Opening any saved movement permit must show the complete editable permit fields together with read-only audit details.
 - Audit details include the original entry time and user, plus the latest modification time and user.
 - A saved permit image remains visible in the same editor when one exists.
+
+# Disconnected write protection
+
+- A failed SQL Server write must never unconditionally reload the workspace and erase the operator's active form.
+- Unsaved permit edits are stored locally as a draft before the server request; reopening the same permit restores the draft with a visible warning.
+- A permit draft is cleared only after the server confirms the save or the operator confirms deletion.
+- Previously committed SQL Server data remains the source of truth; the draft protects interrupted input and is not treated as an approved movement.

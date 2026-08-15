@@ -19,8 +19,9 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.15.02';
-const APP_BUILD_TIME = '2026-08-15 12:45';
+const APP_VERSION = 'v2026.08.15.03';
+const APP_BUILD_TIME = '2026-08-15 13:20';
+const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
 function approximateNamedColorHex(value) {
@@ -1124,8 +1125,8 @@ const {
   parseDbJsonArray,
 });
 async function rollbackAfterBackendWriteFailure(message) {
-  alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');
-  await loadBackendData();
+  alert(`${message || 'تعذر تثبيت التعديل في قاعدة البيانات.'}\n\nلم تُمسح الحقول التي أدخلتها. اترك النافذة مفتوحة، وانتظر رجوع اتصال السيرفر ثم اضغط حفظ مرة أخرى.`);
+  if (backendAvailable) await loadBackendData({ retries:1, silentFailure:true, refreshIfChanged:true });
 }
 const reportTypeLabels = {
   weaving_production_order: 'أمر تشغيل نسيج',
@@ -7212,8 +7213,31 @@ function batchEditorAuditHtml(batch) {
     </div>
   </section>`;
 }
+function readUnsavedWriteDrafts() {
+  try {
+    const drafts = JSON.parse(localStorage.getItem(WRITE_DRAFT_STORAGE_KEY) || '{}');
+    return drafts && typeof drafts === 'object' && !Array.isArray(drafts) ? drafts : {};
+  } catch { return {}; }
+}
+function permitDraftKey(type, id) { return `permit:${type}:${id}`; }
+function savePermitDraft(type, id, values) {
+  const drafts = readUnsavedWriteDrafts();
+  drafts[permitDraftKey(type, id)] = { ...values, savedAt:new Date().toISOString() };
+  safeSetLocalStorage(WRITE_DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+}
+function loadPermitDraft(type, id) {
+  return readUnsavedWriteDrafts()[permitDraftKey(type, id)] || null;
+}
+function clearPermitDraft(type, id) {
+  const drafts = readUnsavedWriteDrafts();
+  delete drafts[permitDraftKey(type, id)];
+  safeSetLocalStorage(WRITE_DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+}
 function openBatchEditorDialog(type, batch) {
+  const savedDraft = loadPermitDraft(type, batch.id);
+  const editorBatch = savedDraft ? { ...batch, ...savedDraft } : batch;
   const order = calculateOrder(orders.find((item)=>item.id === batch.orderId)) || {};
+  batch = editorBatch;
   const selectedAllocation = (order.allocations || []).find((item)=>item.id === batch.allocationId) || {};
   const allocationOptions = (order.allocations || []).map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id === batch.allocationId ? 'selected' : ''}>${escapeHtml(allocationMovementLabel(order, item))}</option>`).join('');
   const productionAllocationOptions = (order.allocations || []).map((item)=>`<option value="${escapeHtml(item.id)}" ${item.id === batch.allocationId ? 'selected' : ''}>${escapeHtml(`${colorWithPantoneLabel(item)} / ${allocationWidthLabel(order, item)}`)}</option>`).join('');
@@ -7242,7 +7266,7 @@ function openBatchEditorDialog(type, batch) {
   return new Promise((resolve)=>{
     const dialog = document.createElement('dialog');
     dialog.className = 'transfer-choice-dialog batch-editor-dialog';
-    dialog.innerHTML = `<form method="dialog" class="transfer-choice-card" dir="rtl"><div class="subsection-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber || '-')}</p><h3>${escapeHtml(batchEditorTypeLabel(type))}</h3></div><button type="button" class="mini-btn" data-batch-editor-close>إغلاق</button></div><div class="form-grid master-grid">${field('التاريخ', 'date', batch.date || '', 'type="date" required')}${field('الكمية', 'quantity', Math.abs(Number(batch.quantity || 0)), 'type="number" step="0.01" required')}${field('رقم الإذن', 'noteNumber', batch.noteNumber || '')}${allocationField}${extraFields}<label class="full-row"><span>ملاحظات</span><textarea name="notes" rows="4">${escapeHtml(batch.notes || '')}</textarea></label>${imageSection}${batchEditorAuditHtml(batch)}</div><div class="dialog-actions"><button type="button" class="primary-btn" data-batch-editor-save>حفظ التعديل</button>${canDeleteRecords() ? '<button type="button" class="mini-btn danger" data-batch-editor-delete>حذف الإذن</button>' : ''}<button type="button" class="mini-btn" data-batch-editor-close>إلغاء</button></div></form>`;
+    dialog.innerHTML = `<form method="dialog" class="transfer-choice-card" dir="rtl"><div class="subsection-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber || '-')}</p><h3>${escapeHtml(batchEditorTypeLabel(type))}</h3></div><button type="button" class="mini-btn" data-batch-editor-close>إغلاق</button></div>${savedDraft ? '<div class="warning">تم استرجاع تعديل لم يُحفظ بسبب انقطاع السيرفر. راجعه ثم اضغط حفظ.</div>' : ''}<div class="form-grid master-grid">${field('التاريخ', 'date', batch.date || '', 'type="date" required')}${field('الكمية', 'quantity', Math.abs(Number(batch.quantity || 0)), 'type="number" step="0.01" required')}${field('رقم الإذن', 'noteNumber', batch.noteNumber || '')}${allocationField}${extraFields}<label class="full-row"><span>ملاحظات</span><textarea name="notes" rows="4">${escapeHtml(batch.notes || '')}</textarea></label>${imageSection}${batchEditorAuditHtml(batch)}</div><div class="dialog-actions"><button type="button" class="primary-btn" data-batch-editor-save>حفظ التعديل</button>${canDeleteRecords() ? '<button type="button" class="mini-btn danger" data-batch-editor-delete>حذف الإذن</button>' : ''}<button type="button" class="mini-btn" data-batch-editor-close>إلغاء</button></div></form>`;
     const finish = (value)=>{ if (dialog.open) dialog.close(); dialog.remove(); resolve(value); };
     dialog.addEventListener('click', (event)=>{
       if (event.target.closest('[data-batch-editor-close]')) { finish(null); return; }
@@ -7252,6 +7276,7 @@ function openBatchEditorDialog(type, batch) {
       if (!form.reportValidity()) return;
       const values = Object.fromEntries(new FormData(form).entries());
       values.sourceDocumentFile = form.elements.sourceDocumentFile?.files?.[0] || null;
+      savePermitDraft(type, batch.id, Object.fromEntries(Object.entries(values).filter(([, value])=>typeof value === 'string')));
       finish({ action:'save', values });
     });
     dialog.addEventListener('cancel', (event)=>{ event.preventDefault(); finish(null); });
@@ -7265,7 +7290,7 @@ async function editBatch(type, id) {
   const editorResult = await openBatchEditorDialog(type, batch);
   if (!editorResult) return;
   if (editorResult.action === 'delete') {
-    if (confirm('هل تريد حذف هذا الإذن نهائيًا من قاعدة البيانات؟')) await deleteBatch(type, id, { confirmed:true });
+    if (confirm('هل تريد حذف هذا الإذن نهائيًا من قاعدة البيانات؟')) { await deleteBatch(type, id, { confirmed:true }); clearPermitDraft(type, id); }
     return;
   }
   if (!(await ensureBackendForWrite())) return;
@@ -7287,6 +7312,7 @@ async function editBatch(type, id) {
     }
   }
   await loadBackendData();
+  clearPermitDraft(type, id);
   return;
   /* Legacy prompt editor retained below as an unreachable rollback reference. */
   const quantity = Number(await window.TwoBTexInput.prompt('الكمية', updatedBatch.quantity)); if (!quantity) return; updatedBatch.quantity = quantity;

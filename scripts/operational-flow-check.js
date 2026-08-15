@@ -991,7 +991,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260815-02'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260815-03'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
   assert(appSource.includes("refs.documentBody.dataset.pricingId = pricing.id"), 'realtime quotation: open document must retain its linked pricing id');
@@ -1262,6 +1262,15 @@ function checkBatchPermitAuditDetails() {
   assert(stylesSource.includes('.batch-editor-audit-grid'), 'movement permit: audit details must have a responsive visible layout');
 }
 
+function checkDisconnectedWriteDraftProtection() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert(appSource.includes("const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1'"), 'offline writes: unsaved permit edits must have durable local draft storage');
+  assert(appSource.includes('savePermitDraft(type, batch.id'), 'offline writes: permit values must be captured before attempting the server save');
+  assert(appSource.includes('loadPermitDraft(type, batch.id)'), 'offline writes: reopening a permit must restore its interrupted edit');
+  assert(appSource.includes('لم تُمسح الحقول التي أدخلتها'), 'offline writes: failed saves must clearly tell the user that entered fields remain');
+  assert(!appSource.includes("alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');\n  await loadBackendData();"), 'offline writes: a failed save must not unconditionally reload and erase the active form');
+}
+
 function checkOperationalAiManagerRules() {
   const serverSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
   const aiEmployeeSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'aiEmployee.js'), 'utf8');
@@ -1344,6 +1353,7 @@ checkWhatsappAccountReplacement();
 checkOrderBusinessModes();
 checkFullBatchPermitEditor();
 checkBatchPermitAuditDetails();
+checkDisconnectedWriteDraftProtection();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 
