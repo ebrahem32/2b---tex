@@ -258,3 +258,8 @@ Waste percentage: 4%
 - Accessory rows in an accepted quotation use the latest accessory quantity from the linked operational order; manual quantity takes priority, then saved quantity, then percentage-derived quantity.
 - An open customer quotation is a read-only live document: it must not pause realtime synchronization and must redraw automatically when its linked pricing or operational order changes.
 - A zero or missing accessory quantity in an old operational order must not overwrite a positive accessory quantity saved in the pricing card.
+# Customer receipt dates and closed operations
+
+- The detailed order report shows every recorded customer receipt date with its color, quantity, and permit number.
+- Operationally closed orders are hidden from the normal operating list and stage screens.
+- Closed orders remain stored and can be displayed explicitly by selecting the `مغلق تشغيليًا` status filter; no order is deleted.

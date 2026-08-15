@@ -104,7 +104,8 @@ function sortDesc(list, valueOf) {
 }
 
 function renderStageScreens() {
-  const source = typeof getCalculatedOrders === 'function' ? getCalculatedOrders() : filteredOrders();
+  const source = (typeof getCalculatedOrders === 'function' ? getCalculatedOrders() : filteredOrders())
+    .filter((order) => !order.operationClosed);
   const weaving = sortDesc(
     source.filter((order) => ['weaving', 'color-planning'].includes(orderStageInfo(order).key)),
     (order) => Math.max(Number(order.totalRawOrdered || 0) - Number(order.totalRawReceived || 0), 0)

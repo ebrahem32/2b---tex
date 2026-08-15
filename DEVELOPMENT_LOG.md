@@ -2276,3 +2276,9 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Prevented old or incomplete operational accessory rows with zero quantity from erasing the positive quantity saved in the pricing card.
 - Added a single-accessory fallback for legacy records whose accessory spelling differs between pricing and operations.
 - Release: `v2026.08.12.05`.
+# Customer Receipt Dates and Closed-Order List - 2026-08-15
+
+- Added a customer receipt dates table to the detailed order report.
+- The table lists date, color, quantity, and permit number for each customer delivery batch.
+- Hidden operationally closed orders from the default operating list and stage screens while retaining the explicit closed-status view.
+- Release: `v2026.08.15.01`.

@@ -743,10 +743,29 @@
       return rows ? `<section class="report-section"><h3>توزيع الرصيد على المصابغ</h3><table class="summary-table"><thead><tr><th>المصبغة</th><th>الخام المرسل للمصبغة</th><th>الرصيد داخل المصبغة</th><th>عدد الألوان</th><th>الألوان</th></tr></thead><tbody>${rows}</tbody></table></section>` : '';
     }
 
+    function customerReceiptDatesSection(order) {
+      const allocations = orderAllocations(order);
+      const allocationIds = new Set(allocations.map((allocation) => allocation.id).filter(Boolean));
+      const allocationById = new Map(allocations.map((allocation) => [allocation.id, allocation]));
+      const rows = (Array.isArray(order?.customerBatches) ? order.customerBatches : [])
+        .filter((batch) => {
+          const movement = clean(batch?.movement);
+          if (movement === 'finished_sale' || movement === 'finished_transfer_out') return false;
+          return clean(batch?.orderId || batch?.order_id) === clean(order?.id)
+            || allocationIds.has(batch?.allocationId || batch?.allocation_id);
+        })
+        .sort((left, right) => clean(left?.date || left?.batch_date).localeCompare(clean(right?.date || right?.batch_date)))
+        .map((batch) => {
+          const allocation = allocationById.get(batch?.allocationId || batch?.allocation_id);
+          return `<tr><td>${safeText(batch?.date || batch?.batch_date)}</td><td>${safeText(allocation?.color || batch?.color)}</td><td>${fmt(batch?.quantity)}</td><td>${safeText(batch?.noteNumber || batch?.note_number)}</td></tr>`;
+        }).join('');
+      return `<section class="report-section customer-receipt-dates"><h3>مواعيد استلام العميل</h3><table><thead><tr><th>تاريخ الاستلام</th><th>اللون</th><th>الكمية</th><th>رقم الإذن</th></tr></thead><tbody>${rows || emptyRow(4, 'لا توجد استلامات مسجلة للعميل حتى الآن.')}</tbody></table></section>`;
+    }
+
     function buildCompactFullReportDocument(order) {
       const dyehouseBalance = Number(order?.rawAtDyehouseAvailable ?? order?.remainingAtDyehouse ?? 0);
       const summary = `<section class="report-section"><h3>ملخص التشغيل</h3><table class="summary-table"><tbody><tr><th>خام مطلوب</th><td>${fmt(order?.totalRawOrdered)}</td><th>خام خرج للمصبغة</th><td>${fmt(order?.totalRawReceived)}</td></tr><tr><th>داخل المصبغة</th><td>${fmt(dyehouseBalance)}</td><th>دخل المخزن</th><td>${fmt(order?.totalFinishedReceived)}</td></tr><tr><th>تسليم العميل</th><td>${fmt(order?.totalDeliveredToCustomer)}</td><th>رصيد المخزن</th><td>${fmt(order?.warehouseBalance)}</td></tr><tr><th>هالك فعلي</th><td>${fmt(order?.totalWaste)}</td><th>هالك تقديري</th><td>${fmt(order?.expectedWasteQuantity)}</td></tr></tbody></table></section>`;
-      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${dyehouseDistributionSection(order)}${colorRows(order, orderAllocations(order), { includeDyehouse:true, includeReceived:true, includeCustomerDelivered:true, includeWarehouseBalance:true, includeWaste:true })}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
+      return reportShell('التقرير التفصيلي للطلب', order, `${summary}${dyehouseDistributionSection(order)}${colorRows(order, orderAllocations(order), { includeDyehouse:true, includeReceived:true, includeCustomerDelivered:true, includeWarehouseBalance:true, includeWaste:true })}${customerReceiptDatesSection(order)}${dyehouseTransfersSection(order)}${accessoriesSection(order, { showMovement:true })}${notesSection(order)}`, { subtitle:'متابعة كاملة من الخام حتى التسليم للعميل.', omitBasicFields:['إجمالي الخام', 'المصبغة'] });
     }
 
     function buildWasteReportDocument(order) {

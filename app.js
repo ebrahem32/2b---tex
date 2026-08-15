@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.12.05';
-const APP_BUILD_TIME = '2026-08-12 10:30';
+const APP_VERSION = 'v2026.08.15.01';
+const APP_BUILD_TIME = '2026-08-15 12:00';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
 function approximateNamedColorHex(value) {
@@ -4973,6 +4973,7 @@ function filteredOrders() {
   const includeMainWarehouseStock = status === 'stage:warehouse' || !!query;
   return allOrders().filter((order) => {
     if (isMainWarehouseStockOrder(order) && !includeMainWarehouseStock) return false;
+    if (order.operationClosed && status !== 'closed') return false;
     const stage = orderStageInfo(order);
     const statusMatch = status.startsWith('stage:')
       ? orderMatchesStageFilter(order, status.slice('stage:'.length), stage)

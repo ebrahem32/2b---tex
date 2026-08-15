@@ -499,6 +499,7 @@ function checkLegacyPartialTransferUsesActualQuantity() {
     ],
     rawBatches: [{ orderId: 'order-document-legacy-transfer', allocationId: null, date: '2026-05-20', quantity: 4180, noteNumber: '5454' }],
     productionBatches: [],
+    customerBatches: [{ orderId:'order-document-legacy-transfer', allocationId:'alloc-width-75', date:'2026-05-28', quantity:40, noteNumber:'CUST-77' }],
     rawReturns: [],
     dyehouseTransfers: [
       { allocationId: 'alloc-width-75', fromDyehouse: 'Star', toDyehouse: 'Biko', quantity: 380.8, date: '2026-05-20', reason: 'تحويل مصبغة' },
@@ -519,6 +520,7 @@ function checkLegacyPartialTransferUsesActualQuantity() {
   assert(fullHtml.includes('off white') && fullHtml.includes('2,100'), 'document: detailed report must show color plan quantities');
   assert(fullHtml.includes('رصيد المخزن') && fullHtml.includes('60'), 'document: detailed report must show warehouse balance');
   assert(fullHtml.includes('داخل المصبغة') && fullHtml.includes('1,719.2'), 'document: detailed report must show dyehouse balance');
+  assert(fullHtml.includes('مواعيد استلام العميل') && fullHtml.includes('2026-05-28') && fullHtml.includes('CUST-77'), 'document: detailed report must show customer receipt dates and permit numbers');
   assert(!fullHtml.includes('593.6') && !fullHtml.includes('other-order'), 'document: detailed report must not include transfers from other orders');
 }
 
@@ -989,7 +991,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260812-05'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260815-01'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
   assert(appSource.includes("refs.documentBody.dataset.pricingId = pricing.id"), 'realtime quotation: open document must retain its linked pricing id');
@@ -1019,6 +1021,13 @@ function checkDesktopPdfExportsOnlyDocumentSheet() {
   assert(stylesSource.includes('body.desktop-pdf-export #documentDialog .dialog-head{display:none!important}'), 'pdf export: dialog toolbar must never appear inside the PDF');
   assert(stylesSource.includes('body.desktop-pdf-export #documentBody>.document-sheet'), 'pdf export: the white document sheet must be the export target');
   assert(desktopMainSource.includes('setEmulatedMedia({ media: "print" })'), 'pdf export: desktop shell must explicitly apply print media before printToPDF');
+}
+
+function checkClosedOrdersStayOutOfOperatingLists() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const ordersUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'ordersUi.js'), 'utf8');
+  assert(appSource.includes("if (order.operationClosed && status !== 'closed') return false;"), 'orders list: operationally closed orders must be hidden unless the closed filter is selected');
+  assert(ordersUiSource.includes('.filter((order) => !order.operationClosed)'), 'stage screens: operationally closed orders must be hidden');
 }
 
 function checkVisibleVersionSynchronization() {
@@ -1059,7 +1068,7 @@ function checkNamedColorApproximation() {
   assert(appSource.includes('namedColorLabelHtml(allocation.color)'), 'named colors: allocation table must display the approximate color circle');
   assert(documentsSource.includes('window.approximateNamedColorHex'), 'named colors: printed documents must reuse the name-based color approximation');
   assert(!documentsSource.includes("const saved = clean(line?.colorHex"), 'named colors: documents must not depend on a saved Pantone-derived hex value');
-  assert(indexSource.includes('./documents.js?v=20260812-01'), 'named colors: document builder must use the current cache key');
+  assert(indexSource.includes('./documents.js?v=20260815-01'), 'named colors: document builder must use the current cache key');
 }
 
 function checkOrderPreparedSpecsPersistence() {
@@ -1313,6 +1322,7 @@ checkRealtimeOperationalSynchronization();
 checkNamedColorApproximation();
 checkAccessoryRawDeliveryPermit();
 checkDesktopPdfExportsOnlyDocumentSheet();
+checkClosedOrdersStayOutOfOperatingLists();
 checkPricingToOrderCarriesGroupedOperationalFields();
 checkGroupedPricingVerifyUsesItemsJson();
 checkPricingSaveBypassesLegacyHiddenRequiredFields();
