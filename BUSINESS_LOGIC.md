@@ -263,3 +263,9 @@ Waste percentage: 4%
 - The detailed order report shows every recorded customer receipt date with its color, quantity, and permit number.
 - Operationally closed orders are hidden from the normal operating list and stage screens.
 - Closed orders remain stored and can be displayed explicitly by selecting the `مغلق تشغيليًا` status filter; no order is deleted.
+
+# Permit audit details
+
+- Opening any saved movement permit must show the complete editable permit fields together with read-only audit details.
+- Audit details include the original entry time and user, plus the latest modification time and user.
+- A saved permit image remains visible in the same editor when one exists.

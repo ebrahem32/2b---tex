@@ -1,5 +1,12 @@
 # Development Log
 
+### 2026-08-15 - Show Audit Details Inside Every Permit
+
+- Added a read-only audit panel to the full permit editor for all movement types.
+- The panel shows entry time, entered by, last modification time, and modified by using the metadata already stored in SQL Server.
+- Kept the existing permit details and saved source image visible in the same editor.
+- Updated version to `v2026.08.15.02`.
+
 ### 2026-08-08 - Synchronize Visible Client And Server Versions
 
 - Exposed the loaded application version and build time to the server-identity checker.

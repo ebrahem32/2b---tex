@@ -991,7 +991,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260815-01'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260815-02'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
   assert(appSource.includes("refs.documentBody.dataset.pricingId = pricing.id"), 'realtime quotation: open document must retain its linked pricing id');
@@ -1252,6 +1252,16 @@ function checkMultiWidthOrderRowsKeepWidthLabels() {
   assert(appSource.includes('transferAllocationLabel(batch)'), 'multi-width orders: dyehouse transfer rows must keep the related width label');
 }
 
+function checkBatchPermitAuditDetails() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const stylesSource = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  assert(appSource.includes('function batchEditorAuditHtml(batch)'), 'movement permit: editor must render saved audit details');
+  assert(appSource.includes("batch?.createdBy || batch?.created_by || 'غير مسجل'"), 'movement permit: editor must show the original creator');
+  assert(appSource.includes("batch?.updatedBy || batch?.updated_by || 'لم يعدل بعد'"), 'movement permit: editor must show the last editor');
+  assert(appSource.includes('${batchEditorAuditHtml(batch)}'), 'movement permit: every permit editor must include its audit panel');
+  assert(stylesSource.includes('.batch-editor-audit-grid'), 'movement permit: audit details must have a responsive visible layout');
+}
+
 function checkOperationalAiManagerRules() {
   const serverSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
   const aiEmployeeSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'aiEmployee.js'), 'utf8');
@@ -1333,6 +1343,7 @@ checkPerColorAccessoryDistribution();
 checkWhatsappAccountReplacement();
 checkOrderBusinessModes();
 checkFullBatchPermitEditor();
+checkBatchPermitAuditDetails();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 

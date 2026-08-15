@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.15.01';
-const APP_BUILD_TIME = '2026-08-15 12:00';
+const APP_VERSION = 'v2026.08.15.02';
+const APP_BUILD_TIME = '2026-08-15 12:45';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
 function approximateNamedColorHex(value) {
@@ -7197,6 +7197,21 @@ async function deleteBatch(type, id, options = {}) {
 function batchEditorTypeLabel(type) {
   return { raw:'خروج خام للمصبغة', rawReturn:'مرتجع خام للنسيج', accessory:'حركة إكسسوار', transfer:'تحويل مصبغة', gluing:'حركة دمج', production:'استلام مجهز', customer:'تسليم عميل', finished:'استلام مجهز' }[type] || 'إذن حركة';
 }
+function batchEditorAuditHtml(batch) {
+  const createdAt = batch?.createdAt || batch?.created_at || '';
+  const updatedAt = batch?.updatedAt || batch?.updated_at || '';
+  const createdBy = batch?.createdBy || batch?.created_by || 'غير مسجل';
+  const updatedBy = batch?.updatedBy || batch?.updated_by || 'لم يعدل بعد';
+  return `<section class="batch-editor-audit full-row" aria-label="بيانات تسجيل الإذن">
+    <h4>بيانات تسجيل الإذن</h4>
+    <div class="batch-editor-audit-grid">
+      <div><span>وقت الإدخال</span><strong>${escapeHtml(movementTimestampLabel(createdAt))}</strong></div>
+      <div><span>المُدخل</span><strong>${escapeHtml(createdBy)}</strong></div>
+      <div><span>آخر تعديل</span><strong>${escapeHtml(movementTimestampLabel(updatedAt))}</strong></div>
+      <div><span>عدّل بواسطة</span><strong>${escapeHtml(updatedBy)}</strong></div>
+    </div>
+  </section>`;
+}
 function openBatchEditorDialog(type, batch) {
   const order = calculateOrder(orders.find((item)=>item.id === batch.orderId)) || {};
   const selectedAllocation = (order.allocations || []).find((item)=>item.id === batch.allocationId) || {};
@@ -7227,7 +7242,7 @@ function openBatchEditorDialog(type, batch) {
   return new Promise((resolve)=>{
     const dialog = document.createElement('dialog');
     dialog.className = 'transfer-choice-dialog batch-editor-dialog';
-    dialog.innerHTML = `<form method="dialog" class="transfer-choice-card" dir="rtl"><div class="subsection-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber || '-')}</p><h3>${escapeHtml(batchEditorTypeLabel(type))}</h3></div><button type="button" class="mini-btn" data-batch-editor-close>إغلاق</button></div><div class="form-grid master-grid">${field('التاريخ', 'date', batch.date || '', 'type="date" required')}${field('الكمية', 'quantity', Math.abs(Number(batch.quantity || 0)), 'type="number" step="0.01" required')}${field('رقم الإذن', 'noteNumber', batch.noteNumber || '')}${allocationField}${extraFields}<label class="full-row"><span>ملاحظات</span><textarea name="notes" rows="4">${escapeHtml(batch.notes || '')}</textarea></label>${imageSection}</div><div class="dialog-actions"><button type="button" class="primary-btn" data-batch-editor-save>حفظ التعديل</button>${canDeleteRecords() ? '<button type="button" class="mini-btn danger" data-batch-editor-delete>حذف الإذن</button>' : ''}<button type="button" class="mini-btn" data-batch-editor-close>إلغاء</button></div></form>`;
+    dialog.innerHTML = `<form method="dialog" class="transfer-choice-card" dir="rtl"><div class="subsection-head"><div><p class="eyebrow">${escapeHtml(order.orderNumber || '-')}</p><h3>${escapeHtml(batchEditorTypeLabel(type))}</h3></div><button type="button" class="mini-btn" data-batch-editor-close>إغلاق</button></div><div class="form-grid master-grid">${field('التاريخ', 'date', batch.date || '', 'type="date" required')}${field('الكمية', 'quantity', Math.abs(Number(batch.quantity || 0)), 'type="number" step="0.01" required')}${field('رقم الإذن', 'noteNumber', batch.noteNumber || '')}${allocationField}${extraFields}<label class="full-row"><span>ملاحظات</span><textarea name="notes" rows="4">${escapeHtml(batch.notes || '')}</textarea></label>${imageSection}${batchEditorAuditHtml(batch)}</div><div class="dialog-actions"><button type="button" class="primary-btn" data-batch-editor-save>حفظ التعديل</button>${canDeleteRecords() ? '<button type="button" class="mini-btn danger" data-batch-editor-delete>حذف الإذن</button>' : ''}<button type="button" class="mini-btn" data-batch-editor-close>إلغاء</button></div></form>`;
     const finish = (value)=>{ if (dialog.open) dialog.close(); dialog.remove(); resolve(value); };
     dialog.addEventListener('click', (event)=>{
       if (event.target.closest('[data-batch-editor-close]')) { finish(null); return; }
