@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.16.01';
+const APP_VERSION = 'v2026.08.16.02';
 const APP_BUILD_TIME = '2026-08-16 10:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
@@ -3282,6 +3282,7 @@ function pricingItemsFor(pricing = {}) {
     quantity: Number(item.quantity || 0),
     inchWidth: item.inchWidth || item.inch_width || pricing.inchWidth || '',
     finishedWeight: item.finishedWeight || item.finished_weight || pricing.finishedWeight || '',
+    widthLines: Array.isArray(item.widthLines) ? item.widthLines : Array.isArray(item.width_lines) ? item.width_lines : [],
     rawCost: Number(item.rawCost || item.raw_cost || 0),
     dyeCost: Number(item.dyeCost || item.dye_cost || 0),
     dyeStages: Array.isArray(item.dyeStages) ? item.dyeStages : Array.isArray(item.dye_stages) ? item.dye_stages : [],
@@ -3306,6 +3307,7 @@ function pricingItemsFor(pricing = {}) {
     quantity: Number(pricing.quantity || 0),
     inchWidth: pricing.inchWidth || '',
     finishedWeight: pricing.finishedWeight || '',
+    widthLines: [],
     rawCost: Number(pricing.rawCost || 0),
     dyeCost: Number(pricing.dyeCost || 0),
     dyeStages: [],
@@ -3379,10 +3381,13 @@ function pricingItemToOrderDraft(item = {}, pricing = {}) {
   const calculated = calculatePricing({ ...pricing, ...item, priceItems:null });
   const accessoryLines = pricingAccessoryLinesForOrder(item);
   const firstAccessory = accessoryLines[0] || {};
+  const widthLines = Array.isArray(item.widthLines) ? item.widthLines.filter((line)=>line && line.inch && Number(line.width || 0) > 0 && Number(line.quantity || 0) > 0) : [];
   return {
     fabricType: calculated.fabricType || item.fabricType || '',
     totalRawQuantity: calculated.quantity || item.quantity || '',
     inchWidth: calculated.inchWidth || item.inchWidth || '',
+    widthMode: widthLines.length ? 'multiple' : 'single',
+    widthLines,
     kiloPrice: calculated.sellPrice || item.sellPrice || '',
     rawCost: Number(calculated.rawCost || item.rawCost || 0),
     expectedWastePercent: Number(calculated.wastePercent || item.wastePercent || 0),
@@ -3492,6 +3497,8 @@ function pricingItemRowHtml(item = {}) {
   const stagesHtml = stages.map((stage)=>pricingStageRowHtml(stage)).join('');
   const accessories = Array.isArray(item.accessoryLines) && item.accessoryLines.length ? item.accessoryLines : [];
   const accessoriesHtml = accessories.map((line)=>pricingAccessoryRowHtml(line, stages)).join('');
+  const widthLines = Array.isArray(item.widthLines) ? item.widthLines : [];
+  const widthLinesHtml = widthLines.map((line)=>pricingWidthLineRowHtml(line)).join('');
   return `<div class="grouped-order-row pricing-item-row" data-pricing-item-row>
     <input data-pricing-item-field="fabricType" list="fabricNamesList" placeholder="الصنف / الخامة" value="${escapeHtml(item.fabricType || item.materialType || '')}">
     <input data-pricing-item-field="dyehouse" placeholder="المصبغة" value="${escapeHtml(item.dyehouse || '')}">
@@ -3499,6 +3506,12 @@ function pricingItemRowHtml(item = {}) {
     <input data-pricing-item-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${item.quantity || ''}">
     <input data-pricing-item-field="inchWidth" placeholder="البوصة" value="${escapeHtml(item.inchWidth || '')}">
     <input data-pricing-item-field="finishedWeight" placeholder="الوزن" value="${escapeHtml(item.finishedWeight || '')}">
+    <div class="pricing-width-card" data-pricing-width-card>
+      <div class="pricing-stage-head"><span>توزيع بوص وعروض الرسالة</span><button class="mini-btn" type="button" data-add-pricing-width>+ إضافة مقاس</button></div>
+      <p class="eyebrow">للصنف الواحد: كل سطر له بوصة وعرض وكمية، ومجموع الكميات يساوي كمية الصنف.</p>
+      <div class="pricing-width-head"><span>البوصة</span><span>العرض</span><span>الكمية</span><span></span></div>
+      <div class="pricing-width-rows">${widthLinesHtml}</div>
+    </div>
     <div class="pricing-money-field"><input data-pricing-item-field="rawCost" type="number" step="0.01" placeholder="سعر القماش" value="${item.rawCost || ''}"><span data-pricing-currency-badge="pricing">${pricingCurrencyLabel()}</span></div>
     <div class="pricing-stage-card" data-pricing-stage-card>
       <div class="pricing-stage-head"><span>جدول الصباغة</span><button class="mini-btn" type="button" data-add-pricing-stage>+ مرحلة</button></div>
@@ -3516,6 +3529,24 @@ function pricingItemRowHtml(item = {}) {
     <div class="pricing-money-field"><input data-pricing-item-field="profitPerKg" type="number" step="0.01" placeholder="ربح" value="${item.profitPerKg || ''}"><span data-pricing-currency-badge="egp">جنيه</span></div>
     <button type="button" class="mini-btn danger" data-remove-pricing-item>حذف</button>
   </div>`;
+}
+
+function pricingWidthLineRowHtml(line = {}) {
+  return `<div class="pricing-width-row" data-pricing-width-row data-width-line-id="${escapeHtml(line.id || '')}">
+    <input data-pricing-width-field="inch" placeholder="البوصة" value="${escapeHtml(line.inch || '')}">
+    <input data-pricing-width-field="width" type="number" step="0.01" placeholder="العرض" value="${line.width || ''}">
+    <input data-pricing-width-field="quantity" type="number" step="0.01" placeholder="الكمية" value="${line.quantity || ''}">
+    <button class="mini-btn danger" type="button" data-remove-pricing-width>حذف</button>
+  </div>`;
+}
+
+function pricingWidthLinesFromRow(row) {
+  return [...row.querySelectorAll('[data-pricing-width-row]')].map((lineRow)=>({
+    id: lineRow.dataset.widthLineId || uid(),
+    inch: lineRow.querySelector('[data-pricing-width-field="inch"]')?.value.trim() || '',
+    width: Number(lineRow.querySelector('[data-pricing-width-field="width"]')?.value || 0),
+    quantity: Number(lineRow.querySelector('[data-pricing-width-field="quantity"]')?.value || 0),
+  })).filter((line)=>line.inch || line.width > 0 || line.quantity > 0);
 }
 
 function pricingAccessoryTypeOptions(current = '') {
@@ -3694,6 +3725,7 @@ function readPricingItemsEditor() {
       quantity: Number(row.querySelector('[data-pricing-item-field="quantity"]')?.value || 0),
       inchWidth: row.querySelector('[data-pricing-item-field="inchWidth"]')?.value.trim() || '',
       finishedWeight: row.querySelector('[data-pricing-item-field="finishedWeight"]')?.value.trim() || '',
+      widthLines: pricingWidthLinesFromRow(row),
       rawCost: Number(row.querySelector('[data-pricing-item-field="rawCost"]')?.value || 0),
       dyeCost: pricingStagesTotal(pricingStagesFromRow(row)),
       dyeStages: pricingStagesFromRow(row),
@@ -3839,6 +3871,17 @@ function ensurePricingItemsUi() {
     updatePricingPreview();
   });
   document.getElementById('pricingItemsRows')?.addEventListener('click', (event)=>{
+    const addWidthButton = event.target.closest('[data-add-pricing-width]');
+    if (addWidthButton) {
+      addWidthButton.closest('[data-pricing-width-card]')?.querySelector('.pricing-width-rows')?.insertAdjacentHTML('beforeend', pricingWidthLineRowHtml());
+      return;
+    }
+    const removeWidthButton = event.target.closest('[data-remove-pricing-width]');
+    if (removeWidthButton) {
+      removeWidthButton.closest('[data-pricing-width-row]')?.remove();
+      updatePricingPreview();
+      return;
+    }
     const addStageButton = event.target.closest('[data-add-pricing-stage]');
     if (addStageButton) {
       addStageButton.closest('[data-pricing-stage-card]')?.querySelector('.pricing-stage-rows')?.insertAdjacentHTML('beforeend', pricingStageRowHtml());
@@ -4016,6 +4059,19 @@ function validatePricingPayloadForSave(pricing) {
     alert('كل خامة في كرت التسعير يجب أن تحتوي على الصنف والكمية.');
     return false;
   }
+  const invalidWidths = items.find((item)=>{
+    const lines = Array.isArray(item.widthLines) ? item.widthLines : [];
+    if (!lines.length) return false;
+    const incomplete = lines.some((line)=>!String(line.inch || '').trim() || !(Number(line.width || 0) > 0) || !(Number(line.quantity || 0) > 0));
+    const total = roundNumber(lines.reduce((sum, line)=>sum + Number(line.quantity || 0), 0));
+    return incomplete || Math.abs(total - Number(item.quantity || 0)) > 0.01;
+  });
+  if (invalidWidths) {
+    const lines = invalidWidths.widthLines || [];
+    const total = roundNumber(lines.reduce((sum, line)=>sum + Number(line.quantity || 0), 0));
+    alert(`راجع توزيع البوص والعروض للصنف ${invalidWidths.fabricType || ''}: أكمل البوصة والعرض والكمية، ويجب أن يساوي مجموعها (${formatNumber(total)}) كمية الصنف (${formatNumber(invalidWidths.quantity)}).`);
+    return false;
+  }
   return true;
 }
 async function attachPricingToOrder(orderId, pricingId) {
@@ -4134,9 +4190,9 @@ function convertPricingToOrder(id) {
     fabricType: primaryDraft.fabricType || primary.fabricType || pricing.fabricType || '',
     totalRawQuantity: primaryDraft.totalRawQuantity || primary.quantity || pricing.quantity || '',
     expectedWastePercent: primaryDraft.expectedWastePercent || '',
-    widthMode: 'single',
+    widthMode: primaryDraft.widthMode || 'single',
     inchWidth: primaryDraft.inchWidth || primary.inchWidth || pricing.inchWidth || '',
-    widthLines: [],
+    widthLines: primaryDraft.widthLines || [],
     kiloPrice: primaryDraft.kiloPrice || primary.sellPrice || pricing.sellPrice || '',
     rawCost: primaryDraft.rawCost || primary.rawCost || pricing.rawCost || 0,
     paymentTerms: pricing.paymentTerms || '',
@@ -6304,9 +6360,12 @@ async function addOrder(event) {
   payloadOperationNotes.preparedWidth = Number(refs.orderPreparedWidth.value || 0) || '';
   const isManufacturing = refs.orderType.value === 'manufacturing';
   const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), orderType:isManufacturing ? 'manufacturing' : 'trade', totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:isManufacturing ? 0 : (+refs.expectedWastePercent.value || 0), widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:isManufacturing ? 0 : (+refs.kiloPrice.value || 0), rawCost:isManufacturing ? 0 : orderRawCost({ ...currentOrder, orderType:refs.orderType.value, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
-  const convertedDraftItems = !editingOrderId && refs.widthMode.value !== 'multiple' && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
-  const groupedItems = !editingOrderId && refs.widthMode.value !== 'multiple'
-    ? (convertedDraftItems.length ? convertedDraftItems : readGroupedOrderItems()).map((item)=>({ ...item, fabricType:canonicalFabricName(item.fabricType) }))
+  const convertedDraftItems = !editingOrderId && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
+  const groupedItems = !editingOrderId
+    ? (convertedDraftItems.length
+      ? convertedDraftItems
+      : refs.widthMode.value !== 'multiple' ? readGroupedOrderItems() : [])
+      .map((item)=>({ ...item, fabricType:canonicalFabricName(item.fabricType) }))
     : [];
   const hasGroupedOrderItems = groupedItems.length > 1;
   const groupedSourcePricingId = hasGroupedOrderItems ? payload.pricingId : '';
@@ -6367,8 +6426,8 @@ async function addOrder(event) {
           inchWidth:item.inchWidth || pricingDraft.inchWidth || payload.inchWidth,
           kiloPrice:isManufacturing ? 0 : (item.kiloPrice || pricingDraft.kiloPrice || payload.kiloPrice),
           rawCost:pricingDraft.rawCost || payload.rawCost,
-          widthMode:'single',
-          widthLines:[],
+          widthMode:pricingDraft.widthMode || 'single',
+          widthLines:pricingDraft.widthLines || [],
           productCode:buildItemCode(payload.orderNumber),
           dyehouse:item.dyehouse || pricingDraft.dyehouse || payload.dyehouse,
           weavingSource:item.weavingSource || pricingDraft.weavingSource || payload.weavingSource,

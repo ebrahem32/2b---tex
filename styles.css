@@ -485,6 +485,8 @@ body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;bo
 .pricing-item-row{grid-template-columns:repeat(4,minmax(0,1fr));min-width:0;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02)}
 .pricing-item-row .pricing-stage-card{grid-column:span 2}
 .pricing-item-row .pricing-accessory-card{grid-column:span 2}
+.pricing-width-card{grid-column:1/-1;display:grid;gap:8px;min-width:0;padding:10px;border:1px solid rgba(200,165,106,.22);border-radius:12px;background:rgba(200,165,106,.045)}
+.pricing-width-head,.pricing-width-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:center}.pricing-width-head{color:var(--muted);font-size:12px;padding-inline:4px}.pricing-width-row input{min-width:0}.pricing-width-row button{white-space:nowrap}
 .pricing-item-row select{min-width:90px}
 .pricing-legacy-field{display:none!important}
 .pricing-items-box .subsection-head span{font-size:18px;color:var(--accent2);font-weight:900}
@@ -523,7 +525,7 @@ body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;bo
 .order-form-pricing-conversion[data-pricing-items-count="1"] #groupedOrderBox{display:none!important}
 .order-form-pricing-conversion:not([data-pricing-items-count="1"]) #groupedOrderRows .grouped-order-row.primary{display:none!important}
 .order-form-pricing-conversion .accessory-lines-box{border:1px solid rgba(200,165,106,.28);border-radius:16px;padding:12px;background:rgba(200,165,106,.05)}
-@media(max-width:900px){.grouped-order-head{display:none}.grouped-order-row{grid-template-columns:1fr!important;border:1px solid var(--line);border-radius:14px;padding:10px;background:rgba(255,255,255,.025)}.grouped-order-row button{grid-column:auto;width:100%}.pricing-item-row{grid-template-columns:1fr 1fr}.pricing-item-row .pricing-stage-card,.pricing-item-row .pricing-accessory-card{grid-column:1/-1}}
+@media(max-width:900px){.grouped-order-head{display:none}.grouped-order-row{grid-template-columns:1fr!important;border:1px solid var(--line);border-radius:14px;padding:10px;background:rgba(255,255,255,.025)}.grouped-order-row button{grid-column:auto;width:100%}.pricing-item-row{grid-template-columns:1fr 1fr}.pricing-item-row .pricing-stage-card,.pricing-item-row .pricing-accessory-card,.pricing-width-card{grid-column:1/-1}.pricing-width-head{display:none}.pricing-width-row{grid-template-columns:1fr 1fr}.pricing-width-row [data-pricing-width-field="quantity"]{grid-column:1/-1}.pricing-width-row button{grid-column:1/-1}}
 .amal-review-box{margin-top:16px;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:20px;padding:18px;direction:rtl}
 .amal-review-box .subsection-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
 .compact-review-fields{grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin-bottom:14px}
