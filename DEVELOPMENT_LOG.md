@@ -1,5 +1,13 @@
 # Development Log
 
+### 2026-08-16 - Operational Health, Draft, And Balance Center
+
+- Expanded system status into a practical operational health center.
+- Added live SQL Server, realtime synchronization, WhatsApp, backup, and interrupted-draft visibility.
+- Added draft reopening and safe draft deletion without touching approved SQL Server permits.
+- Added balance audit for negative dyehouse, warehouse, color-movement, and accessory balances with direct order navigation.
+- Updated version to `v2026.08.16.01`.
+
 ### 2026-08-15 - Protect Input During Server Disconnections
 
 - Removed the unconditional backend reload that erased active fields after a failed write.

@@ -991,7 +991,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260815-03'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260816-01'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
   assert(appSource.includes("refs.documentBody.dataset.pricingId = pricing.id"), 'realtime quotation: open document must retain its linked pricing id');
@@ -1271,6 +1271,18 @@ function checkDisconnectedWriteDraftProtection() {
   assert(!appSource.includes("alert(message || 'تعذر تثبيت التعديل في قاعدة البيانات. سيتم الرجوع لآخر بيانات محفوظة.');\n  await loadBackendData();"), 'offline writes: a failed save must not unconditionally reload and erase the active form');
 }
 
+function checkOperationalHealthCenter() {
+  const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const stylesSource = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  assert(appSource.includes('function permitDraftRows()'), 'health center: interrupted permit drafts must be listed centrally');
+  assert(appSource.includes('function operationalBalanceAuditRows()'), 'health center: operational balances must be audited centrally');
+  assert(appSource.includes('data-open-write-draft'), 'health center: an interrupted draft must be reopenable');
+  assert(appSource.includes('data-open-audit-order'), 'health center: a balance issue must open its related order');
+  assert(appSource.includes("['المزامنة اللحظية', realtimeOk"), 'health center: realtime synchronization state must be visible');
+  assert(appSource.includes("['واتساب', whatsappOk"), 'health center: WhatsApp state must be visible');
+  assert(stylesSource.includes('.system-health-grid'), 'health center: service state cards must have a responsive layout');
+}
+
 function checkOperationalAiManagerRules() {
   const serverSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
   const aiEmployeeSource = fs.readFileSync(path.join(__dirname, '..', 'backend', 'aiEmployee.js'), 'utf8');
@@ -1354,6 +1366,7 @@ checkOrderBusinessModes();
 checkFullBatchPermitEditor();
 checkBatchPermitAuditDetails();
 checkDisconnectedWriteDraftProtection();
+checkOperationalHealthCenter();
 checkMultiWidthOrderRowsKeepWidthLabels();
 checkOperationalAiManagerRules();
 

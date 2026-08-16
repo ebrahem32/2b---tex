@@ -276,3 +276,10 @@ Waste percentage: 4%
 - Unsaved permit edits are stored locally as a draft before the server request; reopening the same permit restores the draft with a visible warning.
 - A permit draft is cleared only after the server confirms the save or the operator confirms deletion.
 - Previously committed SQL Server data remains the source of truth; the draft protects interrupted input and is not treated as an approved movement.
+
+# Operational health center
+
+- The health center combines SQL Server, realtime synchronization, WhatsApp, backup, interrupted drafts, and balance-audit status in one screen.
+- Interrupted permit drafts can be reopened for review and retry; deleting a draft never deletes the approved SQL Server permit.
+- Balance audit flags negative dyehouse raw, negative warehouse stock, finished-plus-waste above dispatched raw, and accessory delivery above accessory receiving.
+- Every balance issue links back to its operational order; the audit reports issues but never changes quantities automatically.

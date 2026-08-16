@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.15.03';
-const APP_BUILD_TIME = '2026-08-15 13:20';
+const APP_VERSION = 'v2026.08.16.01';
+const APP_BUILD_TIME = '2026-08-16 10:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -1951,7 +1951,7 @@ function renderWhatsappSettingsDialog(groupNames = []) {
   </div>`;
   refs.documentBody.querySelectorAll('[data-group-name]').forEach((input)=>input.setAttribute('list', 'whatsappGroupNames'));
   if (refs.documentDialog.open) refs.documentDialog.close();
-  refs.documentDialog.showModal();
+  if (!refs.documentDialog.open) refs.documentDialog.showModal();
   startWhatsappSettingsAutoRefresh();
 }
 async function saveWhatsappSettingsFromDialog() {
@@ -2637,15 +2637,37 @@ async function openSystemStatusDialog() {
   refs.documentTitle.textContent = 'فحص النظام';
   refs.documentBody.dataset.documentType = 'system-status';
   refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>جاري قراءة حالة Railway وقاعدة البيانات...</p></div>';
-  refs.documentDialog.showModal();
+  if (!refs.documentDialog.open) refs.documentDialog.showModal();
   try {
     const status = await backendRequest('/system/check', { cache: 'no-store' });
     const row = (item) => `<tr><td>${escapeHtml(item.label)}</td><td><span class="status ${item.ok ? 'completed' : 'failed'}">${item.ok ? 'سليم' : 'يحتاج مراجعة'}</span></td><td>${escapeHtml(item.detail || '-')}</td></tr>`;
     const tableRow = (label, value) => `<tr><td>${escapeHtml(label)}</td><td>${Number(value || 0).toLocaleString('en-US')}</td></tr>`;
-    const stageRows = (status.orderStages || []).map((stage)=>`<tr><td>${escapeHtml(stage.label)}</td><td>${escapeHtml(stage.description)}</td></tr>`).join('');
+    const draftRows = permitDraftRows();
+    const balanceIssues = operationalBalanceAuditRows();
+    const realtimeOk = realtimeSocket?.readyState === WebSocket.OPEN;
+    const whatsappOk = whatsappStatus?.status === 'connected';
+    const serviceCards = [
+      ['SQL Server', backendAvailable && status.checks?.find((item)=>item.key === 'database')?.ok, backendAvailable ? 'متصل ويستقبل البيانات' : 'غير متصل - الإدخال لن يعتمد'],
+      ['المزامنة اللحظية', realtimeOk, realtimeOk ? 'متصلة الآن' : 'منقطعة وسيتم إعادة الاتصال تلقائيًا'],
+      ['واتساب', whatsappOk, whatsappOk ? 'الحساب متصل' : 'غير متصل أو يحتاج ربط'],
+      ['المسودات غير المعتمدة', draftRows.length === 0, draftRows.length ? `${draftRows.length} مسودة تحتاج إعادة حفظ` : 'لا توجد مسودات معلقة'],
+      ['تدقيق الأرصدة', balanceIssues.length === 0, balanceIssues.length ? `${balanceIssues.length} حالة تحتاج مراجعة` : 'لا توجد فروق حرجة'],
+    ];
+    const serviceCardsHtml = serviceCards.map(([label, ok, detail])=>`<div class="system-health-card ${ok ? 'is-ok' : 'needs-review'}"><span>${escapeHtml(label)}</span><strong>${ok ? 'سليم' : 'يحتاج مراجعة'}</strong><small>${escapeHtml(detail)}</small></div>`).join('');
+    const draftTableRows = draftRows.map((draft)=>`<tr><td>${escapeHtml(draft.orderNumber || '-')}</td><td>${escapeHtml(batchEditorTypeLabel(draft.type))}</td><td>${escapeHtml(movementTimestampLabel(draft.savedAt))}</td><td><button class="mini-btn gold" type="button" data-open-write-draft="${escapeHtml(draft.key)}">فتح وإعادة الحفظ</button> <button class="mini-btn danger" type="button" data-delete-write-draft="${escapeHtml(draft.key)}">حذف المسودة</button></td></tr>`).join('') || '<tr><td colspan="4">لا توجد مسودات غير معتمدة.</td></tr>';
+    const balanceTableRows = balanceIssues.map((issue)=>`<tr><td>${escapeHtml(issue.orderNumber)}</td><td>${escapeHtml(issue.customer)}</td><td>${escapeHtml(issue.kind)}</td><td><strong>${formatNumber(issue.value)} كجم</strong></td><td>${escapeHtml(issue.detail)}</td><td><button class="mini-btn" type="button" data-open-audit-order="${escapeHtml(issue.orderId)}">فتح الأوردر</button></td></tr>`).join('') || '<tr><td colspan="6">لا توجد فروق أرصدة حرجة.</td></tr>';
     refs.documentBody.innerHTML = `<div class="document-sheet">
-      <h2>فحص النظام</h2>
+      <h2>مركز صحة وتشغيل النظام</h2>
       <p class="muted">آخر فحص: ${escapeHtml(status.generatedAt || '-')}</p>
+      <div class="system-health-grid">${serviceCardsHtml}</div>
+      <div class="system-health-actions no-print"><button class="mini-btn gold" type="button" data-refresh-system-health>إعادة الفحص الآن</button><button class="mini-btn" type="button" data-retry-all-drafts ${draftRows.length ? '' : 'disabled'}>مراجعة المسودات (${draftRows.length})</button></div>
+      <h3>المسودات غير المعتمدة</h3>
+      <p class="muted">هذه إدخالات توقفت قبل اعتمادها في SQL Server. افتحها وراجعها ثم اضغط حفظ بعد عودة الاتصال.</p>
+      <div class="table-wrap"><table><thead><tr><th>الأوردر</th><th>نوع الإذن</th><th>وقت حفظ المسودة</th><th>الإجراء</th></tr></thead><tbody>${draftTableRows}</tbody></table></div>
+      <h3>تدقيق الأرصدة</h3>
+      <p class="muted">يعرض الرصيد السالب والحركات التي تجاوزت الرصيد المتاح حتى يمكن الوصول إلى سبب الفرق.</p>
+      <div class="table-wrap"><table><thead><tr><th>الأوردر</th><th>العميل</th><th>نوع الفرق</th><th>القيمة</th><th>التفاصيل</th><th>الإجراء</th></tr></thead><tbody>${balanceTableRows}</tbody></table></div>
+      <h3>الفحص التقني</h3>
       <table>
         <thead><tr><th>البند</th><th>الحالة</th><th>التفاصيل</th></tr></thead>
         <tbody>${(status.checks || []).map(row).join('')}</tbody>
@@ -2663,11 +2685,6 @@ async function openSystemStatusDialog() {
           ${tableRow('سجل التعديلات', status.tables?.auditLog)}
         </tbody>
       </table>
-      <h3>حالات الطلب المعتمدة</h3>
-      <table>
-        <thead><tr><th>الحالة</th><th>المعنى</th></tr></thead>
-        <tbody>${stageRows}</tbody>
-      </table>
       <h3>النسخ الاحتياطي</h3>
       <p><strong>آخر نسخة:</strong> ${escapeHtml(status.storage?.latestBackup?.name || 'لا توجد نسخة')}</p>
       <p><strong>عدد النسخ:</strong> ${Number(status.storage?.backupsCount || 0).toLocaleString('en-US')}</p>
@@ -2677,7 +2694,9 @@ async function openSystemStatusDialog() {
       <button class="mini-btn gold" type="button" data-create-backup>إنشاء نسخة احتياطية الآن</button>
     </div>`;
   } catch {
-    refs.documentBody.innerHTML = '<div class="document-sheet"><h2>فحص النظام</h2><p>تعذر قراءة حالة النظام حاليًا.</p></div>';
+    const drafts = permitDraftRows();
+    const issues = operationalBalanceAuditRows();
+    refs.documentBody.innerHTML = `<div class="document-sheet"><h2>مركز صحة وتشغيل النظام</h2><div class="warning"><strong>السيرفر أو SQL Server غير متاح الآن.</strong><br>لن تُعتمد أي حركة جديدة حتى يعود الاتصال، والبيانات المحفوظة سابقًا لم تُحذف.</div><div class="system-health-grid"><div class="system-health-card needs-review"><span>SQL Server</span><strong>غير متصل</strong><small>سيعاد الفحص تلقائيًا</small></div><div class="system-health-card ${drafts.length ? 'needs-review' : 'is-ok'}"><span>المسودات</span><strong>${drafts.length}</strong><small>${drafts.length ? 'محفوظة محليًا وتحتاج إعادة حفظ' : 'لا توجد مسودات معلقة'}</small></div><div class="system-health-card ${issues.length ? 'needs-review' : 'is-ok'}"><span>تدقيق آخر بيانات محملة</span><strong>${issues.length}</strong><small>حالة تحتاج مراجعة</small></div></div><div class="system-health-actions"><button class="mini-btn gold" type="button" data-refresh-system-health>إعادة الاتصال والفحص</button>${drafts.length ? '<button class="mini-btn" type="button" data-retry-all-drafts>فتح أول مسودة</button>' : ''}</div></div>`;
   }
 }
 async function createBackupFromStatusDialog() {
@@ -7224,6 +7243,7 @@ function savePermitDraft(type, id, values) {
   const drafts = readUnsavedWriteDrafts();
   drafts[permitDraftKey(type, id)] = { ...values, savedAt:new Date().toISOString() };
   safeSetLocalStorage(WRITE_DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+  updateSystemStatusDraftBadge();
 }
 function loadPermitDraft(type, id) {
   return readUnsavedWriteDrafts()[permitDraftKey(type, id)] || null;
@@ -7232,6 +7252,55 @@ function clearPermitDraft(type, id) {
   const drafts = readUnsavedWriteDrafts();
   delete drafts[permitDraftKey(type, id)];
   safeSetLocalStorage(WRITE_DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+  updateSystemStatusDraftBadge();
+}
+function permitCollectionForType(type) {
+  return type === 'raw' ? rawBatches
+    : type === 'accessory' ? accessoryBatches
+    : type === 'transfer' ? dyehouseTransfers
+    : type === 'gluing' ? gluingBatches
+    : type === 'rawReturn' ? rawReturns
+    : type === 'production' ? productionBatches
+    : type === 'customer' ? customerBatches
+    : finishedBatches;
+}
+function permitDraftRows() {
+  return Object.entries(readUnsavedWriteDrafts()).flatMap(([key, draft])=>{
+    if (!key.startsWith('permit:') || !draft || typeof draft !== 'object') return [];
+    const [, type, ...idParts] = key.split(':');
+    const id = idParts.join(':');
+    const permit = permitCollectionForType(type).find((item)=>String(item.id) === String(id));
+    if (!permit) return [];
+    const order = orders.find((item)=>item.id === permit.orderId);
+    return [{ key, type, id, savedAt:draft.savedAt || '', orderNumber:order?.orderNumber || '', permit }];
+  }).sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)));
+}
+function updateSystemStatusDraftBadge() {
+  const button = document.getElementById('systemStatusBtn');
+  if (!button) return;
+  const count = permitDraftRows().length;
+  button.textContent = count ? `حالة النظام (${count} مسودة)` : 'حالة النظام';
+  button.classList.toggle('gold', count > 0);
+}
+function operationalBalanceAuditRows() {
+  const issues = [];
+  allOrders().forEach((order)=>{
+    const add = (kind, value, detail) => issues.push({ orderId:order.id, orderNumber:order.orderNumber || '-', customer:order.customer || '-', kind, value:roundNumber(value), detail });
+    if (Number(order.rawAtDyehouseAvailable || 0) < -0.01) add('رصيد خام سالب داخل المصبغة', order.rawAtDyehouseAvailable, 'المستلم أو المرتجع أكبر من الخام المرسل للمصبغة.');
+    if (Number(order.warehouseBalance || 0) < -0.01) add('رصيد مخزن سالب', order.warehouseBalance, 'تسليم العميل أو الخروج أكبر من المجهز المستلم.');
+    (order.allocations || []).forEach((allocation)=>{
+      const sent = Number(allocation.sentToDyehouse || 0);
+      const finished = Number(allocation.finishedReceived || 0);
+      const waste = Number(allocation.wasteQuantity || 0);
+      if (finished + waste > sent + 0.01) add(`حركة لون: ${allocation.color || '-'}`, sent - finished - waste, `المجهز والهالك (${formatNumber(finished + waste)}) أكبر من المرسل (${formatNumber(sent)}).`);
+      (order.accessoryLines || []).forEach((line)=>{
+        const received = sum(accessoryBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'received' && (batch.accessoryType || line.type) === line.type));
+        const delivered = sum(accessoryBatches.filter((batch)=>batch.allocationId === allocation.id && batch.movement === 'customer' && (batch.accessoryType || line.type) === line.type));
+        if (delivered > received + 0.01) add(`رصيد ${line.type || 'إكسسوار'} سالب`, received - delivered, `${allocation.color || '-'}: المسلم للعميل أكبر من المستلم.`);
+      });
+    });
+  });
+  return issues.sort((a,b)=>Math.abs(Number(b.value)) - Math.abs(Number(a.value)));
 }
 function openBatchEditorDialog(type, batch) {
   const savedDraft = loadPermitDraft(type, batch.id);
@@ -8624,11 +8693,32 @@ refs.weavingSlipForm.onsubmit = (event) => confirmWeavingSlip(event).catch((erro
 refs.documentBody?.addEventListener('click', (event) => {
   if (event.target.closest('[data-create-backup]')) createBackupFromStatusDialog();
   if (event.target.closest('[data-save-fabric-master]')) saveFabricMasterFromDialog().catch((error)=>{ console.error('fabric-master-save-error', error); alert(error.message || 'تعذر حفظ الأصناف الرسمية.'); });
+  if (event.target.closest('[data-refresh-system-health]')) openSystemStatusDialog();
+  const openDraftButton = event.target.closest('[data-open-write-draft]');
+  if (openDraftButton) {
+    const draft = permitDraftRows().find((item)=>item.key === openDraftButton.dataset.openWriteDraft);
+    if (draft) { refs.documentDialog.close(); editBatch(draft.type, draft.id).catch((error)=>{ console.error('draft-open-error', error); alert('تعذر فتح مسودة الإذن.'); }); }
+  }
+  const deleteDraftButton = event.target.closest('[data-delete-write-draft]');
+  if (deleteDraftButton && confirm('هل تريد حذف هذه المسودة غير المعتمدة؟ لن يتم حذف الإذن المحفوظ في SQL Server.')) {
+    const drafts = readUnsavedWriteDrafts();
+    delete drafts[deleteDraftButton.dataset.deleteWriteDraft];
+    safeSetLocalStorage(WRITE_DRAFT_STORAGE_KEY, JSON.stringify(drafts));
+    updateSystemStatusDraftBadge();
+    openSystemStatusDialog();
+  }
+  if (event.target.closest('[data-retry-all-drafts]')) {
+    const draft = permitDraftRows()[0];
+    if (draft) { refs.documentDialog.close(); editBatch(draft.type, draft.id).catch(console.error); }
+  }
+  const auditOrderButton = event.target.closest('[data-open-audit-order]');
+  if (auditOrderButton) { refs.documentDialog.close(); openOrderFocusMode(auditOrderButton.dataset.openAuditOrder); }
 });
 installAiUiHandlers();
 initialLocalStorageSnapshot = captureLocalStorageSnapshot();
 loadCurrentUser().finally(() => {
   installAutomationUi();
+  updateSystemStatusDraftBadge();
   pollBackendStatus();
   pollWhatsappService();
   connectRealtimeSync();

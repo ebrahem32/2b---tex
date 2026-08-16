@@ -299,6 +299,14 @@ body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;bo
 .batch-editor-audit-grid span{margin-bottom:5px;color:var(--muted);font-size:12px}
 .batch-editor-audit-grid strong{font-size:13px}
 @media(max-width:800px){.batch-editor-audit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.system-health-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:16px 0}
+.system-health-card{display:grid;gap:6px;min-width:0;padding:14px;border:1px solid #d1d5db;border-radius:14px;background:#f8fafc}
+.system-health-card span{color:#64748b;font-size:12px}.system-health-card strong{font-size:16px}.system-health-card small{color:#64748b;line-height:1.5}
+.system-health-card.is-ok{border-color:#86efac;background:#f0fdf4}.system-health-card.is-ok strong{color:#166534}
+.system-health-card.needs-review{border-color:#fbbf24;background:#fffbeb}.system-health-card.needs-review strong{color:#92400e}
+.system-health-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+@media(max-width:1000px){.system-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.system-health-grid{grid-template-columns:1fr}}
 .batch-actions{display:flex;gap:6px;flex-wrap:wrap}
 .mini-btn.danger{color:#fecaca}
 .whatsapp-settings-sheet .summary-grid{grid-template-columns:2fr 1fr}
