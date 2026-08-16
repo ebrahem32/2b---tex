@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.16.03';
+const APP_VERSION = 'v2026.08.16.04';
 const APP_BUILD_TIME = '2026-08-16 10:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
@@ -4414,7 +4414,7 @@ function openCustomerPricingQuotation(id) {
     </section>
     ${quotationWidthRows ? `<section class="report-section quotation-width-distribution"><h3>توزيع البوص والعروض والكميات</h3><table class="quotation-items-table"><thead><tr><th>الصنف</th><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${quotationWidthRows}</tbody></table></section>` : ''}
     ${operationalColorRows ? `<section class="report-section quotation-order-colors"><h3>ألوان الطلب المعتمدة</h3><table class="quotation-items-table"><thead><tr><th>اللون</th><th>رقم البانتون</th><th>الكمية</th></tr></thead><tbody>${operationalColorRows}</tbody></table></section>` : ''}
-    <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
+    <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'يرجى مراجعة العرض والموافقة عليه.', 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
     ${documentFooter()}
   </div>`;
   if (!refs.documentDialog.open) refs.documentDialog.showModal();
