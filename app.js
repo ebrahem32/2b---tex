@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.16.02';
+const APP_VERSION = 'v2026.08.16.03';
 const APP_BUILD_TIME = '2026-08-16 10:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
@@ -4303,7 +4303,12 @@ function pricingContractSourceForOrder(pricing, operationalOrder = null) {
     const matches = sourceItems.length === 1 || compatibleFabricForMatch(order.fabricType, item.fabricType || item.materialType);
     if (!matches || quantityApplied) return item;
     quantityApplied = true;
-    return applyOrderType({ ...item, quantity, accessoryLines:syncAccessories(item.accessoryLines || []) });
+    return applyOrderType({
+      ...item,
+      quantity,
+      widthLines:Array.isArray(order.widthLines) && order.widthLines.length ? order.widthLines : (item.widthLines || []),
+      accessoryLines:syncAccessories(item.accessoryLines || []),
+    });
   });
   return { ...pricing, quantity, priceItems };
 }
@@ -4368,6 +4373,14 @@ function openCustomerPricingQuotation(id) {
       <td>${money(clothTotal)} ${currency}</td>
     </tr>${publicAccessoryRows(item)}`;
   }).join('');
+  const quotationWidthRows = (items.length ? items : [pricing]).flatMap((item)=>
+    (Array.isArray(item.widthLines) ? item.widthLines : []).map((line)=>`<tr>
+      <td>${escapeHtml(item.fabricType || '-')}</td>
+      <td>${escapeHtml(line.inch || '-')}</td>
+      <td>${money(line.width)}</td>
+      <td>${money(line.quantity)} كجم</td>
+    </tr>`)
+  ).join('');
   const operationalColorRows = operationalOrder?.allocations?.map((allocation)=>`<tr>
     <td>${escapeHtml(allocation.color || '-')}</td>
     <td><bdi dir="ltr">${escapeHtml(allocation.pantoneCode || '-')}</bdi></td>
@@ -4399,6 +4412,7 @@ function openCustomerPricingQuotation(id) {
       <h3>\u0628\u0646\u0648\u062f \u0627\u0644\u0639\u0631\u0636</h3>
       <table class="quotation-items-table"><thead><tr><th>\u0627\u0644\u0628\u0646\u062f</th><th>\u0627\u0644\u0643\u0645\u064a\u0629</th><th>\u0633\u0639\u0631 \u0627\u0644\u0643\u064a\u0644\u0648</th><th>\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a</th></tr></thead><tbody>${publicItemRows}</tbody></table>
     </section>
+    ${quotationWidthRows ? `<section class="report-section quotation-width-distribution"><h3>توزيع البوص والعروض والكميات</h3><table class="quotation-items-table"><thead><tr><th>الصنف</th><th>البوصة</th><th>العرض</th><th>الكمية</th></tr></thead><tbody>${quotationWidthRows}</tbody></table></section>` : ''}
     ${operationalColorRows ? `<section class="report-section quotation-order-colors"><h3>ألوان الطلب المعتمدة</h3><table class="quotation-items-table"><thead><tr><th>اللون</th><th>رقم البانتون</th><th>الكمية</th></tr></thead><tbody>${operationalColorRows}</tbody></table></section>` : ''}
     <section class="report-section quotation-notes"><h3>\u0645\u0644\u0627\u062d\u0638\u0627\u062a</h3><p>${escapeHtml([notes, 'عرض السعر ساري لمدة 7 أيام.'].filter(Boolean).join('\n'))}</p></section>
     ${documentFooter()}

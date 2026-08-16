@@ -977,6 +977,7 @@ function checkFixedPackagingPricingStageExists() {
 
 function checkPricingListFiltersAndOrderNumber() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
   const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
   const navigationSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'navigation.js'), 'utf8');
@@ -991,10 +992,12 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260816-02'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260816-03'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('data-add-pricing-width') && appSource.includes('pricingWidthLinesFromRow'), 'pricing width distribution: one fabric item must support multiple inch/width/quantity lines');
   assert(appSource.includes("widthMode: primaryDraft.widthMode || 'single'") && appSource.includes('widthLines: primaryDraft.widthLines || []'), 'pricing width distribution: conversion must preserve the single message width breakdown');
   assert(appSource.includes('pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : []'), 'pricing width distribution: multiple products must still convert separately when one product has multiple widths');
+  assert(appSource.includes('quotationWidthRows') && appSource.includes('توزيع البوص والعروض والكميات'), 'quotation width distribution: customer quotation must show inch, width and quantity');
+  assert(documentsSource.includes('function widthDistributionSection') && documentsSource.includes('${widthDistributionSection(order)}'), 'operational documents: order and production documents must show saved width distribution');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
   assert(appSource.includes("refs.documentBody.dataset.pricingId = pricing.id"), 'realtime quotation: open document must retain its linked pricing id');
@@ -1071,7 +1074,7 @@ function checkNamedColorApproximation() {
   assert(appSource.includes('namedColorLabelHtml(allocation.color)'), 'named colors: allocation table must display the approximate color circle');
   assert(documentsSource.includes('window.approximateNamedColorHex'), 'named colors: printed documents must reuse the name-based color approximation');
   assert(!documentsSource.includes("const saved = clean(line?.colorHex"), 'named colors: documents must not depend on a saved Pantone-derived hex value');
-  assert(indexSource.includes('./documents.js?v=20260815-01'), 'named colors: document builder must use the current cache key');
+  assert(indexSource.includes('./documents.js?v=20260816-03'), 'named colors: document builder must use the current cache key');
 }
 
 function checkOrderPreparedSpecsPersistence() {
