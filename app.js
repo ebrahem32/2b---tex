@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.17.01';
-const APP_BUILD_TIME = '2026-08-17 16:10';
+const APP_VERSION = 'v2026.08.17.02';
+const APP_BUILD_TIME = '2026-08-17 16:35';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -3286,6 +3286,7 @@ function pricingItemsFor(pricing = {}) {
   const items = Array.isArray(pricing.priceItems) ? pricing.priceItems.filter(Boolean) : [];
   if (items.length) return items.map((item)=>({
     directQuotation: !!(item.directQuotation || pricing.directQuotation || pricing.materialType === 'DIRECT_QUOTATION'),
+    image: String(item.image || '').startsWith('data:image/') ? item.image : '',
     unit: item.unit || 'كجم',
     unitPrice: Number(item.unitPrice ?? item.sellPrice ?? 0),
     currency: item.currency || pricing.currency || 'EGP',
@@ -4332,7 +4333,10 @@ function openDirectQuotationDocument(sourcePricing) {
   const pricing = calculatePricing(sourcePricing);
   const money = (value)=>Number(value || 0).toLocaleString('en-US', { maximumFractionDigits:2 });
   const currency = pricingCurrencyLabel(pricing.currency || 'EGP');
-  const rows = (pricing.priceItems || []).map((item)=>`<tr><td><strong>${escapeHtml(item.fabricType || '-')}</strong></td><td>${money(item.quantity)} ${escapeHtml(item.unit || 'كجم')}</td><td>${money(item.sellPrice)} ${currency}</td><td>${money(item.totalOffer)} ${currency}</td></tr>`).join('');
+  const rows = (pricing.priceItems || []).map((item)=>{
+    const image = String(item.image || '').startsWith('data:image/') ? `<img class="direct-quotation-print-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.fabricType || 'صورة الخامة')}">` : '';
+    return `<tr><td><div class="direct-quotation-print-item">${image}<strong>${escapeHtml(item.fabricType || '-')}</strong></div></td><td>${money(item.quantity)} ${escapeHtml(item.unit || 'كجم')}</td><td>${money(item.sellPrice)} ${currency}</td><td>${money(item.totalOffer)} ${currency}</td></tr>`;
+  }).join('');
   refs.documentTitle.textContent = 'عرض سعر مباشر';
   refs.documentBody.dataset.documentType = 'direct-quotation';
   refs.documentBody.dataset.pricingId = pricing.id || '';
@@ -8092,6 +8096,27 @@ function resizeSlipImage(file) {
     reader.readAsDataURL(file);
   });
 }
+function resizeDirectQuotationImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const maxSide = 640;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 function getReviewedOrder() {
   const orderId = refs.weavingSlipOrderNumber.value || '';
   return orderId ? calculateOrder(orders.find((item)=>item.id===orderId)) : null;
@@ -8593,12 +8618,13 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
 
 let editingDirectQuotationId = null;
 function directQuotationRowHtml(item = {}) {
-  return `<div class="direct-quotation-row" data-direct-row><input data-direct-name placeholder="اسم الخامة أو البند" value="${escapeHtml(item.fabricType || '')}" required><input data-direct-quantity type="number" min="0" step="0.001" placeholder="الكمية" value="${item.quantity || ''}" required><select data-direct-unit><option ${item.unit === 'كجم' ? 'selected' : ''}>كجم</option><option ${item.unit === 'طن' ? 'selected' : ''}>طن</option><option ${item.unit === 'عبوة' ? 'selected' : ''}>عبوة</option><option ${item.unit === 'قطعة' ? 'selected' : ''}>قطعة</option><option ${item.unit === 'لتر' ? 'selected' : ''}>لتر</option></select><input data-direct-price type="number" min="0" step="0.01" placeholder="سعر الوحدة" value="${item.unitPrice ?? item.sellPrice ?? ''}" required><strong data-direct-total>0</strong><button class="mini-btn danger" type="button" data-remove-direct>حذف</button></div>`;
+  const image = String(item.image || '').startsWith('data:image/') ? item.image : '';
+  return `<div class="direct-quotation-row" data-direct-row data-direct-image-value="${escapeHtml(image)}"><label class="direct-image-picker"><input data-direct-image type="file" accept="image/*"><span>${image ? 'تغيير الصورة' : 'إضافة صورة'}</span>${image ? `<img data-direct-image-preview src="${escapeHtml(image)}" alt="صورة الخامة">` : '<img data-direct-image-preview alt="صورة الخامة" hidden>'}</label><input data-direct-name placeholder="اسم الخامة أو البند" value="${escapeHtml(item.fabricType || '')}" required><input data-direct-quantity type="number" min="0" step="0.001" placeholder="الكمية" value="${item.quantity || ''}" required><select data-direct-unit><option ${item.unit === 'كجم' ? 'selected' : ''}>كجم</option><option ${item.unit === 'طن' ? 'selected' : ''}>طن</option><option ${item.unit === 'عبوة' ? 'selected' : ''}>عبوة</option><option ${item.unit === 'قطعة' ? 'selected' : ''}>قطعة</option><option ${item.unit === 'لتر' ? 'selected' : ''}>لتر</option></select><input data-direct-price type="number" min="0" step="0.01" placeholder="سعر الوحدة" value="${item.unitPrice ?? item.sellPrice ?? ''}" required><strong data-direct-total>0</strong><button class="mini-btn danger" type="button" data-remove-direct>حذف</button></div>`;
 }
 function ensureDirectQuotationDialog() {
   if (document.getElementById('directQuotationDialog')) return;
-  document.body.insertAdjacentHTML('beforeend', `<button type="button" id="openDirectQuotationBtn" hidden></button><dialog id="directQuotationDialog"><form id="directQuotationForm" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">عرض مستقل بدون كرت تكلفة</p><h2>عرض سعر مباشر</h2></div><button class="ghost-btn" type="button" data-close-direct>إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم العرض</span><input id="directQuotationNumber" readonly></label><label><span>العميل</span><input id="directQuotationCustomer" required></label><label><span>التاريخ</span><input id="directQuotationDate" type="date" required></label><label><span>العملة</span><select id="directQuotationCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label><label><span>طريقة السداد</span><select id="directQuotationPayment"><option>نقدي</option><option>أجل شهر</option><option>أجل شهرين</option><option>أجل 3 شهور</option><option>دفعات أسبوعية</option></select></label><label class="full-row"><span>ملاحظات</span><input id="directQuotationNotes" value="يرجى مراجعة العرض والموافقة عليه."></label></div><div class="subsection-head"><h3>بنود العرض</h3><button class="mini-btn" type="button" data-add-direct>+ إضافة بند</button></div><div class="direct-quotation-head"><span>البند / الخامة</span><span>الكمية</span><span>الوحدة</span><span>سعر الوحدة</span><span>الإجمالي</span><span></span></div><div id="directQuotationRows"></div><div class="pricing-preview"><div><span>إجمالي العرض</span><strong id="directQuotationTotal">0</strong></div></div><div class="dialog-actions"><button class="primary-btn" type="submit">حفظ عرض السعر</button></div></form></dialog>`);
-  document.head.insertAdjacentHTML('beforeend', `<style>.direct-quotation-head,.direct-quotation-row{display:grid;grid-template-columns:2fr 1fr .8fr 1fr 1fr auto;gap:10px;align-items:center;margin:8px 0}.direct-quotation-head{color:var(--muted);padding:0 8px}.direct-quotation-row input,.direct-quotation-row select{width:100%}.direct-quotation-row strong{text-align:center}@media(max-width:900px){.direct-quotation-head{display:none}.direct-quotation-row{grid-template-columns:1fr 1fr}.direct-quotation-row [data-direct-name]{grid-column:1/-1}}</style>`);
+  document.body.insertAdjacentHTML('beforeend', `<button type="button" id="openDirectQuotationBtn" hidden></button><dialog id="directQuotationDialog"><form id="directQuotationForm" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">عرض مستقل بدون كرت تكلفة</p><h2>عرض سعر مباشر</h2></div><button class="ghost-btn" type="button" data-close-direct>إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم العرض</span><input id="directQuotationNumber" readonly></label><label><span>العميل</span><input id="directQuotationCustomer" required></label><label><span>التاريخ</span><input id="directQuotationDate" type="date" required></label><label><span>العملة</span><select id="directQuotationCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label><label><span>طريقة السداد</span><select id="directQuotationPayment"><option>نقدي</option><option>أجل شهر</option><option>أجل شهرين</option><option>أجل 3 شهور</option><option>دفعات أسبوعية</option></select></label><label class="full-row"><span>ملاحظات</span><input id="directQuotationNotes" value="يرجى مراجعة العرض والموافقة عليه."></label></div><div class="subsection-head"><h3>بنود العرض</h3><button class="mini-btn" type="button" data-add-direct>+ إضافة بند</button></div><div class="direct-quotation-head"><span>الصورة</span><span>البند / الخامة</span><span>الكمية</span><span>الوحدة</span><span>سعر الوحدة</span><span>الإجمالي</span><span></span></div><div id="directQuotationRows"></div><div class="pricing-preview"><div><span>إجمالي العرض</span><strong id="directQuotationTotal">0</strong></div></div><div class="dialog-actions"><button class="primary-btn" type="submit">حفظ عرض السعر</button></div></form></dialog>`);
+  document.head.insertAdjacentHTML('beforeend', `<style>.direct-quotation-head,.direct-quotation-row{display:grid;grid-template-columns:100px 2fr 1fr .8fr 1fr 1fr auto;gap:10px;align-items:center;margin:8px 0}.direct-quotation-head{color:var(--muted);padding:0 8px}.direct-quotation-row input,.direct-quotation-row select{width:100%}.direct-quotation-row strong{text-align:center}.direct-image-picker{min-height:72px;border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;overflow:hidden;position:relative}.direct-image-picker input{position:absolute;opacity:0;pointer-events:none}.direct-image-picker img{width:58px;height:58px;object-fit:cover;border-radius:9px}.direct-image-picker span{font-size:12px}.direct-quotation-print-item{display:flex;align-items:center;gap:12px}.direct-quotation-print-image{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid #ccd3dc}@media(max-width:900px){.direct-quotation-head{display:none}.direct-quotation-row{grid-template-columns:1fr 1fr}.direct-quotation-row [data-direct-name]{grid-column:1/-1}}</style>`);
   const dialog = document.getElementById('directQuotationDialog');
   const rows = document.getElementById('directQuotationRows');
   const refresh = ()=>{
@@ -8607,6 +8633,23 @@ function ensureDirectQuotationDialog() {
     document.getElementById('directQuotationTotal').textContent = total.toLocaleString('en-US', {maximumFractionDigits:2});
   };
   rows.addEventListener('input', refresh);
+  rows.addEventListener('change', async (event)=>{
+    const input = event.target.closest('[data-direct-image]');
+    const file = input?.files?.[0];
+    if (!input || !file) return;
+    const row = input.closest('[data-direct-row]');
+    try {
+      const image = await resizeDirectQuotationImage(file);
+      row.dataset.directImageValue = image;
+      const preview = row.querySelector('[data-direct-image-preview]');
+      preview.src = image;
+      preview.hidden = false;
+      row.querySelector('.direct-image-picker span').textContent = 'تغيير الصورة';
+    } catch (error) {
+      console.error('direct-quotation-image-error', error);
+      alert('تعذر تجهيز صورة الخامة. اختر صورة JPG أو PNG سليمة.');
+    }
+  });
   rows.addEventListener('click', (event)=>{ if (event.target.closest('[data-remove-direct]')) { event.target.closest('[data-direct-row]')?.remove(); if (!rows.children.length) rows.insertAdjacentHTML('beforeend', directQuotationRowHtml()); refresh(); } });
   dialog.querySelector('[data-add-direct]').onclick = ()=>{ rows.insertAdjacentHTML('beforeend', directQuotationRowHtml()); refresh(); };
   dialog.querySelector('[data-close-direct]').onclick = ()=>dialog.close();
@@ -8632,7 +8675,7 @@ function openDirectQuotationDialog(id = null) {
 async function saveDirectQuotation(event) {
   event.preventDefault();
   if (!(await ensureBackendForWrite())) return;
-  const rows = [...document.querySelectorAll('#directQuotationRows [data-direct-row]')].map((row)=>({ directQuotation:true, fabricType:row.querySelector('[data-direct-name]').value.trim(), quantity:Number(row.querySelector('[data-direct-quantity]').value || 0), unit:row.querySelector('[data-direct-unit]').value, unitPrice:Number(row.querySelector('[data-direct-price]').value || 0), rawCost:0, dyeCost:0, wastePercent:0, profitPerKg:0 })).filter((item)=>item.fabricType || item.quantity || item.unitPrice);
+  const rows = [...document.querySelectorAll('#directQuotationRows [data-direct-row]')].map((row)=>({ directQuotation:true, fabricType:row.querySelector('[data-direct-name]').value.trim(), image:String(row.dataset.directImageValue || '').startsWith('data:image/') ? row.dataset.directImageValue : '', quantity:Number(row.querySelector('[data-direct-quantity]').value || 0), unit:row.querySelector('[data-direct-unit]').value, unitPrice:Number(row.querySelector('[data-direct-price]').value || 0), rawCost:0, dyeCost:0, wastePercent:0, profitPerKg:0 })).filter((item)=>item.fabricType || item.quantity || item.unitPrice);
   if (!document.getElementById('directQuotationCustomer').value.trim()) return alert('اكتب اسم العميل.');
   if (!rows.length || rows.some((item)=>!item.fabricType || item.quantity <= 0 || item.unitPrice < 0)) return alert('أكمل اسم وكمية وسعر كل بند.');
   const pricing = { id:editingDirectQuotationId || uid(), directQuotation:true, pricingNumber:document.getElementById('directQuotationNumber').value, customer:canonicalCustomerName(document.getElementById('directQuotationCustomer').value), pricingDate:document.getElementById('directQuotationDate').value, fabricType:rows[0].fabricType, materialType:'DIRECT_QUOTATION', dyehouse:'', colorClass:'', quantity:rows.reduce((sum,item)=>sum + item.quantity,0), rawCost:0, dyeCost:0, wastePercent:0, extraCost:0, profitPerKg:0, currency:document.getElementById('directQuotationCurrency').value, priceItems:rows, paymentTerms:document.getElementById('directQuotationPayment').value, notes:document.getElementById('directQuotationNotes').value, status:'active' };
