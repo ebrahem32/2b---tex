@@ -74,6 +74,10 @@ The interface is organized as an operations room:
 
 ## Backend
 
+### Financial calculation layer
+
+`backend/financial-center.js` is the server-side source for separated weaving and dyeing values. The order and customer financial APIs must be extended there rather than reimplementing money formulas in the frontend or document templates. See `ARCHITECTURE_DEVELOPMENT_PLAN.md`.
+
 Main backend files:
 
 - `backend/server.js`

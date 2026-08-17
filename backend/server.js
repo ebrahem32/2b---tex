@@ -6,6 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const { DB_PATH, DB_CLIENT, IS_FILE_DATABASE, initDb, run, transaction, get, all, schemaHealth, backupDatabase } = require('./db');
 const { calculateOrderSummary } = require('./calculations');
+const { buildCustomerFinancialCenter, buildOrderFinancialCenter } = require('./financial-center');
 
 const PORT = Number(process.env.PORT || 3050);
 const HOST = process.env.BACKEND_HOST || '127.0.0.1';
@@ -1689,10 +1690,61 @@ async function orderSummary(orderId) {
   });
 }
 
+async function orderFinancialCenter(orderId) {
+  const order = await get('SELECT * FROM orders WHERE id = ?', [orderId]);
+  if (!order) return null;
+  const customer = order.customer_id
+    ? await get('SELECT * FROM customers WHERE id = ?', [order.customer_id])
+    : null;
+  const pricing = order.pricing_id
+    ? await get('SELECT * FROM pricings WHERE id = ?', [order.pricing_id])
+    : null;
+  return buildOrderFinancialCenter({
+    order,
+    customer,
+    customerName: customer?.name || readableCustomerNameFromId(order.customer_id),
+    pricing,
+    rawReceivingBatches: await all('SELECT * FROM raw_receiving_batches WHERE order_id = ?', [orderId]),
+    finishedReceivingBatches: await all('SELECT * FROM finished_receiving_batches WHERE order_id = ?', [orderId]),
+    customerDeliveryBatches: await all('SELECT * FROM customer_delivery_batches WHERE order_id = ?', [orderId]),
+  });
+}
+
+async function customerAccountSetting(customerName) {
+  const row = await get('SELECT value_json FROM system_settings WHERE key = ?', ['customerAccounts']);
+  const accounts = safeJsonParse(row?.value_json, {}) || {};
+  if (accounts[customerName]) return accounts[customerName];
+  const target = String(customerName || '').trim().toLowerCase();
+  const matchedKey = Object.keys(accounts).find((key) => String(key || '').trim().toLowerCase() === target);
+  return matchedKey ? accounts[matchedKey] : { openingBalance:0, payments:[] };
+}
+
 app.get('/api/orders/:orderId/summary', asyncHandler(async (req, res) => {
   const summary = await orderSummary(req.params.orderId);
   if (!summary) return res.status(404).json({ error: 'Order not found' });
   res.json(summary);
+}));
+
+app.get('/api/financial/orders/:orderId', requireRole('accountant'), asyncHandler(async (req, res) => {
+  const center = await orderFinancialCenter(req.params.orderId);
+  if (!center) return res.status(404).json({ error: 'Order not found' });
+  res.json(center);
+}));
+
+app.get('/api/financial/customers/:customerId', requireRole('accountant'), asyncHandler(async (req, res) => {
+  const customer = await get('SELECT * FROM customers WHERE id = ?', [req.params.customerId]);
+  if (!customer) return res.status(404).json({ error: 'Customer not found' });
+  const customerOrders = await all('SELECT id FROM orders WHERE customer_id = ? ORDER BY order_date, created_at', [customer.id]);
+  const orderCenters = [];
+  for (const order of customerOrders) {
+    const center = await orderFinancialCenter(order.id);
+    if (center) orderCenters.push(center);
+  }
+  res.json(buildCustomerFinancialCenter({
+    customer,
+    orderCenters,
+    account: await customerAccountSetting(customer.name),
+  }));
 }));
 
 app.get('/api/dashboard/summary', asyncHandler(async (_req, res) => {

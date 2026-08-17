@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.16.04';
-const APP_BUILD_TIME = '2026-08-16 10:30';
+const APP_VERSION = 'v2026.08.17.01';
+const APP_BUILD_TIME = '2026-08-17 15:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -2166,6 +2166,51 @@ function customerAccountSummary(customerName) {
   const balance = roundNumber(Number(account.openingBalance || 0) + invoiceTotal - paymentTotal);
   return { customerName, openingBalance:Number(account.openingBalance || 0), invoices, invoiceTotal, payments:account.payments || [], paymentTotal, balance };
 }
+
+function financialWarningsHtml(warnings = []) {
+  return warnings.length ? `<div class="warning">${warnings.map((warning)=>`<div>${escapeHtml(warning)}</div>`).join('')}</div>` : '';
+}
+function financialMoney(value) { return `${formatNumber(value || 0)} جنيه`; }
+function orderFinancialCenterHtml(center = {}) {
+  const manufacturing = center.order?.businessMode === 'manufacturing';
+  return `<div class="document-sheet customer-ledger-sheet">
+    <div class="customer-ledger-header"><div><p class="muted">مركز مالي للطلب</p><h2>طلب ${escapeHtml(center.order?.orderNumber || '-')}</h2><span>${escapeHtml(center.order?.customerName || '-')} — ${escapeHtml(center.order?.fabricType || '-')}</span></div></div>
+    ${financialWarningsHtml(center.warnings || [])}
+    <div class="customer-ledger-summary"><div><span>قيمة العقد</span><strong>${financialMoney(center.revenue?.contractValue)}</strong></div><div><span>مبيعات معترف بها</span><strong>${financialMoney(center.revenue?.recognizedValue)}</strong></div><div><span>تكلفة فعلية</span><strong>${financialMoney(center.totals?.actualCost)}</strong></div><div class="emphasis"><span>هامش فعلي</span><strong>${financialMoney(center.totals?.recognizedMargin)}</strong></div></div>
+    <section class="report-section"><h3>فصل تكلفة النسيج والصباغة</h3><table class="customer-ledger-table"><thead><tr><th>البند</th><th>سعر الوحدة</th><th>التقديري</th><th>الفعلي</th><th>أساس الفعلي</th></tr></thead><tbody>
+      <tr><td>خام النسيج${manufacturing ? ' (غير محمل على طلب المصنعية)' : ''}</td><td>${financialMoney(center.weaving?.unitCost)}</td><td>${financialMoney(center.weaving?.estimatedValue)}</td><td>${financialMoney(center.weaving?.actualValue)}</td><td>الخام المستلم: ${formatNumber(center.quantities?.rawReceived)} كجم</td></tr>
+      <tr><td>الصباغة والتجهيز</td><td>${financialMoney(center.dyeing?.unitCost)}</td><td>${financialMoney(center.dyeing?.estimatedValue)}</td><td>${financialMoney(center.dyeing?.actualValue)}</td><td>المجهز المستلم: ${formatNumber(center.quantities?.finishedReceived)} كجم</td></tr>
+    </tbody></table></section>
+    <section class="report-section"><h3>الكميات</h3><div class="customer-ledger-summary"><div><span>التعاقد</span><strong>${formatNumber(center.quantities?.contract)} كجم</strong></div><div><span>خام مستلم</span><strong>${formatNumber(center.quantities?.rawReceived)} كجم</strong></div><div><span>مجهز مستلم</span><strong>${formatNumber(center.quantities?.finishedReceived)} كجم</strong></div><div><span>مسلم للعميل</span><strong>${formatNumber(center.quantities?.customerDelivered)} كجم</strong></div></div></section>
+  </div>`;
+}
+async function renderOrderFinancialCenter(orderId) {
+  refs.documentTitle.textContent = 'المركز المالي للطلب';
+  refs.documentBody.dataset.documentType = 'order-financial-center';
+  refs.documentBody.innerHTML = '<div class="document-sheet"><div class="empty-state">جارٍ حساب المركز المالي...</div></div>';
+  if (!refs.documentDialog.open) refs.documentDialog.showModal();
+  try {
+    const center = await backendRequest(`/financial/orders/${encodeURIComponent(orderId)}`, { cache:'no-store' });
+    refs.documentBody.innerHTML = orderFinancialCenterHtml(center);
+  } catch (error) {
+    refs.documentBody.innerHTML = `<div class="document-sheet"><div class="warning">${escapeHtml(error.message || 'تعذر تحميل المركز المالي للطلب.')}</div></div>`;
+  }
+}
+async function renderCustomerFinancialCenter(customerName) {
+  const customer = customerMasterRows().find((item)=>normalizeCustomerMasterName(item.name) === normalizeCustomerMasterName(customerName));
+  if (!customer?.id) { alert('لم يتم العثور على كود العميل.'); return; }
+  refs.documentTitle.textContent = `المركز المالي للعميل ${customer.name}`;
+  refs.documentBody.dataset.documentType = 'customer-financial-center';
+  refs.documentBody.innerHTML = '<div class="document-sheet"><div class="empty-state">جارٍ تجميع حسابات العميل...</div></div>';
+  if (!refs.documentDialog.open) refs.documentDialog.showModal();
+  try {
+    const center = await backendRequest(`/financial/customers/${encodeURIComponent(customer.id)}`, { cache:'no-store' });
+    const orderRows = (center.orders || []).map((order)=>`<tr><td>${escapeHtml(order.order?.orderNumber || '-')}</td><td>${escapeHtml(order.order?.fabricType || '-')}</td><td>${financialMoney(order.weaving?.actualValue)}</td><td>${financialMoney(order.dyeing?.actualValue)}</td><td>${financialMoney(order.revenue?.recognizedValue)}</td><td>${financialMoney(order.totals?.recognizedMargin)}</td><td class="no-print"><button class="mini-btn" data-open-order-financial="${escapeHtml(order.order?.id || '')}">تفاصيل</button></td></tr>`).join('');
+    refs.documentBody.innerHTML = `<div class="document-sheet customer-ledger-sheet"><div class="customer-ledger-header"><button class="mini-btn no-print" data-back-customer-accounts>رجوع</button><div><p class="muted">مركز مالي للعميل</p><h2>${escapeHtml(center.customer?.name || customer.name)}</h2><span>فصل مستحقات النسيج عن الصباغة عبر جميع الطلبات.</span></div></div><div class="customer-ledger-summary"><div><span>إجمالي النسيج الفعلي</span><strong>${financialMoney(center.weaving?.actualValue)}</strong></div><div><span>إجمالي الصباغة الفعلي</span><strong>${financialMoney(center.dyeing?.actualValue)}</strong></div><div><span>المبيعات المعترف بها</span><strong>${financialMoney(center.revenue?.recognizedValue)}</strong></div><div><span>المدفوعات</span><strong>${financialMoney(center.collections?.paymentTotal)}</strong></div><div class="emphasis"><span>رصيد العميل</span><strong>${financialMoney(center.collections?.outstanding)}</strong></div></div><section class="report-section"><h3>تفاصيل الطلبات</h3><table class="customer-ledger-table"><thead><tr><th>الطلب</th><th>الصنف</th><th>النسيج</th><th>الصباغة</th><th>المبيعات</th><th>الهامش</th><th class="no-print">إجراء</th></tr></thead><tbody>${orderRows || '<tr><td colspan="7">لا توجد طلبات مرتبطة بالعميل.</td></tr>'}</tbody></table></section></div>`;
+  } catch (error) {
+    refs.documentBody.innerHTML = `<div class="document-sheet"><div class="warning">${escapeHtml(error.message || 'تعذر تحميل المركز المالي للعميل.')}</div></div>`;
+  }
+}
 function knownAccountCustomers() {
   return uniqueNonEmpty([...customerMasterRows().map((customer)=>customer.name), ...orders.map((order)=>order.customer), ...pricings.map((pricing)=>pricing.customer), ...customerBatches.map((batch)=>batch.customerName), ...Object.keys(customerAccounts || {})]);
 }
@@ -2294,7 +2339,7 @@ function renderCustomerAccountsDialog() {
     acc.balance += Number(item.balance || 0);
     return acc;
   }, { opening:0, invoices:0, payments:0, balance:0 });
-  const rows = summaries.map((item)=>`<tr><td>${escapeHtml(item.customerName)}</td><td>${formatNumber(item.openingBalance)}</td><td>${formatNumber(item.invoiceTotal)}</td><td>${formatNumber(item.paymentTotal)}</td><td><strong>${formatNumber(item.balance)}</strong></td><td class="no-print"><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(item.customerName)}">عرض الحساب</button></td></tr>`).join('');
+  const rows = summaries.map((item)=>`<tr><td>${escapeHtml(item.customerName)}</td><td>${formatNumber(item.openingBalance)}</td><td>${formatNumber(item.invoiceTotal)}</td><td>${formatNumber(item.paymentTotal)}</td><td><strong>${formatNumber(item.balance)}</strong></td><td class="no-print"><div class="batch-actions"><button class="mini-btn" type="button" data-customer-ledger="${escapeHtml(item.customerName)}">كشف الحساب</button><button class="mini-btn gold" type="button" data-customer-financial="${escapeHtml(item.customerName)}">المركز المالي</button></div></td></tr>`).join('');
   refs.documentTitle.textContent = 'حسابات العملاء';
   refs.documentBody.dataset.documentType = 'customer-accounts';
   refs.documentBody.innerHTML = `<div class="document-sheet customer-account-sheet">
@@ -6270,6 +6315,10 @@ function renderDetails() {
     const colorCell = row.querySelector('td');
     if (allocation && colorCell) colorCell.textContent = colorWithPantoneLabel(allocation);
   });
+  const editOrderButton = refs.orderDetailsPanel.querySelector('#editOrderBtn');
+  if (editOrderButton && !refs.orderDetailsPanel.querySelector('#orderFinancialCenterBtn')) {
+    editOrderButton.insertAdjacentHTML('beforebegin', '<button class="mini-btn gold" id="orderFinancialCenterBtn" type="button">المركز المالي</button>');
+  }
   const hasMixedClothAndAccessory = order.accessoryLines.length > 0 && Number(order.totalRawOrdered || order.totalRawQuantity || 0) > 0;
   refs.orderDetailsPanel.querySelector('.section-head')?.insertAdjacentHTML('afterend', order360Html(order));
   if (hasMixedClothAndAccessory) {
@@ -8493,6 +8542,10 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (event.target.closest('[data-back-a5-accounts]')) renderA5AccountsDialog();
   const ledgerButton = event.target.closest('[data-customer-ledger]');
   if (ledgerButton) renderCustomerLedgerDialog(ledgerButton.dataset.customerLedger);
+  const customerFinancialButton = event.target.closest('[data-customer-financial]');
+  if (customerFinancialButton) renderCustomerFinancialCenter(customerFinancialButton.dataset.customerFinancial);
+  const orderFinancialButton = event.target.closest('[data-open-order-financial]');
+  if (orderFinancialButton) renderOrderFinancialCenter(orderFinancialButton.dataset.openOrderFinancial);
   const editCustomerMasterButton = event.target.closest('[data-edit-customer-master]');
   if (editCustomerMasterButton) fillCustomerMasterForm(editCustomerMasterButton.dataset.editCustomerMaster);
   const deleteCustomerMasterButton = event.target.closest('[data-delete-customer-master]');
@@ -8725,6 +8778,7 @@ refs.orderDetailsPanel.addEventListener('click', (event) => {
     return;
   }
   if (target.id === 'editOrderBtn') { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; editingOrderId = selectedOrderId; const order = orders.find((item)=>item.id===selectedOrderId); if (order) { fillOrderForm(order); refs.orderDialog.showModal(); } }
+  if (target.id === 'orderFinancialCenterBtn') { event.preventDefault(); renderOrderFinancialCenter(selectedOrderId); return; }
   if (target.id === 'toggleOperationClosedBtn') { event.preventDefault(); toggleOperationClosed().catch((error)=>{ console.error('operation-close-error', error); alert('تعذر حفظ حالة دورة التشغيل.'); }); return; }
   if (target.id === 'addAllocationBtn') addAllocation().catch((error)=>{ console.error('allocation-add-error', error); alert('تعذر حفظ اللون.'); });
   if (target.dataset.openCombinedMovement) {
