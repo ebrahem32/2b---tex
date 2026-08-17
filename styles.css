@@ -542,6 +542,29 @@ body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;wi
 .lab-color-swatch{width:82px;height:82px;margin:auto;border-radius:50%;border:2px dashed #64748b;display:grid;place-items:center;background:#fff center/cover no-repeat;overflow:hidden}.lab-color-swatch span{font-size:12px;color:#64748b;font-weight:700}.lab-color-swatch.has-color{border-style:solid;border-color:#111;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 @media print{.lab-samples-table .sample-cell{width:5cm!important;height:3cm!important}.lab-samples-table .color-cell{height:3cm!important}}
 
+/* Keep the normal 6-8 colour lab sheet on one A4 page. Empty Pantone/image
+   fields stay empty instead of consuming space with placeholder messages. */
+@media print{
+  .lab-document{width:196mm!important;max-width:196mm!important;height:auto!important;min-height:0!important;margin:0 auto!important}
+  .lab-samples-table th,.lab-samples-table td{padding:3px!important}
+  .lab-logo-wrap{height:28mm!important;padding:3mm!important}
+  .lab-logo-wrap img{max-width:42mm!important;width:auto!important;max-height:22mm!important}
+  .lab-title{height:28mm!important;font-size:18px!important}
+  .lab-meta-row th,.lab-meta-row td{height:8mm!important;font-size:13px!important}
+  .lab-order-number{font-size:18px!important}
+  .lab-item-row th,.lab-item-row td{height:14mm!important;font-size:18px!important}
+  .lab-sample-head th{height:9mm!important;font-size:15px!important}
+  .lab-sample-head th:nth-child(2)::before,.lab-sample-head th:nth-child(3)::after{width:12mm!important;height:4mm!important}
+  .lab-samples-table .sample-cell,.lab-samples-table .color-cell{height:24mm!important;min-height:24mm!important}
+  .lab-samples-table .color-cell{font-size:16px!important}
+  .lab-color-info{gap:3px!important}
+  .lab-color-info strong{font-size:16px!important}
+  .lab-color-info span{font-size:11px!important}
+  .lab-color-swatch{width:18mm!important;height:18mm!important}
+  .lab-section-title th,.lab-sample-head th{font-size:14px!important}
+  .lab-accessory-row th,.lab-accessory-row td,.lab-total-row th,.lab-total-row td{height:8mm!important;font-size:12px!important}
+}
+
 @media print{
   .document-sheet,
   .document-sheet *{

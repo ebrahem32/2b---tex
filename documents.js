@@ -637,7 +637,7 @@
       const labColorContent = (line = {}) => {
         const color = clean(line.color || '');
         const pantone = clean(line.pantoneCode || line.pantone_code || '');
-        return `<div class="lab-color-info"><strong>${safeText(color || pantone || '-')}</strong>${pantone ? `<span class="pantone-label">بانتون <bdi dir="ltr">${safeText(pantone)}</bdi></span>` : '<span>رقم البانتون غير مسجل</span>'}</div>`;
+        return `<div class="lab-color-info"><strong>${safeText(color || pantone || '-')}</strong>${pantone ? `<span class="pantone-label">بانتون <bdi dir="ltr">${safeText(pantone)}</bdi></span>` : ''}</div>`;
       };
       const labSampleContent = (line = {}) => {
         const imageValue = clean(line.colorImage || line.color_image || line.colorImageUrl || line.color_image_url || '');
@@ -645,7 +645,7 @@
         const colorValue = clean(line.colorHex || line.color_hex || '');
         const colorHex = /^#[0-9a-f]{6}$/i.test(colorValue) ? colorValue : '';
         const style = image ? `background-image:url('${safeText(image)}')` : (colorHex ? `background-color:${colorHex}` : '');
-        return `<div class="lab-color-swatch ${style ? 'has-color' : ''}"${style ? ` style="${style}"` : ''}><span>${style ? '' : 'صورة اللون'}</span></div>`;
+        return style ? `<div class="lab-color-swatch has-color" style="${style}"></div>` : '';
       };
       const sampleRows = [];
       for (let index = 0; index < Math.max(rows.length, 1); index += 2) {
