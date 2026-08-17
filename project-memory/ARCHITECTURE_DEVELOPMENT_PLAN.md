@@ -66,3 +66,10 @@ The UI and reports must consume the server result and must not repeat these form
 - The client retries a POST once only for a network interruption or retryable server response, using the exact same payload and ID.
 - Validation and permission errors are never retried automatically.
 - `scripts/save-resilience-check.js` is part of the required backend verification suite.
+
+## Frontend Persistence Extraction (v2026.08.17.03)
+
+- Extracted POST/PUT/DELETE/settings writes and retry policy from `app.js` into `modules/persistenceWriter.js`.
+- Preserved the existing function names in `app.js` as compatibility wrappers so operational screens keep the same behavior.
+- Added executable behavior tests for transient retry, non-retryable validation errors, and offline fallback.
+- Further extraction must continue in small independently tested slices; do not move document layouts or business calculations with persistence code.

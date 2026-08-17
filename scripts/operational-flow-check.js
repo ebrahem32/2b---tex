@@ -992,7 +992,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260817-04'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260817-05'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('data-add-pricing-width') && appSource.includes('pricingWidthLinesFromRow'), 'pricing width distribution: one fabric item must support multiple inch/width/quantity lines');
   assert(appSource.includes("widthMode: primaryDraft.widthMode || 'single'") && appSource.includes('widthLines: primaryDraft.widthLines || []'), 'pricing width distribution: conversion must preserve the single message width breakdown');
   assert(appSource.includes('pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : []'), 'pricing width distribution: multiple products must still convert separately when one product has multiple widths');
