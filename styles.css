@@ -76,7 +76,7 @@ body.desktop-pdf-export #documentDialog::backdrop{display:none!important}
 body.desktop-pdf-export #documentDialog .dialog-head{display:none!important}
 body.desktop-pdf-export #documentDialog .printable-card{display:block!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:visible!important;background:#fff!important}
 body.desktop-pdf-export #documentBody{display:block!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
-body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;box-shadow:none!important;border-radius:0!important;margin:0 auto!important}
+body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;width:196mm!important;max-width:196mm!important;height:auto!important;min-height:0!important;padding:0!important;box-shadow:none!important;border-radius:0!important;margin:0 auto!important;overflow:visible!important}
 
 
 .document-brand{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #d1d5db}
@@ -628,7 +628,7 @@ body.desktop-pdf-export #documentBody>.document-sheet{display:block!important;bo
   #documentDialog:has(.dyeing-document),
   #documentDialog:has(.dyeing-document) .printable-card,
   #documentDialog:has(.dyeing-document) #documentBody{width:196mm!important;max-width:196mm!important;margin:0 auto!important}
-  .dyeing-document{width:196mm!important;max-width:196mm!important;min-height:283mm!important;font-size:10.8px!important;line-height:1.24!important;padding:0!important;margin:0 auto!important}
+  .dyeing-document{width:196mm!important;max-width:196mm!important;height:auto!important;min-height:0!important;font-size:10.8px!important;line-height:1.24!important;padding:0!important;margin:0 auto!important;break-after:auto!important;page-break-after:auto!important}
   .dyeing-document .document-brand{margin-bottom:7px!important;padding-bottom:5px!important}
   .dyeing-document .document-brand img{width:96px!important}
   .dyeing-document .document-brand strong{font-size:15px!important}

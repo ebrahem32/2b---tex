@@ -262,6 +262,13 @@ function installDesktopBridge() {
     if (!event.sender || event.sender.isDestroyed()) return { ok: false, error: "Window is not ready." };
     try {
       event.sender.setEmulatedMedia({ media: "print" });
+      // Give Chromium two layout frames to apply @media print before creating
+      // the PDF. Without this, an occasional screen-sized sheet (297mm plus
+      // padding) is captured and creates a nearly blank second A4 page.
+      await event.sender.executeJavaScript(
+        "new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
+        true,
+      );
       const previewRoot = path.join(app.getPath("temp"), "2BTex", "PrintPreview");
       fs.mkdirSync(previewRoot, { recursive: true });
       const previewPath = path.join(previewRoot, `2B-Tex-${Date.now()}.pdf`);
