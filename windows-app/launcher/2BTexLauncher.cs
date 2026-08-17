@@ -16,6 +16,12 @@ namespace TwoBTexLauncher
         [STAThread]
         private static int Main()
         {
+            string installRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "2BTex");
+            string localAppDir = Path.Combine(installRoot, "App");
+            string localExe = Path.Combine(localAppDir, "2B Tex.exe");
+
             try
             {
                 string shareRoot = ResolveShareRoot();
@@ -56,11 +62,6 @@ namespace TwoBTexLauncher
                     throw new InvalidOperationException("نسخة التطبيق على السيرفر لا تطابق ملف التحديث.");
                 }
 
-                string installRoot = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "2BTex");
-                string localAppDir = Path.Combine(installRoot, "App");
-                string localExe = Path.Combine(localAppDir, "2B Tex.exe");
                 string localAsar = Path.Combine(localAppDir, @"resources\app.asar");
 
                 bool copyRequired = !File.Exists(localExe) || !File.Exists(localAsar);
@@ -104,14 +105,46 @@ namespace TwoBTexLauncher
             }
             catch (Exception ex)
             {
+                // A brief network interruption must not prevent staff from opening
+                // the already verified local client. The Electron shell will keep
+                // retrying the central server and show the real connection state.
+                if (File.Exists(localExe))
+                {
+                    WriteLauncherDiagnostic(installRoot, ex);
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = localExe,
+                        WorkingDirectory = localAppDir,
+                        UseShellExecute = true
+                    });
+                    return 0;
+                }
+
                 MessageBox.Show(
-                    ex.Message,
+                    "تعذر الوصول إلى السيرفر ولا توجد نسخة محلية صالحة للتشغيل.\n\n" + ex.Message,
                     AppName,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error,
                     MessageBoxDefaultButton.Button1,
                     MessageBoxOptions.RightAlign | MessageBoxOptions.RtlReading);
                 return 1;
+            }
+        }
+
+        private static void WriteLauncherDiagnostic(string installRoot, Exception error)
+        {
+            try
+            {
+                string diagnosticsDir = Path.Combine(installRoot, "Diagnostics");
+                Directory.CreateDirectory(diagnosticsDir);
+                string logPath = Path.Combine(
+                    diagnosticsDir,
+                    "launcher-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".log");
+                File.WriteAllText(logPath, error.ToString());
+            }
+            catch
+            {
+                // Diagnostics must never block the local fallback.
             }
         }
 
