@@ -208,7 +208,6 @@ function renderPricings() {
     const finishedPrices = uniqueNonEmpty(rows.map((row)=>money(row.sellPrice, row.currency)));
     const header = `<tr class="pricing-group-row"><td colspan="10"><div class="pricing-group-title"><strong>${escapeHtml(group.fabric)}</strong><span>${rows.length} سعر مسجل</span><span>سعر الخام: ${escapeHtml(rawPrices.join(' / ') || '-')}</span><span>سعر المجهز: ${escapeHtml(finishedPrices.join(' / ') || '-')}</span></div></td></tr>`;
     const body = rows.map((pricing)=>{
-      const isDirect = !!(pricing.directQuotation || pricing.materialType === 'DIRECT_QUOTATION');
       const linkedOrder = pricing.linkedOrder;
       const statusLabel = pricing.listMode === 'linked'
         ? (linkedOrder ? `مرتبط بطلب ${escapeHtml(linkedOrder.orderNumber || '')}` : 'محوّل ويحتاج ربط')
@@ -216,11 +215,8 @@ function renderPricings() {
       const statusClass = pricing.listMode === 'linked' ? 'completed' : 'pending';
       const unifiedOrderNumber = linkedOrder?.orderNumber || pricing.pricingNumber || '-';
       const linkedOrderButton = linkedOrder ? `<button class="mini-btn" data-open-order="${escapeHtml(linkedOrder.id)}">فتح الطلب</button>` : '';
-      const convertButton = pricing.listMode === 'linked' || isDirect ? '' : `<button class="mini-btn" data-convert-pricing="${pricing.id}">تحويل لطلب تشغيل</button>`;
-      const costButton = isDirect ? '' : `<button class="mini-btn" data-pricing-cost="${pricing.id}">تقرير تكلفة</button>`;
-      const editLabel = isDirect ? 'تعديل العرض' : 'تعديل الكرت';
-      const displayStatus = isDirect ? 'عرض مباشر' : statusLabel;
-      return `<tr class="pricing-child-row"><td data-label="رقم الطلب">${escapeHtml(unifiedOrderNumber)}</td><td data-label="العميل">${escapeHtml(pricing.customer || '-')}</td><td data-label="الصنف">${escapeHtml(pricing.fabricType || group.fabric)}</td><td data-label="المصبغة">${escapeHtml(isDirect ? '-' : (pricing.dyehouse || '-'))}</td><td data-label="الكمية">${Number(pricing.quantity || 0).toLocaleString('en-US')}</td><td data-label="سعر الخام">${escapeHtml(isDirect ? '-' : money(pricing.rawCost, pricing.currency))}</td><td data-label="سعر المجهز">${escapeHtml(money(pricing.sellPrice, pricing.currency))}</td><td data-label="إجمالي العقد">${escapeHtml(money(pricing.totalOffer, pricing.currency))}</td><td data-label="الحالة"><span class="status ${statusClass}">${displayStatus}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button>${costButton}${linkedOrderButton}${convertButton}<button class="mini-btn" data-edit-pricing="${pricing.id}">${editLabel}</button>${canDeleteRecords() && pricing.listMode !== 'linked' ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`;
+      const convertButton = pricing.listMode === 'linked' ? '' : `<button class="mini-btn" data-convert-pricing="${pricing.id}">تحويل لطلب تشغيل</button>`;
+      return `<tr class="pricing-child-row"><td data-label="رقم الطلب">${escapeHtml(unifiedOrderNumber)}</td><td data-label="العميل">${escapeHtml(pricing.customer || '-')}</td><td data-label="الصنف">${escapeHtml(pricing.fabricType || group.fabric)}</td><td data-label="المصبغة">${escapeHtml(pricing.dyehouse || '-')}</td><td data-label="الكمية">${Number(pricing.quantity || 0).toLocaleString('en-US')}</td><td data-label="سعر الخام">${escapeHtml(money(pricing.rawCost, pricing.currency))}</td><td data-label="سعر المجهز">${escapeHtml(money(pricing.sellPrice, pricing.currency))}</td><td data-label="إجمالي العقد">${escapeHtml(money(pricing.totalOffer, pricing.currency))}</td><td data-label="الحالة"><span class="status ${statusClass}">${statusLabel}</span></td><td data-label="إجراءات"><div class="batch-actions"><button class="mini-btn" data-pricing-quote="${pricing.id}">عرض سعر</button><button class="mini-btn" data-pricing-cost="${pricing.id}">تقرير تكلفة</button>${linkedOrderButton}${convertButton}<button class="mini-btn" data-edit-pricing="${pricing.id}">تعديل الكرت</button>${canDeleteRecords() && pricing.listMode !== 'linked' ? `<button class="mini-btn danger" data-delete-pricing="${pricing.id}">حذف</button>` : ''}</div></td></tr>`;
     }).join('');
     return header + body;
   }).join('');

@@ -101,7 +101,6 @@
         return;
       }
       if (action === 'pricingNew') { setWorkspaceModule('pricing'); refs.openPricingFormBtn?.click(); }
-      if (action === 'directQuotationNew') { setWorkspaceModule('pricing'); document.getElementById('openDirectQuotationBtn')?.click(); }
       if (action === 'orderNew') { setWorkspaceModule('orders'); refs.openOrderFormBtn?.click(); }
       if (action === 'managementReports') { setWorkspaceModule('reports'); refs.openManagementReportsBtn?.click(); }
       if (action.startsWith('report:')) {

@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.17.01';
-const APP_BUILD_TIME = '2026-08-17 16:10';
+const APP_VERSION = 'v2026.08.16.04';
+const APP_BUILD_TIME = '2026-08-16 10:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -727,7 +727,6 @@ function mapDbPricing(row, customers) {
   const priceItems = parseDbJsonArray(row.pricing_items_json);
   const firstItemWithWeavingSource = priceItems.find((item)=>item?.weavingSource || item?.weaving_source);
   const firstItemWithCurrency = priceItems.find((item)=>item?.currency || item?.exchangeRate || item?.exchange_rate);
-  const isDirectQuotation = row.material_type === 'DIRECT_QUOTATION' || priceItems.some((item)=>item?.directQuotation);
   return {
     id: row.id,
     pricingNumber: row.pricing_number || '',
@@ -755,7 +754,6 @@ function mapDbPricing(row, customers) {
     priceItems,
     currency: firstItemWithCurrency?.currency || 'EGP',
     exchangeRate: Number(firstItemWithCurrency?.exchangeRate || firstItemWithCurrency?.exchange_rate || 1),
-    directQuotation: isDirectQuotation,
   };
 }
 function renderBackendUnavailable() {
@@ -3233,17 +3231,6 @@ function pricingWithOperationalWastePercent(pricing = {}) {
 
 function calculatePricing(pricing) {
   const source = pricingWithOperationalWastePercent(pricing || {});
-  if (source.directQuotation || source.materialType === 'DIRECT_QUOTATION') {
-    const directSourceItems = Array.isArray(source.priceItems) && source.priceItems.length ? source.priceItems : ((source.fabricType || source.quantity) ? [source] : []);
-    const directItems = directSourceItems.map((item)=>{
-      const quantity = Number(item.quantity || 0);
-      const sellPrice = Number(item.unitPrice ?? item.sellPrice ?? 0);
-      return { ...item, directQuotation:true, quantity, sellPrice, unitPrice:sellPrice, totalOffer:roundNumber(quantity * sellPrice), costPerKg:0, rawCost:0, dyeCost:0, wasteCost:0, wastePercent:0, profitPerKg:0 };
-    });
-    const totalOffer = roundNumber(directItems.reduce((sum,item)=>sum + Number(item.totalOffer || 0), 0));
-    const totalQuantity = roundNumber(directItems.reduce((sum,item)=>sum + Number(item.quantity || 0), 0));
-    return { ...source, directQuotation:true, priceItems:directItems, itemCount:directItems.length, quantity:totalQuantity, sellPrice:Number(directItems[0]?.sellPrice || source.unitPrice || 0), totalOffer, rawCost:0, dyeCost:0, wasteCost:0, wastePercent:0, costPerKg:0, fabricType:directItems[0]?.fabricType || source.fabricType || 'عرض سعر مباشر' };
-  }
   const items = pricingItemsFor(source);
   if (items.length <= 1 && !Array.isArray(source.priceItems)) return pricingDomain.calculatePricing(source, activeDyehousePriceLibrary());
   const calculatedItems = items.map((item)=>pricingDomain.calculatePricing({ ...source, ...item }, activeDyehousePriceLibrary()));
@@ -3285,9 +3272,6 @@ function pricingInheritedNumber(item = {}, keys = [], fallback = 0) {
 function pricingItemsFor(pricing = {}) {
   const items = Array.isArray(pricing.priceItems) ? pricing.priceItems.filter(Boolean) : [];
   if (items.length) return items.map((item)=>({
-    directQuotation: !!(item.directQuotation || pricing.directQuotation || pricing.materialType === 'DIRECT_QUOTATION'),
-    unit: item.unit || 'كجم',
-    unitPrice: Number(item.unitPrice ?? item.sellPrice ?? 0),
     currency: item.currency || pricing.currency || 'EGP',
     exchangeRate: Number(item.exchangeRate || item.exchange_rate || pricing.exchangeRate || pricing.exchange_rate || 0),
     fabricType: item.fabricType || item.fabric_type || '',
@@ -4328,32 +4312,8 @@ function pricingContractSourceForOrder(pricing, operationalOrder = null) {
   });
   return { ...pricing, quantity, priceItems };
 }
-function openDirectQuotationDocument(sourcePricing) {
-  const pricing = calculatePricing(sourcePricing);
-  const money = (value)=>Number(value || 0).toLocaleString('en-US', { maximumFractionDigits:2 });
-  const currency = pricingCurrencyLabel(pricing.currency || 'EGP');
-  const rows = (pricing.priceItems || []).map((item)=>`<tr><td><strong>${escapeHtml(item.fabricType || '-')}</strong></td><td>${money(item.quantity)} ${escapeHtml(item.unit || 'كجم')}</td><td>${money(item.sellPrice)} ${currency}</td><td>${money(item.totalOffer)} ${currency}</td></tr>`).join('');
-  refs.documentTitle.textContent = 'عرض سعر مباشر';
-  refs.documentBody.dataset.documentType = 'direct-quotation';
-  refs.documentBody.dataset.pricingId = pricing.id || '';
-  refs.documentBody.dataset.documentNumber = pricing.pricingNumber || '';
-  refs.documentBody.dataset.reportTitle = 'عرض سعر مباشر';
-  refs.documentBody.innerHTML = `<div class="document-sheet quotation-report two-b-report">
-    ${documentHeader()}
-    <div class="document-inline-actions no-print"><button class="mini-btn" data-edit-direct-quotation="${escapeHtml(pricing.id)}">تعديل</button></div>
-    <div class="report-title quotation-title"><h2>عرض سعر للعميل <small># ${escapeHtml(pricing.pricingNumber || '-')}</small></h2><span>عرض سعر مباشر لبنود وخامات جاهزة للبيع.</span></div>
-    <div class="document-meta quotation-meta"><div><span>العميل</span>${escapeHtml(pricing.customer || '-')}</div><div><span>التاريخ</span>${escapeHtml(pricing.pricingDate || '-')}</div><div><span>طريقة السداد</span>${escapeHtml(pricing.paymentTerms || 'نقدي')}</div><div><span>العملة</span>${currency}</div></div>
-    <section class="report-section quotation-summary"><h3>ملخص العرض</h3><div class="quotation-total"><span>إجمالي العرض</span><strong>${money(pricing.totalOffer)} ${currency}</strong></div></section>
-    <section class="report-section"><h3>بنود العرض</h3><table class="quotation-items-table"><thead><tr><th>البند / الخامة</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${rows || emptyRow(4, 'لا توجد بنود.')}</tbody></table></section>
-    <section class="report-section quotation-notes"><h3>ملاحظات</h3><p>${escapeHtml(pricing.notes || 'يرجى مراجعة العرض والموافقة عليه.')}</p></section>
-    ${documentFooter()}
-  </div>`;
-  refs.documentDialog.showModal();
-}
-
 function openCustomerPricingQuotation(id) {
   const sourcePricing = pricings.find((item)=>item.id===id);
-  if (sourcePricing?.directQuotation || sourcePricing?.materialType === 'DIRECT_QUOTATION') return openDirectQuotationDocument(sourcePricing);
   const operationalOrder = linkedOperationalOrderForPricing(sourcePricing);
   const contractSource = pricingContractSourceForOrder(sourcePricing, operationalOrder);
   const pricing = calculatePricing(contractSource);
@@ -8462,13 +8422,6 @@ document.addEventListener('click', (event) => {
   }
 });
 if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
-  const editDirectQuotationButton = event.target.closest('[data-edit-direct-quotation]');
-  if (editDirectQuotationButton) {
-    event.preventDefault();
-    event.stopPropagation();
-    openDirectQuotationDialog(editDirectQuotationButton.dataset.editDirectQuotation);
-    return;
-  }
   const editPricingDocButton = event.target.closest('[data-edit-pricing-doc]');
   if (editPricingDocButton) {
     event.preventDefault();
@@ -8591,62 +8544,6 @@ if (refs.documentBody) refs.documentBody.addEventListener('click', (event)=>{
   if (event.target.closest('[data-save-bulk-batches]')) saveBulkBatchesFromDialog().catch((error)=>{ console.error('bulk-batches-save-error', error); alert(error.message || 'تعذر حفظ الإدخال الجماعي.'); });
 });
 
-let editingDirectQuotationId = null;
-function directQuotationRowHtml(item = {}) {
-  return `<div class="direct-quotation-row" data-direct-row><input data-direct-name placeholder="اسم الخامة أو البند" value="${escapeHtml(item.fabricType || '')}" required><input data-direct-quantity type="number" min="0" step="0.001" placeholder="الكمية" value="${item.quantity || ''}" required><select data-direct-unit><option ${item.unit === 'كجم' ? 'selected' : ''}>كجم</option><option ${item.unit === 'طن' ? 'selected' : ''}>طن</option><option ${item.unit === 'عبوة' ? 'selected' : ''}>عبوة</option><option ${item.unit === 'قطعة' ? 'selected' : ''}>قطعة</option><option ${item.unit === 'لتر' ? 'selected' : ''}>لتر</option></select><input data-direct-price type="number" min="0" step="0.01" placeholder="سعر الوحدة" value="${item.unitPrice ?? item.sellPrice ?? ''}" required><strong data-direct-total>0</strong><button class="mini-btn danger" type="button" data-remove-direct>حذف</button></div>`;
-}
-function ensureDirectQuotationDialog() {
-  if (document.getElementById('directQuotationDialog')) return;
-  document.body.insertAdjacentHTML('beforeend', `<button type="button" id="openDirectQuotationBtn" hidden></button><dialog id="directQuotationDialog"><form id="directQuotationForm" class="dialog-card xl"><div class="dialog-head"><div><p class="eyebrow">عرض مستقل بدون كرت تكلفة</p><h2>عرض سعر مباشر</h2></div><button class="ghost-btn" type="button" data-close-direct>إغلاق</button></div><div class="form-grid master-grid"><label><span>رقم العرض</span><input id="directQuotationNumber" readonly></label><label><span>العميل</span><input id="directQuotationCustomer" required></label><label><span>التاريخ</span><input id="directQuotationDate" type="date" required></label><label><span>العملة</span><select id="directQuotationCurrency"><option value="EGP">جنيه</option><option value="USD">دولار</option></select></label><label><span>طريقة السداد</span><select id="directQuotationPayment"><option>نقدي</option><option>أجل شهر</option><option>أجل شهرين</option><option>أجل 3 شهور</option><option>دفعات أسبوعية</option></select></label><label class="full-row"><span>ملاحظات</span><input id="directQuotationNotes" value="يرجى مراجعة العرض والموافقة عليه."></label></div><div class="subsection-head"><h3>بنود العرض</h3><button class="mini-btn" type="button" data-add-direct>+ إضافة بند</button></div><div class="direct-quotation-head"><span>البند / الخامة</span><span>الكمية</span><span>الوحدة</span><span>سعر الوحدة</span><span>الإجمالي</span><span></span></div><div id="directQuotationRows"></div><div class="pricing-preview"><div><span>إجمالي العرض</span><strong id="directQuotationTotal">0</strong></div></div><div class="dialog-actions"><button class="primary-btn" type="submit">حفظ عرض السعر</button></div></form></dialog>`);
-  document.head.insertAdjacentHTML('beforeend', `<style>.direct-quotation-head,.direct-quotation-row{display:grid;grid-template-columns:2fr 1fr .8fr 1fr 1fr auto;gap:10px;align-items:center;margin:8px 0}.direct-quotation-head{color:var(--muted);padding:0 8px}.direct-quotation-row input,.direct-quotation-row select{width:100%}.direct-quotation-row strong{text-align:center}@media(max-width:900px){.direct-quotation-head{display:none}.direct-quotation-row{grid-template-columns:1fr 1fr}.direct-quotation-row [data-direct-name]{grid-column:1/-1}}</style>`);
-  const dialog = document.getElementById('directQuotationDialog');
-  const rows = document.getElementById('directQuotationRows');
-  const refresh = ()=>{
-    let total = 0;
-    rows.querySelectorAll('[data-direct-row]').forEach((row)=>{ const value = Number(row.querySelector('[data-direct-quantity]').value || 0) * Number(row.querySelector('[data-direct-price]').value || 0); row.querySelector('[data-direct-total]').textContent = value.toLocaleString('en-US', {maximumFractionDigits:2}); total += value; });
-    document.getElementById('directQuotationTotal').textContent = total.toLocaleString('en-US', {maximumFractionDigits:2});
-  };
-  rows.addEventListener('input', refresh);
-  rows.addEventListener('click', (event)=>{ if (event.target.closest('[data-remove-direct]')) { event.target.closest('[data-direct-row]')?.remove(); if (!rows.children.length) rows.insertAdjacentHTML('beforeend', directQuotationRowHtml()); refresh(); } });
-  dialog.querySelector('[data-add-direct]').onclick = ()=>{ rows.insertAdjacentHTML('beforeend', directQuotationRowHtml()); refresh(); };
-  dialog.querySelector('[data-close-direct]').onclick = ()=>dialog.close();
-  document.getElementById('openDirectQuotationBtn').onclick = ()=>openDirectQuotationDialog();
-  document.getElementById('directQuotationForm').onsubmit = saveDirectQuotation;
-}
-function openDirectQuotationDialog(id = null) {
-  ensureDirectQuotationDialog();
-  editingDirectQuotationId = id || null;
-  const pricing = id ? pricings.find((item)=>String(item.id) === String(id)) : null;
-  document.getElementById('directQuotationNumber').value = pricing?.pricingNumber || nextPricingNumber();
-  document.getElementById('directQuotationCustomer').value = pricing?.customer || '';
-  document.getElementById('directQuotationDate').value = pricing?.pricingDate || new Date().toISOString().slice(0,10);
-  document.getElementById('directQuotationCurrency').value = pricing?.currency || 'EGP';
-  document.getElementById('directQuotationPayment').value = pricing?.paymentTerms || 'نقدي';
-  document.getElementById('directQuotationNotes').value = pricing?.notes || 'يرجى مراجعة العرض والموافقة عليه.';
-  const rows = document.getElementById('directQuotationRows');
-  rows.innerHTML = (pricing?.priceItems?.length ? pricing.priceItems : [{},{},{}]).map(directQuotationRowHtml).join('');
-  rows.dispatchEvent(new Event('input', { bubbles:true }));
-  if (refs.documentDialog.open) refs.documentDialog.close();
-  document.getElementById('directQuotationDialog').showModal();
-}
-async function saveDirectQuotation(event) {
-  event.preventDefault();
-  if (!(await ensureBackendForWrite())) return;
-  const rows = [...document.querySelectorAll('#directQuotationRows [data-direct-row]')].map((row)=>({ directQuotation:true, fabricType:row.querySelector('[data-direct-name]').value.trim(), quantity:Number(row.querySelector('[data-direct-quantity]').value || 0), unit:row.querySelector('[data-direct-unit]').value, unitPrice:Number(row.querySelector('[data-direct-price]').value || 0), rawCost:0, dyeCost:0, wastePercent:0, profitPerKg:0 })).filter((item)=>item.fabricType || item.quantity || item.unitPrice);
-  if (!document.getElementById('directQuotationCustomer').value.trim()) return alert('اكتب اسم العميل.');
-  if (!rows.length || rows.some((item)=>!item.fabricType || item.quantity <= 0 || item.unitPrice < 0)) return alert('أكمل اسم وكمية وسعر كل بند.');
-  const pricing = { id:editingDirectQuotationId || uid(), directQuotation:true, pricingNumber:document.getElementById('directQuotationNumber').value, customer:canonicalCustomerName(document.getElementById('directQuotationCustomer').value), pricingDate:document.getElementById('directQuotationDate').value, fabricType:rows[0].fabricType, materialType:'DIRECT_QUOTATION', dyehouse:'', colorClass:'', quantity:rows.reduce((sum,item)=>sum + item.quantity,0), rawCost:0, dyeCost:0, wastePercent:0, extraCost:0, profitPerKg:0, currency:document.getElementById('directQuotationCurrency').value, priceItems:rows, paymentTerms:document.getElementById('directQuotationPayment').value, notes:document.getElementById('directQuotationNotes').value, status:'active' };
-  const backendCustomer = await ensureBackendCustomer(pricing.customer);
-  const saved = editingDirectQuotationId ? await putBackend(`/pricings/${editingDirectQuotationId}`, pricingToApi(pricing, backendCustomer)) : await postBackend('/pricings', pricingToApi(pricing, backendCustomer));
-  if (!saved) return rollbackAfterBackendWriteFailure('تعذر حفظ عرض السعر المباشر في قاعدة البيانات.');
-  recordAudit(editingDirectQuotationId ? 'update' : 'create', 'pricing', pricing.id, null, pricing, `${editingDirectQuotationId ? 'تعديل' : 'إنشاء'} عرض سعر مباشر رقم ${pricing.pricingNumber}`);
-  await persistAuditLog();
-  await loadBackendData();
-  document.getElementById('directQuotationDialog').close();
-  editingDirectQuotationId = null;
-}
-ensureDirectQuotationDialog();
-
 refs.closePricingFormBtn.onclick = () => { pendingPricingOrderId = null; refs.pricingDialog.close(); };
 refs.closeOrderFormBtn.onclick = () => { setOrderFormPricingConversionMode(false); pendingConvertedPricingId = null; pendingConvertedPricingItems = []; pendingConvertedOrderDrafts = []; refs.orderDialog.close(); };
 refs.pricingForm.onsubmit = (event) => addPricing(event).catch((error)=>{ console.error('pricing-save-error', error); alert('تعذر حفظ التسعيرة.'); });
@@ -8683,7 +8580,7 @@ refs.pricingTableBody.onclick = (event) => {
   const convertPricingButton = event.target.closest('[data-convert-pricing]');
   if (convertPricingButton) { convertPricingToOrder(convertPricingButton.dataset.convertPricing); return; }
   const editPricingButton = event.target.closest('[data-edit-pricing]');
-  if (editPricingButton) { const pricing = pricings.find((item)=>String(item.id) === String(editPricingButton.dataset.editPricing)); if (pricing?.directQuotation) openDirectQuotationDialog(pricing.id); else editPricing(editPricingButton.dataset.editPricing); return; }
+  if (editPricingButton) { editPricing(editPricingButton.dataset.editPricing); return; }
   const deletePricingButton = event.target.closest('[data-delete-pricing]');
   if (deletePricingButton) deletePricing(deletePricingButton.dataset.deletePricing).catch((error)=>{ console.error('pricing-delete-error', error); alert('تعذر حذف التسعيرة.'); });
 };
