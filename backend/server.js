@@ -504,11 +504,24 @@ function updateSql(table, data, idValue) {
   };
 }
 
+async function existingPostedRow(table, data, database = { get }) {
+  const rowId = String(data?.id || '').trim();
+  if (!rowId) return null;
+  return database.get(`SELECT * FROM ${table} WHERE id = ?`, [rowId]);
+}
+
+function sendIdempotentReplay(res, row) {
+  res.setHeader('X-Idempotent-Replay', 'true');
+  return res.status(200).json(row);
+}
+
 function crudRoutes(base, table) {
   app.get(`/api/${base}`, asyncHandler(async (_req, res) => {
     res.json(await all(`SELECT * FROM ${table} ORDER BY created_at DESC`));
   }));
   app.post(`/api/${base}`, requireRole('manager'), asyncHandler(async (req, res) => {
+    const replayed = await existingPostedRow(table, req.body || {});
+    if (replayed) return sendIdempotentReplay(res, replayed);
     if (table === 'customers' && req.body?.id) {
       const customer = await ensureCustomerReference(req.body.id, req.body.name, req.body.notes || 'مضاف من الواجهة');
       if (customer && req.body.phone !== undefined) await run('UPDATE customers SET phone = ?, updated_at = ? WHERE id = ?', [String(req.body.phone || '').trim(), now(), customer.id]);
@@ -1081,6 +1094,10 @@ app.post('/api/orders/bulk', requireRole('manager'), asyncHandler(async (req, re
   if (!items.length) return res.status(400).json({ error: 'orders array is required' });
   const seen = new Set();
   for (const item of items) {
+    const replayed = await existingPostedRow('orders', item || {});
+    if (replayed) {
+      continue;
+    }
     const key = [item.order_number || '', item.customer_id || '', String(item.fabric_type || '').trim()].join('|');
     if (seen.has(key)) return res.status(409).json({ error: `Duplicate order item: ${item.order_number || '-'} / ${item.fabric_type || '-'}` });
     seen.add(key);
@@ -1090,15 +1107,24 @@ app.post('/api/orders/bulk', requireRole('manager'), asyncHandler(async (req, re
   const saved = await transaction(async (tx) => {
     const output = [];
     for (const item of items) {
+      const replayed = await existingPostedRow('orders', item || {}, tx);
+      if (replayed) {
+        output.push({ row: replayed, replayed: true });
+        continue;
+      }
       const query = insertSql('orders', item || {});
       await tx.run(query.sql, query.values);
       const row = await tx.get('SELECT * FROM orders WHERE id = ?', [query.id]);
-      output.push(row);
+      output.push({ row, replayed: false });
     }
     return output;
   });
-  for (const row of saved) await auditMutation('create', 'orders', row.id, null, row, 'POST /api/orders/bulk');
-  res.status(201).json(saved);
+  for (const item of saved) {
+    if (!item.replayed) await auditMutation('create', 'orders', item.row.id, null, item.row, 'POST /api/orders/bulk');
+  }
+  const rows = saved.map((item) => item.row);
+  if (saved.every((item) => item.replayed)) res.setHeader('X-Idempotent-Replay', 'true');
+  res.status(saved.every((item) => item.replayed) ? 200 : 201).json(rows);
 }));
 
 app.get('/api/orders/:id', asyncHandler(async (req, res) => {
@@ -1112,6 +1138,8 @@ app.get('/api/orders/:orderId/allocations', asyncHandler(async (req, res) => {
 }));
 
 app.post('/api/orders/:orderId/allocations', requireRole('manager'), asyncHandler(async (req, res) => {
+  const replayed = await existingPostedRow('order_allocations', req.body || {});
+  if (replayed) return sendIdempotentReplay(res, replayed);
   const query = insertSql('order_allocations', { ...req.body, order_id: req.params.orderId });
   await run(query.sql, query.values);
   const after = await get('SELECT * FROM order_allocations WHERE id = ?', [query.id]);
@@ -1164,6 +1192,8 @@ app.post('/api/batches/:type', requireRole('manager'), asyncHandler(async (req, 
   if (req.params.type === 'bulk') return saveBulkBatches(req, res);
   const table = batchTables[req.params.type];
   if (!table) return res.status(400).json({ error: 'Unknown batch type' });
+  const replayed = await existingPostedRow(table, req.body || {});
+  if (replayed) return sendIdempotentReplay(res, replayed);
   const query = insertSql(table, req.body || {});
   await run(query.sql, query.values);
   const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]);
@@ -1230,6 +1260,8 @@ app.put('/api/settings/:key', requireRole('manager'), asyncHandler(async (req, r
 
 function batchPost(route, table) {
   app.post(route, requireRole('manager'), asyncHandler(async (req, res) => {
+    const replayed = await existingPostedRow(table, req.body || {});
+    if (replayed) return sendIdempotentReplay(res, replayed);
     const query = insertSql(table, req.body || {});
     await run(query.sql, query.values);
     const after = await get(`SELECT * FROM ${table} WHERE id = ?`, [query.id]);
@@ -1264,19 +1296,28 @@ async function saveBulkBatches(req, res) {
   const saved = await transaction(async (tx) => {
     const rows = [];
     for (const item of normalized) {
+      const replayed = await existingPostedRow(item.table, item.body, tx);
+      if (replayed) {
+        rows.push({ type: item.type, table: item.table, row: replayed, replayed: true });
+        continue;
+      }
       const query = insertSql(item.table, item.body);
       await tx.run(query.sql, query.values);
-      rows.push({ type: item.type, table: item.table, row: await tx.get(`SELECT * FROM ${item.table} WHERE id = ?`, [query.id]) });
+      rows.push({ type: item.type, table: item.table, row: await tx.get(`SELECT * FROM ${item.table} WHERE id = ?`, [query.id]), replayed: false });
     }
     return rows;
   });
-  await auditMutation('create', 'system_settings', 'bulk-batches', null, { count: saved.length, types: saved.map((item) => item.type) }, `حفظ جماعي ${saved.length} حركة تشغيل`);
-  res.status(201).json({ ok: true, count: saved.length, items: saved });
+  const inserted = saved.filter((item) => !item.replayed);
+  if (inserted.length) await auditMutation('create', 'system_settings', 'bulk-batches', null, { count: inserted.length, replayed: saved.length - inserted.length, types: inserted.map((item) => item.type) }, `حفظ جماعي ${inserted.length} حركة تشغيل`);
+  if (!inserted.length) res.setHeader('X-Idempotent-Replay', 'true');
+  res.status(inserted.length ? 201 : 200).json({ ok: true, count: saved.length, inserted: inserted.length, replayed: saved.length - inserted.length, items: saved });
 }
 
 app.post('/api/batches/bulk', requireRole('manager'), asyncHandler(saveBulkBatches));
 
 app.post('/api/transfers', requireRole('manager'), asyncHandler(async (req, res) => {
+  const replayed = await existingPostedRow('dyehouse_transfers', req.body || {});
+  if (replayed) return sendIdempotentReplay(res, replayed);
   const query = insertSql('dyehouse_transfers', req.body || {});
   await run(query.sql, query.values);
   const after = await get('SELECT * FROM dyehouse_transfers WHERE id = ?', [query.id]);

@@ -26,7 +26,10 @@
         headers: { ...defaultHeaders, ...(requestOptions.headers || {}) },
       });
       if (!response.ok) {
-        throw new Error(await errorMessageFromResponse(response));
+        const error = new Error(await errorMessageFromResponse(response));
+        error.status = response.status;
+        error.retryable = [408, 425, 429].includes(response.status) || response.status >= 500;
+        throw error;
       }
       return parseJsonResponse(response);
     }

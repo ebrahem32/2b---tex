@@ -57,3 +57,12 @@ The UI and reports must consume the server result and must not repeat these form
 - Allocate customer receipts to orders while retaining unallocated customer credit.
 - Add due dates, aging, payable/receivable status, and reconciliation with A5 without direct cross-database writes.
 - Add adjustment/reversal entries instead of destructive financial edits.
+
+## Persistence Hardening (v2026.08.17.02)
+
+- POST writes now treat a repeated client-generated record ID as a safe replay and return the already-saved row instead of creating a duplicate.
+- The rule covers customers/pricing/orders, allocations, operational batches, bulk orders, bulk batches, and dyehouse transfers.
+- Bulk replay handling runs inside the same database transaction and does not create duplicate audit entries.
+- The client retries a POST once only for a network interruption or retryable server response, using the exact same payload and ID.
+- Validation and permission errors are never retried automatically.
+- `scripts/save-resilience-check.js` is part of the required backend verification suite.

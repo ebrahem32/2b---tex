@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.17.01';
+const APP_VERSION = 'v2026.08.17.02';
 const APP_BUILD_TIME = '2026-08-17 15:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
@@ -567,6 +567,24 @@ async function backendRequest(path, options = {}) {
   return backendClient.request(path, options);
 }
 
+function retryableBackendError(error) {
+  return error?.retryable === true || !Number(error?.status);
+}
+
+async function backendRequestWithRetry(path, options = {}, attempts = 2) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await backendRequest(path, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts || !retryableBackendError(error)) throw error;
+      await wait(350 * attempt);
+    }
+  }
+  throw lastError;
+}
+
 async function loadCurrentUser() {
   try {
     const data = await backendRequest('/auth/me', { cache:'no-store' });
@@ -1063,12 +1081,12 @@ async function ensureBackendCustomer(name) {
 }
 async function postBackend(path, payload) {
   if (!backendAvailable) return null;
-  try { return await backendRequest(path, { method: 'POST', body: JSON.stringify(payload) }); }
+  try { return await backendRequestWithRetry(path, { method: 'POST', body: JSON.stringify(payload) }); }
   catch (error) { backendAvailable = false; console.warn('Backend write failed, kept LocalStorage copy', error); return null; }
 }
 async function postBackendStrict(path, payload) {
   if (!backendAvailable) throw new Error('قاعدة البيانات غير متصلة الآن.');
-  return backendRequest(path, { method: 'POST', body: JSON.stringify(payload) });
+  return backendRequestWithRetry(path, { method: 'POST', body: JSON.stringify(payload) });
 }
 async function putBackend(path, payload) {
   if (!backendAvailable) return null;
