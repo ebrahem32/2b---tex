@@ -149,6 +149,25 @@ ORDER BY acc_id DESC
 `);
 }
 
+async function getActiveItems(limit = 250) {
+  const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 250));
+  return querySql(`
+SELECT TOP ${safeLimit}
+  d.item_id AS itemId,
+  LTRIM(RTRIM(d.Item_cod)) AS itemCode,
+  LTRIM(RTRIM(d.Item_name)) AS itemName,
+  LTRIM(RTRIM(d.cat_name)) AS categoryName,
+  LTRIM(RTRIM(i.Unit_name)) AS unitName,
+  MAX(d.AznDate) AS lastMovementDate,
+  COUNT(*) AS movementCount
+FROM AzonDt d
+LEFT JOIN Items i ON i.Item_Id = d.item_id
+WHERE ISNULL(LTRIM(RTRIM(d.Item_name)), '') <> ''
+GROUP BY d.item_id, d.Item_cod, d.Item_name, d.cat_name, i.Unit_name
+ORDER BY MAX(d.AznDate) DESC, COUNT(*) DESC
+`);
+}
+
 async function route(req, res) {
   if (req.method === 'OPTIONS') {
     sendJson(res, 200, { ok: true });
@@ -170,6 +189,11 @@ async function route(req, res) {
       const customerName = url.searchParams.get('customerName') || '';
       const movements = await getCustomerLedger(customerName);
       sendJson(res, 200, { ok: true, server: SQL_SERVER, database: SQL_DATABASE, customerName, movements });
+      return;
+    }
+    if (req.method === 'GET' && url.pathname === '/api/a5/items') {
+      const items = await getActiveItems(url.searchParams.get('limit'));
+      sendJson(res, 200, { ok: true, mode: 'read-only', server: SQL_SERVER, database: SQL_DATABASE, items });
       return;
     }
     sendJson(res, 404, { ok: false, message: 'المسار غير موجود' });
