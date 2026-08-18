@@ -1311,6 +1311,19 @@ function orderRawCost(order) {
   if (direct) return direct;
   return Number(pricingForOrder(order)?.rawCost || 0);
 }
+function linkedPricingRawCostForOrder(order = {}, pricingId = '') {
+  if (order?.orderType === 'manufacturing') return 0;
+  const direct = Number(order?.rawCost || order?.rawPrice || 0);
+  if (direct) return direct;
+  const linkedPricing = pricings.find((pricing)=>String(pricing.id || '') === String(pricingId || order?.pricingId || ''))
+    || pricingForOrder(order);
+  if (!linkedPricing) return 0;
+  const items = pricingItemsFor(linkedPricing);
+  const linkedItem = items.find((item)=>pricingItemMatchesOrder(item, order))
+    || items.find((item)=>compatibleFabricForMatch(order.fabricType, item.fabricType || item.materialType || ''))
+    || items[0];
+  return Number(linkedItem?.rawCost || linkedPricing.rawCost || 0);
+}
 function uniqueNonEmpty(values) {
   return [...new Set((values || []).map((value)=>String(value || '').trim()).filter(Boolean))];
 }
@@ -6423,7 +6436,9 @@ async function addOrder(event) {
   payloadOperationNotes.preparedWeight = Number(refs.orderPreparedWeight.value || 0) || '';
   payloadOperationNotes.preparedWidth = Number(refs.orderPreparedWidth.value || 0) || '';
   const isManufacturing = refs.orderType.value === 'manufacturing';
-  const payload = { pricingId: currentOrder?.pricingId || pendingConvertedPricingId || '', orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), orderType:isManufacturing ? 'manufacturing' : 'trade', totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:isManufacturing ? 0 : (+refs.expectedWastePercent.value || 0), widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:isManufacturing ? 0 : (+refs.kiloPrice.value || 0), rawCost:isManufacturing ? 0 : orderRawCost({ ...currentOrder, orderType:refs.orderType.value, orderNumber:refs.orderNumber.value }), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
+  const pricingId = currentOrder?.pricingId || pendingConvertedPricingId || '';
+  const orderForPricingCost = { ...currentOrder, pricingId, orderType:refs.orderType.value, orderNumber:refs.orderNumber.value, customer:canonicalCustomerName(refs.customer.value), fabricType:canonicalFabricName(refs.fabricType.value), totalRawQuantity:+refs.totalRawQuantity.value, dyehouse:refs.dyehouse.value };
+  const payload = { pricingId, orderNumber:refs.orderNumber.value, productCode:buildItemCode(refs.orderNumber.value), customer:canonicalCustomerName(refs.customer.value), orderDate:refs.orderDate.value, fabricType:canonicalFabricName(refs.fabricType.value), orderType:isManufacturing ? 'manufacturing' : 'trade', totalRawQuantity:+refs.totalRawQuantity.value, expectedWastePercent:isManufacturing ? 0 : (+refs.expectedWastePercent.value || 0), widthMode:refs.widthMode.value, inchWidth:refs.inchWidth.value, widthLines, kiloPrice:isManufacturing ? 0 : (+refs.kiloPrice.value || 0), rawCost:isManufacturing ? 0 : linkedPricingRawCostForOrder(orderForPricingCost, pricingId), paymentTerms, accessoryType:firstAccessory.type || refs.accessoryType.value, accessoryPercent:+(firstAccessory.percent ?? refs.accessoryPercent.value) || 0, accessoryLines, dyehouse:refs.dyehouse.value, weavingSource:refs.weavingSource.value, notes:refs.orderNotes.value, operationNotes: payloadOperationNotes };
   const convertedDraftItems = !editingOrderId && pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : [];
   const groupedItems = !editingOrderId
     ? (convertedDraftItems.length

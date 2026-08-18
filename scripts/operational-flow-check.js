@@ -1008,6 +1008,7 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(pricingUiSource.includes('data-open-order-financial'), 'pricing list: a linked pricing card must open its order financial center');
   assert(documentsSource.includes('function widthDistributionSection') && documentsSource.includes('${widthDistributionSection(order)}'), 'operational documents: order and production documents must show saved width distribution');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
+  assert(appSource.includes('linkedPricingRawCostForOrder(orderForPricingCost, pricingId)'), 'pricing conversion: order save must inherit raw cost from the directly linked pricing card');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
   assert(appSource.includes("refs.documentBody.dataset.pricingId = pricing.id"), 'realtime quotation: open document must retain its linked pricing id');
   assert(appSource.includes('quantityManual:syncedQuantity'), 'customer quotation: accessory quantity must sync from the operational order without becoming zero');
