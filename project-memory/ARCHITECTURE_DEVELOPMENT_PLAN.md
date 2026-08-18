@@ -73,3 +73,10 @@ The UI and reports must consume the server result and must not repeat these form
 - Preserved the existing function names in `app.js` as compatibility wrappers so operational screens keep the same behavior.
 - Added executable behavior tests for transient retry, non-retryable validation errors, and offline fallback.
 - Further extraction must continue in small independently tested slices; do not move document layouts or business calculations with persistence code.
+
+## Pricing/Financial Center Link (v2026.08.17.04)
+
+- The order financial-center response exposes the linked pricing-card ID, number, original quantity, and offer value.
+- The order financial view identifies the pricing card as the source of estimated raw and dyeing costs.
+- Users can open the cost card from the financial center and open the financial center from a linked pricing card.
+- Actual raw and dyeing values remain based on operational receipts; they are not copied from the pricing card.

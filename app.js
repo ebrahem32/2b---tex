@@ -19,7 +19,7 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.17.03';
+const APP_VERSION = 'v2026.08.17.04';
 const APP_BUILD_TIME = '2026-08-17 15:30';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
@@ -2165,9 +2165,12 @@ function financialWarningsHtml(warnings = []) {
 function financialMoney(value) { return `${formatNumber(value || 0)} جنيه`; }
 function orderFinancialCenterHtml(center = {}) {
   const manufacturing = center.order?.businessMode === 'manufacturing';
+  const pricingLinked = center.pricing?.linked && center.pricing?.id;
+  const pricingAction = pricingLinked ? `<button class="mini-btn gold no-print" data-pricing-cost="${escapeHtml(center.pricing.id)}">فتح كرت التكلفة ${escapeHtml(center.pricing.number || '')}</button>` : '';
   return `<div class="document-sheet customer-ledger-sheet">
-    <div class="customer-ledger-header"><div><p class="muted">مركز مالي للطلب</p><h2>طلب ${escapeHtml(center.order?.orderNumber || '-')}</h2><span>${escapeHtml(center.order?.customerName || '-')} — ${escapeHtml(center.order?.fabricType || '-')}</span></div></div>
+    <div class="customer-ledger-header"><div><p class="muted">مركز مالي للطلب</p><h2>طلب ${escapeHtml(center.order?.orderNumber || '-')}</h2><span>${escapeHtml(center.order?.customerName || '-')} — ${escapeHtml(center.order?.fabricType || '-')}</span><div class="batch-actions no-print">${pricingAction}</div></div></div>
     ${financialWarningsHtml(center.warnings || [])}
+    <div class="customer-ledger-summary"><div><span>مصدر التكلفة التقديرية</span><strong>${pricingLinked ? `كرت ${escapeHtml(center.pricing.number || '-')}` : 'بيانات الطلب'}</strong></div><div><span>قيمة كرت السعر</span><strong>${financialMoney(center.pricing?.totalOffer)}</strong></div><div><span>تكلفة النسيج التقديرية</span><strong>${financialMoney(center.weaving?.estimatedValue)}</strong></div><div><span>تكلفة الصباغة التقديرية</span><strong>${financialMoney(center.dyeing?.estimatedValue)}</strong></div></div>
     <div class="customer-ledger-summary"><div><span>قيمة العقد</span><strong>${financialMoney(center.revenue?.contractValue)}</strong></div><div><span>مبيعات معترف بها</span><strong>${financialMoney(center.revenue?.recognizedValue)}</strong></div><div><span>تكلفة فعلية</span><strong>${financialMoney(center.totals?.actualCost)}</strong></div><div class="emphasis"><span>هامش فعلي</span><strong>${financialMoney(center.totals?.recognizedMargin)}</strong></div></div>
     <section class="report-section"><h3>فصل تكلفة النسيج والصباغة</h3><table class="customer-ledger-table"><thead><tr><th>البند</th><th>سعر الوحدة</th><th>التقديري</th><th>الفعلي</th><th>أساس الفعلي</th></tr></thead><tbody>
       <tr><td>خام النسيج${manufacturing ? ' (غير محمل على طلب المصنعية)' : ''}</td><td>${financialMoney(center.weaving?.unitCost)}</td><td>${financialMoney(center.weaving?.estimatedValue)}</td><td>${financialMoney(center.weaving?.actualValue)}</td><td>الخام المستلم: ${formatNumber(center.quantities?.rawReceived)} كجم</td></tr>

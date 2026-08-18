@@ -118,6 +118,14 @@ function buildOrderFinancialCenter(input = {}) {
       fabricType: order.fabric_type || order.fabricType || '',
       businessMode: isManufacturingOrder(order) ? 'manufacturing' : 'trade',
     },
+    pricing: {
+      linked: Boolean(pricing?.id || order?.pricing_id),
+      id: pricing?.id || order?.pricing_id || '',
+      number: pricing?.pricing_number || pricing?.pricingNumber || '',
+      quantity: round(number(pricing?.quantity)),
+      totalOffer: round(number(pricing?.total_price || pricing?.totalPrice)),
+      source: pricing?.id ? 'pricing-card' : 'order-fields',
+    },
     quantities: {
       contract: round(contractQuantity),
       rawReceived: round(rawReceivedQuantity),

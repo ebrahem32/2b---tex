@@ -992,12 +992,14 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260817-05'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260817-06'), 'pricing navigation: main app asset must use the current cache-busting key');
   assert(appSource.includes('data-add-pricing-width') && appSource.includes('pricingWidthLinesFromRow'), 'pricing width distribution: one fabric item must support multiple inch/width/quantity lines');
   assert(appSource.includes("widthMode: primaryDraft.widthMode || 'single'") && appSource.includes('widthLines: primaryDraft.widthLines || []'), 'pricing width distribution: conversion must preserve the single message width breakdown');
   assert(appSource.includes('pendingConvertedOrderDrafts.length > 1 ? pendingConvertedOrderDrafts : []'), 'pricing width distribution: multiple products must still convert separately when one product has multiple widths');
   assert(appSource.includes('quotationWidthRows') && appSource.includes('توزيع البوص والعروض والكميات'), 'quotation width distribution: customer quotation must show inch, width and quantity');
   assert(appSource.includes('يرجى مراجعة العرض والموافقة عليه.'), 'customer quotation: approval request must appear on the customer-facing offer');
+  assert(appSource.includes('مصدر التكلفة التقديرية') && appSource.includes('فتح كرت التكلفة'), 'financial center: order center must expose its linked pricing card');
+  assert(pricingUiSource.includes('data-open-order-financial'), 'pricing list: a linked pricing card must open its order financial center');
   assert(documentsSource.includes('function widthDistributionSection') && documentsSource.includes('${widthDistributionSection(order)}'), 'operational documents: order and production documents must show saved width distribution');
   assert(appSource.includes('operationalQuantity > 0 ? operationalQuantity : pricingQuantity'), 'customer quotation: empty operational accessory data must not erase the pricing-card quantity');
   assert(appSource.includes('refreshOpenLiveDocument();'), 'realtime quotation: loaded backend changes must refresh an open quotation');
