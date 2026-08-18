@@ -738,6 +738,21 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
     accessoryLines: [{ type:'ريب', percent:17, quantityManual:'' }],
   }, 'D');
   assert(legacyZeroAccessoryHtml.includes('255 ريب'), 'document: legacy allocation zero must not hide an order-level accessory percentage');
+  const legacyState = {
+    orders: [],
+    allocations: baseOrder.allocations.map((allocation)=>({ ...allocation, accessoryQuantityManual:0 })),
+    rawBatches: [], productionBatches: [], finishedBatches: [], customerBatches: [],
+    accessoryBatches: [], rawReturns: [], gluingBatches: [], dyehouseTransfers: [],
+  };
+  const legacyCalculated = createFrontendDomain(legacyState).calculateOrder({
+    ...baseOrder,
+    totalRawQuantity:3000,
+    accessoryType:'ريب',
+    accessoryPercent:17,
+    accessoryLines:[{ type:'ريب', percent:17, quantityManual:'' }],
+  });
+  assert.equal(legacyCalculated.accessoryLines[0].percent, 17, 'order domain: legacy color zeros must preserve the configured accessory percentage');
+  assert.equal(legacyCalculated.accessoryLines[0].quantity, 510, 'order domain: legacy color zeros must preserve the calculated accessory quantity');
   const calculatedPercentHtml = builders.buildDyeingOrderDocument({
     ...baseOrder,
     totalRawOrdered: 5200,
@@ -983,6 +998,7 @@ function checkFixedPackagingPricingStageExists() {
 
 function checkPricingListFiltersAndOrderNumber() {
   const appSource = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const orderDomainSource = fs.readFileSync(path.join(__dirname, '..', 'orders.js'), 'utf8');
   const documentsSource = fs.readFileSync(path.join(__dirname, '..', 'documents.js'), 'utf8');
   const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const pricingUiSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'pricingUi.js'), 'utf8');
@@ -998,7 +1014,9 @@ function checkPricingListFiltersAndOrderNumber() {
   assert(appSource.includes('الرصيد الفعلي للبيع'), 'pricing print: actual sellable balance must be shown');
   assert(appSource.includes('totalContractsText'), 'pricing print: contract total summary must be calculated');
   assert(indexSource.includes('./modules/navigation.js?v=20260808-03'), 'pricing navigation: navigation asset must use the current cache-busting key');
-  assert(indexSource.includes('./app.js?v=20260818-02'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./app.js?v=20260818-03'), 'pricing navigation: main app asset must use the current cache-busting key');
+  assert(indexSource.includes('./orders.js?v=20260818-01'), 'order calculations: order domain asset must use the current cache-busting key');
+  assert(orderDomainSource.includes('Number(value || 0) !== 0'), 'order calculations: legacy default zero must not erase an order-level accessory percentage');
   assert(appSource.includes('function accessoryCalculationLines(order)') && appSource.includes("type:type || 'إكسسوار'"), 'dyeing documents: legacy top-level accessory percentage must remain visible when detail lines are unavailable');
   assert(appSource.includes('data-add-pricing-width') && appSource.includes('pricingWidthLinesFromRow'), 'pricing width distribution: one fabric item must support multiple inch/width/quantity lines');
   assert(appSource.includes("widthMode: primaryDraft.widthMode || 'single'") && appSource.includes('widthLines: primaryDraft.widthLines || []'), 'pricing width distribution: conversion must preserve the single message width breakdown');

@@ -269,7 +269,14 @@
       const recordedAccessoryQuantity = sum(data.accessoryBatches.filter((batch)=>batch.orderId === order.id && (!batch.movement || batch.movement === 'sent')));
       const hasAccessory = configuredAccessoryLines.length > 0 || !!order.accessoryType || manualAccessoryQuantity > 0 || recordedAccessoryQuantity > 0;
       const accessoryQuantity = manualAccessoryQuantity || roundNumber(Number(order.totalRawQuantity || 0) * Number(order.accessoryPercent || 0) / 100) || recordedAccessoryQuantity;
-      const hasPerColorAccessory = orderAllocations.some((item)=>item.accessoryQuantityManual !== null && item.accessoryQuantityManual !== undefined && item.accessoryQuantityManual !== '');
+      // Old allocation rows contain a stored zero by default. That zero is not
+      // a manual per-color distribution and must not erase the order-level
+      // accessory percentage. A real per-color distribution has at least one
+      // non-zero entered quantity.
+      const hasPerColorAccessory = orderAllocations.some((item)=>{
+        const value = item.accessoryQuantityManual;
+        return value !== null && value !== undefined && value !== '' && Number(value || 0) !== 0;
+      });
       const accessoryLines = configuredAccessoryLines.length
         ? configuredAccessoryLines.map((line, index)=>configuredAccessoryLines.length === 1 && index === 0 && hasPerColorAccessory
           ? { ...line, quantity:manualAccessoryQuantity, percent:totalRawOrdered ? roundNumber(manualAccessoryQuantity / totalRawOrdered * 100) : Number(line.percent || 0) }
