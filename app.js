@@ -5297,7 +5297,13 @@ function accessoryTypeMatches(batch, line, order) {
     || normalizeForCompare(batchType) === normalizeForCompare(lineName);
 }
 function accessoryPlannedQuantityForLine(order, allocation, line) {
-  const hasAllocationManual = allocation?.accessoryQuantityManual !== '' && allocation?.accessoryQuantityManual !== null && allocation?.accessoryQuantityManual !== undefined;
+  const allocationManualValue = allocation?.accessoryQuantityManual;
+  const hasStoredAllocationManual = allocationManualValue !== '' && allocationManualValue !== null && allocationManualValue !== undefined;
+  const isPerColorDerby = normalizeForCompare(accessoryLineName(line, order)).includes(normalizeForCompare('ديربي'));
+  // Older color rows were saved with a default zero even when the accessory
+  // was configured as a percentage on the order. Treat that legacy zero as
+  // "not entered"; an explicit per-color Derby zero remains meaningful.
+  const hasAllocationManual = hasStoredAllocationManual && (Number(allocationManualValue || 0) !== 0 || isPerColorDerby);
   if (hasAllocationManual) {
     const sourcePlanned = Number(allocation?.sourcePlannedQuantity || allocation?.plannedQuantity || 0);
     const scopedRatio = sourcePlanned ? Number(allocation?.plannedQuantity || 0) / sourcePlanned : 1;

@@ -732,6 +732,12 @@ function checkBodyLabelOnlyAppearsWithAccessories() {
   }, 'D');
   assert(withAccessoryHtml.includes('جسم'), 'document: body label must appear when order has accessories');
   assert(withAccessoryHtml.includes('ريب'), 'document: accessory type must appear when order has accessories');
+  const legacyZeroAccessoryHtml = builders.buildDyeingOrderDocument({
+    ...baseOrder,
+    allocations: baseOrder.allocations.map((allocation)=>({ ...allocation, accessoryQuantityManual:0 })),
+    accessoryLines: [{ type:'ريب', percent:17, quantityManual:'' }],
+  }, 'D');
+  assert(legacyZeroAccessoryHtml.includes('255 ريب'), 'document: legacy allocation zero must not hide an order-level accessory percentage');
   const calculatedPercentHtml = builders.buildDyeingOrderDocument({
     ...baseOrder,
     totalRawOrdered: 5200,
