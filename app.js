@@ -19,8 +19,8 @@ const STORAGE_KEYS = {
   auditLog: '2btex.auditLog.v1',
   whatsappStatus: '2btex.whatsappStatus.v1',
 };
-const APP_VERSION = 'v2026.08.18.01';
-const APP_BUILD_TIME = '2026-08-18 13:07';
+const APP_VERSION = 'v2026.08.18.02';
+const APP_BUILD_TIME = '2026-08-18 13:24';
 const WRITE_DRAFT_STORAGE_KEY = '2btex.unsavedWriteDrafts.v1';
 window.TWO_B_APP_VERSION = APP_VERSION;
 window.TWO_B_APP_BUILD_TIME = APP_BUILD_TIME;
@@ -5332,8 +5332,17 @@ function accessoryPlannedQuantityForLine(order, allocation, line) {
   if (lines.length === 1 && Number(allocation?.accessoryQuantity || 0)) return roundNumber(allocation.accessoryQuantity);
   return 0;
 }
+function accessoryCalculationLines(order) {
+  const configured = Array.isArray(order?.accessoryLines) ? order.accessoryLines.filter(Boolean) : [];
+  if (configured.length) return configured;
+  const type = String(order?.accessoryType || '').trim();
+  const percent = Number(order?.accessoryPercent || 0);
+  const quantityManual = Number(order?.accessoryRequired || 0);
+  if (!type && !percent && !quantityManual) return [];
+  return [{ type:type || 'إكسسوار', percent, quantityManual:quantityManual || '' }];
+}
 function accessoryPlannedPartsForOrder(order, allocation) {
-  return (order?.accessoryLines || []).map((line) => {
+  return accessoryCalculationLines(order).map((line) => {
     const quantity = accessoryPlannedQuantityForLine(order, allocation, line);
     return quantity ? `${formatNumber(quantity)} ${accessoryLineName(line, order)}` : '';
   }).filter(Boolean);
@@ -5343,7 +5352,7 @@ function accessoryPlannedPartsForScopedQuantity(order, allocation, scopedQuantit
   const quantity = Number(scopedQuantity || 0);
   const ratio = planned ? quantity / planned : 0;
   if (!ratio) return [];
-  return (order?.accessoryLines || []).map((line) => {
+  return accessoryCalculationLines(order).map((line) => {
     const baseQuantity = accessoryPlannedQuantityForLine(order, allocation, line);
     const scopedAccessory = roundNumber(Number(baseQuantity || 0) * ratio);
     return scopedAccessory ? `${formatNumber(scopedAccessory)} ${accessoryLineName(line, order)}` : '';
