@@ -2250,3 +2250,13 @@ This file records important system changes. New entries should follow `CHANGE_TE
 - Added the circles to the allocation workspace and reused them in operational documents.
 - Unknown names use a neutral fallback color.
 - Release: `v2026.08.12.01`.
+
+## 2026-08-23 - Deep operational context for the AI employee
+
+- Created `backend/aiKnowledge.js` as the stable business-knowledge and A5 snapshot layer.
+- Added `project-memory/AI_OPERATIONAL_KNOWLEDGE.md` as the human-readable canonical summary.
+- Extended `buildAiEmployeeContext()` and the model payload with `businessKnowledge` and `a5Integration`.
+- Added browser-side A5 context forwarding to handle network segmentation between the 2B and A5 servers.
+- Added `scripts/ai-knowledge-check.js` and `scripts/ai-employee-context-check.js`.
+- Syntax/version/knowledge checks passed. The repository-wide check still reports the pre-existing `save-resilience-check.js` assertion that `app.js` does not use the extracted persistence writer; this is outside the AI change.
+- Release: `v2026.08.23.01`.

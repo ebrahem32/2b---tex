@@ -1,5 +1,6 @@
 const { all, get } = require('./db');
 const { calculateOrderSummary } = require('./calculations');
+const { AI_BUSINESS_KNOWLEDGE, buildA5KnowledgeSnapshot } = require('./aiKnowledge');
 
 // Factory: the AI employee layer needs two customer helpers that live with the
 // audit/repair logic in server.js, so they are injected instead of required.
@@ -287,6 +288,8 @@ function compactAiEmployeeModelPayload(data = {}, rulesBaseline = {}) {
       orders: focusedOrders,
     },
     factorySnapshot: data.factorySnapshot,
+    businessKnowledge: data.businessKnowledge,
+    a5Integration: data.a5Integration,
     stageGroups: data.stageGroups,
     dyehouseBalances: normalizeAiArray(data.dyehouseBalances).slice(0, 30),
     priorityOrders,
@@ -300,6 +303,10 @@ function compactAiEmployeeModelPayload(data = {}, rulesBaseline = {}) {
       'لو لا توجد أوامر مطابقة قل ذلك صراحة ولا تعرض أوامر بديلة.',
       'لا تعتبر الرصيد داخل المصبغة هالكا إلا إذا كان الطلب مغلقا أو الهالك مسجل فعليا.',
       'رصيد المخزن هو مجهز جاهز للتسليم.',
+      'استخدم businessKnowledge لتعريف معنى الحقول وقواعد العمل، واستخدم بيانات 2B وA5 الحية للأرقام.',
+      'عند اختلاف 2B وA5 اذكر القيمتين والفرق ولا تخمن أو تدمج حركة تحت طلب غير مؤكد.',
+      'ربط A5 يدوي ومعتمد؛ التشابه في الاسم ليس موافقة على الربط.',
+      'فرّق بين خام A5 ومجهز A5، وبين حساب دلتا الكاش وحساب دلتا الشيكات.',
     ],
   };
 }
@@ -411,6 +418,7 @@ async function buildAiEmployeeContext() {
     reportOutbox,
     auditLog,
     customerAccountsRow,
+    a5Integration,
   ] = await Promise.all([
     all('SELECT * FROM customers ORDER BY name'),
     all('SELECT * FROM orders ORDER BY created_at DESC'),
@@ -426,6 +434,7 @@ async function buildAiEmployeeContext() {
     all('SELECT * FROM report_outbox ORDER BY created_at DESC LIMIT 100'),
     all('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 80'),
     get('SELECT value_json FROM system_settings WHERE key = ?', ['customerAccounts']),
+    buildA5KnowledgeSnapshot(),
   ]);
   const customersById = new Map(customers.map((customer) => [customer.id, customer]));
   const ordersById = new Map(orders.map((order) => [order.id, order]));
@@ -608,7 +617,9 @@ async function buildAiEmployeeContext() {
   return {
     generatedAt: now(),
     role: '2B Tex AI Employee',
-    mission: 'متابعة التشغيل اليومي، كشف الوقوف، ترتيب الأولويات، ومساعدة الإدارة برسائل عملية.',
+    mission: 'متابعة التشغيل اليومي، كشف الوقوف، ترتيب الأولويات، مطابقة 2B مع A5، ومساعدة الإدارة برسائل عملية قابلة للمراجعة.',
+    businessKnowledge: AI_BUSINESS_KNOWLEDGE,
+    a5Integration,
     factorySnapshot: {
       customersCount: customers.length,
       ordersCount: orders.length,
@@ -1339,7 +1350,59 @@ function buildOperationalCommandReport(context = {}, userRequest = '') {
   return null;
 }
 
+function buildBusinessKnowledgeCommandReport(context = {}, userRequest = '') {
+  const question = normalizeAiSearchText(userRequest);
+  const asksForExplanation = ['اشرح', 'يعني', 'الفرق', 'قاعده', 'قاعدة', 'ازاي', 'كيف', 'ما هو', 'ايه هو', 'سياسة']
+    .some((word) => question.includes(normalizeAiSearchText(word)));
+  const hasOrderNumber = /\b\d{4,}\b/.test(String(userRequest || ''));
+  if (!asksForExplanation || hasOrderNumber) return null;
+  let title = '';
+  let findings = [];
+  if (aiCommandHasAny(question, ['مصنعيه', 'مصنعية', 'بيع وشراء', 'نوع التعاقد', 'نوع الطلب'])) {
+    title = 'نوع التعاقد والتشغيل';
+    findings = [
+      `بيع وشراء: ${AI_BUSINESS_KNOWLEDGE.orderTypes.buyAndSell}`,
+      `مصنعية فقط: ${AI_BUSINESS_KNOWLEDGE.orderTypes.manufacturingOnly}`,
+    ];
+  } else if (aiCommandHasAny(question, ['a5', 'ايه فايف', 'الربط', 'المزامنه', 'المزامنة'])) {
+    const a5 = context.a5Integration || {};
+    title = 'تكامل 2B مع A5';
+    findings = [
+      AI_BUSINESS_KNOWLEDGE.a5Integration.principle,
+      AI_BUSINESS_KNOWLEDGE.a5Integration.mapping,
+      `التصنيف: الخام ${AI_BUSINESS_KNOWLEDGE.a5Integration.categories.raw}، والمجهز ${AI_BUSINESS_KNOWLEDGE.a5Integration.categories.finished}.`,
+      `الحالة الحالية: ${a5.available ? 'A5 متصل' : 'A5 غير متاح من هذا المسار'}، روابط ${Number(a5.linkedOrdersCount || 0)}، مراجعات معلقة ${Number(a5.sync?.pendingReview || 0)}.`,
+    ];
+  } else if (aiCommandHasAny(question, ['هالك', 'رصيد المصبغه', 'رصيد المصبغة', 'خام مطلوب'])) {
+    title = 'الكميات والهالك';
+    findings = AI_BUSINESS_KNOWLEDGE.quantityRules;
+  } else if (aiCommandHasAny(question, ['اكسسوار', 'إكسسوار', 'ريب', 'ديربي', 'لياقات', 'اساور', 'أساور'])) {
+    title = 'الإكسسوارات';
+    findings = AI_BUSINESS_KNOWLEDGE.accessories;
+  } else if (aiCommandHasAny(question, ['مركز مالي', 'كرت التكلفه', 'كرت التكلفة', 'فلوس النسيج', 'فلوس الصباغه', 'فلوس الصباغة'])) {
+    title = 'المركز المالي';
+    findings = AI_BUSINESS_KNOWLEDGE.financialRules;
+  } else if (aiCommandHasAny(question, ['بوصه', 'بوصة', 'عرض', 'رسائل', 'امر تشغيل النسيج', 'أمر تشغيل النسيج'])) {
+    title = 'المقاسات ومستندات التشغيل';
+    findings = AI_BUSINESS_KNOWLEDGE.sizingAndDocuments;
+  }
+  if (!findings.length) return null;
+  return {
+    source: '2b-business-knowledge',
+    executiveSummary: `${title}: ${findings[0]}`,
+    keyFindings: findings,
+    ordersToWatch: [],
+    risks: ['أي رقم تشغيلي يظل مرجعه بيانات 2B وA5 الحية، وليس الذاكرة النصية.'],
+    recommendations: ['عند وجود تعارض بين النظامين اعرض المصدرين والفرق وحوّل الحركة للمراجعة دون تخمين.'],
+    priorityActions: [],
+    whatsappMessage: findings.join(' '),
+    userRequest,
+  };
+}
+
 function buildEnhancedOperationalCommandReport(context = {}, userRequest = '') {
+  const knowledgeReport = buildBusinessKnowledgeCommandReport(context, userRequest);
+  if (knowledgeReport) return knowledgeReport;
   if (aiCommandHasAny(userRequest, ['حساب', 'كشف حساب', 'رصيد عميل'])) {
     return buildCustomerAccountCommandReport(context, userRequest);
   }
@@ -1373,6 +1436,7 @@ return {
   buildOperationalDashboardReport,
   runAiEmployeeModelReport,
   buildEnhancedOperationalCommandReport,
+  buildBusinessKnowledgeCommandReport,
 };
 }
 

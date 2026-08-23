@@ -156,6 +156,60 @@
       };
     }
 
+    async function fetchA5AssistantContext() {
+      const baseUrl = 'http://192.168.11.205:3040';
+      try {
+        const [connectorsResponse, syncResponse, linksResponse] = await Promise.all([
+          fetch(`${baseUrl}/api/connectors/status`, { cache:'no-store' }),
+          fetch(`${baseUrl}/api/sync/status`, { cache:'no-store' }),
+          fetch(`${baseUrl}/api/order-links`, { cache:'no-store' }),
+        ]);
+        if (!connectorsResponse.ok || !syncResponse.ok || !linksResponse.ok) return null;
+        const [connectors, sync, links] = await Promise.all([
+          connectorsResponse.json(), syncResponse.json(), linksResponse.json(),
+        ]);
+        return {
+          available: connectors?.connectors?.a5?.ok === true,
+          twoBAvailable: connectors?.connectors?.twoB?.ok === true,
+          mode: connectors?.connectors?.mode || links?.mode || 'read-only-review',
+          sync: {
+            enabled: sync?.enabled === true,
+            running: sync?.running === true,
+            intervalSeconds: Number(sync?.intervalSeconds || 0),
+            lastRunAt: sync?.lastRunAt || '',
+            lastSuccessAt: sync?.lastSuccessAt || '',
+            lastError: sync?.lastError || null,
+            imported: Number(sync?.lastResult?.imported || 0),
+            duplicates: Number(sync?.lastResult?.duplicates || 0),
+            pendingReview: Number(sync?.reviewCount || 0),
+          },
+          linkedOrdersCount: Array.isArray(links?.rows) ? links.rows.length : 0,
+          links: (Array.isArray(links?.rows) ? links.rows : []).slice(0, 100).map((row)=>({
+            orderNumber: String(row.twoBOrderNumber || ''),
+            twoBCustomer: row.twoBCustomer || '',
+            twoBFabric: row.twoBFabric || '',
+            rawItem: { code:row.a5RawItemCode || row.a5ItemCode || '', name:row.a5RawItemName || row.a5ItemName || '' },
+            finishedItem: { code:row.a5FinishedItemCode || '', name:row.a5FinishedItemName || '' },
+            supplierAccount: row.a5SupplierName || row.a5SupplierAccount || '',
+            expectedPurchaseUnitPrice: Number(row.expectedPurchaseUnitPrice || 0),
+            expectedSaleUnitPrice: Number(row.expectedSaleUnitPrice || 0),
+            dyehouse: row.a5Dyehouse || '',
+            invoiceNumbers: row.a5InvoiceNumber || '',
+            transferIds: (Array.isArray(row.a5TransferIds) ? row.a5TransferIds : []).slice(0, 30),
+            status: row.linkStatus || 'linked',
+            note: row.note || '',
+            updatedAt: row.updatedAt || row.linkedAt || '',
+          })),
+          reviewItems: (Array.isArray(sync?.reviews) ? sync.reviews : []).slice(0, 30).map((item)=>({
+            orderNumber:item.orderNumber || '', itemCode:item.itemCode || '', documentNumber:item.documentNumber || '',
+            date:item.date || '', quantity:Number(item.quantity || 0), reason:item.reason || '',
+          })),
+        };
+      } catch {
+        return null;
+      }
+    }
+
     async function requestAiEmployee(question, triggerButton, title = 'الملخص التنفيذي') {
       if (!triggerButton) return;
       const refs = deps.refs;
@@ -164,10 +218,11 @@
       triggerButton.textContent = 'جاري التحليل...';
       if (refs.aiStatusText) refs.aiStatusText.textContent = 'موظف 2B الذكي يقرأ قاعدة البيانات من Railway الآن.';
       try {
+        const a5Integration = await fetchA5AssistantContext();
         const response = await fetch(`${deps.AI_SERVICE_URL}/api/ai/employee-report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, ...(a5Integration ? { a5Integration } : {}) }),
         });
         const data = await response.json().catch(()=>({}));
         if (!response.ok) {

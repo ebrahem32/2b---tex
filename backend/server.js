@@ -875,6 +875,19 @@ app.get('/api/ai/employee-context', asyncHandler(async (_req, res) => {
 
 app.post('/api/ai/employee-report', asyncHandler(async (req, res) => {
   const context = await buildAiEmployeeContext();
+  const clientA5 = req.body?.a5Integration;
+  if (clientA5 && typeof clientA5 === 'object' && clientA5.available === true) {
+    context.a5Integration = {
+      available: true,
+      twoBAvailable: clientA5.twoBAvailable === true,
+      mode: String(clientA5.mode || 'read-only-review').slice(0, 80),
+      sync: clientA5.sync && typeof clientA5.sync === 'object' ? clientA5.sync : {},
+      linkedOrdersCount: Number(clientA5.linkedOrdersCount || 0),
+      links: Array.isArray(clientA5.links) ? clientA5.links.slice(0, 100) : [],
+      reviewItems: Array.isArray(clientA5.reviewItems) ? clientA5.reviewItems.slice(0, 30) : [],
+      source: 'authenticated-2b-client',
+    };
+  }
   const userRequest = String(req.body?.question || 'حلل حالة تشغيل 2B الآن كموظف ذكاء اصطناعي مسؤول عن المتابعة اليومية.').trim();
   const commandReport = buildEnhancedOperationalCommandReport(context, userRequest);
   if (commandReport) return res.json(commandReport);

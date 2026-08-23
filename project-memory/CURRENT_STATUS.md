@@ -1945,3 +1945,12 @@ For Phase 3.1 local verification before commit:
 - Successful `did-stop-loading` now restores the connected state, and subframe/resource failures no longer mark the whole server offline.
 - Loading has its own neutral `جاري الاتصال` state instead of being labeled as an outage.
 - Windows desktop package version advanced to `2026.8.2`.
+
+## AI Employee Knowledge Deepening - 2026-08-23
+
+- Added a centralized operational knowledge layer covering order types, waste, dyehouse balances, accessories, dimensions, financial-center rules, A5 integration, WhatsApp, backups, and answer safety.
+- The AI context now combines live SQL Server orders with live A5 link/synchronization state.
+- A5 data can arrive directly from the Control Center or through the authenticated 2B client when the 2B server cannot reach the A5 host.
+- The integration remains read-only for the assistant: ambiguous A5 movements are reported for review and never linked by guesswork.
+- Added executable knowledge/context checks. Live verification read 60 orders, 18 customers, 9 A5 links, and 6 A5 review items from the current environment.
+- Release: `v2026.08.23.01`.
